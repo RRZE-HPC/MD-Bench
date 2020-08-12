@@ -33,9 +33,6 @@
 #include <math.h>
 #include <float.h>
 
-#include <timing.h>
-#include <allocate.h>
-
 #define HLINE "----------------------------------------------------------------------------\n"
 
 #define FACTOR 0.999
@@ -128,7 +125,11 @@ typedef struct {
     double t_scale;
     double p_scale;
     double e_scale;
+    double t_act;
+    double p_act;
+    double e_act;
     int mstat;
+    int nstat;
 } Thermo;
 
 /* Park/Miller RNG w/out MASKING, so as to be like f90s version */
@@ -156,7 +157,7 @@ double myrandom(int* idum)
 // Neighbor list related subroutines
 
 // convert atom coordinates in bin index
-int coord2bin(Neighbor* neighbor, double x, double y, double z)
+int coord2bin(Neighbor* neighbor, double xin, double yin, double zin)
 {
     int ix, iy, iz;
     double bininvx = neighbor->bininvx;
@@ -166,28 +167,28 @@ int coord2bin(Neighbor* neighbor, double x, double y, double z)
     int mbinylo = neighbor->mbinylo;
     int mbinzlo = neighbor->mbinzlo;
 
-    if(x >= xprd) {
-        ix = (int)((x - xprd) * bininvx) + neighbor->nbinx - mbinxlo;
-    } else if(x >= 0.0) {
-        ix = (int)(x * bininvx) - mbinxlo;
+    if(xin >= xprd) {
+        ix = (int)((xin - xprd) * bininvx) + neighbor->nbinx - mbinxlo;
+    } else if(xin >= 0.0) {
+        ix = (int)(xin * bininvx) - mbinxlo;
     } else {
-        ix = (int)(x * bininvx) - mbinxlo - 1;
+        ix = (int)(xin * bininvx) - mbinxlo - 1;
     }
 
-    if(y >= yprd) {
-        iy = (int)((y - yprd) * bininvy) + neighbor->nbiny - mbinylo;
-    } else if(y >= 0.0) {
-        iy = (int)(y * bininvy) - mbinylo;
+    if(yin >= yprd) {
+        iy = (int)((yin - yprd) * bininvy) + neighbor->nbiny - mbinylo;
+    } else if(yin >= 0.0) {
+        iy = (int)(yin * bininvy) - mbinylo;
     } else {
-        iy = (int)(y * bininvy) - mbinylo - 1;
+        iy = (int)(yin * bininvy) - mbinylo - 1;
     }
 
-    if(z >= zprd) {
-        iz = (int)((z - zprd) * bininvz) + neighbor->nbinz - mbinzlo;
-    } else if(z >= 0.0) {
-        iz = (int)(z * bininvz) - mbinzlo;
+    if(zin >= zprd) {
+        iz = (int)((zin - zprd) * bininvz) + neighbor->nbinz - mbinzlo;
+    } else if(zin >= 0.0) {
+        iz = (int)(zin * bininvz) - mbinzlo;
     } else {
-        iz = (int)(z * bininvz) - mbinzlo - 1;
+        iz = (int)(zin * bininvz) - mbinzlo - 1;
     }
 
     return (iz * neighbor->mbiny * neighbor->mbinx + iy * neighbor->mbinx + ix + 1);
@@ -267,12 +268,12 @@ void buildNeighborlist(Neighbor *neighbor)
     int nall = Nlocal + Nghost;
 
     /* extend atom arrays if necessary */
-    if(nall > Nmax) {
-        Nmax = nall;
+    if(nall > neighbor->nmax) {
+        neighbor->nmax = nall;
         if(neighbor->numneigh) free(neighbor->numneigh);
         if(neighbor->neighbors) free(neighbor->neighbors);
-        neighbor->numneigh = (int*) malloc(Nmax * sizeof(int));
-        neighbor->neighbors = (int*) malloc(Nmax * neighbor->maxneighs * sizeof(int*));
+        neighbor->numneigh = (int*) malloc(neighbor->nmax * sizeof(int));
+        neighbor->neighbors = (int*) malloc(neighbor->nmax * neighbor->maxneighs * sizeof(int*));
     }
 
     /* bin local & ghost atoms */
@@ -298,6 +299,11 @@ void buildNeighborlist(Neighbor *neighbor)
 
                 for(int m = 0; m < neighbor->bincount[jbin]; m++) {
                     int j = loc_bin[m];
+
+                    if ( j == i ){
+                        continue;
+                    }
+
                     double delx = xtmp - x[j];
                     double dely = ytmp - y[j];
                     double delz = ztmp - z[j];
@@ -354,7 +360,9 @@ void init(Neighbor *neighbor, Parameter *param)
     neighbor->nbinz = neighscale * param->nz;
     neighbor->every = 20;
     neighbor->ncalls = 0;
+    neighbor->nmax = 0;
     neighbor->atoms_per_bin = 8;
+    neighbor->maxneighs = 100;
     neighbor->cutneigh = param->cutforce + 0.30;
     neighbor->numneigh = NULL;
     neighbor->neighbors = NULL;
@@ -529,7 +537,7 @@ void growarray()
 void processBorders(double cutneigh)
 {
     Nghost = 0;
-    int lastidx = Nlocal;
+    int lastidx = Nlocal-1;
 
     for(int i = 0; i < Nlocal; i++) {
 
@@ -637,23 +645,6 @@ void processBorders(double cutneigh)
     }
 }
 
-void addatom(double x_in, double y_in, double z_in,
-        double vx_in, double vy_in, double vz_in)
-{
-    if(Nlocal == Nmax) {
-        growarray();
-    }
-
-    x[Nlocal] = x_in;
-    y[Nlocal] = y_in;
-    z[Nlocal] = z_in;
-    vx[Nlocal] = vx_in;
-    vy[Nlocal] = vy_in;
-    vz[Nlocal] = vz_in;
-
-    Nlocal++;
-}
-
 /* place atoms in the same bin consecutive in memory */
 void sortAtoms(Neighbor *neighbor)
 {
@@ -718,12 +709,12 @@ void create_atoms(Parameter *param)
     /* determine loop bounds of lattice subsection that overlaps my sub-box
        insure loop bounds do not exceed nx,ny,nz */
     double alat = pow((4.0 / param->rho), (1.0 / 3.0));
-    int ilo = (int) xlo / (0.5 * alat) - 1;
-    int ihi = (int) xhi / (0.5 * alat) + 1;
-    int jlo = (int) ylo / (0.5 * alat) - 1;
-    int jhi = (int) yhi / (0.5 * alat) + 1;
-    int klo = (int) zlo / (0.5 * alat) - 1;
-    int khi = (int) zhi / (0.5 * alat) + 1;
+    int ilo = (int) (xlo / (0.5 * alat) - 1);
+    int ihi = (int) (xhi / (0.5 * alat) + 1);
+    int jlo = (int) (ylo / (0.5 * alat) - 1);
+    int jhi = (int) (yhi / (0.5 * alat) + 1);
+    int klo = (int) (zlo / (0.5 * alat) - 1);
+    int khi = (int) (zhi / (0.5 * alat) + 1);
 
     ilo = MAX(ilo, 0);
     ihi = MIN(ihi, 2 * param->nx - 1);
@@ -732,12 +723,10 @@ void create_atoms(Parameter *param)
     klo = MAX(klo, 0);
     khi = MIN(khi, 2 * param->nz - 1);
 
-    /* each proc generates positions and velocities of atoms on fcc sublattice
-       that overlaps its box, only store atoms that fall in my box
-       use atom # (generated from lattice coords) as unique seed to generate a
-       unique velocity exercise RNG between calls to avoid correlations in adjacent atoms */
+    printf("CA alat=%f ilo=%d ihi=%d jlo=%d jhi=%d klo=%d khi=%d\n",
+            alat, ilo, ihi, jlo, jhi, klo, khi);
 
-    double xtmp, ytmp, ztmp, vx, vy, vz;
+    double xtmp, ytmp, ztmp, vxtmp, vytmp, vztmp;
     int i, j, k, m, n;
     int sx = 0; int sy = 0; int sz = 0;
     int ox = 0; int oy = 0; int oz = 0;
@@ -762,24 +751,39 @@ void create_atoms(Parameter *param)
                     ytmp >= ylo && ytmp < yhi &&
                     ztmp >= zlo && ztmp < zhi ) {
 
-                n = k * (2 * param->ny) * (2 * param->nx) + j * (2 * param->nx) + i + 1;
+                n = k * (2 * param->ny) * (2 * param->nx) +
+                    j * (2 * param->nx) +
+                    i + 1;
 
                 for(m = 0; m < 5; m++) {
                     myrandom(&n);
                 }
-                vx = myrandom(&n);
+                vxtmp = myrandom(&n);
 
                 for(m = 0; m < 5; m++){
                     myrandom(&n);
                 }
-                vy = myrandom(&n);
+                vytmp = myrandom(&n);
 
                 for(m = 0; m < 5; m++) {
                     myrandom(&n);
                 }
-                vz = myrandom(&n);
+                vztmp = myrandom(&n);
 
-                addatom(xtmp, ytmp, ztmp, vx, vy, vz);
+                if(Nlocal == Nmax) {
+                    growarray();
+                }
+
+                /* printf("%d %f %f %f\n",Nlocal, xtmp, ytmp, ztmp); */
+
+                x[Nlocal] = xtmp;
+                y[Nlocal] = ytmp;
+                z[Nlocal] = ztmp;
+                vx[Nlocal] = vxtmp;
+                vy[Nlocal] = vytmp;
+                vz[Nlocal] = vztmp;
+
+                Nlocal++;
             }
         }
 
@@ -810,6 +814,48 @@ void create_atoms(Parameter *param)
             oz++;
         }
     }
+}
+
+
+void adjustVelocity(Parameter *param, Thermo *thermo)
+{
+  /* zero center-of-mass motion */
+  double vxtot = 0.0;
+  double vytot = 0.0;
+  double vztot = 0.0;
+
+  for(int i = 0; i < Nlocal; i++) {
+    vxtot += vx[i];
+    vytot += vy[i];
+    vztot += vz[i];
+  }
+
+  vxtot = vxtot / Natoms;
+  vytot = vytot / Natoms;
+  vztot = vztot / Natoms;
+
+  for(int i = 0; i < Nlocal; i++) {
+    vx[i] -= vxtot;
+    vy[i] -= vytot;
+    vz[i] -= vztot;
+  }
+
+  /* rescale velocities, including old ones */
+  thermo->t_act = 0;
+  double t = 0.0;
+
+  for(int i = 0; i < Nlocal; i++) {
+    t += (vx[i] * vx[i] + vy[i] * vy[i] + vz[i] * vz[i]) * param->mass;
+  }
+
+  t *= thermo->t_scale;
+  double factor = sqrt(param->temp / t);
+
+  for(int i = 0; i < Nlocal; i++) {
+    vx[i] *= factor;
+    vy[i] *= factor;
+    vz[i] *= factor;
+  }
 }
 
 void thermoSetup(Parameter *param, Thermo *thermo)
@@ -923,9 +969,11 @@ void computeForce(Neighbor *neighbor, Parameter *param)
         double fix = 0;
         double fiy = 0;
         double fiz = 0;
+        /* printf("%d %d: ", i, numneighs); */
 
         for(int k = 0; k < numneighs; k++) {
             int j = neighs[k];
+        /* printf("%d ", j); */
             double delx = xtmp - x[j];
             double dely = ytmp - y[j];
             double delz = ztmp - z[j];
@@ -944,6 +992,7 @@ void computeForce(Neighbor *neighbor, Parameter *param)
                 t_virial += (delx * delx + dely * dely + delz * delz) * force;
             }
         }
+        /* printf("\n"); */
 
         fx[i] += fix;
         fy[i] += fiy;
@@ -954,10 +1003,24 @@ void computeForce(Neighbor *neighbor, Parameter *param)
     virial += (0.5 * t_virial);
 }
 
-void printState()
+void printAtomState(Neighbor *neighbor)
 {
     printf("Atom counts: Natoms=%d Nlocal=%d Nghost=%d Nmax=%d\n",
             Natoms, Nlocal, Nghost, Nmax);
+
+    int nall = Nlocal + Nghost;
+    double min = -neighbor->cutneigh;
+    double max = xprd + neighbor->cutneigh;
+
+    for (int i=0; i<nall; i++) {
+        printf("%d  %f %f %f\n", i, x[i], y[i], z[i]);
+
+        if ( x[i] < min || x[i] > max ||
+                y[i] < min || y[i] > max ||
+                z[i] < min || z[i] > max) {
+            printf("OOB!!\n");
+        }
+    }
 }
 
 int main (int argc, char** argv)
@@ -967,15 +1030,15 @@ int main (int argc, char** argv)
     Thermo thermo;
 
     init(&neighbor, &param);
-    printState();
     setup(&neighbor, &param);
     create_atoms(&param);
-    printState();
     thermoSetup(&param, &thermo);
+    adjustVelocity(&param, &thermo);
     processBorders(neighbor.cutneigh);
+    /* printAtomState(&neighbor); */
     buildNeighborlist(&neighbor);
-    printState();
-    exit(EXIT_SUCCESS);
+    /* printAtomState(); */
+    thermoCompute(0, &param, &thermo);
 
     for(int n = 0; n < param.ntimes; n++) {
 
@@ -983,17 +1046,20 @@ int main (int argc, char** argv)
 
         if(!((n + 1) % neighbor.every)) {
             processBorders(neighbor.cutneigh);
-            sortAtoms(&neighbor);
+            /* sortAtoms(&neighbor); */
             buildNeighborlist(&neighbor);
         }
 
         computeForce(&neighbor, &param);
         finalIntegrate(&param);
 
-        if(param.nstat) {
+        if(thermo.nstat) {
             thermoCompute(n + 1, &param, &thermo);
         }
+    printf("x[0] = %f\n", x[0]);
     }
+
+    thermoCompute(-1, &param, &thermo);
 
     return EXIT_SUCCESS;
 }
