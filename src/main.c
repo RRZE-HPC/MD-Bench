@@ -50,6 +50,7 @@
 #endif
 
 static int Natoms, Nlocal, Nghost, Nmax;
+static double Cutneigh;                 // neighbor cutoff
 static double xprd, yprd, zprd;
 static double xlo, xhi;
 static double ylo, yhi;
@@ -83,7 +84,7 @@ typedef struct {
     int* neighbors;
     int maxneighs;
     int nbinx, nbiny, nbinz;
-    double cutneigh;                 // neighbor cutoff
+    /* double cutneigh;                 // neighbor cutoff */
     double cutneighsq;               // neighbor cutoff squared
     int every;
     int ncalls;
@@ -354,6 +355,7 @@ void init(Neighbor *neighbor, Parameter *param)
     param->mass = 1.0;
     param->dtforce = 0.5 * param->dt;
 
+    Cutneigh = param->cutforce + 0.30;
     double neighscale = 5.0 / 6.0;
     neighbor->nbinx = neighscale * param->nx;
     neighbor->nbiny = neighscale * param->ny;
@@ -363,7 +365,7 @@ void init(Neighbor *neighbor, Parameter *param)
     neighbor->nmax = 0;
     neighbor->atoms_per_bin = 8;
     neighbor->maxneighs = 100;
-    neighbor->cutneigh = param->cutforce + 0.30;
+    /* neighbor->cutneigh = param->cutforce + 0.30; */
     neighbor->numneigh = NULL;
     neighbor->neighbors = NULL;
     neighbor->stencil = NULL;
@@ -377,7 +379,6 @@ void setup(Neighbor *neighbor, Parameter *param)
     double coord;
     int mbinxhi, mbinyhi, mbinzhi;
     int nextx, nexty, nextz;
-    double cutneigh = neighbor->cutneigh;
 
     xprd = param->nx * lattice;
     yprd = param->ny * lattice;
@@ -387,7 +388,7 @@ void setup(Neighbor *neighbor, Parameter *param)
     ylo = 0.0; yhi = yprd;
     zlo = 0.0; zhi = zprd;
 
-    neighbor->cutneighsq = cutneigh * cutneigh;
+    neighbor->cutneighsq = Cutneigh * Cutneigh;
     neighbor->binsizex = xprd / neighbor->nbinx;
     neighbor->binsizey = yprd / neighbor->nbiny;
     neighbor->binsizez = zprd / neighbor->nbinz;
@@ -397,36 +398,36 @@ void setup(Neighbor *neighbor, Parameter *param)
     neighbor->bininvz = 1.0 / neighbor->binsizez;
 
     // x coordinate
-    coord = xlo - cutneigh - SMALL * xprd;
+    coord = xlo - Cutneigh - SMALL * xprd;
     neighbor->mbinxlo = (int) (coord * neighbor->bininvx);
 
     if (coord < 0.0) {
         neighbor->mbinxlo = neighbor->mbinxlo - 1;
     }
 
-    coord = xhi + cutneigh + SMALL * xprd;
+    coord = xhi + Cutneigh + SMALL * xprd;
     mbinxhi = (int) (coord * neighbor->bininvx);
 
     // y coordinate
-    coord = ylo - cutneigh - SMALL * yprd;
+    coord = ylo - Cutneigh - SMALL * yprd;
     neighbor->mbinylo = (int) (coord * neighbor->bininvy);
 
     if (coord < 0.0) {
         neighbor->mbinylo = neighbor->mbinylo - 1;
     }
 
-    coord = yhi + cutneigh + SMALL * yprd;
+    coord = yhi + Cutneigh + SMALL * yprd;
     mbinyhi = (int) (coord * neighbor->bininvy);
 
     // z coordinate
-    coord = zlo - cutneigh - SMALL * zprd;
+    coord = zlo - Cutneigh - SMALL * zprd;
     neighbor->mbinzlo = (int) (coord * neighbor->bininvz);
 
     if (coord < 0.0) {
         neighbor->mbinzlo = neighbor->mbinzlo - 1;
     }
 
-    coord = zhi + cutneigh + SMALL * zprd;
+    coord = zhi + Cutneigh + SMALL * zprd;
     mbinzhi = (int) (coord * neighbor->bininvz);
 
 
@@ -442,14 +443,14 @@ void setup(Neighbor *neighbor, Parameter *param)
     mbinzhi = mbinzhi + 1;
     neighbor->mbinz = mbinzhi - neighbor->mbinzlo + 1;
 
-    nextx = (int) (cutneigh * neighbor->bininvx);
-    if(nextx * neighbor->binsizex < FACTOR * cutneigh) nextx++;
+    nextx = (int) (Cutneigh * neighbor->bininvx);
+    if(nextx * neighbor->binsizex < FACTOR * Cutneigh) nextx++;
 
-    nexty = (int) (cutneigh * neighbor->bininvy);
-    if(nexty * neighbor->binsizey < FACTOR * cutneigh) nexty++;
+    nexty = (int) (Cutneigh * neighbor->bininvy);
+    if(nexty * neighbor->binsizey < FACTOR * Cutneigh) nexty++;
 
-    nextz = (int) (cutneigh * neighbor->bininvz);
-    if(nextz * neighbor->binsizez < FACTOR * cutneigh) nextz++;
+    nextz = (int) (Cutneigh * neighbor->bininvz);
+    if(nextz * neighbor->binsizez < FACTOR * Cutneigh) nextz++;
 
     if (neighbor->stencil) {
         free(neighbor->stencil);
@@ -530,11 +531,105 @@ void growarray()
     }
 }
 
+int setupGhostAtom(int i, int lastidx)
+{
+    /* Setup ghost atoms */
+    if (x[i] < Cutneigh) { /* left plane */
+        x[lastidx+1] = x[i] + xprd;
+        y[lastidx+1] = y[i];
+        z[lastidx+1] = z[i];
+        lastidx++; Nghost++;
+
+        /* treat corners */
+        if (y[i] < Cutneigh && z[i] < Cutneigh) { /* bottom left front corner */
+            x[lastidx+1] = x[i] + xprd;
+            y[lastidx+1] = y[i] + yprd;
+            z[lastidx+1] = z[i] + zprd;
+            lastidx++; Nghost++;
+        } else if (y[i] >= (yprd-Cutneigh) && z[i] < Cutneigh) { /* bottom left back corner */
+            x[lastidx+1] = x[i] + xprd;
+            y[lastidx+1] = y[i] - yprd;
+            z[lastidx+1] = z[i] + zprd;
+            lastidx++; Nghost++;
+        } else if (y[i] < Cutneigh && z[i] >= (zprd-Cutneigh)) { /* top left front corner */
+            x[lastidx+1] = x[i] + xprd;
+            y[lastidx+1] = y[i] + yprd;
+            z[lastidx+1] = z[i] - zprd;
+            lastidx++; Nghost++;
+        } else if (y[i] >= (yprd-Cutneigh) && z[i] >= (zprd-Cutneigh)) { /* top left back corner */
+            x[lastidx+1] = x[i] + xprd;
+            y[lastidx+1] = y[i] - yprd;
+            z[lastidx+1] = z[i] - zprd;
+            lastidx++; Nghost++;
+        }
+    } else if (x[i] >= (xprd-Cutneigh)) { /* right plane */
+        x[lastidx+1] = x[i] - xprd;
+        y[lastidx+1] = y[i];
+        z[lastidx+1] = z[i];
+        lastidx++; Nghost++;
+
+        /* treat corners */
+        if (y[i] < Cutneigh && z[i] < Cutneigh) { /* bottom right front corner */
+            x[lastidx+1] = x[i] - xprd;
+            y[lastidx+1] = y[i] + yprd;
+            z[lastidx+1] = z[i] + zprd;
+            lastidx++; Nghost++;
+        } else if (y[i] >= (yprd-Cutneigh) && z[i] < Cutneigh) { /* bottom right back corner */
+            x[lastidx+1] = x[i] - xprd;
+            y[lastidx+1] = y[i] - yprd;
+            z[lastidx+1] = z[i] + zprd;
+            lastidx++; Nghost++;
+        } else if (y[i] < Cutneigh && z[i] >= (zprd-Cutneigh)) { /* top right front corner */
+            x[lastidx+1] = x[i] - xprd;
+            y[lastidx+1] = y[i] + yprd;
+            z[lastidx+1] = z[i] - zprd;
+            lastidx++; Nghost++;
+        } else if (y[i] >= (yprd-Cutneigh) && z[i] >= (zprd-Cutneigh)) { /* top right back corner */
+            x[lastidx+1] = x[i] - xprd;
+            y[lastidx+1] = y[i] - yprd;
+            z[lastidx+1] = z[i] - zprd;
+            lastidx++; Nghost++;
+        }
+    } else if (y[i] < Cutneigh) { /* front plane */
+        x[lastidx+1] = x[i];
+        y[lastidx+1] = y[i] + yprd;
+        z[lastidx+1] = z[i];
+        lastidx++; Nghost++;
+    } else if (y[i] >= (yprd-Cutneigh)) { /* back plane */
+        x[lastidx+1] = x[i];
+        y[lastidx+1] = y[i] - yprd;
+        z[lastidx+1] = z[i];
+        lastidx++; Nghost++;
+    } else if (z[i] < Cutneigh) { /* bottom plane */
+        x[lastidx+1] = x[i];
+        y[lastidx+1] = y[i];
+        z[lastidx+1] = z[i] + zprd;
+        lastidx++; Nghost++;
+    } else if (z[i] >= (zprd-Cutneigh)) { /* top plane */
+        x[lastidx+1] = x[i];
+        y[lastidx+1] = y[i];
+        z[lastidx+1] = z[i] - zprd;
+        lastidx++; Nghost++;
+    }
+
+    return lastidx;
+}
+
+void exchangeBorders()
+{
+    Nghost = 0;
+    int lastidx = Nlocal-1;
+
+    for(int i = 0; i < Nlocal; i++) {
+        lastidx = setupGhostAtom(i, lastidx);
+    }
+}
+
 /* Enforce periodic boundary conditions
  * Relocate atoms that have left domain for
  * 6 planes (and 8 corners (diagonal))
  * Setup ghost atoms at boundaries*/
-void processBorders(double cutneigh)
+void processBorders()
 {
     Nghost = 0;
     int lastidx = Nlocal-1;
@@ -564,84 +659,7 @@ void processBorders(double cutneigh)
             growarray();
         }
 
-        /* Setup ghost atoms */
-        if (x[i] < cutneigh) { /* left plane */
-            x[lastidx+1] = x[i] + xprd;
-            y[lastidx+1] = y[i];
-            z[lastidx+1] = z[i];
-            lastidx++; Nghost++;
-
-            /* treat corners */
-            if (y[i] < cutneigh && z[i] < cutneigh) { /* bottom left front corner */
-                x[lastidx+1] = x[i] + xprd;
-                y[lastidx+1] = y[i] + yprd;
-                z[lastidx+1] = z[i] + zprd;
-                lastidx++; Nghost++;
-            } else if (y[i] >= (yprd-cutneigh) && z[i] < cutneigh) { /* bottom left back corner */
-                x[lastidx+1] = x[i] + xprd;
-                y[lastidx+1] = y[i] - yprd;
-                z[lastidx+1] = z[i] + zprd;
-                lastidx++; Nghost++;
-            } else if (y[i] < cutneigh && z[i] >= (zprd-cutneigh)) { /* top left front corner */
-                x[lastidx+1] = x[i] + xprd;
-                y[lastidx+1] = y[i] + yprd;
-                z[lastidx+1] = z[i] - zprd;
-                lastidx++; Nghost++;
-            } else if (y[i] >= (yprd-cutneigh) && z[i] >= (zprd-cutneigh)) { /* top left back corner */
-                x[lastidx+1] = x[i] + xprd;
-                y[lastidx+1] = y[i] - yprd;
-                z[lastidx+1] = z[i] - zprd;
-                lastidx++; Nghost++;
-            }
-        } else if (x[i] >= (xprd-cutneigh)) { /* right plane */
-            x[lastidx+1] = x[i] - xprd;
-            y[lastidx+1] = y[i];
-            z[lastidx+1] = z[i];
-            lastidx++; Nghost++;
-
-            /* treat corners */
-            if (y[i] < cutneigh && z[i] < cutneigh) { /* bottom right front corner */
-                x[lastidx+1] = x[i] - xprd;
-                y[lastidx+1] = y[i] + yprd;
-                z[lastidx+1] = z[i] + zprd;
-                lastidx++; Nghost++;
-            } else if (y[i] >= (yprd-cutneigh) && z[i] < cutneigh) { /* bottom right back corner */
-                x[lastidx+1] = x[i] - xprd;
-                y[lastidx+1] = y[i] - yprd;
-                z[lastidx+1] = z[i] + zprd;
-                lastidx++; Nghost++;
-            } else if (y[i] < cutneigh && z[i] >= (zprd-cutneigh)) { /* top right front corner */
-                x[lastidx+1] = x[i] - xprd;
-                y[lastidx+1] = y[i] + yprd;
-                z[lastidx+1] = z[i] - zprd;
-                lastidx++; Nghost++;
-            } else if (y[i] >= (yprd-cutneigh) && z[i] >= (zprd-cutneigh)) { /* top right back corner */
-                x[lastidx+1] = x[i] - xprd;
-                y[lastidx+1] = y[i] - yprd;
-                z[lastidx+1] = z[i] - zprd;
-                lastidx++; Nghost++;
-            }
-        } else if (y[i] < cutneigh) { /* front plane */
-            x[lastidx+1] = x[i];
-            y[lastidx+1] = y[i] + yprd;
-            z[lastidx+1] = z[i];
-            lastidx++; Nghost++;
-        } else if (y[i] >= (yprd-cutneigh)) { /* back plane */
-            x[lastidx+1] = x[i];
-            y[lastidx+1] = y[i] - yprd;
-            z[lastidx+1] = z[i];
-            lastidx++; Nghost++;
-        } else if (z[i] < cutneigh) { /* bottom plane */
-            x[lastidx+1] = x[i];
-            y[lastidx+1] = y[i];
-            z[lastidx+1] = z[i] + zprd;
-            lastidx++; Nghost++;
-        } else if (z[i] >= (zprd-cutneigh)) { /* top plane */
-            x[lastidx+1] = x[i];
-            y[lastidx+1] = y[i];
-            z[lastidx+1] = z[i] - zprd;
-            lastidx++; Nghost++;
-        }
+        lastidx = setupGhostAtom(i, lastidx);
     }
 }
 
@@ -723,8 +741,8 @@ void create_atoms(Parameter *param)
     klo = MAX(klo, 0);
     khi = MIN(khi, 2 * param->nz - 1);
 
-    printf("CA alat=%f ilo=%d ihi=%d jlo=%d jhi=%d klo=%d khi=%d\n",
-            alat, ilo, ihi, jlo, jhi, klo, khi);
+    /* printf("CA alat=%f ilo=%d ihi=%d jlo=%d jhi=%d klo=%d khi=%d\n", */
+            /* alat, ilo, ihi, jlo, jhi, klo, khi); */
 
     double xtmp, ytmp, ztmp, vxtmp, vytmp, vztmp;
     int i, j, k, m, n;
@@ -1003,14 +1021,14 @@ void computeForce(Neighbor *neighbor, Parameter *param)
     virial += (0.5 * t_virial);
 }
 
-void printAtomState(Neighbor *neighbor)
+void printAtomState()
 {
     printf("Atom counts: Natoms=%d Nlocal=%d Nghost=%d Nmax=%d\n",
             Natoms, Nlocal, Nghost, Nmax);
 
     int nall = Nlocal + Nghost;
-    double min = -neighbor->cutneigh;
-    double max = xprd + neighbor->cutneigh;
+    double min = -Cutneigh;
+    double max = xprd + Cutneigh;
 
     for (int i=0; i<nall; i++) {
         printf("%d  %f %f %f\n", i, x[i], y[i], z[i]);
@@ -1034,18 +1052,18 @@ int main (int argc, char** argv)
     create_atoms(&param);
     thermoSetup(&param, &thermo);
     adjustVelocity(&param, &thermo);
-    processBorders(neighbor.cutneigh);
+    processBorders();
     /* printAtomState(&neighbor); */
     buildNeighborlist(&neighbor);
-    /* printAtomState(); */
     thermoCompute(0, &param, &thermo);
 
     for(int n = 0; n < param.ntimes; n++) {
 
         initialIntegrate(&param);
+        exchangeBorders();
 
         if(!((n + 1) % neighbor.every)) {
-            processBorders(neighbor.cutneigh);
+            /* processBorders(); */
             /* sortAtoms(&neighbor); */
             buildNeighborlist(&neighbor);
         }
@@ -1056,7 +1074,7 @@ int main (int argc, char** argv)
         if(thermo.nstat) {
             thermoCompute(n + 1, &param, &thermo);
         }
-    printf("x[0] = %f\n", x[0]);
+        printf("x[0] = %f\n", x[0]);
     }
 
     thermoCompute(-1, &param, &thermo);
