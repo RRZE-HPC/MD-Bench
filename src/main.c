@@ -61,6 +61,10 @@ static double *fx, *fy, *fz;
 static double eng_vdwl;
 static double virial;
 
+static int NmaxGhost;
+static int *BorderMap;
+static int *PBCx, *PBCy, *PBCz;
+
 typedef enum {
     LEFT = 0,
     RIGHT,
@@ -341,6 +345,10 @@ void init(Neighbor *neighbor, Parameter *param)
     vx = NULL; vy = NULL; vz = NULL;
     fx = NULL; fy = NULL; fz = NULL;
 
+    NmaxGhost = 0;
+    BorderMap = NULL;
+    PBCx = NULL; PBCy = NULL; PBCz = NULL;
+
     param->epsilon = 1.0;
     param->sigma6 = 1.0;
     param->rho = 0.8442;
@@ -509,6 +517,38 @@ double* myrealloc(double *ptr, int n, int nold) {
     return newarray;
 }
 
+int* myreallocInt(int *ptr, int n, int nold) {
+
+    int* newarray;
+
+    newarray = (int*) malloc(n * sizeof(int));
+
+    if(nold) {
+        memcpy(newarray, ptr, nold * sizeof(int));
+    }
+
+    if(ptr) {
+        free(ptr);
+    }
+
+    return newarray;
+}
+
+void growBoundary()
+{
+    int nold = NmaxGhost;
+    NmaxGhost += DELTA;
+
+    BorderMap =  myreallocInt(BorderMap, NmaxGhost, nold);
+    PBCx =  myreallocInt(PBCx, NmaxGhost, nold);
+    PBCy =  myreallocInt(PBCy, NmaxGhost, nold);
+    PBCz =  myreallocInt(PBCz, NmaxGhost, nold);
+
+    if(BorderMap == NULL || PBCx == NULL || PBCy == NULL || PBCz == NULL ) {
+        printf("ERROR: No memory for Boundary\n");
+    }
+}
+
 void growarray()
 {
     int nold = Nmax;
@@ -615,25 +655,17 @@ int setupGhostAtom(int i, int lastidx)
     return lastidx;
 }
 
-void exchangeBorders()
+void updateBorders()
 {
-    Nghost = 0;
-    int lastidx = Nlocal-1;
-
-    for(int i = 0; i < Nlocal; i++) {
-        lastidx = setupGhostAtom(i, lastidx);
+    for(int i = 0; i < Nghost; i++) {
+        x[Nlocal + i] = x[BorderMap[i]] + PBCx[i] * xprd;
+        y[Nlocal + i] = y[BorderMap[i]] + PBCy[i] * yprd;
+        z[Nlocal + i] = z[BorderMap[i]] + PBCz[i] * zprd;
     }
 }
 
-/* Enforce periodic boundary conditions
- * Relocate atoms that have left domain for
- * 6 planes (and 8 corners (diagonal))
- * Setup ghost atoms at boundaries*/
-void processBorders()
+void updateAtomLocations()
 {
-    Nghost = 0;
-    int lastidx = Nlocal-1;
-
     for(int i = 0; i < Nlocal; i++) {
 
         /* Relocate atoms that have left the domain */
@@ -654,13 +686,212 @@ void processBorders()
         } else if(z[i] >= zprd) {
             z[i] -= zprd;
         }
+    }
+}
 
-        if (lastidx+1 >= Nmax) {
+void setupBordersNew()
+{
+    int nghostprev;
+    Nghost = -1;
+
+    for (int i = 0; i < Nlocal; i++) {
+
+        if (Nlocal + Nghost + 1 >= Nmax) {
             growarray();
         }
 
-        lastidx = setupGhostAtom(i, lastidx);
+        if (Nghost + 1 >= NmaxGhost) {
+            growBoundary();
+        }
+
+        if (x[i] < Cutneigh) {
+            Nghost++;
+            BorderMap[Nghost] = i;
+            PBCx[Nghost] = +1; PBCy[Nghost] = 0; PBCz[Nghost] = 0;
+        } else if (x[i] >= xprd - Cutneigh) {
+            Nghost++;
+            BorderMap[Nghost] = i;
+            PBCx[Nghost] = -1; PBCy[Nghost] = 0; PBCz[Nghost] = 0;
+        }
     }
+
+    nghostprev = Nghost+1;
+    printf("nghost 1 %d\n", nghostprev);
+
+    for (int i = 0; i < Nlocal + nghostprev; i++) {
+
+        if (Nlocal + Nghost + 1 >= Nmax) {
+            growarray();
+        }
+
+        if (Nghost + 1 >= NmaxGhost) {
+            growBoundary();
+        }
+
+        if (y[i] < Cutneigh) {
+            if (i >= Nlocal) {
+                Nghost++;
+                BorderMap[Nghost] = BorderMap[i - Nlocal];
+                PBCx[Nghost] = 0; PBCy[Nghost] = +1; PBCz[Nghost] = 0;
+            } else {
+                Nghost++;
+                BorderMap[Nghost] = i;
+                PBCx[Nghost] = 0; PBCy[Nghost] = +1; PBCz[Nghost] = 0;
+            }
+        } else if (y[i] >= yprd - Cutneigh) {
+            if (i >= Nlocal) {
+                Nghost++;
+                BorderMap[Nghost] = BorderMap[i - Nlocal];
+                PBCx[Nghost] = 0; PBCy[Nghost] = -1; PBCz[Nghost] = 0;
+            } else {
+                Nghost++;
+                BorderMap[Nghost] = i;
+                PBCx[Nghost] = 0; PBCy[Nghost] = -1; PBCz[Nghost] = 0;
+            }
+        }
+    }
+
+    nghostprev = Nghost+1;
+    printf("nghost 2 %d\n", nghostprev);
+
+    for (int i = 0; i < Nlocal + nghostprev; i++) {
+
+        if (Nlocal + Nghost + 1 >= Nmax) {
+            growarray();
+        }
+
+        if (Nghost + 1 >= NmaxGhost) {
+            growBoundary();
+        }
+
+
+        if (z[i] < Cutneigh) {
+            if (i >= Nlocal) {
+                Nghost++;
+                BorderMap[Nghost] = BorderMap[i - Nlocal];
+                PBCx[Nghost] = 0; PBCy[Nghost] = 0; PBCz[Nghost] = +1;
+            } else {
+                Nghost++;
+                BorderMap[Nghost] = i;
+                PBCx[Nghost] = 0; PBCy[Nghost] = 0; PBCz[Nghost] = +1;
+            }
+        } else if(z[i] >= zprd - Cutneigh) {
+            if (i >= Nlocal) {
+                Nghost++;
+                BorderMap[Nghost] = BorderMap[i - Nlocal];
+                PBCx[Nghost] = 0; PBCy[Nghost] = 0; PBCz[Nghost] = -1;
+            } else {
+                Nghost++;
+                BorderMap[Nghost] = i;
+                PBCx[Nghost] = 0; PBCy[Nghost] = 0; PBCz[Nghost] = -1;
+            }
+        }
+    }
+
+    Nghost++;
+}
+
+#define ADDGHOST(dx,dy,dz) Nghost++; BorderMap[Nghost] = i; PBCx[Nghost] = dx; PBCy[Nghost] = dy; PBCz[Nghost] = dz;
+
+/* Enforce periodic boundary conditions
+ * Relocate atoms that have left domain for
+ * 6 planes (and 8 corners (diagonal))
+ * Setup ghost atoms at boundaries*/
+void setupBorders()
+{
+    Nghost = -1;
+
+    for(int i = 0; i < Nlocal; i++) {
+
+        if (Nlocal + Nghost + 1 >= Nmax) {
+            growarray();
+        }
+
+        if (Nghost + 1 >= NmaxGhost) {
+            growBoundary();
+        }
+
+        /* Setup ghost atoms */
+        if (x[i] < Cutneigh) { /* left plane */
+            ADDGHOST(+1,0,0);
+            /* Nghost++; */
+            /* BorderMap[Nghost] = i; */
+            /* PBCx[Nghost] = +1; PBCy[Nghost] = 0; PBCz[Nghost] = 0; */
+
+            /* treat edges and corners */
+            if (z[i] < Cutneigh) { /* bottom left edge */
+                Nghost++;
+                BorderMap[Nghost] = i;
+                PBCx[Nghost] = +1; PBCy[Nghost] = 0; PBCz[Nghost] = +1;
+
+                if (y[i] < Cutneigh) { /* bottom left front corner */
+                    Nghost++;
+                    BorderMap[Nghost] = i;
+                    PBCx[Nghost] = +1; PBCy[Nghost] = +1; PBCz[Nghost] = +1;
+                }
+            } else if (y[i] >= (yprd-Cutneigh) && z[i] < Cutneigh) { /* bottom left back corner */
+                Nghost++;
+                BorderMap[Nghost] = i;
+                PBCx[Nghost] = +1; PBCy[Nghost] = -1; PBCz[Nghost] = +1;
+            } else if (z[i] >= (zprd-Cutneigh)) { /* top left edge */
+                Nghost++;
+                BorderMap[Nghost] = i;
+                PBCx[Nghost] = +1; PBCy[Nghost] = 0; PBCz[Nghost] = -1;
+
+                if (y[i] < Cutneigh) { /* bottom left front corner */
+                    Nghost++;
+                    BorderMap[Nghost] = i;
+                    PBCx[Nghost] = +1; PBCy[Nghost] = +1; PBCz[Nghost] = -1;
+                }
+            } else if (y[i] >= (yprd-Cutneigh) && z[i] >= (zprd-Cutneigh)) { /* top left back corner */
+                Nghost++;
+                BorderMap[Nghost] = i;
+                PBCx[Nghost] = +1; PBCy[Nghost] = -1; PBCz[Nghost] = -1;
+            }
+        } else if (x[i] >= (xprd-Cutneigh)) { /* right plane */
+            Nghost++;
+            BorderMap[Nghost] = i;
+            PBCx[Nghost] = -1; PBCy[Nghost] = 0; PBCz[Nghost] = 0;
+
+            /* treat corners */
+            if (y[i] < Cutneigh && z[i] < Cutneigh) { /* bottom right front corner */
+                Nghost++;
+                BorderMap[Nghost] = i;
+                PBCx[Nghost] = -1; PBCy[Nghost] = +1; PBCz[Nghost] = +1;
+            } else if (y[i] >= (yprd-Cutneigh) && z[i] < Cutneigh) { /* bottom right back corner */
+                Nghost++;
+                BorderMap[Nghost] = i;
+                PBCx[Nghost] = -1; PBCy[Nghost] = -1; PBCz[Nghost] = +1;
+            } else if (y[i] < Cutneigh && z[i] >= (zprd-Cutneigh)) { /* top right front corner */
+                Nghost++;
+                BorderMap[Nghost] = i;
+                PBCx[Nghost] = -1; PBCy[Nghost] = +1; PBCz[Nghost] = -1;
+            } else if (y[i] >= (yprd-Cutneigh) && z[i] >= (zprd-Cutneigh)) { /* top right back corner */
+                Nghost++;
+                BorderMap[Nghost] = i;
+                PBCx[Nghost] = -1; PBCy[Nghost] = -1; PBCz[Nghost] = -1;
+            }
+        } else if (y[i] < Cutneigh) { /* front plane */
+            Nghost++;
+            BorderMap[Nghost] = i;
+            PBCx[Nghost] = 0; PBCy[Nghost] = +1; PBCz[Nghost] = 0;
+        } else if (y[i] >= (yprd-Cutneigh)) { /* back plane */
+            Nghost++;
+            BorderMap[Nghost] = i;
+            PBCx[Nghost] = 0; PBCy[Nghost] = -1; PBCz[Nghost] = 0;
+        } else if (z[i] < Cutneigh) { /* bottom plane */
+            Nghost++;
+            BorderMap[Nghost] = i;
+            PBCx[Nghost] = 0; PBCy[Nghost] = 0; PBCz[Nghost] = +1;
+        } else if (z[i] >= (zprd-Cutneigh)) { /* top plane */
+            Nghost++;
+            BorderMap[Nghost] = i;
+            PBCx[Nghost] = 0; PBCy[Nghost] = 0; PBCz[Nghost] = -1;
+        }
+    }
+
+    // increase by one to make it the count
+    Nghost++;
 }
 
 /* place atoms in the same bin consecutive in memory */
@@ -1052,18 +1283,23 @@ int main (int argc, char** argv)
     create_atoms(&param);
     thermoSetup(&param, &thermo);
     adjustVelocity(&param, &thermo);
-    processBorders();
-    /* printAtomState(&neighbor); */
+    setupBorders();
+    /* updateBorders(); */
+    printAtomState();
+    exit(EXIT_SUCCESS);
     buildNeighborlist(&neighbor);
     thermoCompute(0, &param, &thermo);
+    computeForce(&neighbor, &param);
 
     for(int n = 0; n < param.ntimes; n++) {
 
         initialIntegrate(&param);
-        exchangeBorders();
+        updateBorders();
 
         if(!((n + 1) % neighbor.every)) {
-            /* processBorders(); */
+            updateAtomLocations();
+            setupBorders();
+            updateBorders();
             /* sortAtoms(&neighbor); */
             buildNeighborlist(&neighbor);
         }
