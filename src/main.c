@@ -65,24 +65,6 @@ static int NmaxGhost;
 static int *BorderMap;
 static int *PBCx, *PBCy, *PBCz;
 
-typedef enum {
-    LEFT = 0,
-    RIGHT,
-    FRONT,
-    BACK,
-    TOP,
-    BOTTOM,
-    TOPRIGHTBACK,
-    TOPLEFTBACK,
-    TOPRIGHTFRONT,
-    TOPLEFTFRONT,
-    BOTTOMRIGHTBACK,
-    BOTTOMLEFTBACK,
-    BOTTOMRIGHTFRONT,
-    BOTTOMLEFTFRONT,
-    DCOUNT
-} direction;
-
 typedef struct {
     int* numneigh;
     int* neighbors;
@@ -571,90 +553,6 @@ void growarray()
     }
 }
 
-int setupGhostAtom(int i, int lastidx)
-{
-    /* Setup ghost atoms */
-    if (x[i] < Cutneigh) { /* left plane */
-        x[lastidx+1] = x[i] + xprd;
-        y[lastidx+1] = y[i];
-        z[lastidx+1] = z[i];
-        lastidx++; Nghost++;
-
-        /* treat corners */
-        if (y[i] < Cutneigh && z[i] < Cutneigh) { /* bottom left front corner */
-            x[lastidx+1] = x[i] + xprd;
-            y[lastidx+1] = y[i] + yprd;
-            z[lastidx+1] = z[i] + zprd;
-            lastidx++; Nghost++;
-        } else if (y[i] >= (yprd-Cutneigh) && z[i] < Cutneigh) { /* bottom left back corner */
-            x[lastidx+1] = x[i] + xprd;
-            y[lastidx+1] = y[i] - yprd;
-            z[lastidx+1] = z[i] + zprd;
-            lastidx++; Nghost++;
-        } else if (y[i] < Cutneigh && z[i] >= (zprd-Cutneigh)) { /* top left front corner */
-            x[lastidx+1] = x[i] + xprd;
-            y[lastidx+1] = y[i] + yprd;
-            z[lastidx+1] = z[i] - zprd;
-            lastidx++; Nghost++;
-        } else if (y[i] >= (yprd-Cutneigh) && z[i] >= (zprd-Cutneigh)) { /* top left back corner */
-            x[lastidx+1] = x[i] + xprd;
-            y[lastidx+1] = y[i] - yprd;
-            z[lastidx+1] = z[i] - zprd;
-            lastidx++; Nghost++;
-        }
-    } else if (x[i] >= (xprd-Cutneigh)) { /* right plane */
-        x[lastidx+1] = x[i] - xprd;
-        y[lastidx+1] = y[i];
-        z[lastidx+1] = z[i];
-        lastidx++; Nghost++;
-
-        /* treat corners */
-        if (y[i] < Cutneigh && z[i] < Cutneigh) { /* bottom right front corner */
-            x[lastidx+1] = x[i] - xprd;
-            y[lastidx+1] = y[i] + yprd;
-            z[lastidx+1] = z[i] + zprd;
-            lastidx++; Nghost++;
-        } else if (y[i] >= (yprd-Cutneigh) && z[i] < Cutneigh) { /* bottom right back corner */
-            x[lastidx+1] = x[i] - xprd;
-            y[lastidx+1] = y[i] - yprd;
-            z[lastidx+1] = z[i] + zprd;
-            lastidx++; Nghost++;
-        } else if (y[i] < Cutneigh && z[i] >= (zprd-Cutneigh)) { /* top right front corner */
-            x[lastidx+1] = x[i] - xprd;
-            y[lastidx+1] = y[i] + yprd;
-            z[lastidx+1] = z[i] - zprd;
-            lastidx++; Nghost++;
-        } else if (y[i] >= (yprd-Cutneigh) && z[i] >= (zprd-Cutneigh)) { /* top right back corner */
-            x[lastidx+1] = x[i] - xprd;
-            y[lastidx+1] = y[i] - yprd;
-            z[lastidx+1] = z[i] - zprd;
-            lastidx++; Nghost++;
-        }
-    } else if (y[i] < Cutneigh) { /* front plane */
-        x[lastidx+1] = x[i];
-        y[lastidx+1] = y[i] + yprd;
-        z[lastidx+1] = z[i];
-        lastidx++; Nghost++;
-    } else if (y[i] >= (yprd-Cutneigh)) { /* back plane */
-        x[lastidx+1] = x[i];
-        y[lastidx+1] = y[i] - yprd;
-        z[lastidx+1] = z[i];
-        lastidx++; Nghost++;
-    } else if (z[i] < Cutneigh) { /* bottom plane */
-        x[lastidx+1] = x[i];
-        y[lastidx+1] = y[i];
-        z[lastidx+1] = z[i] + zprd;
-        lastidx++; Nghost++;
-    } else if (z[i] >= (zprd-Cutneigh)) { /* top plane */
-        x[lastidx+1] = x[i];
-        y[lastidx+1] = y[i];
-        z[lastidx+1] = z[i] - zprd;
-        lastidx++; Nghost++;
-    }
-
-    return lastidx;
-}
-
 void updateBorders()
 {
     for(int i = 0; i < Nghost; i++) {
@@ -691,8 +589,9 @@ void updateAtomLocations()
 
 void setupBordersNew()
 {
-    int nghostprev;
-    Nghost = -1;
+    int lastidx = 0;
+    int nghostprev = 0;
+    Nghost = 0;
 
     for (int i = 0; i < Nlocal; i++) {
 
@@ -700,59 +599,45 @@ void setupBordersNew()
             growarray();
         }
 
-        if (Nghost + 1 >= NmaxGhost) {
-            growBoundary();
-        }
-
         if (x[i] < Cutneigh) {
             Nghost++;
-            BorderMap[Nghost] = i;
-            PBCx[Nghost] = +1; PBCy[Nghost] = 0; PBCz[Nghost] = 0;
+            x[i+lastidx] = x[i] + xprd;
+            y[i+lastidx] = y[i];
+            z[i+lastidx] = z[i];
+            lastidx++;
         } else if (x[i] >= xprd - Cutneigh) {
             Nghost++;
-            BorderMap[Nghost] = i;
-            PBCx[Nghost] = -1; PBCy[Nghost] = 0; PBCz[Nghost] = 0;
+            x[i+lastidx] = x[i] - xprd;
+            y[i+lastidx] = y[i];
+            z[i+lastidx] = z[i];
+            lastidx++;
         }
     }
 
     nghostprev = Nghost+1;
-    printf("nghost 1 %d\n", nghostprev);
 
-    for (int i = 0; i < Nlocal + nghostprev; i++) {
+    for (int i = 0; i < Nlocal + nghostprev ; i++) {
 
         if (Nlocal + Nghost + 1 >= Nmax) {
             growarray();
-        }
-
-        if (Nghost + 1 >= NmaxGhost) {
-            growBoundary();
         }
 
         if (y[i] < Cutneigh) {
-            if (i >= Nlocal) {
                 Nghost++;
-                BorderMap[Nghost] = BorderMap[i - Nlocal];
-                PBCx[Nghost] = 0; PBCy[Nghost] = +1; PBCz[Nghost] = 0;
-            } else {
-                Nghost++;
-                BorderMap[Nghost] = i;
-                PBCx[Nghost] = 0; PBCy[Nghost] = +1; PBCz[Nghost] = 0;
-            }
+                x[i+lastidx] = x[i];
+                y[i+lastidx] = y[i] + yprd;
+                z[i+lastidx] = z[i];
+            lastidx++;
         } else if (y[i] >= yprd - Cutneigh) {
-            if (i >= Nlocal) {
                 Nghost++;
-                BorderMap[Nghost] = BorderMap[i - Nlocal];
-                PBCx[Nghost] = 0; PBCy[Nghost] = -1; PBCz[Nghost] = 0;
-            } else {
-                Nghost++;
-                BorderMap[Nghost] = i;
-                PBCx[Nghost] = 0; PBCy[Nghost] = -1; PBCz[Nghost] = 0;
-            }
+                x[i+lastidx] = x[i];
+                y[i+lastidx] = y[i] - yprd;
+                z[i+lastidx] = z[i];
+            lastidx++;
         }
     }
 
     nghostprev = Nghost+1;
-    printf("nghost 2 %d\n", nghostprev);
 
     for (int i = 0; i < Nlocal + nghostprev; i++) {
 
@@ -760,31 +645,18 @@ void setupBordersNew()
             growarray();
         }
 
-        if (Nghost + 1 >= NmaxGhost) {
-            growBoundary();
-        }
-
-
         if (z[i] < Cutneigh) {
-            if (i >= Nlocal) {
                 Nghost++;
-                BorderMap[Nghost] = BorderMap[i - Nlocal];
-                PBCx[Nghost] = 0; PBCy[Nghost] = 0; PBCz[Nghost] = +1;
-            } else {
-                Nghost++;
-                BorderMap[Nghost] = i;
-                PBCx[Nghost] = 0; PBCy[Nghost] = 0; PBCz[Nghost] = +1;
-            }
+                x[i+lastidx] = x[i];
+                y[i+lastidx] = y[i];
+                z[i+lastidx] = z[i] + zprd;
+            lastidx++;
         } else if(z[i] >= zprd - Cutneigh) {
-            if (i >= Nlocal) {
                 Nghost++;
-                BorderMap[Nghost] = BorderMap[i - Nlocal];
-                PBCx[Nghost] = 0; PBCy[Nghost] = 0; PBCz[Nghost] = -1;
-            } else {
-                Nghost++;
-                BorderMap[Nghost] = i;
-                PBCx[Nghost] = 0; PBCy[Nghost] = 0; PBCz[Nghost] = -1;
-            }
+                x[i+lastidx] = x[i];
+                y[i+lastidx] = y[i];
+                z[i+lastidx] = z[i] - zprd;
+            lastidx++;
         }
     }
 
@@ -803,11 +675,11 @@ void setupBorders()
 
     for(int i = 0; i < Nlocal; i++) {
 
-        if (Nlocal + Nghost + 1 >= Nmax) {
+        if (Nlocal + Nghost + 7 >= Nmax) {
             growarray();
         }
 
-        if (Nghost + 1 >= NmaxGhost) {
+        if (Nghost + 7 >= NmaxGhost) {
             growBoundary();
         }
 
@@ -822,18 +694,25 @@ void setupBorders()
                 if (y[i] < Cutneigh) { /* bottom left front corner */
                     ADDGHOST(+1,+1,+1);
                 }
-            } else if (y[i] >= (yprd-Cutneigh) && z[i] < Cutneigh) { /* bottom left back corner */
+            }
+
+            if (y[i] >= (yprd-Cutneigh) && z[i] < Cutneigh) { /* bottom left back corner */
                 ADDGHOST(+1,-1,+1);
-            } else if (z[i] >= (zprd-Cutneigh)) { /* top left edge */
+            }
+
+            if (z[i] >= (zprd-Cutneigh)) { /* top left edge */
                 ADDGHOST(+1,0,-1);
 
                 if (y[i] < Cutneigh) { /* bottom left front corner */
                     ADDGHOST(+1,+1,-1);
                 }
-            } else if (y[i] >= (yprd-Cutneigh) && z[i] >= (zprd-Cutneigh)) { /* top left back corner */
+            }
+
+            if (y[i] >= (yprd-Cutneigh) && z[i] >= (zprd-Cutneigh)) { /* top left back corner */
                 ADDGHOST(+1,-1,-1);
             }
-        } else if (x[i] >= (xprd-Cutneigh)) { /* right plane */
+        }
+        if (x[i] >= (xprd-Cutneigh)) { /* right plane */
             ADDGHOST(-1,0,0);
 
             /* treat edges and corners */
@@ -843,53 +722,65 @@ void setupBorders()
                 if (y[i] < Cutneigh) { /* bottom right front corner */
                     ADDGHOST(-1,+1,+1);
                 }
-            } else if (y[i] >= (yprd-Cutneigh) && z[i] < Cutneigh) { /* bottom right back corner */
+            }
+            if (y[i] >= (yprd-Cutneigh) && z[i] < Cutneigh) { /* bottom right back corner */
                 ADDGHOST(-1,-1,+1);
-            } else if (z[i] >= (zprd-Cutneigh)) { /* top right edge */
+            }
+
+            if (z[i] >= (zprd-Cutneigh)) { /* top right edge */
                 ADDGHOST(-1,0,-1);
 
                 if (y[i] < Cutneigh) { /* top right front corner */
                     ADDGHOST(-1,+1,-1);
                 }
-            } else if (y[i] >= (yprd-Cutneigh) && z[i] >= (zprd-Cutneigh)) { /* top right back corner */
+            }
+            if (y[i] >= (yprd-Cutneigh) && z[i] >= (zprd-Cutneigh)) { /* top right back corner */
                 ADDGHOST(-1,-1,-1);
             }
-        } else if (y[i] < Cutneigh) { /* front plane */
+        }
+        if (y[i] < Cutneigh) { /* front plane */
             ADDGHOST(0,+1,0);
 
             if (z[i] < Cutneigh) { /* bottom front edge */
                 ADDGHOST(0,+1,+1);
-            } else if (z[i] >= (zprd-Cutneigh)) { /* top front edge */
+            }
+            if (z[i] >= (zprd-Cutneigh)) { /* top front edge */
                 ADDGHOST(0,+1,-1);
             }
 
             if (x[i] < Cutneigh) { /* left front edge */
                 ADDGHOST(+1,+1,0);
-            } else if (x[i] >= (xprd-Cutneigh)) { /* right front edge */
+            }
+            if (x[i] >= (xprd-Cutneigh)) { /* right front edge */
                 ADDGHOST(+1,-1,0);
             }
-        } else if (y[i] >= (yprd-Cutneigh)) { /* back plane */
+        }
+        if (y[i] >= (yprd-Cutneigh)) { /* back plane */
             ADDGHOST(0,-1,0);
 
             if (z[i] < Cutneigh) { /* bottom back edge */
                 ADDGHOST(0,-1,+1);
-            } else if (z[i] >= (zprd-Cutneigh)) { /* top back edge */
+            }
+            if (z[i] >= (zprd-Cutneigh)) { /* top back edge */
                 ADDGHOST(0,-1,-1);
             }
 
             if (x[i] < Cutneigh) { /* left back edge */
                 ADDGHOST(-1,+1,0);
-            } else if (x[i] >= (xprd-Cutneigh)) { /* right back edge */
+            }
+            if (x[i] >= (xprd-Cutneigh)) { /* right back edge */
                 ADDGHOST(-1,-1,0);
             }
-        } else if (z[i] < Cutneigh) { /* bottom plane */
+        }
+        if (z[i] < Cutneigh) { /* bottom plane */
             ADDGHOST(0,0,+1);
-        } else if (z[i] >= (zprd-Cutneigh)) { /* top plane */
+        }
+        if (z[i] >= (zprd-Cutneigh)) { /* top plane */
             ADDGHOST(0,0,-1);
         }
     }
 
-    // increase by one to make it the ghost count
+    // increase by one to make it the ghost atom count
     Nghost++;
 }
 
@@ -1171,6 +1062,8 @@ void thermoCompute(int iflag, Parameter *param, Thermo *thermo)
 
 void initialIntegrate(Parameter *param)
 {
+    /* printf("dtforce %f dt %f\n",param->dtforce, param->dt); */
+
     for(int i = 0; i < Nlocal; i++) {
         vx[i] += param->dtforce * fx[i];
         vy[i] += param->dtforce * fy[i];
@@ -1295,6 +1188,7 @@ int main (int argc, char** argv)
         initialIntegrate(&param);
         updateBorders();
 
+        printf("x = %f %f %f\n", x[0], y[0], z[0]);
         if(!((n + 1) % neighbor.every)) {
             printf("Reneighbor at %d\n",n);
             updateAtomLocations();
@@ -1310,7 +1204,6 @@ int main (int argc, char** argv)
         if(thermo.nstat) {
             thermoCompute(n + 1, &param, &thermo);
         }
-        printf("x = %f %f %f\n", x[0], y[0], z[0]);
     }
 
     thermoCompute(-1, &param, &thermo);
