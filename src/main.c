@@ -814,83 +814,82 @@ void setupBorders()
         /* Setup ghost atoms */
         if (x[i] < Cutneigh) { /* left plane */
             ADDGHOST(+1,0,0);
-            /* Nghost++; */
-            /* BorderMap[Nghost] = i; */
-            /* PBCx[Nghost] = +1; PBCy[Nghost] = 0; PBCz[Nghost] = 0; */
 
             /* treat edges and corners */
             if (z[i] < Cutneigh) { /* bottom left edge */
-                Nghost++;
-                BorderMap[Nghost] = i;
-                PBCx[Nghost] = +1; PBCy[Nghost] = 0; PBCz[Nghost] = +1;
+                ADDGHOST(+1,0,+1);
 
                 if (y[i] < Cutneigh) { /* bottom left front corner */
-                    Nghost++;
-                    BorderMap[Nghost] = i;
-                    PBCx[Nghost] = +1; PBCy[Nghost] = +1; PBCz[Nghost] = +1;
+                    ADDGHOST(+1,+1,+1);
                 }
             } else if (y[i] >= (yprd-Cutneigh) && z[i] < Cutneigh) { /* bottom left back corner */
-                Nghost++;
-                BorderMap[Nghost] = i;
-                PBCx[Nghost] = +1; PBCy[Nghost] = -1; PBCz[Nghost] = +1;
+                ADDGHOST(+1,-1,+1);
             } else if (z[i] >= (zprd-Cutneigh)) { /* top left edge */
-                Nghost++;
-                BorderMap[Nghost] = i;
-                PBCx[Nghost] = +1; PBCy[Nghost] = 0; PBCz[Nghost] = -1;
+                ADDGHOST(+1,0,-1);
 
                 if (y[i] < Cutneigh) { /* bottom left front corner */
-                    Nghost++;
-                    BorderMap[Nghost] = i;
-                    PBCx[Nghost] = +1; PBCy[Nghost] = +1; PBCz[Nghost] = -1;
+                    ADDGHOST(+1,+1,-1);
                 }
             } else if (y[i] >= (yprd-Cutneigh) && z[i] >= (zprd-Cutneigh)) { /* top left back corner */
-                Nghost++;
-                BorderMap[Nghost] = i;
-                PBCx[Nghost] = +1; PBCy[Nghost] = -1; PBCz[Nghost] = -1;
+                ADDGHOST(+1,-1,-1);
             }
         } else if (x[i] >= (xprd-Cutneigh)) { /* right plane */
-            Nghost++;
-            BorderMap[Nghost] = i;
-            PBCx[Nghost] = -1; PBCy[Nghost] = 0; PBCz[Nghost] = 0;
+            ADDGHOST(-1,0,0);
 
-            /* treat corners */
-            if (y[i] < Cutneigh && z[i] < Cutneigh) { /* bottom right front corner */
-                Nghost++;
-                BorderMap[Nghost] = i;
-                PBCx[Nghost] = -1; PBCy[Nghost] = +1; PBCz[Nghost] = +1;
+            /* treat edges and corners */
+            if (z[i] < Cutneigh) { /* bottom right edge */
+                ADDGHOST(-1,0,+1);
+
+                if (y[i] < Cutneigh) { /* bottom right front corner */
+                    ADDGHOST(-1,+1,+1);
+                }
             } else if (y[i] >= (yprd-Cutneigh) && z[i] < Cutneigh) { /* bottom right back corner */
-                Nghost++;
-                BorderMap[Nghost] = i;
-                PBCx[Nghost] = -1; PBCy[Nghost] = -1; PBCz[Nghost] = +1;
-            } else if (y[i] < Cutneigh && z[i] >= (zprd-Cutneigh)) { /* top right front corner */
-                Nghost++;
-                BorderMap[Nghost] = i;
-                PBCx[Nghost] = -1; PBCy[Nghost] = +1; PBCz[Nghost] = -1;
+                ADDGHOST(-1,-1,+1);
+            } else if (z[i] >= (zprd-Cutneigh)) { /* top right edge */
+                ADDGHOST(-1,0,-1);
+
+                if (y[i] < Cutneigh) { /* top right front corner */
+                    ADDGHOST(-1,+1,-1);
+                }
             } else if (y[i] >= (yprd-Cutneigh) && z[i] >= (zprd-Cutneigh)) { /* top right back corner */
-                Nghost++;
-                BorderMap[Nghost] = i;
-                PBCx[Nghost] = -1; PBCy[Nghost] = -1; PBCz[Nghost] = -1;
+                ADDGHOST(-1,-1,-1);
             }
         } else if (y[i] < Cutneigh) { /* front plane */
-            Nghost++;
-            BorderMap[Nghost] = i;
-            PBCx[Nghost] = 0; PBCy[Nghost] = +1; PBCz[Nghost] = 0;
+            ADDGHOST(0,+1,0);
+
+            if (z[i] < Cutneigh) { /* bottom front edge */
+                ADDGHOST(0,+1,+1);
+            } else if (z[i] >= (zprd-Cutneigh)) { /* top front edge */
+                ADDGHOST(0,+1,-1);
+            }
+
+            if (x[i] < Cutneigh) { /* left front edge */
+                ADDGHOST(+1,+1,0);
+            } else if (x[i] >= (xprd-Cutneigh)) { /* right front edge */
+                ADDGHOST(+1,-1,0);
+            }
         } else if (y[i] >= (yprd-Cutneigh)) { /* back plane */
-            Nghost++;
-            BorderMap[Nghost] = i;
-            PBCx[Nghost] = 0; PBCy[Nghost] = -1; PBCz[Nghost] = 0;
+            ADDGHOST(0,-1,0);
+
+            if (z[i] < Cutneigh) { /* bottom back edge */
+                ADDGHOST(0,-1,+1);
+            } else if (z[i] >= (zprd-Cutneigh)) { /* top back edge */
+                ADDGHOST(0,-1,-1);
+            }
+
+            if (x[i] < Cutneigh) { /* left back edge */
+                ADDGHOST(-1,+1,0);
+            } else if (x[i] >= (xprd-Cutneigh)) { /* right back edge */
+                ADDGHOST(-1,-1,0);
+            }
         } else if (z[i] < Cutneigh) { /* bottom plane */
-            Nghost++;
-            BorderMap[Nghost] = i;
-            PBCx[Nghost] = 0; PBCy[Nghost] = 0; PBCz[Nghost] = +1;
+            ADDGHOST(0,0,+1);
         } else if (z[i] >= (zprd-Cutneigh)) { /* top plane */
-            Nghost++;
-            BorderMap[Nghost] = i;
-            PBCx[Nghost] = 0; PBCy[Nghost] = 0; PBCz[Nghost] = -1;
+            ADDGHOST(0,0,-1);
         }
     }
 
-    // increase by one to make it the count
+    // increase by one to make it the ghost count
     Nghost++;
 }
 
@@ -1261,15 +1260,15 @@ void printAtomState()
     double min = -Cutneigh;
     double max = xprd + Cutneigh;
 
-    for (int i=0; i<nall; i++) {
-        printf("%d  %f %f %f\n", i, x[i], y[i], z[i]);
+    /* for (int i=0; i<nall; i++) { */
+    /*     printf("%d  %f %f %f\n", i, x[i], y[i], z[i]); */
 
-        if ( x[i] < min || x[i] > max ||
-                y[i] < min || y[i] > max ||
-                z[i] < min || z[i] > max) {
-            printf("OOB!!\n");
-        }
-    }
+    /*     if ( x[i] < min || x[i] > max || */
+    /*             y[i] < min || y[i] > max || */
+    /*             z[i] < min || z[i] > max) { */
+    /*         printf("OOB!!\n"); */
+    /*     } */
+    /* } */
 }
 
 int main (int argc, char** argv)
@@ -1284,9 +1283,9 @@ int main (int argc, char** argv)
     thermoSetup(&param, &thermo);
     adjustVelocity(&param, &thermo);
     setupBorders();
-    /* updateBorders(); */
-    printAtomState();
-    exit(EXIT_SUCCESS);
+    updateBorders();
+    /* printAtomState(); */
+    /* exit(EXIT_SUCCESS); */
     buildNeighborlist(&neighbor);
     thermoCompute(0, &param, &thermo);
     computeForce(&neighbor, &param);
@@ -1297,6 +1296,7 @@ int main (int argc, char** argv)
         updateBorders();
 
         if(!((n + 1) % neighbor.every)) {
+            printf("Reneighbor at %d\n",n);
             updateAtomLocations();
             setupBorders();
             updateBorders();
@@ -1310,7 +1310,7 @@ int main (int argc, char** argv)
         if(thermo.nstat) {
             thermoCompute(n + 1, &param, &thermo);
         }
-        printf("x[0] = %f\n", x[0]);
+        printf("x = %f %f %f\n", x[0], y[0], z[0]);
     }
 
     thermoCompute(-1, &param, &thermo);
