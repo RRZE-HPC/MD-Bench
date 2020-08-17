@@ -58,8 +58,6 @@ static double zlo, zhi;
 static double *x, *y, *z;
 static double *vx, *vy, *vz;
 static double *fx, *fy, *fz;
-static double eng_vdwl;
-static double virial;
 
 static int NmaxGhost;
 static int *BorderMap;
@@ -116,7 +114,6 @@ typedef struct {
     double p_act;
     double e_act;
     int mstat;
-    int nstat;
 } Thermo;
 
 /* Park/Miller RNG w/out MASKING, so as to be like f90s version */
@@ -129,21 +126,15 @@ typedef struct {
 
 double myrandom(int* idum)
 {
-    int k;
+    int k= (*idum) / IQ;
     double ans;
 
-    k = (*idum) / IQ;
     *idum = IA * (*idum - k * IQ) - IR * k;
-
     if(*idum < 0) *idum += IM;
-
     ans = AM * (*idum);
     return ans;
 }
 
-// Neighbor list related subroutines
-
-// convert atom coordinates in bin index
 int coord2bin(Neighbor* neighbor, double xin, double yin, double zin)
 {
     int ix, iy, iz;
@@ -181,9 +172,6 @@ int coord2bin(Neighbor* neighbor, double xin, double yin, double zin)
     return (iz * neighbor->mbiny * neighbor->mbinx + iy * neighbor->mbinx + ix + 1);
 }
 
-
-// Sort atoms in bins. All bins can hold the same number of max atoms
-// If one bin is exceeded reallocate and start over.
 void binatoms(Neighbor *neighbor)
 {
     int* bincount = neighbor->bincount;
@@ -217,7 +205,6 @@ void binatoms(Neighbor *neighbor)
     }
 }
 
-/* compute closest distance between central bin (0,0,0) and bin (i,j,k) */
 double bindist(Neighbor *neighbor, int i, int j, int k)
 {
     double delx, dely, delz;
@@ -387,39 +374,29 @@ void setup(Neighbor *neighbor, Parameter *param)
     neighbor->bininvy = 1.0 / neighbor->binsizey;
     neighbor->bininvz = 1.0 / neighbor->binsizez;
 
-    // x coordinate
     coord = xlo - Cutneigh - SMALL * xprd;
     neighbor->mbinxlo = (int) (coord * neighbor->bininvx);
-
     if (coord < 0.0) {
         neighbor->mbinxlo = neighbor->mbinxlo - 1;
     }
-
     coord = xhi + Cutneigh + SMALL * xprd;
     mbinxhi = (int) (coord * neighbor->bininvx);
 
-    // y coordinate
     coord = ylo - Cutneigh - SMALL * yprd;
     neighbor->mbinylo = (int) (coord * neighbor->bininvy);
-
     if (coord < 0.0) {
         neighbor->mbinylo = neighbor->mbinylo - 1;
     }
-
     coord = yhi + Cutneigh + SMALL * yprd;
     mbinyhi = (int) (coord * neighbor->bininvy);
 
-    // z coordinate
     coord = zlo - Cutneigh - SMALL * zprd;
     neighbor->mbinzlo = (int) (coord * neighbor->bininvz);
-
     if (coord < 0.0) {
         neighbor->mbinzlo = neighbor->mbinzlo - 1;
     }
-
     coord = zhi + Cutneigh + SMALL * zprd;
     mbinzhi = (int) (coord * neighbor->bininvz);
-
 
     neighbor->mbinxlo = neighbor->mbinxlo - 1;
     mbinxhi = mbinxhi + 1;
@@ -463,12 +440,6 @@ void setup(Neighbor *neighbor, Parameter *param)
         }
     }
 
-/*     printf("STENCIL %d \n", neighbor->nstencil); */
-/*     for (int i=0; i<neighbor->nstencil; i++) { */
-/*         printf("%d ", neighbor->stencil[i]); */
-/*     } */
-/*     printf("\n"); */
-
     neighbor->mbins = neighbor->mbinx * neighbor->mbiny * neighbor->mbinz;
 
     if (neighbor->bincount) {
@@ -485,13 +456,11 @@ void setup(Neighbor *neighbor, Parameter *param)
 double* myrealloc(double *ptr, int n, int nold) {
 
     double* newarray;
-
     newarray = (double*) malloc(n * sizeof(double));
 
     if(nold) {
         memcpy(newarray, ptr, nold * sizeof(double));
     }
-
     if(ptr) {
         free(ptr);
     }
@@ -508,7 +477,6 @@ int* myreallocInt(int *ptr, int n, int nold) {
     if(nold) {
         memcpy(newarray, ptr, nold * sizeof(int));
     }
-
     if(ptr) {
         free(ptr);
     }
@@ -536,15 +504,9 @@ void growarray()
     int nold = Nmax;
     Nmax += DELTA;
 
-    x =  myrealloc(x, Nmax, nold);
-    y =  myrealloc(y, Nmax, nold);
-    z =  myrealloc(z, Nmax, nold);
-    vx =  myrealloc(vx, Nmax, nold);
-    vy =  myrealloc(vy, Nmax, nold);
-    vz =  myrealloc(vz, Nmax, nold);
-    fx =  myrealloc(fx, Nmax, nold);
-    fy =  myrealloc(fy, Nmax, nold);
-    fz =  myrealloc(fz, Nmax, nold);
+    x =  myrealloc(x, Nmax, nold); y =  myrealloc(y, Nmax, nold); z =  myrealloc(z, Nmax, nold);
+    vx =  myrealloc(vx, Nmax, nold); vy =  myrealloc(vy, Nmax, nold); vz =  myrealloc(vz, Nmax, nold);
+    fx =  myrealloc(fx, Nmax, nold); fy =  myrealloc(fy, Nmax, nold); fz =  myrealloc(fz, Nmax, nold);
 
     if(x == NULL || y == NULL || z == NULL ||
             vx == NULL || vy == NULL || vz == NULL ||
@@ -566,7 +528,6 @@ void updateAtomLocations()
 {
     for(int i = 0; i < Nlocal; i++) {
 
-        /* Relocate atoms that have left the domain */
         if(x[i] < 0.0) {
             x[i] += xprd;
         } else if(x[i] >= xprd) {
@@ -664,11 +625,6 @@ void setupBordersNew()
 }
 
 #define ADDGHOST(dx,dy,dz) Nghost++; BorderMap[Nghost] = i; PBCx[Nghost] = dx; PBCy[Nghost] = dy; PBCz[Nghost] = dz;
-
-/* Enforce periodic boundary conditions
- * Relocate atoms that have left domain for
- * 6 planes (and 8 corners (diagonal))
- * Setup ghost atoms at boundaries*/
 void setupBorders()
 {
     Nghost = -1;
@@ -678,7 +634,6 @@ void setupBorders()
         if (Nlocal + Nghost + 7 >= Nmax) {
             growarray();
         }
-
         if (Nghost + 7 >= NmaxGhost) {
             growBoundary();
         }
@@ -714,12 +669,10 @@ void setupBorders()
         if (y[i] >= (yprd-Cutneigh) && x[i] < Cutneigh)         { ADDGHOST(+1,-1,0); }
         if (y[i] >= (yprd-Cutneigh) && x[i] >= (xprd-Cutneigh)) { ADDGHOST(-1,-1,0); }
     }
-
     // increase by one to make it the ghost atom count
     Nghost++;
 }
 
-/* place atoms in the same bin consecutive in memory */
 void sortAtoms(Neighbor *neighbor)
 {
     binatoms(neighbor);
@@ -740,12 +693,8 @@ void sortAtoms(Neighbor *neighbor)
     double* new_vy = (double*) malloc(Nmax * sizeof(double));
     double* new_vz = (double*) malloc(Nmax * sizeof(double));
 
-    double* old_x = x;
-    double* old_y = y;
-    double* old_z = z;
-    double* old_vx = vx;
-    double* old_vy = vy;
-    double* old_vz = vz;
+    double* old_x = x; double* old_y = y; double* old_z = z;
+    double* old_vx = vx; double* old_vy = vy; double* old_vz = vz;
 
     for(int mybin = 0; mybin<mbins; mybin++) {
         int start = mybin>0?binpos[mybin-1]:0;
@@ -765,23 +714,14 @@ void sortAtoms(Neighbor *neighbor)
 
     free(x); free(y); free(z);
     free(vx); free(vy); free(vz);
-
-    x = new_x;
-    y = new_y;
-    z = new_z;
-    vx = new_vx;
-    vy = new_vy;
-    vz = new_vz;
+    x = new_x; y = new_y; z = new_z;
+    vx = new_vx; vy = new_vy; vz = new_vz;
 }
 
 void create_atoms(Parameter *param)
 {
-    /* total # of atoms */
     Natoms = 4 * param->nx * param->ny * param->nz;
     Nlocal = 0;
-
-    /* determine loop bounds of lattice subsection that overlaps my sub-box
-       insure loop bounds do not exceed nx,ny,nz */
     double alat = pow((4.0 / param->rho), (1.0 / 3.0));
     int ilo = (int) (xlo / (0.5 * alat) - 1);
     int ihi = (int) (xhi / (0.5 * alat) + 1);
@@ -796,9 +736,6 @@ void create_atoms(Parameter *param)
     jhi = MIN(jhi, 2 * param->ny - 1);
     klo = MAX(klo, 0);
     khi = MIN(khi, 2 * param->nz - 1);
-
-    /* printf("CA alat=%f ilo=%d ihi=%d jlo=%d jhi=%d klo=%d khi=%d\n", */
-            /* alat, ilo, ihi, jlo, jhi, klo, khi); */
 
     double xtmp, ytmp, ztmp, vxtmp, vytmp, vztmp;
     int i, j, k, m, n;
@@ -848,48 +785,21 @@ void create_atoms(Parameter *param)
                     growarray();
                 }
 
-                /* printf("%d %f %f %f\n",Nlocal, xtmp, ytmp, ztmp); */
-
-                x[Nlocal] = xtmp;
-                y[Nlocal] = ytmp;
-                z[Nlocal] = ztmp;
-                vx[Nlocal] = vxtmp;
-                vy[Nlocal] = vytmp;
-                vz[Nlocal] = vztmp;
-
+                x[Nlocal] = xtmp; y[Nlocal] = ytmp; z[Nlocal] = ztmp;
+                vx[Nlocal] = vxtmp; vy[Nlocal] = vytmp; vz[Nlocal] = vztmp;
                 Nlocal++;
             }
         }
 
         sx++;
 
-        if(sx == subboxdim) {
-            sx = 0;
-            sy++;
-        }
-
-        if(sy == subboxdim) {
-            sy = 0;
-            sz++;
-        }
-
-        if(sz == subboxdim) {
-            sz = 0;
-            ox++;
-        }
-
-        if(ox * subboxdim > ihi) {
-            ox = 0;
-            oy++;
-        }
-
-        if(oy * subboxdim > jhi) {
-            oy = 0;
-            oz++;
-        }
+        if(sx == subboxdim) { sx = 0; sy++; }
+        if(sy == subboxdim) { sy = 0; sz++; }
+        if(sz == subboxdim) { sz = 0; ox++; }
+        if(ox * subboxdim > ihi) { ox = 0; oy++; }
+        if(oy * subboxdim > jhi) { oy = 0; oz++; }
     }
 }
-
 
 void adjustVelocity(Parameter *param, Thermo *thermo)
 {
@@ -914,7 +824,6 @@ void adjustVelocity(Parameter *param, Thermo *thermo)
     vz[i] -= vztot;
   }
 
-  /* rescale velocities, including old ones */
   thermo->t_act = 0;
   double t = 0.0;
 
@@ -947,32 +856,19 @@ void thermoSetup(Parameter *param, Thermo *thermo)
     thermo->p_scale = 1.0 / 3 / xprd / yprd / zprd;
     thermo->e_scale = 0.5;
 
-    eng_vdwl = 0.0;
-    virial = 0.0;
+    printf("step\ttemp\t\tpressure\n");
 }
 
 
 void thermoCompute(int iflag, Parameter *param, Thermo *thermo)
 {
-    double t, eng, p;
-
-    if(iflag > 0 && iflag % param->nstat){
-        return;
-    }
-
-    if(iflag == -1 && param->nstat > 0 && param->ntimes % param->nstat == 0)
-    {
-        return;
-    }
-
-    t = 0.0;
+    double t = 0.0, p;
 
     for(int i = 0; i < Nlocal; i++) {
         t += (vx[i] * vx[i] + vy[i] * vy[i] + vz[i] * vz[i]) * param->mass;
     }
 
     t = t * thermo->t_scale;
-    eng = eng_vdwl * thermo->e_scale / Natoms;
     p = (t * thermo->dof_boltz) * thermo->p_scale;
 
     int istep = iflag;
@@ -980,35 +876,27 @@ void thermoCompute(int iflag, Parameter *param, Thermo *thermo)
     if(iflag == -1){
         istep = param->ntimes;
     }
-
     if(iflag == 0){
         thermo->mstat = 0;
     }
 
     thermo->steparr[thermo->mstat] = istep;
     thermo->tmparr[thermo->mstat] = t;
-    thermo->engarr[thermo->mstat] = eng;
     thermo->prsarr[thermo->mstat] = p;
-
     thermo->mstat++;
-    fprintf(stdout, "%i %e %e %e\n", istep, t, eng, p);
+    fprintf(stdout, "%i\t%e\t%e\n", istep, t, p);
 }
-
 
 void initialIntegrate(Parameter *param)
 {
-    /* printf("dtforce %f dt %f\n",param->dtforce, param->dt); */
-
     for(int i = 0; i < Nlocal; i++) {
         vx[i] += param->dtforce * fx[i];
         vy[i] += param->dtforce * fy[i];
         vz[i] += param->dtforce * fz[i];
-         /* if (i==129212) printf("f %f %f %f v %f %f %f\n",fx[i], fy[i], fz[i], vx[i], vy[i], vz[i] ); */
         x[i]  += param->dt * vx[i];
         y[i]  += param->dt * vy[i];
         z[i]  += param->dt * vz[i];
     }
-        /* printf("C x = %f %f %f\n", x[129212], y[129212], z[129212]); */
 }
 
 void finalIntegrate(Parameter *param)
@@ -1026,8 +914,6 @@ void computeForce(Neighbor *neighbor, Parameter *param)
     double cutforcesq = param->cutforce * param->cutforce;
     double sigma6 = param->sigma6;
     double epsilon = param->epsilon;
-    double t_eng_vdwl = 0.0;
-    double t_virial = 0.0;
 
     for(int i = 0; i < Nlocal; i++) {
         fx[i] = 0.0;
@@ -1035,8 +921,6 @@ void computeForce(Neighbor *neighbor, Parameter *param)
         fz[i] = 0.0;
     }
 
-    // loop over all neighbors of my atoms
-    // store force on atom i
     for(int i = 0; i < Nlocal; i++) {
         neighs = &neighbor->neighbors[i * neighbor->maxneighs];
         int numneighs = neighbor->numneigh[i];
@@ -1047,69 +931,28 @@ void computeForce(Neighbor *neighbor, Parameter *param)
         double fix = 0;
         double fiy = 0;
         double fiz = 0;
-        /* printf("%d %d: ", i, numneighs); */
 
         for(int k = 0; k < numneighs; k++) {
             int j = neighs[k];
-        /* printf("%d ", j); */
             double delx = xtmp - x[j];
             double dely = ytmp - y[j];
             double delz = ztmp - z[j];
             double rsq = delx * delx + dely * dely + delz * delz;
 
-
             if(rsq < cutforcesq) {
                 double sr2 = 1.0 / rsq;
                 double sr6 = sr2 * sr2 * sr2 * sigma6;
                 double force = 48.0 * sr6 * (sr6 - 0.5) * sr2 * epsilon;
-
-            /* if (i==129212){ */
-            /*     printf("%d %f %f %f r %f",j, x[j],y[j],z[j],rsq); */
-            /* } */
-            /* if (i==129212){ */
-            /*     printf("f %f", force); */
-            /* } */
                 fix += delx * force;
                 fiy += dely * force;
                 fiz += delz * force;
-
-                t_eng_vdwl += sr6 * (sr6 - 1.0) * epsilon;
-                t_virial += (delx * delx + dely * dely + delz * delz) * force;
-            /* if (i==129212){ */
-            /*     printf("\n"); */
-            /* } */
             }
         }
-        /* printf("\n"); */
 
         fx[i] += fix;
         fy[i] += fiy;
         fz[i] += fiz;
     }
-
-    eng_vdwl += (4.0 * t_eng_vdwl);
-    virial += (0.5 * t_virial);
-    /* exit(EXIT_SUCCESS); */
-}
-
-void printAtomState()
-{
-    printf("Atom counts: Natoms=%d Nlocal=%d Nghost=%d Nmax=%d\n",
-            Natoms, Nlocal, Nghost, Nmax);
-
-    int nall = Nlocal + Nghost;
-    double min = -Cutneigh;
-    double max = xprd + Cutneigh;
-
-    /* for (int i=0; i<nall; i++) { */
-    /*     printf("%d  %f %f %f\n", i, x[i], y[i], z[i]); */
-
-    /*     if ( x[i] < min || x[i] > max || */
-    /*             y[i] < min || y[i] > max || */
-    /*             z[i] < min || z[i] > max) { */
-    /*         printf("OOB!!\n"); */
-    /*     } */
-    /* } */
 }
 
 int main (int argc, char** argv)
@@ -1125,36 +968,28 @@ int main (int argc, char** argv)
     adjustVelocity(&param, &thermo);
     setupBorders();
     updateBorders();
-    /* printAtomState(); */
-    /* exit(EXIT_SUCCESS); */
     buildNeighborlist(&neighbor);
     thermoCompute(0, &param, &thermo);
     computeForce(&neighbor, &param);
 
     for(int n = 0; n < param.ntimes; n++) {
 
-        /* printf("A x = %f %f %f maps %d\n", x[176962], y[176962], z[176962], BorderMap[176962-Nlocal]); */
-        /* printf("A x = %f %f %f\n", x[129212], y[129212], z[129212]); */
         initialIntegrate(&param);
 
-        printf("x = %f %f %f\n", x[0], y[0], z[0]);
-        if(!((n + 1) % neighbor.every)) {
-            printf("Reneighbor at %d\n",n);
+        if((n + 1) % neighbor.every) {
+            updateBorders();
+        } else {
             updateAtomLocations();
             setupBorders();
             updateBorders();
             /* sortAtoms(&neighbor); */
             buildNeighborlist(&neighbor);
-        } else {
-            updateBorders();
         }
-        /* printf("B x = %f %f %f\n", x[129212], y[129212], z[129212]); */
-        /* printf("B x = %f %f %f\n", x[176962], y[176962], z[176962]); */
 
         computeForce(&neighbor, &param);
         finalIntegrate(&param);
 
-        if(thermo.nstat) {
+        if(!((n + 1) % param.nstat) && (n+1) < param.ntimes) {
             thermoCompute(n + 1, &param, &thermo);
         }
     }
