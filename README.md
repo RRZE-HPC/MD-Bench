@@ -14,3 +14,7 @@ You have to call `make clean` before `make` if you changed the build settings.
 ## Configuration
 
 Currently all settings are hard-coded in `main.c`.
+
+## Run the benchmark
+
+Just execute the binary. There are no options.
