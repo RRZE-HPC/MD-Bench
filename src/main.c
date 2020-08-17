@@ -684,100 +684,35 @@ void setupBorders()
         }
 
         /* Setup ghost atoms */
-        if (x[i] < Cutneigh) { /* left plane */
-            ADDGHOST(+1,0,0);
-
-            /* treat edges and corners */
-            if (z[i] < Cutneigh) { /* bottom left edge */
-                ADDGHOST(+1,0,+1);
-
-                if (y[i] < Cutneigh) { /* bottom left front corner */
-                    ADDGHOST(+1,+1,+1);
-                }
-            }
-
-            if (y[i] >= (yprd-Cutneigh) && z[i] < Cutneigh) { /* bottom left back corner */
-                ADDGHOST(+1,-1,+1);
-            }
-
-            if (z[i] >= (zprd-Cutneigh)) { /* top left edge */
-                ADDGHOST(+1,0,-1);
-
-                if (y[i] < Cutneigh) { /* bottom left front corner */
-                    ADDGHOST(+1,+1,-1);
-                }
-            }
-
-            if (y[i] >= (yprd-Cutneigh) && z[i] >= (zprd-Cutneigh)) { /* top left back corner */
-                ADDGHOST(+1,-1,-1);
-            }
-        }
-        if (x[i] >= (xprd-Cutneigh)) { /* right plane */
-            ADDGHOST(-1,0,0);
-
-            /* treat edges and corners */
-            if (z[i] < Cutneigh) { /* bottom right edge */
-                ADDGHOST(-1,0,+1);
-
-                if (y[i] < Cutneigh) { /* bottom right front corner */
-                    ADDGHOST(-1,+1,+1);
-                }
-            }
-            if (y[i] >= (yprd-Cutneigh) && z[i] < Cutneigh) { /* bottom right back corner */
-                ADDGHOST(-1,-1,+1);
-            }
-
-            if (z[i] >= (zprd-Cutneigh)) { /* top right edge */
-                ADDGHOST(-1,0,-1);
-
-                if (y[i] < Cutneigh) { /* top right front corner */
-                    ADDGHOST(-1,+1,-1);
-                }
-            }
-            if (y[i] >= (yprd-Cutneigh) && z[i] >= (zprd-Cutneigh)) { /* top right back corner */
-                ADDGHOST(-1,-1,-1);
-            }
-        }
-        if (y[i] < Cutneigh) { /* front plane */
-            ADDGHOST(0,+1,0);
-
-            if (z[i] < Cutneigh) { /* bottom front edge */
-                ADDGHOST(0,+1,+1);
-            }
-            if (z[i] >= (zprd-Cutneigh)) { /* top front edge */
-                ADDGHOST(0,+1,-1);
-            }
-
-            if (x[i] < Cutneigh) { /* left front edge */
-                ADDGHOST(+1,+1,0);
-            }
-            if (x[i] >= (xprd-Cutneigh)) { /* right front edge */
-                ADDGHOST(+1,-1,0);
-            }
-        }
-        if (y[i] >= (yprd-Cutneigh)) { /* back plane */
-            ADDGHOST(0,-1,0);
-
-            if (z[i] < Cutneigh) { /* bottom back edge */
-                ADDGHOST(0,-1,+1);
-            }
-            if (z[i] >= (zprd-Cutneigh)) { /* top back edge */
-                ADDGHOST(0,-1,-1);
-            }
-
-            if (x[i] < Cutneigh) { /* left back edge */
-                ADDGHOST(-1,+1,0);
-            }
-            if (x[i] >= (xprd-Cutneigh)) { /* right back edge */
-                ADDGHOST(-1,-1,0);
-            }
-        }
-        if (z[i] < Cutneigh) { /* bottom plane */
-            ADDGHOST(0,0,+1);
-        }
-        if (z[i] >= (zprd-Cutneigh)) { /* top plane */
-            ADDGHOST(0,0,-1);
-        }
+        /* 6 planes */
+        if (x[i] < Cutneigh)         { ADDGHOST(+1,0,0); }
+        if (x[i] >= (xprd-Cutneigh)) { ADDGHOST(-1,0,0); }
+        if (y[i] < Cutneigh)         { ADDGHOST(0,+1,0); }
+        if (y[i] >= (yprd-Cutneigh)) { ADDGHOST(0,-1,0); }
+        if (z[i] < Cutneigh)         { ADDGHOST(0,0,+1); }
+        if (z[i] >= (zprd-Cutneigh)) { ADDGHOST(0,0,-1); }
+        /* 8 corners */
+        if (x[i] < Cutneigh         && y[i] < Cutneigh         && z[i] < Cutneigh)         { ADDGHOST(+1,+1,+1); }
+        if (x[i] < Cutneigh         && y[i] >= (yprd-Cutneigh) && z[i] < Cutneigh)         { ADDGHOST(+1,-1,+1); }
+        if (x[i] < Cutneigh         && y[i] >= Cutneigh        && z[i] >= (zprd-Cutneigh)) { ADDGHOST(+1,+1,-1); }
+        if (x[i] < Cutneigh         && y[i] >= (yprd-Cutneigh) && z[i] >= (zprd-Cutneigh)) { ADDGHOST(+1,-1,-1); }
+        if (x[i] >= (xprd-Cutneigh) && y[i] < Cutneigh         && z[i] < Cutneigh)         { ADDGHOST(-1,+1,+1); }
+        if (x[i] >= (xprd-Cutneigh) && y[i] >= (yprd-Cutneigh) && z[i] < Cutneigh)         { ADDGHOST(-1,-1,+1); }
+        if (x[i] >= (xprd-Cutneigh) && y[i] < Cutneigh         && z[i] >= (zprd-Cutneigh)) { ADDGHOST(-1,+1,-1); }
+        if (x[i] >= (xprd-Cutneigh) && y[i] >= (yprd-Cutneigh) && z[i] >= (zprd-Cutneigh)) { ADDGHOST(-1,-1,-1); }
+        /* 12 edges */
+        if (x[i] < Cutneigh         && z[i] < Cutneigh)         { ADDGHOST(+1,0,+1); }
+        if (x[i] < Cutneigh         && z[i] >= (zprd-Cutneigh)) { ADDGHOST(+1,0,-1); }
+        if (x[i] >= (xprd-Cutneigh) && z[i] < Cutneigh)         { ADDGHOST(-1,0,+1); }
+        if (x[i] >= (xprd-Cutneigh) && z[i] >= (zprd-Cutneigh)) { ADDGHOST(-1,0,-1); }
+        if (y[i] < Cutneigh         && z[i] < Cutneigh)         { ADDGHOST(0,+1,+1); }
+        if (y[i] < Cutneigh         && z[i] >= (zprd-Cutneigh)) { ADDGHOST(0,+1,-1); }
+        if (y[i] >= (yprd-Cutneigh) && z[i] < Cutneigh)         { ADDGHOST(0,-1,+1); }
+        if (y[i] >= (yprd-Cutneigh) && z[i] >= (zprd-Cutneigh)) { ADDGHOST(0,-1,-1); }
+        if (y[i] < Cutneigh         && x[i] < Cutneigh)         { ADDGHOST(+1,+1,0); }
+        if (y[i] < Cutneigh         && x[i] >= (xprd-Cutneigh)) { ADDGHOST(-1,+1,0); }
+        if (y[i] >= (yprd-Cutneigh) && x[i] < Cutneigh)         { ADDGHOST(+1,-1,0); }
+        if (y[i] >= (yprd-Cutneigh) && x[i] >= (xprd-Cutneigh)) { ADDGHOST(-1,-1,0); }
     }
 
     // increase by one to make it the ghost atom count
@@ -1068,10 +1003,12 @@ void initialIntegrate(Parameter *param)
         vx[i] += param->dtforce * fx[i];
         vy[i] += param->dtforce * fy[i];
         vz[i] += param->dtforce * fz[i];
+         /* if (i==129212) printf("f %f %f %f v %f %f %f\n",fx[i], fy[i], fz[i], vx[i], vy[i], vz[i] ); */
         x[i]  += param->dt * vx[i];
         y[i]  += param->dt * vy[i];
         z[i]  += param->dt * vz[i];
     }
+        /* printf("C x = %f %f %f\n", x[129212], y[129212], z[129212]); */
 }
 
 void finalIntegrate(Parameter *param)
@@ -1120,17 +1057,27 @@ void computeForce(Neighbor *neighbor, Parameter *param)
             double delz = ztmp - z[j];
             double rsq = delx * delx + dely * dely + delz * delz;
 
+
             if(rsq < cutforcesq) {
                 double sr2 = 1.0 / rsq;
                 double sr6 = sr2 * sr2 * sr2 * sigma6;
                 double force = 48.0 * sr6 * (sr6 - 0.5) * sr2 * epsilon;
 
+            /* if (i==129212){ */
+            /*     printf("%d %f %f %f r %f",j, x[j],y[j],z[j],rsq); */
+            /* } */
+            /* if (i==129212){ */
+            /*     printf("f %f", force); */
+            /* } */
                 fix += delx * force;
                 fiy += dely * force;
                 fiz += delz * force;
 
                 t_eng_vdwl += sr6 * (sr6 - 1.0) * epsilon;
                 t_virial += (delx * delx + dely * dely + delz * delz) * force;
+            /* if (i==129212){ */
+            /*     printf("\n"); */
+            /* } */
             }
         }
         /* printf("\n"); */
@@ -1142,6 +1089,7 @@ void computeForce(Neighbor *neighbor, Parameter *param)
 
     eng_vdwl += (4.0 * t_eng_vdwl);
     virial += (0.5 * t_virial);
+    /* exit(EXIT_SUCCESS); */
 }
 
 void printAtomState()
@@ -1185,8 +1133,9 @@ int main (int argc, char** argv)
 
     for(int n = 0; n < param.ntimes; n++) {
 
+        /* printf("A x = %f %f %f maps %d\n", x[176962], y[176962], z[176962], BorderMap[176962-Nlocal]); */
+        /* printf("A x = %f %f %f\n", x[129212], y[129212], z[129212]); */
         initialIntegrate(&param);
-        updateBorders();
 
         printf("x = %f %f %f\n", x[0], y[0], z[0]);
         if(!((n + 1) % neighbor.every)) {
@@ -1196,7 +1145,11 @@ int main (int argc, char** argv)
             updateBorders();
             /* sortAtoms(&neighbor); */
             buildNeighborlist(&neighbor);
+        } else {
+            updateBorders();
         }
+        /* printf("B x = %f %f %f\n", x[129212], y[129212], z[129212]); */
+        /* printf("B x = %f %f %f\n", x[176962], y[176962], z[176962]); */
 
         computeForce(&neighbor, &param);
         finalIntegrate(&param);
