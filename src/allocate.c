@@ -2,7 +2,7 @@
  * =======================================================================================
  *
  *      Author:   Jan Eitzinger (je), jan.eitzinger@fau.de
- *      Copyright (c) 2019 RRZE, University Erlangen-Nuremberg
+ *      Copyright (c) 2020 RRZE, University Erlangen-Nuremberg
  *
  *      Permission is hereby granted, free of charge, to any person obtaining a copy
  *      of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <errno.h>
 
 void* allocate (int alignment, size_t bytesize)
@@ -55,4 +56,21 @@ void* allocate (int alignment, size_t bytesize)
     }
 
     return ptr;
+}
+
+void* reallocate (
+        void* ptr,
+        int alignment,
+        size_t newBytesize,
+        size_t oldBytesize)
+{
+    void* newarray;
+    newarray =  allocate(alignment, newBytesize);
+
+    if(ptr != NULL) {
+        memcpy(newarray, ptr, oldBytesize);
+        free(ptr);
+    }
+
+    return newarray;
 }
