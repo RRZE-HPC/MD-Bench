@@ -2,7 +2,7 @@
  * =======================================================================================
  *
  *      Author:   Jan Eitzinger (je), jan.eitzinger@fau.de
- *      Copyright (c) 2019 RRZE, University Erlangen-Nuremberg
+ *      Copyright (c) 2020 RRZE, University Erlangen-Nuremberg
  *
  *      Permission is hereby granted, free of charge, to any person obtaining a copy
  *      of this software and associated documentation files (the "Software"), to deal
@@ -24,10 +24,23 @@
  *
  * =======================================================================================
  */
-#include <stdlib.h>
+#ifndef __PARAMETER_H_
+#define __PARAMETER_H_
 
-#ifndef __ALLOCATE_H_
-#define __ALLOCATE_H_
-extern void* allocate (int alignment, size_t bytesize);
-extern void* reallocate (void* ptr, int alignment, size_t newBytesize, size_t oldBytesize);
+typedef struct {
+    double epsilon;
+    double sigma6;
+    double temp;
+    double rho;
+    double mass;
+    int ntimes;
+    int nstat;
+    int every;
+    double dt;
+    double dtforce;
+    double cutforce;
+    double cutneigh;
+    int nx, ny, nz;
+    double xprd, yprd, zprd;
+} Parameter;
 #endif

@@ -2,7 +2,7 @@
  * =======================================================================================
  *
  *      Author:   Jan Eitzinger (je), jan.eitzinger@fau.de
- *      Copyright (c) 2019 RRZE, University Erlangen-Nuremberg
+ *      Copyright (c) 2020 RRZE, University Erlangen-Nuremberg
  *
  *      Permission is hereby granted, free of charge, to any person obtaining a copy
  *      of this software and associated documentation files (the "Software"), to deal
@@ -24,10 +24,22 @@
  *
  * =======================================================================================
  */
-#include <stdlib.h>
+#include <atom.h>
+#include <parameter.h>
 
-#ifndef __ALLOCATE_H_
-#define __ALLOCATE_H_
-extern void* allocate (int alignment, size_t bytesize);
-extern void* reallocate (void* ptr, int alignment, size_t newBytesize, size_t oldBytesize);
+#ifndef __NEIGHBOR_H_
+#define __NEIGHBOR_H_
+typedef struct {
+    /* double cutneigh;                 // neighbor cutoff */
+    int every;
+    int ncalls;
+    int* neighbors;
+    int maxneighs;
+    int* numneigh;
+} Neighbor;
+
+extern void initNeighbor(Neighbor*, Parameter*);
+extern void setupNeighbor(Parameter*);
+extern void binatoms(Atom*);
+extern void buildNeighbor(Atom*, Neighbor*);
 #endif

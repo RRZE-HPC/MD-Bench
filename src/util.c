@@ -2,7 +2,7 @@
  * =======================================================================================
  *
  *      Author:   Jan Eitzinger (je), jan.eitzinger@fau.de
- *      Copyright (c) 2019 RRZE, University Erlangen-Nuremberg
+ *      Copyright (c) 2020 RRZE, University Erlangen-Nuremberg
  *
  *      Permission is hereby granted, free of charge, to any person obtaining a copy
  *      of this software and associated documentation files (the "Software"), to deal
@@ -24,10 +24,23 @@
  *
  * =======================================================================================
  */
-#include <stdlib.h>
+#include <util.h>
 
-#ifndef __ALLOCATE_H_
-#define __ALLOCATE_H_
-extern void* allocate (int alignment, size_t bytesize);
-extern void* reallocate (void* ptr, int alignment, size_t newBytesize, size_t oldBytesize);
-#endif
+/* Park/Miller RNG w/out MASKING, so as to be like f90s version */
+#define IA 16807
+#define IM 2147483647
+#define AM (1.0/IM)
+#define IQ 127773
+#define IR 2836
+#define MASK 123459876
+
+double myrandom(int* idum)
+{
+    int k= (*idum) / IQ;
+    double ans;
+
+    *idum = IA * (*idum - k * IQ) - IR * k;
+    if(*idum < 0) *idum += IM;
+    ans = AM * (*idum);
+    return ans;
+}
