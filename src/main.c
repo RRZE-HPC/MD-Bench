@@ -68,10 +68,6 @@ void init(Parameter *param)
     param->mass = 1.0;
     param->dtforce = 0.5 * param->dt;
     param->every = 20;
-    double lattice = pow((4.0 / param->rho), (1.0 / 3.0));
-    param->xprd = param->nx * lattice;
-    param->yprd = param->ny * lattice;
-    param->zprd = param->nz * lattice;
 }
 
 double setup(
@@ -80,6 +76,10 @@ double setup(
         Neighbor *neighbor)
 {
     double S, E;
+    double lattice = pow((4.0 / param->rho), (1.0 / 3.0));
+    param->xprd = param->nx * lattice;
+    param->yprd = param->ny * lattice;
+    param->zprd = param->nz * lattice;
 
     S = getTimeStamp();
     initAtom(atom);
@@ -145,7 +145,7 @@ void finalIntegrate(Parameter *param, Atom *atom)
 
 double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor)
 {
-    int Nlocal = atom->Natoms;
+    int Nlocal = atom->Nlocal;
     int* neighs;
     double cutforcesq = param->cutforce * param->cutforce;
     double sigma6 = param->sigma6;
@@ -204,11 +204,11 @@ void printAtomState(Atom *atom)
     printf("Atom counts: Natoms=%d Nlocal=%d Nghost=%d Nmax=%d\n",
             atom->Natoms, atom->Nlocal, atom->Nghost, atom->Nmax);
 
-    int nall = atom->Nlocal + atom->Nghost;
+/*     int nall = atom->Nlocal + atom->Nghost; */
 
-    for (int i=0; i<nall; i++) {
-        printf("%d  %f %f %f\n", i, atom->x[i], atom->y[i], atom->z[i]);
-    }
+/*     for (int i=0; i<nall; i++) { */
+/*         printf("%d  %f %f %f\n", i, atom->x[i], atom->y[i], atom->z[i]); */
+/*     } */
 }
 
 int main (int argc, char** argv)
@@ -283,11 +283,12 @@ int main (int argc, char** argv)
     computeThermo(-1, &param, &atom);
 
     printf(HLINE);
-    printf("System: %d atoms, Steps: %d\n", atom.Natoms, param.ntimes);
+    printf("System: %d atoms %d ghost atoms, Steps: %d\n", atom.Natoms, atom.Nghost, param.ntimes);
     printf("TOTAL %.2fs FORCE %.2fs NEIGH %.2fs REST %.2fs\n",
             timer[TOTAL], timer[FORCE], timer[NEIGH], timer[TOTAL]-timer[FORCE]-timer[NEIGH]);
     printf(HLINE);
-    printf("Performance: %.2f million atom updates per second\n", 1e-6 * (double) (atom.Natoms * param.ntimes) / timer[TOTAL]);
+    printf("Performance: %.2f million atom updates per second\n",
+            1e-6 * (double) atom.Natoms * param.ntimes / timer[TOTAL]);
 
     return EXIT_SUCCESS;
 }
