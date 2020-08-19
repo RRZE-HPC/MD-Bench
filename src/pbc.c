@@ -39,17 +39,7 @@ static int *PBCx, *PBCy, *PBCz;
 
 static void growPbc();
 
-void growPbc()
-{
-    int nold = NmaxGhost;
-    NmaxGhost += DELTA;
-
-    BorderMap = (int*) reallocate(BorderMap, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));
-    PBCx = (int*) reallocate(PBCx, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));
-    PBCy = (int*) reallocate(PBCy, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));
-    PBCz = (int*) reallocate(PBCz, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));
-}
-
+/* exported subroutines */
 void initPbc()
 {
     NmaxGhost = 0;
@@ -57,6 +47,8 @@ void initPbc()
     PBCx = NULL; PBCy = NULL; PBCz = NULL;
 }
 
+/* update coordinates of ghost atoms */
+/* uses mapping created in setupPbc */
 void updatePbc(Atom *atom, Parameter *param)
 {
     int nlocal = atom->Nlocal;
@@ -74,6 +66,8 @@ void updatePbc(Atom *atom, Parameter *param)
     }
 }
 
+/* relocate atoms that have left domain according
+ * to periodic boundary conditions */
 void updateAtomsPbc(Atom *atom, Parameter *param)
 {
     double* x = atom->x;
@@ -105,6 +99,10 @@ void updateAtomsPbc(Atom *atom, Parameter *param)
     }
 }
 
+/* setup periodic boundary conditions by
+ * defining ghost atoms around domain
+ * only creates mapping and coordinate corrections
+ * that are then enforced in updatePbc */
 #define ADDGHOST(dx,dy,dz) Nghost++; BorderMap[Nghost] = i; PBCx[Nghost] = dx; PBCy[Nghost] = dy; PBCz[Nghost] = dz;
 void setupPbc(Atom *atom, Parameter *param)
 {
@@ -158,4 +156,16 @@ void setupPbc(Atom *atom, Parameter *param)
     }
     // increase by one to make it the ghost atom count
     atom->Nghost = Nghost + 1;
+}
+
+/* internal subroutines */
+void growPbc()
+{
+    int nold = NmaxGhost;
+    NmaxGhost += DELTA;
+
+    BorderMap = (int*) reallocate(BorderMap, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));
+    PBCx = (int*) reallocate(PBCx, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));
+    PBCy = (int*) reallocate(PBCy, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));
+    PBCz = (int*) reallocate(PBCz, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));
 }

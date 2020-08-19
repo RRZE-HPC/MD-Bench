@@ -36,6 +36,7 @@ typedef struct {
     double *fx, *fy, *fz;
 } Atom;
 
+extern void initAtom(Atom*);
 extern void createAtom(Atom*, Parameter*);
 extern void growAtom(Atom*);
 #endif
