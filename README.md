@@ -1,6 +1,6 @@
 # MD-Bench
 
-A simple, sequential  C version of the Mantevo miniMD benchmark.
+A simple, sequential  re-implementation in C of the Mantevo miniMD benchmark.
 
 ## Build
 
