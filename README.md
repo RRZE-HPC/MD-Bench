@@ -17,4 +17,10 @@ Currently all settings are hard-coded in `main.c`.
 
 ## Run the benchmark
 
-Just execute the binary. There are no options.
+Without any options 200 steps with system size 32x32x32 is used.
+
+The default can be changed using the following options:
+```
+-n / --nsteps <int>:  set number of timesteps for simulation
+-nx/-ny/-nz <int>:    set linear dimension of systembox in x/y/z direction
+```
