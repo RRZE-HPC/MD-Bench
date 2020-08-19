@@ -156,6 +156,7 @@ double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor)
         fz[i] = 0.0;
     }
 
+#pragma omp parallel for
     for(int i = 0; i < Nlocal; i++) {
         neighs = &neighbor->neighbors[i * neighbor->maxneighs];
         int numneighs = neighbor->numneigh[i];
