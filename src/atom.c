@@ -24,14 +24,26 @@
  *
  * =======================================================================================
  */
+#include <stdlib.h>
+#include <stdio.h>
 #include <math.h>
 
-#include <parameter.h>
-#include <allocate.h>
 #include <atom.h>
+#include <allocate.h>
 #include <util.h>
 
 #define DELTA 20000
+
+void initAtom(Atom *atom)
+{
+    atom->x  = NULL; atom->y  = NULL; atom->z  = NULL;
+    atom->vx = NULL; atom->vy = NULL; atom->vz = NULL;
+    atom->fx = NULL; atom->fy = NULL; atom->fz = NULL;
+    atom->Natoms = 0;
+    atom->Nlocal = 0;
+    atom->Nghost = 0;
+    atom->Nmax   = 0;
+}
 
 void createAtom(Atom *atom, Parameter *param)
 {
@@ -128,9 +140,9 @@ void growAtom(Atom *atom)
     int nold = atom->Nmax;
     atom->Nmax += DELTA;
 
-    atom->x = (double*) reallocate(atom->x, ALIGNMENT, atom->Nmax * sizeof(double), nold * sizeof(double));
-    atom->y = (double*) reallocate(atom->y, ALIGNMENT, atom->Nmax * sizeof(double), nold * sizeof(double));
-    atom->z = (double*) reallocate(atom->z, ALIGNMENT, atom->Nmax * sizeof(double), nold * sizeof(double));
+    atom->x  = (double*) reallocate(atom->x,  ALIGNMENT, atom->Nmax * sizeof(double), nold * sizeof(double));
+    atom->y  = (double*) reallocate(atom->y,  ALIGNMENT, atom->Nmax * sizeof(double), nold * sizeof(double));
+    atom->z  = (double*) reallocate(atom->z,  ALIGNMENT, atom->Nmax * sizeof(double), nold * sizeof(double));
     atom->vx = (double*) reallocate(atom->vx, ALIGNMENT, atom->Nmax * sizeof(double), nold * sizeof(double));
     atom->vy = (double*) reallocate(atom->vy, ALIGNMENT, atom->Nmax * sizeof(double), nold * sizeof(double));
     atom->vz = (double*) reallocate(atom->vz, ALIGNMENT, atom->Nmax * sizeof(double), nold * sizeof(double));

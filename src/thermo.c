@@ -44,6 +44,7 @@ static double p_act;
 static double e_act;
 static int mstat;
 
+/* exported subroutines */
 void setupThermo(Parameter *param, int natoms)
 {
     int maxstat = param->ntimes / param->nstat + 2;

@@ -76,7 +76,7 @@ void initNeighbor(Neighbor *neighbor, Parameter *param)
     neighbor->neighbors = NULL;
 }
 
-void setupNeighbor(Parameter *param)
+void setupNeighbor()
 {
     double coord;
     int mbinxhi, mbinyhi, mbinzhi;

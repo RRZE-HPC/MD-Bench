@@ -325,7 +325,7 @@ void init(Neighbor *neighbor, Parameter *param)
     param->dt = 0.005;
     param->nx = 32;
     param->ny = 32;
-    param->nz = 32;
+    param->nz = 64;
     param->cutforce = 2.5;
     param->temp = 1.44;
     param->nstat = 100;

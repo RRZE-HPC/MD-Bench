@@ -33,6 +33,7 @@
 #include <math.h>
 #include <float.h>
 
+#include <timing.h>
 #include <allocate.h>
 #include <neighbor.h>
 #include <parameter.h>
@@ -42,16 +43,16 @@
 
 #define HLINE "----------------------------------------------------------------------------\n"
 
-#define FACTOR 0.999
-#define SMALL 1.0e-6
-#define DELTA 20000
+typedef enum {
+    TOTAL = 0,
+    NEIGH,
+    FORCE,
+    NUMTIMER
+} timertype;
 
-void init(Atom *atom, Parameter *param)
+
+void init(Parameter *param)
 {
-    atom->x = NULL; atom->y = NULL; atom->z = NULL;
-    atom->vx = NULL; atom->vy = NULL; atom->vz = NULL;
-    atom->fx = NULL; atom->fy = NULL; atom->fz = NULL;
-
     param->epsilon = 1.0;
     param->sigma6 = 1.0;
     param->rho = 0.8442;
@@ -71,6 +72,19 @@ void init(Atom *atom, Parameter *param)
     param->xprd = param->nx * lattice;
     param->yprd = param->ny * lattice;
     param->zprd = param->nz * lattice;
+}
+
+void setup(Parameter *param, Atom *atom, Neighbor *neighbor){
+    initAtom(atom);
+    initNeighbor(neighbor, param);
+    initPbc();
+    setupNeighbor();
+    createAtom(atom, param);
+    setupThermo(param, atom->Natoms);
+    adjustThermo(param, atom);
+    setupPbc(atom, param);
+    updatePbc(atom, param);
+    buildNeighbor(atom, neighbor);
 }
 
 void initialIntegrate(Parameter *param, Atom *atom)
@@ -101,7 +115,7 @@ void finalIntegrate(Parameter *param, Atom *atom)
     }
 }
 
-void computeForce(Neighbor *neighbor, Atom *atom, Parameter *param)
+void computeForce(Parameter *param, Atom *atom, Neighbor *neighbor)
 {
     int Nlocal = atom->Natoms;
     int* neighs;
@@ -164,26 +178,52 @@ void printAtomState(Atom *atom)
     }
 }
 
-
 int main (int argc, char** argv)
 {
+    double timer[NUMTIMER];
+    double S;
     Atom atom;
     Neighbor neighbor;
     Parameter param;
 
-    init(&atom, &param);
-    initNeighbor(&neighbor, &param);
-    initPbc();
-    setupNeighbor(&param);
-    createAtom(&atom, &param);
-    setupThermo(&param, atom.Natoms);
-    adjustThermo(&param, &atom);
-    /* printAtomState(&atom); */
-    setupPbc(&atom, &param);
-    updatePbc(&atom, &param);
-    buildNeighbor(&atom, &neighbor);
+    init(&param);
+
+    for(int i = 0; i < argc; i++)
+    {
+        if((strcmp(argv[i], "-n") == 0) || (strcmp(argv[i], "--nsteps") == 0))
+        {
+            param.ntimes = atoi(argv[++i]);
+            continue;
+        }
+        if((strcmp(argv[i], "-nx") == 0))
+        {
+            param.nx = atoi(argv[++i]);
+            continue;
+        }
+        if((strcmp(argv[i], "-ny") == 0))
+        {
+            param.ny = atoi(argv[++i]);
+            continue;
+        }
+        if((strcmp(argv[i], "-nz") == 0))
+        {
+            param.nz = atoi(argv[++i]);
+            continue;
+        }
+        if((strcmp(argv[i], "-h") == 0) || (strcmp(argv[i], "--help") == 0))
+        {
+            printf("MD Bench: A minimalistic re-implementation of miniMD\n");
+            printf(HLINE);
+            printf("-n / --nsteps <int>:    set number of timesteps for simulation\n");
+            printf("-nx/-ny/-nz <int>:      set linear dimension of systembox in x/y/z direction\n");
+            printf(HLINE);
+            exit(EXIT_SUCCESS);
+        }
+    }
+
+    setup(&param, &atom, &neighbor);
     computeThermo(0, &param, &atom);
-    computeForce(&neighbor, &atom, &param);
+    computeForce(&param, &atom, &neighbor);
 
     for(int n = 0; n < param.ntimes; n++) {
 
@@ -199,7 +239,7 @@ int main (int argc, char** argv)
             buildNeighbor(&atom, &neighbor);
         }
 
-        computeForce(&neighbor, &atom, &param);
+        computeForce(&param, &atom, &neighbor);
         finalIntegrate(&param, &atom);
 
         if(!((n + 1) % param.nstat) && (n+1) < param.ntimes) {

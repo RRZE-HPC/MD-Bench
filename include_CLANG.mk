@@ -7,7 +7,7 @@ ANSI_CFLAGS += -std=c99
 ANSI_CFLAGS += -pedantic
 ANSI_CFLAGS += -Wextra
 
-CFLAGS   = -O3 #-g  $(ANSI_CFLAGS)
+CFLAGS   = -O3 $(ANSI_CFLAGS) #-g
 ASFLAGS  = -masm=intel
 CXXFLAGS = $(CFLAGS)
 FCFLAGS  =
