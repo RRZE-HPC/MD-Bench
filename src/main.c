@@ -74,7 +74,14 @@ void init(Parameter *param)
     param->zprd = param->nz * lattice;
 }
 
-void setup(Parameter *param, Atom *atom, Neighbor *neighbor){
+double setup(
+        Parameter *param,
+        Atom *atom,
+        Neighbor *neighbor)
+{
+    double S, E;
+
+    S = getTimeStamp();
     initAtom(atom);
     initNeighbor(neighbor, param);
     initPbc();
@@ -85,6 +92,27 @@ void setup(Parameter *param, Atom *atom, Neighbor *neighbor){
     setupPbc(atom, param);
     updatePbc(atom, param);
     buildNeighbor(atom, neighbor);
+    E = getTimeStamp();
+
+    return E-S;
+}
+
+double reneighbour(
+        Parameter *param,
+        Atom *atom,
+        Neighbor *neighbor)
+{
+    double S, E;
+
+    S = getTimeStamp();
+    updateAtomsPbc(atom, param);
+    setupPbc(atom, param);
+    updatePbc(atom, param);
+    /* sortAtom(); */
+    buildNeighbor(atom, neighbor);
+    E = getTimeStamp();
+
+    return E-S;
 }
 
 void initialIntegrate(Parameter *param, Atom *atom)
@@ -115,7 +143,7 @@ void finalIntegrate(Parameter *param, Atom *atom)
     }
 }
 
-void computeForce(Parameter *param, Atom *atom, Neighbor *neighbor)
+double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor)
 {
     int Nlocal = atom->Natoms;
     int* neighs;
@@ -124,7 +152,9 @@ void computeForce(Parameter *param, Atom *atom, Neighbor *neighbor)
     double epsilon = param->epsilon;
     double* x = atom->x; double* y = atom->y; double* z = atom->z;
     double* fx = atom->fx; double* fy = atom->fy; double* fz = atom->fz;
+    double S, E;
 
+    S = getTimeStamp();
     for(int i = 0; i < Nlocal; i++) {
         fx[i] = 0.0;
         fy[i] = 0.0;
@@ -163,6 +193,9 @@ void computeForce(Parameter *param, Atom *atom, Neighbor *neighbor)
         fy[i] += fiy;
         fz[i] += fiz;
     }
+    E = getTimeStamp();
+
+    return E-S;
 }
 
 
@@ -181,7 +214,6 @@ void printAtomState(Atom *atom)
 int main (int argc, char** argv)
 {
     double timer[NUMTIMER];
-    double S;
     Atom atom;
     Neighbor neighbor;
     Parameter param;
@@ -214,8 +246,8 @@ int main (int argc, char** argv)
         {
             printf("MD Bench: A minimalistic re-implementation of miniMD\n");
             printf(HLINE);
-            printf("-n / --nsteps <int>:    set number of timesteps for simulation\n");
-            printf("-nx/-ny/-nz <int>:      set linear dimension of systembox in x/y/z direction\n");
+            printf("-n / --nsteps <int>:  set number of timesteps for simulation\n");
+            printf("-nx/-ny/-nz <int>:    set linear dimension of systembox in x/y/z direction\n");
             printf(HLINE);
             exit(EXIT_SUCCESS);
         }
@@ -225,6 +257,10 @@ int main (int argc, char** argv)
     computeThermo(0, &param, &atom);
     computeForce(&param, &atom, &neighbor);
 
+    timer[FORCE] = 0.0;
+    timer[NEIGH] = 0.0;
+    timer[TOTAL] = getTimeStamp();
+
     for(int n = 0; n < param.ntimes; n++) {
 
         initialIntegrate(&param, &atom);
@@ -232,14 +268,10 @@ int main (int argc, char** argv)
         if((n + 1) % param.every) {
             updatePbc(&atom, &param);
         } else {
-            updateAtomsPbc(&atom, &param);
-            setupPbc(&atom, &param);
-            updatePbc(&atom, &param);
-            /* sortAtom(); */
-            buildNeighbor(&atom, &neighbor);
+            timer[NEIGH] += reneighbour(&param, &atom, &neighbor);
         }
 
-        computeForce(&param, &atom, &neighbor);
+        timer[FORCE] += computeForce(&param, &atom, &neighbor);
         finalIntegrate(&param, &atom);
 
         if(!((n + 1) % param.nstat) && (n+1) < param.ntimes) {
@@ -247,7 +279,15 @@ int main (int argc, char** argv)
         }
     }
 
+    timer[TOTAL] = getTimeStamp() - timer[TOTAL];
     computeThermo(-1, &param, &atom);
+
+    printf(HLINE);
+    printf("System: %d atoms, Steps: %d\n", atom.Natoms, param.ntimes);
+    printf("TOTAL %.2fs FORCE %.2fs NEIGH %.2fs REST %.2fs\n",
+            timer[TOTAL], timer[FORCE], timer[NEIGH], timer[TOTAL]-timer[FORCE]-timer[NEIGH]);
+    printf(HLINE);
+    printf("Performance: %.2f million atom updates per second\n", 1e-6 * (double) (atom.Natoms * param.ntimes) / timer[TOTAL]);
 
     return EXIT_SUCCESS;
 }
