@@ -13,7 +13,7 @@ You have to call `make clean` before `make` if you changed the build settings.
 
 ## Configuration
 
-Currently all settings are hard-coded in `main.c`.
+Currently all settings apart from the options described below are hard-coded in `main.c`.
 
 ## Run the benchmark
 
