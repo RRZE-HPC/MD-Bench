@@ -43,12 +43,12 @@ void initAtom(Atom *atom)
 
 void createAtom(Atom *atom, Parameter *param)
 {
-    double xlo = 0.0; double xhi = param->xprd;
-    double ylo = 0.0; double yhi = param->yprd;
-    double zlo = 0.0; double zhi = param->zprd;
+    MD_FLOAT xlo = 0.0; MD_FLOAT xhi = param->xprd;
+    MD_FLOAT ylo = 0.0; MD_FLOAT yhi = param->yprd;
+    MD_FLOAT zlo = 0.0; MD_FLOAT zhi = param->zprd;
     atom->Natoms = 4 * param->nx * param->ny * param->nz;
     atom->Nlocal = 0;
-    double alat = pow((4.0 / param->rho), (1.0 / 3.0));
+    MD_FLOAT alat = pow((4.0 / param->rho), (1.0 / 3.0));
     int ilo = (int) (xlo / (0.5 * alat) - 1);
     int ihi = (int) (xhi / (0.5 * alat) + 1);
     int jlo = (int) (ylo / (0.5 * alat) - 1);
@@ -63,7 +63,7 @@ void createAtom(Atom *atom, Parameter *param)
     klo = MAX(klo, 0);
     khi = MIN(khi, 2 * param->nz - 1);
 
-    double xtmp, ytmp, ztmp, vxtmp, vytmp, vztmp;
+    MD_FLOAT xtmp, ytmp, ztmp, vxtmp, vytmp, vztmp;
     int i, j, k, m, n;
     int sx = 0; int sy = 0; int sz = 0;
     int ox = 0; int oy = 0; int oz = 0;
@@ -136,15 +136,15 @@ void growAtom(Atom *atom)
     int nold = atom->Nmax;
     atom->Nmax += DELTA;
 
-    atom->x  = (double*) reallocate(atom->x,  ALIGNMENT, atom->Nmax * sizeof(double), nold * sizeof(double));
-    atom->y  = (double*) reallocate(atom->y,  ALIGNMENT, atom->Nmax * sizeof(double), nold * sizeof(double));
-    atom->z  = (double*) reallocate(atom->z,  ALIGNMENT, atom->Nmax * sizeof(double), nold * sizeof(double));
-    atom->vx = (double*) reallocate(atom->vx, ALIGNMENT, atom->Nmax * sizeof(double), nold * sizeof(double));
-    atom->vy = (double*) reallocate(atom->vy, ALIGNMENT, atom->Nmax * sizeof(double), nold * sizeof(double));
-    atom->vz = (double*) reallocate(atom->vz, ALIGNMENT, atom->Nmax * sizeof(double), nold * sizeof(double));
-    atom->fx = (double*) reallocate(atom->fx, ALIGNMENT, atom->Nmax * sizeof(double), nold * sizeof(double));
-    atom->fy = (double*) reallocate(atom->fy, ALIGNMENT, atom->Nmax * sizeof(double), nold * sizeof(double));
-    atom->fz = (double*) reallocate(atom->fz, ALIGNMENT, atom->Nmax * sizeof(double), nold * sizeof(double));
+    atom->x  = (MD_FLOAT*) reallocate(atom->x,  ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
+    atom->y  = (MD_FLOAT*) reallocate(atom->y,  ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
+    atom->z  = (MD_FLOAT*) reallocate(atom->z,  ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
+    atom->vx = (MD_FLOAT*) reallocate(atom->vx, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
+    atom->vy = (MD_FLOAT*) reallocate(atom->vy, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
+    atom->vz = (MD_FLOAT*) reallocate(atom->vz, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
+    atom->fx = (MD_FLOAT*) reallocate(atom->fx, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
+    atom->fy = (MD_FLOAT*) reallocate(atom->fy, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
+    atom->fz = (MD_FLOAT*) reallocate(atom->fz, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
 }
 
 
