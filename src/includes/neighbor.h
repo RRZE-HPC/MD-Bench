@@ -26,7 +26,6 @@
 #ifndef __NEIGHBOR_H_
 #define __NEIGHBOR_H_
 typedef struct {
-    /* double cutneigh;                 // neighbor cutoff */
     int every;
     int ncalls;
     int* neighbors;

@@ -27,17 +27,17 @@
 #include <thermo.h>
 
 static int *steparr;
-static double *tmparr;
-static double *engarr;
-static double *prsarr;
-static double mvv2e;
+static MD_FLOAT *tmparr;
+static MD_FLOAT *engarr;
+static MD_FLOAT *prsarr;
+static MD_FLOAT mvv2e;
 static int dof_boltz;
-static double t_scale;
-static double p_scale;
-static double e_scale;
-static double t_act;
-static double p_act;
-static double e_act;
+static MD_FLOAT t_scale;
+static MD_FLOAT p_scale;
+static MD_FLOAT e_scale;
+static MD_FLOAT t_act;
+static MD_FLOAT p_act;
+static MD_FLOAT e_act;
 static int mstat;
 
 /* exported subroutines */
@@ -46,9 +46,9 @@ void setupThermo(Parameter *param, int natoms)
     int maxstat = param->ntimes / param->nstat + 2;
 
     steparr = (int*) malloc(maxstat * sizeof(int));
-    tmparr = (double*) malloc(maxstat * sizeof(double));
-    engarr = (double*) malloc(maxstat * sizeof(double));
-    prsarr = (double*) malloc(maxstat * sizeof(double));
+    tmparr = (MD_FLOAT*) malloc(maxstat * sizeof(MD_FLOAT));
+    engarr = (MD_FLOAT*) malloc(maxstat * sizeof(MD_FLOAT));
+    prsarr = (MD_FLOAT*) malloc(maxstat * sizeof(MD_FLOAT));
 
     mvv2e = 1.0;
     dof_boltz = (natoms * 3 - 3);
@@ -61,10 +61,10 @@ void setupThermo(Parameter *param, int natoms)
 
 void computeThermo(int iflag, Parameter *param, Atom *atom)
 {
-    double t = 0.0, p;
-    double* vx = atom->vx;
-    double* vy = atom->vy;
-    double* vz = atom->vz;
+    MD_FLOAT t = 0.0, p;
+    MD_FLOAT* vx = atom->vx;
+    MD_FLOAT* vy = atom->vy;
+    MD_FLOAT* vz = atom->vz;
 
     for(int i = 0; i < atom->Nlocal; i++) {
         t += (vx[i] * vx[i] + vy[i] * vy[i] + vz[i] * vz[i]) * param->mass;
@@ -92,8 +92,8 @@ void computeThermo(int iflag, Parameter *param, Atom *atom)
 void adjustThermo(Parameter *param, Atom *atom)
 {
     /* zero center-of-mass motion */
-    double vxtot = 0.0; double vytot = 0.0; double vztot = 0.0;
-    double* vx = atom->vx; double* vy = atom->vy; double* vz = atom->vz;
+    MD_FLOAT vxtot = 0.0; MD_FLOAT vytot = 0.0; MD_FLOAT vztot = 0.0;
+    MD_FLOAT* vx = atom->vx; MD_FLOAT* vy = atom->vy; MD_FLOAT* vz = atom->vz;
 
     for(int i = 0; i < atom->Nlocal; i++) {
         vxtot += vx[i];
@@ -112,14 +112,14 @@ void adjustThermo(Parameter *param, Atom *atom)
     }
 
     t_act = 0;
-    double t = 0.0;
+    MD_FLOAT t = 0.0;
 
     for(int i = 0; i < atom->Nlocal; i++) {
         t += (vx[i] * vx[i] + vy[i] * vy[i] + vz[i] * vz[i]) * param->mass;
     }
 
     t *= t_scale;
-    double factor = sqrt(param->temp / t);
+    MD_FLOAT factor = sqrt(param->temp / t);
 
     for(int i = 0; i < atom->Nlocal; i++) {
         vx[i] *= factor;

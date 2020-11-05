@@ -31,8 +31,8 @@
 #define SMALL 1.0e-6
 #define FACTOR 0.999
 
-static double xprd, yprd, zprd;
-static double bininvx, bininvy, bininvz;
+static MD_FLOAT xprd, yprd, zprd;
+static MD_FLOAT bininvx, bininvy, bininvz;
 static int mbinxlo, mbinylo, mbinzlo;
 static int nbinx, nbiny, nbinz;
 static int mbinx, mbiny, mbinz; // n bins in x, y, z
@@ -40,21 +40,21 @@ static int *bincount;
 static int *bins;
 static int mbins; //total number of bins
 static int atoms_per_bin;  // max atoms per bin
-static double cutneigh;
-static double cutneighsq;               // neighbor cutoff squared
+static MD_FLOAT cutneigh;
+static MD_FLOAT cutneighsq;  // neighbor cutoff squared
 static int nmax;
-static int nstencil;                    // # of bins in stencil
-static int* stencil;                    // stencil list of bin offsets
-static double binsizex, binsizey, binsizez;
+static int nstencil;      // # of bins in stencil
+static int* stencil;      // stencil list of bin offsets
+static MD_FLOAT binsizex, binsizey, binsizez;
 
-static int coord2bin(double, double , double);
-static double bindist(int, int, int);
+static int coord2bin(MD_FLOAT, MD_FLOAT , MD_FLOAT);
+static MD_FLOAT bindist(int, int, int);
 
 /* exported subroutines */
 void initNeighbor(Neighbor *neighbor, Parameter *param)
 {
-    double lattice = pow((4.0 / param->rho), (1.0 / 3.0));
-    double neighscale = 5.0 / 6.0;
+    MD_FLOAT lattice = pow((4.0 / param->rho), (1.0 / 3.0));
+    MD_FLOAT neighscale = 5.0 / 6.0;
     xprd = param->nx * lattice;
     yprd = param->ny * lattice;
     zprd = param->nz * lattice;
@@ -74,12 +74,12 @@ void initNeighbor(Neighbor *neighbor, Parameter *param)
 
 void setupNeighbor()
 {
-    double coord;
+    MD_FLOAT coord;
     int mbinxhi, mbinyhi, mbinzhi;
     int nextx, nexty, nextz;
-    double xlo = 0.0; double xhi = xprd;
-    double ylo = 0.0; double yhi = yprd;
-    double zlo = 0.0; double zhi = zprd;
+    MD_FLOAT xlo = 0.0; MD_FLOAT xhi = xprd;
+    MD_FLOAT ylo = 0.0; MD_FLOAT yhi = yprd;
+    MD_FLOAT zlo = 0.0; MD_FLOAT zhi = zprd;
 
     cutneighsq = cutneigh * cutneigh;
     binsizex = xprd / nbinx;
@@ -184,9 +184,9 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor)
     /* bin local & ghost atoms */
     binatoms(atom);
     int resize = 1;
-    double* x = atom->x;
-    double* y = atom->y;
-    double* z = atom->z;
+    MD_FLOAT* x = atom->x;
+    MD_FLOAT* y = atom->y;
+    MD_FLOAT* z = atom->z;
 
     /* loop over each atom, storing neighbors */
     while(resize) {
@@ -196,9 +196,9 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor)
         for(int i = 0; i < atom->Nlocal; i++) {
             int* neighptr = &(neighbor->neighbors[i * neighbor->maxneighs]);
             int n = 0;
-            double xtmp = x[i];
-            double ytmp = y[i];
-            double ztmp = z[i];
+            MD_FLOAT xtmp = x[i];
+            MD_FLOAT ytmp = y[i];
+            MD_FLOAT ztmp = z[i];
             int ibin = coord2bin(xtmp, ytmp, ztmp);
 
             for(int k = 0; k < nstencil; k++) {
@@ -212,10 +212,10 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor)
                         continue;
                     }
 
-                    double delx = xtmp - x[j];
-                    double dely = ytmp - y[j];
-                    double delz = ztmp - z[j];
-                    double rsq = delx * delx + dely * dely + delz * delz;
+                    MD_FLOAT delx = xtmp - x[j];
+                    MD_FLOAT dely = ytmp - y[j];
+                    MD_FLOAT delz = ztmp - z[j];
+                    MD_FLOAT rsq = delx * delx + dely * dely + delz * delz;
 
                     if( rsq <= cutneighsq ) {
                         neighptr[n++] = j;
@@ -244,9 +244,9 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor)
 }
 
 /* internal subroutines */
-double bindist(int i, int j, int k)
+MD_FLOAT bindist(int i, int j, int k)
 {
-    double delx, dely, delz;
+    MD_FLOAT delx, dely, delz;
 
     if(i > 0) {
         delx = (i - 1) * binsizex;
@@ -275,7 +275,7 @@ double bindist(int i, int j, int k)
     return (delx * delx + dely * dely + delz * delz);
 }
 
-int coord2bin(double xin, double yin, double zin)
+int coord2bin(MD_FLOAT xin, MD_FLOAT yin, MD_FLOAT zin)
 {
     int ix, iy, iz;
 
@@ -309,9 +309,9 @@ int coord2bin(double xin, double yin, double zin)
 void binatoms(Atom *atom)
 {
     int nall = atom->Nlocal + atom->Nghost;
-    double* x = atom->x;
-    double* y = atom->y;
-    double* z = atom->z;
+    MD_FLOAT* x = atom->x;
+    MD_FLOAT* y = atom->y;
+    MD_FLOAT* z = atom->z;
     int resize = 1;
 
     while(resize > 0) {

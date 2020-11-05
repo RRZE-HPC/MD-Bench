@@ -48,12 +48,12 @@ void initPbc()
 void updatePbc(Atom *atom, Parameter *param)
 {
     int nlocal = atom->Nlocal;
-    double* x = atom->x;
-    double* y = atom->y;
-    double* z = atom->z;
-    double xprd = param->xprd;
-    double yprd = param->yprd;
-    double zprd = param->zprd;
+    MD_FLOAT* x = atom->x;
+    MD_FLOAT* y = atom->y;
+    MD_FLOAT* z = atom->z;
+    MD_FLOAT xprd = param->xprd;
+    MD_FLOAT yprd = param->yprd;
+    MD_FLOAT zprd = param->zprd;
 
     for(int i = 0; i < atom->Nghost; i++) {
         x[nlocal + i] = x[BorderMap[i]] + PBCx[i] * xprd;
@@ -66,12 +66,12 @@ void updatePbc(Atom *atom, Parameter *param)
  * to periodic boundary conditions */
 void updateAtomsPbc(Atom *atom, Parameter *param)
 {
-    double* x = atom->x;
-    double* y = atom->y;
-    double* z = atom->z;
-    double xprd = param->xprd;
-    double yprd = param->yprd;
-    double zprd = param->zprd;
+    MD_FLOAT* x = atom->x;
+    MD_FLOAT* y = atom->y;
+    MD_FLOAT* z = atom->z;
+    MD_FLOAT xprd = param->xprd;
+    MD_FLOAT yprd = param->yprd;
+    MD_FLOAT zprd = param->zprd;
 
     for(int i = 0; i < atom->Nlocal; i++) {
 
@@ -102,11 +102,11 @@ void updateAtomsPbc(Atom *atom, Parameter *param)
 #define ADDGHOST(dx,dy,dz) Nghost++; BorderMap[Nghost] = i; PBCx[Nghost] = dx; PBCy[Nghost] = dy; PBCz[Nghost] = dz;
 void setupPbc(Atom *atom, Parameter *param)
 {
-    double* x = atom->x; double* y = atom->y; double* z = atom->z;
-    double xprd = param->xprd;
-    double yprd = param->yprd;
-    double zprd = param->zprd;
-    double Cutneigh = param->cutneigh;
+    MD_FLOAT* x = atom->x; MD_FLOAT* y = atom->y; MD_FLOAT* z = atom->z;
+    MD_FLOAT xprd = param->xprd;
+    MD_FLOAT yprd = param->yprd;
+    MD_FLOAT zprd = param->zprd;
+    MD_FLOAT Cutneigh = param->cutneigh;
     int Nghost = -1;
 
     for(int i = 0; i < atom->Nlocal; i++) {

@@ -27,9 +27,9 @@
 
 typedef struct {
     int Natoms, Nlocal, Nghost, Nmax;
-    double *x, *y, *z;
-    double *vx, *vy, *vz;
-    double *fx, *fy, *fz;
+    MD_FLOAT *x, *y, *z;
+    MD_FLOAT *vx, *vy, *vz;
+    MD_FLOAT *fx, *fy, *fz;
 } Atom;
 
 extern void initAtom(Atom*);

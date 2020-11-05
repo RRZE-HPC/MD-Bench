@@ -23,20 +23,29 @@
 #ifndef __PARAMETER_H_
 #define __PARAMETER_H_
 
+#ifndef PRECISION
+#define PRECISION 2
+#endif
+#if PRECISION == 1
+#define MD_FLOAT float
+#else
+#define MD_FLOAT double
+#endif
+
 typedef struct {
-    double epsilon;
-    double sigma6;
-    double temp;
-    double rho;
-    double mass;
+    MD_FLOAT epsilon;
+    MD_FLOAT sigma6;
+    MD_FLOAT temp;
+    MD_FLOAT rho;
+    MD_FLOAT mass;
     int ntimes;
     int nstat;
     int every;
-    double dt;
-    double dtforce;
-    double cutforce;
-    double cutneigh;
+    MD_FLOAT dt;
+    MD_FLOAT dtforce;
+    MD_FLOAT cutforce;
+    MD_FLOAT cutneigh;
     int nx, ny, nz;
-    double xprd, yprd, zprd;
+    MD_FLOAT xprd, yprd, zprd;
 } Parameter;
 #endif
