@@ -184,9 +184,6 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor)
     /* bin local & ghost atoms */
     binatoms(atom);
     int resize = 1;
-    MD_FLOAT* x = atom->x;
-    MD_FLOAT* y = atom->y;
-    MD_FLOAT* z = atom->z;
 
     /* loop over each atom, storing neighbors */
     while(resize) {
@@ -196,9 +193,9 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor)
         for(int i = 0; i < atom->Nlocal; i++) {
             int* neighptr = &(neighbor->neighbors[i * neighbor->maxneighs]);
             int n = 0;
-            MD_FLOAT xtmp = x[i];
-            MD_FLOAT ytmp = y[i];
-            MD_FLOAT ztmp = z[i];
+            MD_FLOAT xtmp = get_atom_x(atom, i);
+            MD_FLOAT ytmp = get_atom_y(atom, i);
+            MD_FLOAT ztmp = get_atom_z(atom, i);
             int ibin = coord2bin(xtmp, ytmp, ztmp);
 
             for(int k = 0; k < nstencil; k++) {
@@ -212,9 +209,9 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor)
                         continue;
                     }
 
-                    MD_FLOAT delx = xtmp - x[j];
-                    MD_FLOAT dely = ytmp - y[j];
-                    MD_FLOAT delz = ztmp - z[j];
+                    MD_FLOAT delx = xtmp - get_atom_x(atom, j);
+                    MD_FLOAT dely = ytmp - get_atom_y(atom, j);
+                    MD_FLOAT delz = ztmp - get_atom_z(atom, j);
                     MD_FLOAT rsq = delx * delx + dely * dely + delz * delz;
 
                     if( rsq <= cutneighsq ) {
@@ -309,9 +306,6 @@ int coord2bin(MD_FLOAT xin, MD_FLOAT yin, MD_FLOAT zin)
 void binatoms(Atom *atom)
 {
     int nall = atom->Nlocal + atom->Nghost;
-    MD_FLOAT* x = atom->x;
-    MD_FLOAT* y = atom->y;
-    MD_FLOAT* z = atom->z;
     int resize = 1;
 
     while(resize > 0) {
@@ -322,7 +316,7 @@ void binatoms(Atom *atom)
         }
 
         for(int i = 0; i < nall; i++) {
-            int ibin = coord2bin(x[i], y[i], z[i]);
+            int ibin = coord2bin(get_atom_x(atom, i), get_atom_y(atom, i), get_atom_z(atom, i));
 
             if(bincount[ibin] < atoms_per_bin) {
                 int ac = bincount[ibin]++;
