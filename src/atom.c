@@ -111,9 +111,9 @@ void createAtom(Atom *atom, Parameter *param)
                     growAtom(atom);
                 }
 
-                atom->x[atom->Nlocal] = xtmp;
-                atom->y[atom->Nlocal] = ytmp;
-                atom->z[atom->Nlocal] = ztmp;
+                set_atom_x(atom, atom->Nlocal, xtmp);
+                set_atom_y(atom, atom->Nlocal, ytmp);
+                set_atom_z(atom, atom->Nlocal, ztmp);
                 atom->vx[atom->Nlocal] = vxtmp;
                 atom->vy[atom->Nlocal] = vytmp;
                 atom->vz[atom->Nlocal] = vztmp;
@@ -136,9 +136,13 @@ void growAtom(Atom *atom)
     int nold = atom->Nmax;
     atom->Nmax += DELTA;
 
+    #ifdef AOS
+    atom->x  = (MD_FLOAT*) reallocate(atom->x,  ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT) * 3, nold * sizeof(MD_FLOAT) * 3);
+    #else
     atom->x  = (MD_FLOAT*) reallocate(atom->x,  ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
     atom->y  = (MD_FLOAT*) reallocate(atom->y,  ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
     atom->z  = (MD_FLOAT*) reallocate(atom->z,  ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
+    #endif
     atom->vx = (MD_FLOAT*) reallocate(atom->vx, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
     atom->vy = (MD_FLOAT*) reallocate(atom->vy, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
     atom->vz = (MD_FLOAT*) reallocate(atom->vz, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
