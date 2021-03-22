@@ -291,7 +291,7 @@ int main (int argc, char** argv)
     computeThermo(-1, &param, &atom);
 
     printf(HLINE);
-    printf("Data layout for positions: %s\n", posDataLayout());
+    printf("Data layout for positions: %s\n", POS_DATA_LAYOUT);
 #if PRECISION == 1
     printf("Using single precision floating point.\n");
 #else

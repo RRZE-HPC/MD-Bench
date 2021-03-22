@@ -37,21 +37,26 @@ extern void createAtom(Atom*, Parameter*);
 extern void growAtom(Atom*);
 
 #ifdef AOS
-inline const char *posDataLayout() { return "AoS"; }
+#define POS_DATA_LAYOUT         "AoS"
+/* FIXME: these macros are resulting in segfault
+#define set_atom_x(atom, i, v)  (atom->x[i * 3 + 0] = v)
+#define set_atom_y(atom, i, v)  (atom->x[i * 3 + 1] = v)
+#define set_atom_z(atom, i, v)  (atom->x[i * 3 + 2] = v)
+*/
 inline void set_atom_x(Atom *atom, int i, MD_FLOAT x) { atom->x[i * 3 + 0] = x; }
 inline void set_atom_y(Atom *atom, int i, MD_FLOAT y) { atom->x[i * 3 + 1] = y; }
 inline void set_atom_z(Atom *atom, int i, MD_FLOAT z) { atom->x[i * 3 + 2] = z; }
-inline MD_FLOAT get_atom_x(Atom *atom, int i) { return atom->x[i * 3 + 0]; }
-inline MD_FLOAT get_atom_y(Atom *atom, int i) { return atom->x[i * 3 + 1]; }
-inline MD_FLOAT get_atom_z(Atom *atom, int i) { return atom->x[i * 3 + 2]; }
+#define get_atom_x(atom, i)     (atom->x[i * 3 + 0])
+#define get_atom_y(atom, i)     (atom->x[i * 3 + 1])
+#define get_atom_z(atom, i)     (atom->x[i * 3 + 2])
 #else
-inline const char *posDataLayout() { return "SoA"; }
-inline void set_atom_x(Atom *atom, int i, MD_FLOAT x) { atom->x[i] = x; }
-inline void set_atom_y(Atom *atom, int i, MD_FLOAT y) { atom->y[i] = y; }
-inline void set_atom_z(Atom *atom, int i, MD_FLOAT z) { atom->z[i] = z; }
-inline MD_FLOAT get_atom_x(Atom *atom, int i) { return atom->x[i]; }
-inline MD_FLOAT get_atom_y(Atom *atom, int i) { return atom->y[i]; }
-inline MD_FLOAT get_atom_z(Atom *atom, int i) { return atom->z[i]; }
+#define POS_DATA_LAYOUT         "SoA"
+#define set_atom_x(atom, i, v)  (atom->x[i] = v)
+#define set_atom_y(atom, i, v)  (atom->y[i] = v)
+#define set_atom_z(atom, i, v)  (atom->z[i] = v)
+#define get_atom_x(atom, i)     (atom->x[i])
+#define get_atom_y(atom, i)     (atom->y[i])
+#define get_atom_z(atom, i)     (atom->z[i])
 #endif
 
 #endif
