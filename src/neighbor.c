@@ -2,7 +2,7 @@
  * =======================================================================================
  *
  *   Author:   Jan Eitzinger (je), jan.eitzinger@fau.de
- *   Copyright (c) 2020 RRZE, University Erlangen-Nuremberg
+ *   Copyright (c) 2021 RRZE, University Erlangen-Nuremberg
  *
  *   This file is part of MD-Bench.
  *
@@ -193,9 +193,9 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor)
         for(int i = 0; i < atom->Nlocal; i++) {
             int* neighptr = &(neighbor->neighbors[i * neighbor->maxneighs]);
             int n = 0;
-            MD_FLOAT xtmp = get_atom_x(atom, i);
-            MD_FLOAT ytmp = get_atom_y(atom, i);
-            MD_FLOAT ztmp = get_atom_z(atom, i);
+            MD_FLOAT xtmp = atom_x(i);
+            MD_FLOAT ytmp = atom_y(i);
+            MD_FLOAT ztmp = atom_z(i);
             int ibin = coord2bin(xtmp, ytmp, ztmp);
 
             for(int k = 0; k < nstencil; k++) {
@@ -209,9 +209,9 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor)
                         continue;
                     }
 
-                    MD_FLOAT delx = xtmp - get_atom_x(atom, j);
-                    MD_FLOAT dely = ytmp - get_atom_y(atom, j);
-                    MD_FLOAT delz = ztmp - get_atom_z(atom, j);
+                    MD_FLOAT delx = xtmp - atom_x(j);
+                    MD_FLOAT dely = ytmp - atom_y(j);
+                    MD_FLOAT delz = ztmp - atom_z(j);
                     MD_FLOAT rsq = delx * delx + dely * dely + delz * delz;
 
                     if( rsq <= cutneighsq ) {
@@ -316,7 +316,7 @@ void binatoms(Atom *atom)
         }
 
         for(int i = 0; i < nall; i++) {
-            int ibin = coord2bin(get_atom_x(atom, i), get_atom_y(atom, i), get_atom_z(atom, i));
+            int ibin = coord2bin(atom_x(i), atom_y(i), atom_z(i));
 
             if(bincount[ibin] < atoms_per_bin) {
                 int ac = bincount[ibin]++;

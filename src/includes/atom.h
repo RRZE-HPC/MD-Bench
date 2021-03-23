@@ -2,7 +2,7 @@
  * =======================================================================================
  *
  *   Author:   Jan Eitzinger (je), jan.eitzinger@fau.de
- *   Copyright (c) 2020 RRZE, University Erlangen-Nuremberg
+ *   Copyright (c) 2021 RRZE, University Erlangen-Nuremberg
  *
  *   This file is part of MD-Bench.
  *
@@ -38,25 +38,14 @@ extern void growAtom(Atom*);
 
 #ifdef AOS
 #define POS_DATA_LAYOUT         "AoS"
-/* FIXME: these macros are resulting in segfault
-#define set_atom_x(atom, i, v)  (atom->x[i * 3 + 0] = v)
-#define set_atom_y(atom, i, v)  (atom->x[i * 3 + 1] = v)
-#define set_atom_z(atom, i, v)  (atom->x[i * 3 + 2] = v)
-*/
-inline void set_atom_x(Atom *atom, int i, MD_FLOAT x) { atom->x[i * 3 + 0] = x; }
-inline void set_atom_y(Atom *atom, int i, MD_FLOAT y) { atom->x[i * 3 + 1] = y; }
-inline void set_atom_z(Atom *atom, int i, MD_FLOAT z) { atom->x[i * 3 + 2] = z; }
-#define get_atom_x(atom, i)     (atom->x[i * 3 + 0])
-#define get_atom_y(atom, i)     (atom->x[i * 3 + 1])
-#define get_atom_z(atom, i)     (atom->x[i * 3 + 2])
+#define atom_x(i)     atom->x[i * 3 + 0]
+#define atom_y(i)     atom->x[i * 3 + 1]
+#define atom_z(i)     atom->x[i * 3 + 2]
 #else
 #define POS_DATA_LAYOUT         "SoA"
-#define set_atom_x(atom, i, v)  (atom->x[i] = v)
-#define set_atom_y(atom, i, v)  (atom->y[i] = v)
-#define set_atom_z(atom, i, v)  (atom->z[i] = v)
-#define get_atom_x(atom, i)     (atom->x[i])
-#define get_atom_y(atom, i)     (atom->y[i])
-#define get_atom_z(atom, i)     (atom->z[i])
+#define atom_x(i)     atom->x[i]
+#define atom_y(i)     atom->y[i]
+#define atom_z(i)     atom->z[i]
 #endif
 
 #endif
