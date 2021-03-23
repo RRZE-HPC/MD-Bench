@@ -68,26 +68,23 @@ void updateAtomsPbc(Atom *atom, Parameter *param)
     MD_FLOAT zprd = param->zprd;
 
     for(int i = 0; i < atom->Nlocal; i++) {
-        MD_FLOAT x = atom_x(i);
-        MD_FLOAT y = atom_y(i);
-        MD_FLOAT z = atom_z(i);
 
-        if(x < 0.0) {
-            atom_x(i) = x + xprd;
-        } else if(x >= xprd) {
-            atom_x(i) = x - xprd;
+        if(atom_x(i) < 0.0) {
+            atom_x(i) += xprd;
+        } else if(atom_x(i) >= xprd) {
+            atom_x(i) -= xprd;
         }
 
-        if(y < 0.0) {
-            atom_y(i) = y + yprd;
-        } else if(y >= yprd) {
-            atom_y(i) = y - yprd;
+        if(atom_y(i) < 0.0) {
+            atom_y(i) += yprd;
+        } else if(atom_y(i) >= yprd) {
+            atom_y(i) -= yprd;
         }
 
-        if(z < 0.0) {
-            atom_z(i) = z + zprd;
-        } else if(z >= zprd) {
-            atom_z(i) = z - zprd;
+        if(atom_z(i) < 0.0) {
+            atom_z(i) += zprd;
+        } else if(atom_z(i) >= zprd) {
+            atom_z(i) -= zprd;
         }
     }
 }
@@ -96,7 +93,12 @@ void updateAtomsPbc(Atom *atom, Parameter *param)
  * defining ghost atoms around domain
  * only creates mapping and coordinate corrections
  * that are then enforced in updatePbc */
-#define ADDGHOST(dx,dy,dz) Nghost++; BorderMap[Nghost] = i; PBCx[Nghost] = dx; PBCy[Nghost] = dy; PBCz[Nghost] = dz;
+#define ADDGHOST(dx,dy,dz) \
+    Nghost++;              \
+    BorderMap[Nghost] = i; \
+    PBCx[Nghost] = dx;     \
+    PBCy[Nghost] = dy;     \
+    PBCz[Nghost] = dz;
 void setupPbc(Atom *atom, Parameter *param)
 {
     MD_FLOAT xprd = param->xprd;
