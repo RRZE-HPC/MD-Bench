@@ -5,7 +5,7 @@ TARGET	   = MDBench-$(TAG)
 BUILD_DIR  = ./$(TAG)
 SRC_DIR    = ./src
 MAKE_DIR   = ./
-FLAGS      = #-DAOS
+FLAGS      = -DAOS
 Q         ?= @
 
 #DO NOT EDIT BELOW

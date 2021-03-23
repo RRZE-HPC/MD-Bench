@@ -123,9 +123,9 @@ void initialIntegrate(Parameter *param, Atom *atom)
         vx[i] += param->dtforce * fx[i];
         vy[i] += param->dtforce * fy[i];
         vz[i] += param->dtforce * fz[i];
-        set_atom_x(atom, i, get_atom_x(atom, i) + param->dt * vx[i]);
-        set_atom_y(atom, i, get_atom_y(atom, i) + param->dt * vy[i]);
-        set_atom_z(atom, i, get_atom_z(atom, i) + param->dt * vz[i]);
+        atom_x(i) = atom_x(i) + param->dt * vx[i];
+        atom_y(i) = atom_y(i) + param->dt * vy[i];
+        atom_z(i) = atom_z(i) + param->dt * vz[i];
     }
 }
 
@@ -164,9 +164,9 @@ double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor)
     for(int i = 0; i < Nlocal; i++) {
         neighs = &neighbor->neighbors[i * neighbor->maxneighs];
         int numneighs = neighbor->numneigh[i];
-        MD_FLOAT xtmp = get_atom_x(atom, i);
-        MD_FLOAT ytmp = get_atom_y(atom, i);
-        MD_FLOAT ztmp = get_atom_z(atom, i);
+        MD_FLOAT xtmp = atom_x(i);
+        MD_FLOAT ytmp = atom_y(i);
+        MD_FLOAT ztmp = atom_z(i);
 
         MD_FLOAT fix = 0;
         MD_FLOAT fiy = 0;
@@ -174,9 +174,9 @@ double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor)
 
         for(int k = 0; k < numneighs; k++) {
             int j = neighs[k];
-            MD_FLOAT delx = xtmp - get_atom_x(atom, j);
-            MD_FLOAT dely = ytmp - get_atom_y(atom, j);
-            MD_FLOAT delz = ztmp - get_atom_z(atom, j);
+            MD_FLOAT delx = xtmp - atom_x(j);
+            MD_FLOAT dely = ytmp - atom_y(j);
+            MD_FLOAT delz = ztmp - atom_z(j);
             MD_FLOAT rsq = delx * delx + dely * dely + delz * delz;
 
             if(rsq < cutforcesq) {

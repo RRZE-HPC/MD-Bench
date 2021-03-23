@@ -1,8 +1,10 @@
 /*
  * =======================================================================================
  *
- *   Author:   Jan Eitzinger (je), jan.eitzinger@fau.de
- *   Copyright (c) 2020 RRZE, University Erlangen-Nuremberg
+ *   Authors:   Jan Eitzinger (je), jan.eitzinger@fau.de
+ *              Rafael Ravedutti (rr), rafaelravedutti@gmail.com
+ *
+ *   Copyright (c) 2021 RRZE, University Erlangen-Nuremberg
  *
  *   This file is part of MD-Bench.
  *
@@ -111,9 +113,9 @@ void createAtom(Atom *atom, Parameter *param)
                     growAtom(atom);
                 }
 
-                set_atom_x(atom, atom->Nlocal, xtmp);
-                set_atom_y(atom, atom->Nlocal, ytmp);
-                set_atom_z(atom, atom->Nlocal, ztmp);
+                atom_x(atom->Nlocal) = xtmp;
+                atom_y(atom->Nlocal) = ytmp;
+                atom_z(atom->Nlocal) = ztmp;
                 atom->vx[atom->Nlocal] = vxtmp;
                 atom->vy[atom->Nlocal] = vytmp;
                 atom->vz[atom->Nlocal] = vztmp;

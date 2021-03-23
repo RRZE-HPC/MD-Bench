@@ -53,9 +53,9 @@ void updatePbc(Atom *atom, Parameter *param)
     MD_FLOAT zprd = param->zprd;
 
     for(int i = 0; i < atom->Nghost; i++) {
-        set_atom_x(atom, nlocal + i, get_atom_x(atom, BorderMap[i]) + PBCx[i] * xprd);
-        set_atom_y(atom, nlocal + i, get_atom_y(atom, BorderMap[i]) + PBCy[i] * yprd);
-        set_atom_z(atom, nlocal + i, get_atom_z(atom, BorderMap[i]) + PBCz[i] * zprd);
+        atom_x(nlocal + i) = atom_x(BorderMap[i]) + PBCx[i] * xprd;
+        atom_y(nlocal + i) = atom_y(BorderMap[i]) + PBCy[i] * yprd;
+        atom_z(nlocal + i) = atom_z(BorderMap[i]) + PBCz[i] * zprd;
     }
 }
 
@@ -68,26 +68,26 @@ void updateAtomsPbc(Atom *atom, Parameter *param)
     MD_FLOAT zprd = param->zprd;
 
     for(int i = 0; i < atom->Nlocal; i++) {
-        MD_FLOAT x = get_atom_x(atom, i);
-        MD_FLOAT y = get_atom_y(atom, i);
-        MD_FLOAT z = get_atom_z(atom, i);
+        MD_FLOAT x = atom_x(i);
+        MD_FLOAT y = atom_y(i);
+        MD_FLOAT z = atom_z(i);
 
         if(x < 0.0) {
-            set_atom_x(atom, i, x + xprd);
+            atom_x(i) = x + xprd;
         } else if(x >= xprd) {
-            set_atom_x(atom, i, x - xprd);
+            atom_x(i) = x - xprd;
         }
 
         if(y < 0.0) {
-            set_atom_y(atom, i, y + yprd);
+            atom_y(i) = y + yprd;
         } else if(y >= yprd) {
-            set_atom_y(atom, i, y - yprd);
+            atom_y(i) = y - yprd;
         }
 
         if(z < 0.0) {
-            set_atom_z(atom, i, z + zprd);
+            atom_z(i) = z + zprd;
         } else if(z >= zprd) {
-            set_atom_z(atom, i, z - zprd);
+            atom_z(i) = z - zprd;
         }
     }
 }
@@ -114,9 +114,9 @@ void setupPbc(Atom *atom, Parameter *param)
             growPbc();
         }
 
-        MD_FLOAT x = get_atom_x(atom, i);
-        MD_FLOAT y = get_atom_y(atom, i);
-        MD_FLOAT z = get_atom_z(atom, i);
+        MD_FLOAT x = atom_x(i);
+        MD_FLOAT y = atom_y(i);
+        MD_FLOAT z = atom_z(i);
 
         /* Setup ghost atoms */
         /* 6 planes */
