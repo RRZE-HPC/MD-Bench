@@ -116,7 +116,6 @@ double reneighbour(
 
 void initialIntegrate(Parameter *param, Atom *atom)
 {
-    MD_FLOAT* x = atom->x; MD_FLOAT* y = atom->y; MD_FLOAT* z = atom->z;
     MD_FLOAT* fx = atom->fx; MD_FLOAT* fy = atom->fy; MD_FLOAT* fz = atom->fz;
     MD_FLOAT* vx = atom->vx; MD_FLOAT* vy = atom->vy; MD_FLOAT* vz = atom->vz;
 
@@ -124,9 +123,9 @@ void initialIntegrate(Parameter *param, Atom *atom)
         vx[i] += param->dtforce * fx[i];
         vy[i] += param->dtforce * fy[i];
         vz[i] += param->dtforce * fz[i];
-        x[i]  += param->dt * vx[i];
-        y[i]  += param->dt * vy[i];
-        z[i]  += param->dt * vz[i];
+        atom_x(i) = atom_x(i) + param->dt * vx[i];
+        atom_y(i) = atom_y(i) + param->dt * vy[i];
+        atom_z(i) = atom_z(i) + param->dt * vz[i];
     }
 }
 
@@ -149,7 +148,6 @@ double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor)
     MD_FLOAT cutforcesq = param->cutforce * param->cutforce;
     MD_FLOAT sigma6 = param->sigma6;
     MD_FLOAT epsilon = param->epsilon;
-    MD_FLOAT* x = atom->x; MD_FLOAT* y = atom->y; MD_FLOAT* z = atom->z;
     MD_FLOAT* fx = atom->fx; MD_FLOAT* fy = atom->fy; MD_FLOAT* fz = atom->fz;
     MD_FLOAT S, E;
 
@@ -166,9 +164,9 @@ double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor)
     for(int i = 0; i < Nlocal; i++) {
         neighs = &neighbor->neighbors[i * neighbor->maxneighs];
         int numneighs = neighbor->numneigh[i];
-        MD_FLOAT xtmp = x[i];
-        MD_FLOAT ytmp = y[i];
-        MD_FLOAT ztmp = z[i];
+        MD_FLOAT xtmp = atom_x(i);
+        MD_FLOAT ytmp = atom_y(i);
+        MD_FLOAT ztmp = atom_z(i);
 
         MD_FLOAT fix = 0;
         MD_FLOAT fiy = 0;
@@ -176,9 +174,9 @@ double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor)
 
         for(int k = 0; k < numneighs; k++) {
             int j = neighs[k];
-            MD_FLOAT delx = xtmp - x[j];
-            MD_FLOAT dely = ytmp - y[j];
-            MD_FLOAT delz = ztmp - z[j];
+            MD_FLOAT delx = xtmp - atom_x(j);
+            MD_FLOAT dely = ytmp - atom_y(j);
+            MD_FLOAT delz = ztmp - atom_z(j);
             MD_FLOAT rsq = delx * delx + dely * dely + delz * delz;
 
             if(rsq < cutforcesq) {
@@ -293,6 +291,7 @@ int main (int argc, char** argv)
     computeThermo(-1, &param, &atom);
 
     printf(HLINE);
+    printf("Data layout for positions: %s\n", POS_DATA_LAYOUT);
 #if PRECISION == 1
     printf("Using single precision floating point.\n");
 #else
