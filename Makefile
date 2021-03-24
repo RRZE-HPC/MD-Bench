@@ -1,5 +1,3 @@
-TAG = CLANG
-
 #CONFIGURE BUILD SYSTEM
 TARGET	   = MDBench-$(TAG)
 BUILD_DIR  = ./$(TAG)
@@ -8,14 +6,23 @@ MAKE_DIR   = ./
 Q         ?= @
 
 #DO NOT EDIT BELOW
+include $(MAKE_DIR)/config.mk
 include $(MAKE_DIR)/include_$(TAG).mk
 INCLUDES  += -I./src/includes
+
+ifeq ($(strip $(DATA_LAYOUT)),AOS)
+DEFINES +=  -DAOS
+endif
+ifeq ($(strip $(DATA_TYPE)),SP)
+DEFINES +=  -DPRECISION=1
+else
+DEFINES +=  -DPRECISION=2
+endif
 
 VPATH     = $(SRC_DIR)
 ASM       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.s,$(wildcard $(SRC_DIR)/*.c))
 OBJ       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c))
-CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
-
+CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(OPTIONS) $(INCLUDES)
 
 ${TARGET}: $(BUILD_DIR) $(OBJ)
 	@echo "===>  LINKING  $(TARGET)"

@@ -2,7 +2,7 @@
  * =======================================================================================
  *
  *   Author:   Jan Eitzinger (je), jan.eitzinger@fau.de
- *   Copyright (c) 2020 RRZE, University Erlangen-Nuremberg
+ *   Copyright (c) 2021 RRZE, University Erlangen-Nuremberg
  *
  *   This file is part of MD-Bench.
  *
@@ -35,4 +35,17 @@ typedef struct {
 extern void initAtom(Atom*);
 extern void createAtom(Atom*, Parameter*);
 extern void growAtom(Atom*);
+
+#ifdef AOS
+#define POS_DATA_LAYOUT     "AoS"
+#define atom_x(i)           atom->x[(i) * 3 + 0]
+#define atom_y(i)           atom->x[(i) * 3 + 1]
+#define atom_z(i)           atom->x[(i) * 3 + 2]
+#else
+#define POS_DATA_LAYOUT     "SoA"
+#define atom_x(i)           atom->x[i]
+#define atom_y(i)           atom->y[i]
+#define atom_z(i)           atom->z[i]
+#endif
+
 #endif

@@ -1,8 +1,10 @@
 /*
  * =======================================================================================
  *
- *   Author:   Jan Eitzinger (je), jan.eitzinger@fau.de
- *   Copyright (c) 2020 RRZE, University Erlangen-Nuremberg
+ *   Authors:   Jan Eitzinger (je), jan.eitzinger@fau.de
+ *              Rafael Ravedutti (rr), rafaelravedutti@gmail.com
+ *
+ *   Copyright (c) 2021 RRZE, University Erlangen-Nuremberg
  *
  *   This file is part of MD-Bench.
  *
@@ -111,9 +113,9 @@ void createAtom(Atom *atom, Parameter *param)
                     growAtom(atom);
                 }
 
-                atom->x[atom->Nlocal] = xtmp;
-                atom->y[atom->Nlocal] = ytmp;
-                atom->z[atom->Nlocal] = ztmp;
+                atom_x(atom->Nlocal) = xtmp;
+                atom_y(atom->Nlocal) = ytmp;
+                atom_z(atom->Nlocal) = ztmp;
                 atom->vx[atom->Nlocal] = vxtmp;
                 atom->vy[atom->Nlocal] = vytmp;
                 atom->vz[atom->Nlocal] = vztmp;
@@ -136,9 +138,13 @@ void growAtom(Atom *atom)
     int nold = atom->Nmax;
     atom->Nmax += DELTA;
 
+    #ifdef AOS
+    atom->x  = (MD_FLOAT*) reallocate(atom->x,  ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT) * 3, nold * sizeof(MD_FLOAT) * 3);
+    #else
     atom->x  = (MD_FLOAT*) reallocate(atom->x,  ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
     atom->y  = (MD_FLOAT*) reallocate(atom->y,  ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
     atom->z  = (MD_FLOAT*) reallocate(atom->z,  ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
+    #endif
     atom->vx = (MD_FLOAT*) reallocate(atom->vx, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
     atom->vy = (MD_FLOAT*) reallocate(atom->vy, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
     atom->vz = (MD_FLOAT*) reallocate(atom->vz, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));

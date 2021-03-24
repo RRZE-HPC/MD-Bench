@@ -4,9 +4,10 @@ A simple, sequential  C implementation of the [Mantevo miniMD](https://github.co
 
 ## Build
 
-1. Open the `Makefile` and edit the `TAG` value according to the tool chain used. Currently supported is GCC, CLANG (LLVM), and ICC (Intel).
-2. Open and adapt the compiler flags in `<include_<TOOLCHAIN>.mk`, e.g. in `include_ICC.mk` for the Intel tool chain.
-3. Build the binary calling `make`.
+1. Open `config.mk` and edit the `TAG` value according to the tool chain used. Currently supported is GCC, CLANG (LLVM), and ICC (Intel).
+2. Change `DATA_LAYOUT` and `DATA_TYPE` if desired in config.mk.
+3. Open and adapt the compiler flags in `<include_<TOOLCHAIN>.mk`, e.g. in `include_ICC.mk` for the Intel tool chain.
+4. Build the binary calling `make`.
 
 You can clean intermediate build results with `make clean`, and all build results with `make distclean`.
 You have to call `make clean` before `make` if you changed the build settings.
