@@ -74,10 +74,10 @@ double setup(
         Neighbor *neighbor)
 {
     double S, E;
-    double lattice = pow((4.0 / param->rho), (1.0 / 3.0));
-    param->xprd = param->nx * lattice;
-    param->yprd = param->ny * lattice;
-    param->zprd = param->nz * lattice;
+    param->lattice = pow((4.0 / param->rho), (1.0 / 3.0));
+    param->xprd = param->nx * param->lattice;
+    param->yprd = param->ny * param->lattice;
+    param->zprd = param->nz * param->lattice;
 
     S = getTimeStamp();
     initAtom(atom);

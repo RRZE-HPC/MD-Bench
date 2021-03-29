@@ -53,11 +53,10 @@ static MD_FLOAT bindist(int, int, int);
 /* exported subroutines */
 void initNeighbor(Neighbor *neighbor, Parameter *param)
 {
-    MD_FLOAT lattice = pow((4.0 / param->rho), (1.0 / 3.0));
     MD_FLOAT neighscale = 5.0 / 6.0;
-    xprd = param->nx * lattice;
-    yprd = param->ny * lattice;
-    zprd = param->nz * lattice;
+    xprd = param->nx * param->lattice;
+    yprd = param->ny * param->lattice;
+    zprd = param->nz * param->lattice;
     cutneigh = param->cutneigh;
     nbinx = neighscale * param->nx;
     nbiny = neighscale * param->ny;
