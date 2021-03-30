@@ -1,7 +1,9 @@
 # Supported: GCC, CLANG, ICC
 TAG ?= GCC
-DATA_TYPE ?= SP#SP or DP
-DATA_LAYOUT ?= SoA#AOS or SOA
+# SP or DP
+DATA_TYPE ?= DP
+# AOS or SOA
+DATA_LAYOUT ?= SOA
 
 #Feature options
 OPTIONS +=  -DALIGNMENT=64
