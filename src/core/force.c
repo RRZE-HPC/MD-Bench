@@ -30,7 +30,8 @@
 double computeForce(
         Parameter *param,
         Atom *atom,
-        Neighbor *neighbor)
+        Neighbor *neighbor,
+        int profile)
 {
     int Nlocal = atom->Nlocal;
     int* neighs;
@@ -47,7 +48,9 @@ double computeForce(
         fz[i] = 0.0;
     }
 
-    LIKWID_MARKER_START("force");
+    if(profile) {
+        LIKWID_MARKER_START("force");
+    }
 
 #pragma omp parallel for
     for(int i = 0; i < Nlocal; i++) {
@@ -82,8 +85,11 @@ double computeForce(
         fy[i] += fiy;
         fz[i] += fiz;
     }
-    LIKWID_MARKER_STOP("force");
-    E = getTimeStamp();
 
+    if(profile) {
+        LIKWID_MARKER_STOP("force");
+    }
+
+    E = getTimeStamp();
     return E-S;
 }

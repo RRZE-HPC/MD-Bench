@@ -15,24 +15,18 @@
 
 #define LATTICE_DISTANCE    10.0
 #define NEIGH_DISTANCE      1.0
-#define NX                  4
-#define NY                  4
-#define NZ                  2
 
-extern double computeForce( Parameter*, Atom*, Neighbor*);
+extern double computeForce( Parameter*, Atom*, Neighbor*, int);
 
 void init(Parameter *param) {
     param->epsilon = 1.0;
     param->sigma6 = 1.0;
     param->rho = 0.8442;
     param->ntimes = 200;
-    param->nx = NX;
-    param->ny = NY;
-    param->nz = NZ; 
+    param->nx = 4;
+    param->ny = 4;
+    param->nz = 2;
     param->lattice = LATTICE_DISTANCE;
-    param->xprd = NX * LATTICE_DISTANCE;
-    param->yprd = NY * LATTICE_DISTANCE;
-    param->zprd = NZ * LATTICE_DISTANCE;
     param->cutforce = 5.0;
     param->cutneigh = param->cutforce;
     param->mass = 1.0;
@@ -43,6 +37,11 @@ void init(Parameter *param) {
     param->temp = 1.44;
     param->every = 20;
 }
+
+// Show debug messages
+//#define DEBUG  printf
+// Do not show debug messages
+#define DEBUG
 
 #define ADD_ATOM(x, y, z, vx, vy, vz)   atom_x(atom->Nlocal) = base_x + x * NEIGH_DISTANCE; \
                                         atom_y(atom->Nlocal) = base_y + y * NEIGH_DISTANCE; \
@@ -60,7 +59,7 @@ int main(int argc, const char *argv[]) {
 
     LIKWID_MARKER_INIT;
     LIKWID_MARKER_REGISTER("force");
-    printf("Initializing parameters...\n");
+    DEBUG("Initializing parameters...\n");
     init(&param);
 
     for(int i = 0; i < argc; i++)
@@ -96,17 +95,19 @@ int main(int argc, const char *argv[]) {
         }
     }
 
-    printf("Initializing atoms...\n");
+    param.xprd = param.nx * LATTICE_DISTANCE;
+    param.yprd = param.ny * LATTICE_DISTANCE;
+    param.zprd = param.nz * LATTICE_DISTANCE;
+
+    DEBUG("Initializing atoms...\n");
     initAtom(atom);
 
-    printf("Creating atoms...\n");
-    // Neighbors per atom
-    // Total atoms: NX * NY * NZ * atoms_per_unit_cell
-    const int atoms_per_unit_cell = 8;
+    DEBUG("Creating atoms...\n");
+    const int atoms_per_unit_cell = 16;
 
-    for(int i = 0; i < NX; ++i) {
-        for(int j = 0; j < NY; ++j) {
-            for(int k = 0; k < NZ; ++k) {
+    for(int i = 0; i < param.nx; ++i) {
+        for(int j = 0; j < param.ny; ++j) {
+            for(int k = 0; k < param.nz; ++k) {
                 MD_FLOAT base_x = i * LATTICE_DISTANCE;
                 MD_FLOAT base_y = j * LATTICE_DISTANCE;
                 MD_FLOAT base_z = k * LATTICE_DISTANCE;
@@ -118,26 +119,66 @@ int main(int argc, const char *argv[]) {
                     growAtom(atom);
                 }
 
-                ADD_ATOM(0.0, 0.0, 0.0, vx, vy, vz);
-                ADD_ATOM(1.0, 0.0, 0.0, vx, vy, vz);
-                ADD_ATOM(0.0, 1.0, 0.0, vx, vy, vz);
-                ADD_ATOM(0.0, 0.0, 1.0, vx, vy, vz);
-                ADD_ATOM(1.0, 1.0, 0.0, vx, vy, vz);
-                ADD_ATOM(1.0, 0.0, 1.0, vx, vy, vz);
-                ADD_ATOM(0.0, 1.0, 1.0, vx, vy, vz);
-                ADD_ATOM(1.0, 1.0, 1.0, vx, vy, vz);
+                if(atoms_per_unit_cell == 4) {
+                    ADD_ATOM(0.0, 0.0, 0.0, vx, vy, vz);
+                    ADD_ATOM(1.0, 0.0, 0.0, vx, vy, vz);
+                    ADD_ATOM(0.0, 1.0, 0.0, vx, vy, vz);
+                    ADD_ATOM(0.0, 0.0, 1.0, vx, vy, vz);
+                } else if(atoms_per_unit_cell == 8) {
+                    ADD_ATOM(0.0, 0.0, 0.0, vx, vy, vz);
+                    ADD_ATOM(1.0, 0.0, 0.0, vx, vy, vz);
+                    ADD_ATOM(0.0, 1.0, 0.0, vx, vy, vz);
+                    ADD_ATOM(0.0, 0.0, 1.0, vx, vy, vz);
+                    ADD_ATOM(1.0, 1.0, 0.0, vx, vy, vz);
+                    ADD_ATOM(1.0, 0.0, 1.0, vx, vy, vz);
+                    ADD_ATOM(0.0, 1.0, 1.0, vx, vy, vz);
+                    ADD_ATOM(1.0, 1.0, 1.0, vx, vy, vz);
+                } else if(atoms_per_unit_cell == 16) {
+                    ADD_ATOM(0.0, 0.0, 0.0, vx, vy, vz);
+                    ADD_ATOM(1.0, 0.0, 0.0, vx, vy, vz);
+                    ADD_ATOM(0.0, 1.0, 0.0, vx, vy, vz);
+                    ADD_ATOM(0.0, 0.0, 1.0, vx, vy, vz);
+                    ADD_ATOM(1.0, 1.0, 0.0, vx, vy, vz);
+                    ADD_ATOM(1.0, 0.0, 1.0, vx, vy, vz);
+                    ADD_ATOM(0.0, 1.0, 1.0, vx, vy, vz);
+                    ADD_ATOM(1.0, 1.0, 1.0, vx, vy, vz);
+                    ADD_ATOM(0.5, 0.5, 0.5, vx, vy, vz);
+                    ADD_ATOM(1.5, 0.5, 0.5, vx, vy, vz);
+                    ADD_ATOM(0.5, 1.5, 0.5, vx, vy, vz);
+                    ADD_ATOM(0.5, 0.5, 1.5, vx, vy, vz);
+                    ADD_ATOM(1.5, 1.5, 0.5, vx, vy, vz);
+                    ADD_ATOM(1.5, 0.5, 1.5, vx, vy, vz);
+                    ADD_ATOM(0.5, 1.5, 1.5, vx, vy, vz);
+                    ADD_ATOM(1.5, 1.5, 1.5, vx, vy, vz);
+                } else {
+                    printf("Invalid number of atoms per unit cell, must be: 4, 8 or 16\n");
+                    return EXIT_FAILURE;
+                }
             }
         }
     }
 
-    printf("Initializing neighbor lists...\n");
+    const double estim_volume = (double)(atom->Nlocal * 6 * sizeof(MD_FLOAT) + (atoms_per_unit_cell - 1 + 2) * sizeof(int)) / 1000.0;
+    printf("System size (unit cells): %dx%dx%d\n", param.nx, param.ny, param.nz);
+    printf("Atoms per unit cell: %d\n", atoms_per_unit_cell);
+    printf("Total number of atoms: %d\n", atom->Nlocal);
+    printf("Estimated memory volume (kB): %.4f\n", estim_volume);
+
+    DEBUG("Initializing neighbor lists...\n");
     initNeighbor(&neighbor, &param);
-    printf("Setting up neighbor lists...\n");
+    DEBUG("Setting up neighbor lists...\n");
     setupNeighbor();
-    printf("Building neighbor lists...\n");
+    DEBUG("Building neighbor lists...\n");
     buildNeighbor(atom, &neighbor);
-    printf("Computing forces...\n");
-    computeForce(&param, atom, &neighbor);
+    DEBUG("Computing forces...\n");
+    computeForce(&param, atom, &neighbor, 0);
+
+    double T_accum = 0.0;
+    for(int i = 0; i < param.ntimes; i++) {
+        T_accum += computeForce(&param, atom, &neighbor, 1);
+    }
+
+    printf("Total time: %.4f, Time/force: %.4f\n", T_accum, T_accum / param.ntimes);
     LIKWID_MARKER_CLOSE;
     return EXIT_SUCCESS;
 }
