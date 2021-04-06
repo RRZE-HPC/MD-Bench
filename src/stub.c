@@ -16,7 +16,7 @@
 #define LATTICE_DISTANCE    10.0
 #define NEIGH_DISTANCE      1.0
 
-extern double computeForce( Parameter*, Atom*, Neighbor*, int);
+extern double computeForce( Parameter*, Atom*, Neighbor*, int, int);
 
 void init(Parameter *param) {
     param->epsilon = 1.0;
@@ -103,7 +103,7 @@ int main(int argc, const char *argv[]) {
     initAtom(atom);
 
     DEBUG("Creating atoms...\n");
-    const int atoms_per_unit_cell = 16;
+    const int atoms_per_unit_cell = 8;
 
     for(int i = 0; i < param.nx; ++i) {
         for(int j = 0; j < param.ny; ++j) {
@@ -158,7 +158,7 @@ int main(int argc, const char *argv[]) {
         }
     }
 
-    const double estim_volume = (double)(atom->Nlocal * 6 * sizeof(MD_FLOAT) + (atoms_per_unit_cell - 1 + 2) * sizeof(int)) / 1000.0;
+    const double estim_volume = (double)(atom->Nlocal * 6 * sizeof(MD_FLOAT) + atom->Nlocal * (atoms_per_unit_cell - 1 + 2) * sizeof(int)) / 1000.0;
     printf("System size (unit cells): %dx%dx%d\n", param.nx, param.ny, param.nz);
     printf("Atoms per unit cell: %d\n", atoms_per_unit_cell);
     printf("Total number of atoms: %d\n", atom->Nlocal);
@@ -171,13 +171,9 @@ int main(int argc, const char *argv[]) {
     DEBUG("Building neighbor lists...\n");
     buildNeighbor(atom, &neighbor);
     DEBUG("Computing forces...\n");
-    computeForce(&param, atom, &neighbor, 0);
+    computeForce(&param, atom, &neighbor, 0, 1);
 
-    double T_accum = 0.0;
-    for(int i = 0; i < param.ntimes; i++) {
-        T_accum += computeForce(&param, atom, &neighbor, 1);
-    }
-
+    double T_accum = computeForce(&param, atom, &neighbor, 1, param.ntimes);
     printf("Total time: %.4f, Time/force: %.4f\n", T_accum, T_accum / param.ntimes);
     LIKWID_MARKER_CLOSE;
     return EXIT_SUCCESS;
