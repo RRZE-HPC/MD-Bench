@@ -1,11 +1,9 @@
 #CONFIGURE BUILD SYSTEM
+TARGET	   = MDBench-$(TAG)
 BUILD_DIR  = ./$(TAG)
-SRC_DIR    = ./src/core
+SRC_DIR    = ./src
 MAKE_DIR   = ./
 Q         ?= @
-
-TARGET_MDBENCH	   = MDBench-$(TAG)
-TARGET_STUB        = stub
 
 #DO NOT EDIT BELOW
 include $(MAKE_DIR)/config.mk
@@ -23,30 +21,22 @@ endif
 
 VPATH     = $(SRC_DIR)
 ASM       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.s,$(wildcard $(SRC_DIR)/*.c))
-OBJ       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c))
+OBJ       = $(filter-out $(BUILD_DIR)/main%,$(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c)))
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(OPTIONS) $(INCLUDES)
 
-all: ${TARGET_MDBENCH} ${TARGET_STUB}
+ifneq ($(VARIANT),)
+	.DEFAULT_GOAL := ${TARGET}-$(VARIANT)
+endif
 
-${TARGET_MDBENCH}: $(BUILD_DIR) $(OBJ) $(BUILD_DIR)/main.o
-	@echo "===>  LINKING  $(TARGET_MDBENCH)"
-	$(Q)${LINKER} ${LFLAGS} -o $(TARGET_MDBENCH) $(OBJ) $(BUILD_DIR)/main.o $(LIBS)
+${TARGET}: $(BUILD_DIR) $(OBJ) $(SRC_DIR)/main.c
+	@echo "===>  LINKING  $(TARGET)"
+	$(Q)${LINKER} $(CPPFLAGS) ${LFLAGS} -o $(TARGET) $(SRC_DIR)/main.c $(OBJ) $(LIBS)
 
-${TARGET_STUB}: $(BUILD_DIR) $(OBJ) $(BUILD_DIR)/stub.o
-	@echo "===>  LINKING  $(TARGET_STUB)"
-	$(Q)${LINKER} ${LFLAGS} -o $(TARGET_STUB) $(OBJ) $(BUILD_DIR)/stub.o $(LIBS)
+${TARGET}-%: $(BUILD_DIR) $(OBJ) $(SRC_DIR)/main-%.c
+	@echo "===>  LINKING  $(TARGET)-$* "
+	$(Q)${LINKER} $(CPPFLAGS) ${LFLAGS} -o $(TARGET)-$* $(SRC_DIR)/main-$*.c $(OBJ) $(LIBS)
 
 asm:  $(BUILD_DIR) $(ASM)
-
-$(BUILD_DIR)/main.o: ./src/main.c
-	@echo "===>  COMPILE  $@"
-	$(Q)$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
-	$(Q)$(CC) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/main.d
-
-$(BUILD_DIR)/stub.o: ./src/stub.c
-	@echo "===>  COMPILE  $@"
-	$(Q)$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
-	$(Q)$(CC) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/stub.d
 
 $(BUILD_DIR)/%.o:  %.c
 	@echo "===>  COMPILE  $@"
