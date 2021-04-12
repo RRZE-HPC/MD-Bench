@@ -39,9 +39,9 @@ void init(Parameter *param) {
 }
 
 // Show debug messages
-//#define DEBUG  printf
+//#define DEBUG(msg)  printf(msg)
 // Do not show debug messages
-#define DEBUG
+#define DEBUG(msg)
 
 #define ADD_ATOM(x, y, z, vx, vy, vz)   atom_x(atom->Nlocal) = base_x + x * NEIGH_DISTANCE; \
                                         atom_y(atom->Nlocal) = base_y + y * NEIGH_DISTANCE; \
@@ -49,7 +49,7 @@ void init(Parameter *param) {
                                         atom->vx[atom->Nlocal] = vy;                        \
                                         atom->vy[atom->Nlocal] = vy;                        \
                                         atom->vz[atom->Nlocal] = vz;                        \
-                                        atom->Nlocal++ 
+                                        atom->Nlocal++
 
 int main(int argc, const char *argv[]) {
     Atom atom_data;
