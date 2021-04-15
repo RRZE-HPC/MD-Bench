@@ -39,9 +39,8 @@ double computeForce(
     MD_FLOAT sigma6 = param->sigma6;
     MD_FLOAT epsilon = param->epsilon;
     MD_FLOAT* fx = atom->fx; MD_FLOAT* fy = atom->fy; MD_FLOAT* fz = atom->fz;
-    MD_FLOAT S, E;
+    double S, E;
 
-    S = getTimeStamp();
     for(int i = 0; i < Nlocal; i++) {
         fx[i] = 0.0;
         fy[i] = 0.0;
@@ -49,7 +48,7 @@ double computeForce(
     }
 
     if(profile) {
-        LIKWID_MARKER_START("force");
+    //    LIKWID_MARKER_START("force");
     }
 
 #pragma omp parallel for
@@ -63,6 +62,8 @@ double computeForce(
         MD_FLOAT fix = 0;
         MD_FLOAT fiy = 0;
         MD_FLOAT fiz = 0;
+
+//	printf("%d: %d\n", i, numneighs);
 
         for(int k = 0; k < numneighs; k++) {
             int j = neighs[k];
@@ -87,9 +88,8 @@ double computeForce(
     }
 
     if(profile) {
-        LIKWID_MARKER_STOP("force");
+     //   LIKWID_MARKER_STOP("force");
     }
 
-    E = getTimeStamp();
-    return E-S;
+    return 0.0;
 }
