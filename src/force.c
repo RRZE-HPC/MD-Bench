@@ -40,9 +40,8 @@ double computeForce(
     MD_FLOAT sigma6 = param->sigma6;
     MD_FLOAT epsilon = param->epsilon;
     MD_FLOAT* fx = atom->fx; MD_FLOAT* fy = atom->fy; MD_FLOAT* fz = atom->fz;
-    MD_FLOAT S, E;
+    double S, E;
 
-    S = getTimeStamp();
     for(int i = 0; i < Nlocal; i++) {
         fx[i] = 0.0;
         fy[i] = 0.0;
@@ -50,49 +49,47 @@ double computeForce(
     }
 
     if(profile) {
-        LIKWID_MARKER_START("force");
+    //    LIKWID_MARKER_START("force");
     }
 
-    for(int t = 0; t < ntimes; t++) {
 #pragma omp parallel for
-        for(int i = 0; i < Nlocal; i++) {
-            neighs = &neighbor->neighbors[i * neighbor->maxneighs];
-            int numneighs = neighbor->numneigh[i];
-            MD_FLOAT xtmp = atom_x(i);
-            MD_FLOAT ytmp = atom_y(i);
-            MD_FLOAT ztmp = atom_z(i);
+    for(int i = 0; i < Nlocal; i++) {
+        neighs = &neighbor->neighbors[i * neighbor->maxneighs];
+        int numneighs = neighbor->numneigh[i];
+        MD_FLOAT xtmp = atom_x(i);
+        MD_FLOAT ytmp = atom_y(i);
+        MD_FLOAT ztmp = atom_z(i);
+        MD_FLOAT fix = 0;
+        MD_FLOAT fiy = 0;
+        MD_FLOAT fiz = 0;
 
-            MD_FLOAT fix = 0;
-            MD_FLOAT fiy = 0;
-            MD_FLOAT fiz = 0;
+//	printf("%d: %d\n", i, numneighs);
 
-            for(int k = 0; k < numneighs; k++) {
-                int j = neighs[k];
-                MD_FLOAT delx = xtmp - atom_x(j);
-                MD_FLOAT dely = ytmp - atom_y(j);
-                MD_FLOAT delz = ztmp - atom_z(j);
-                MD_FLOAT rsq = delx * delx + dely * dely + delz * delz;
+        for(int k = 0; k < numneighs; k++) {
+            int j = neighs[k];
+            MD_FLOAT delx = xtmp - atom_x(j);
+            MD_FLOAT dely = ytmp - atom_y(j);
+            MD_FLOAT delz = ztmp - atom_z(j);
+            MD_FLOAT rsq = delx * delx + dely * dely + delz * delz;
 
-                if(rsq < cutforcesq) {
-                    MD_FLOAT sr2 = 1.0 / rsq;
-                    MD_FLOAT sr6 = sr2 * sr2 * sr2 * sigma6;
-                    MD_FLOAT force = 48.0 * sr6 * (sr6 - 0.5) * sr2 * epsilon;
-                    fix += delx * force;
-                    fiy += dely * force;
-                    fiz += delz * force;
-                }
+            if(rsq < cutforcesq) {
+                MD_FLOAT sr2 = 1.0 / rsq;
+                MD_FLOAT sr6 = sr2 * sr2 * sr2 * sigma6;
+                MD_FLOAT force = 48.0 * sr6 * (sr6 - 0.5) * sr2 * epsilon;
+                fix += delx * force;
+                fiy += dely * force;
+                fiz += delz * force;
             }
-
-            fx[i] += fix;
-            fy[i] += fiy;
-            fz[i] += fiz;
         }
+
+        fx[i] += fix;
+        fy[i] += fiy;
+        fz[i] += fiz;
     }
 
     if(profile) {
-        LIKWID_MARKER_STOP("force");
+     //   LIKWID_MARKER_STOP("force");
     }
 
-    E = getTimeStamp();
-    return E-S;
+    return 0.0;
 }
