@@ -10,6 +10,6 @@ ANSI_CFLAGS += -Wextra
 CFLAGS   = -O3 -march=znver1  -ffast-math -funroll-loops # -fopenmp
 ASFLAGS  =  -masm=intel
 LFLAGS   =
-DEFINES  = -D_GNU_SOURCE
-INCLUDES =
-LIBS     = -lm
+DEFINES  = -D_GNU_SOURCE -DLIKWID_PERFMON
+INCLUDES = $(LIKWID_INC)
+LIBS     = -lm $(LIKWID_LIB) -llikwid

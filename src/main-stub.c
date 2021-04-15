@@ -158,11 +158,17 @@ int main(int argc, const char *argv[]) {
         }
     }
 
-    const double estim_volume = (double)(atom->Nlocal * 6 * sizeof(MD_FLOAT) + (atoms_per_unit_cell - 1 + 2) * sizeof(int)) / 1000.0;
+    const double estim_volume = (double)
+	    (atom->Nlocal * 6 * sizeof(MD_FLOAT) +
+	     atom->Nlocal * (atoms_per_unit_cell - 1 + 2) * sizeof(int)) / 1000.0;
     printf("System size (unit cells): %dx%dx%d\n", param.nx, param.ny, param.nz);
     printf("Atoms per unit cell: %d\n", atoms_per_unit_cell);
     printf("Total number of atoms: %d\n", atom->Nlocal);
-    printf("Estimated memory volume (kB): %.4f\n", estim_volume);
+    printf("Estimated total data volume (kB): %.4f\n", estim_volume );
+    printf("Estimated atom data volume (kB): %.4f\n",
+		    (double)(atom->Nlocal * 3 * sizeof(MD_FLOAT)  / 1000.0));
+    printf("Estimated neighborlist data volume (kB): %.4f\n",
+		    (double)(atom->Nlocal * (atoms_per_unit_cell - 1 + 2) * sizeof(int)) / 1000.0);
 
     DEBUG("Initializing neighbor lists...\n");
     initNeighbor(&neighbor, &param);
@@ -173,12 +179,18 @@ int main(int argc, const char *argv[]) {
     DEBUG("Computing forces...\n");
     computeForce(&param, atom, &neighbor, 0);
 
-    double T_accum = 0.0;
+    double S, E;
+    S = getTimeStamp();
+    LIKWID_MARKER_START("force");
     for(int i = 0; i < param.ntimes; i++) {
-        T_accum += computeForce(&param, atom, &neighbor, 1);
+        computeForce(&param, atom, &neighbor, 1);
     }
+    LIKWID_MARKER_STOP("force");
+    E = getTimeStamp();
+    double T_accum = E-S;
 
-    printf("Total time: %.4f, Time/force: %.4f\n", T_accum, T_accum / param.ntimes);
+    printf("Total time: %.4f, Mega atom updates/s: %.4f\n",
+		    T_accum, atom->Nlocal * param.ntimes/T_accum/1.E6);
     LIKWID_MARKER_CLOSE;
     return EXIT_SUCCESS;
 }
