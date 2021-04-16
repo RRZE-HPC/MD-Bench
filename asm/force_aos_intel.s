@@ -573,33 +573,58 @@ computeForce:
                                 # LOE rbx rbp rdi r13 eax edx ecx esi r8d r9d r10d r11d r12d r14d r15d xmm6 xmm7 xmm12 ymm3 ymm15 ymm16 zmm0 zmm1 zmm2 zmm5 zmm8 zmm9 zmm10 zmm11 zmm13 zmm14
 ..B1.29:                        # Preds ..B1.26
                                 # Execution count [1.25e+01]
+# k1 <- [true for all elements]
         vpcmpeqb  k1, xmm0, xmm0                                #69.36
+# k2 <- [true for all elements]
         vpcmpeqb  k2, xmm0, xmm0                                #69.36
+# k3 <- [true for all elements]
         vpcmpeqb  k3, xmm0, xmm0                                #69.36
+# zmm4 <- 0.0
         vpxord    zmm4, zmm4, zmm4                              #69.36
+# zmm17 <- 0.0
         vpxord    zmm17, zmm17, zmm17                           #69.36
+# zmm18 <- 0.0
         vpxord    zmm18, zmm18, zmm18                           #69.36
+# zmm4 <- atom->x[j * 3 + 2]
         vgatherdpd zmm4{k1}, QWORD PTR [16+rdi+ymm3*8]          #69.36
+# zmm17 <- atom->x[j * 3 + 1]
         vgatherdpd zmm17{k2}, QWORD PTR [8+rdi+ymm3*8]          #69.36
+# zmm18 <- atom->x[j * 3]
         vgatherdpd zmm18{k3}, QWORD PTR [rdi+ymm3*8]            #69.36
                                 # LOE rbx rbp rdi r13 r11d r12d r14d xmm6 xmm7 xmm12 ymm15 ymm16 zmm0 zmm1 zmm2 zmm4 zmm5 zmm8 zmm9 zmm10 zmm11 zmm13 zmm14 zmm17 zmm18
 ..B1.30:                        # Preds ..B1.29
                                 # Execution count [2.50e+01]
+# k++
         add       r12d, 8                                       #67.9
+# k++
         add       rbx, 8                                        #67.9
+# zmm26 <- atom->x[i * 3 + 2] - atom->x[j * 3 + 2]
         vsubpd    zmm26, zmm0, zmm4                             #71.36
+# zmm24 <- atom->x[i * 3 + 1] - atom->x[j * 3 + 1]
         vsubpd    zmm24, zmm1, zmm17                            #70.36
+# zmm23 <- atom->x[i * 3] - atom->x[j * 3]
         vsubpd    zmm23, zmm2, zmm18                            #69.36
+# zmm3 <- dely * dely
         vmulpd    zmm3, zmm24, zmm24                            #72.49
+# zmm3 <- delx * delx + dely * dely
         vfmadd231pd zmm3, zmm23, zmm23                          #72.49
+# zmm3 <- rsq (delz * delz + delx * delx + dely * dely)
         vfmadd231pd zmm3, zmm26, zmm26                          #72.63
+# zmm22 <- sr2 (1.0 / rsq -- compute reciprocal)
         vrcp14pd  zmm22, zmm3                                   #75.38
+# k2 <- [rsq < cutforcesq]
         vcmppd    k2, zmm3, zmm14, 1                            #74.22
+# k0 <- [true when +0, Neg. 0, +inf, -inf]
         vfpclasspd k0, zmm22, 30                                #75.38
+# zmm3 <- [-(rsq * sr2) + 1.0] -- check if 1.0 / rsq is valid! -- call it error?
         vfnmadd213pd zmm3, zmm22, QWORD BCST .L_2il0floatpacket.9[rip] #75.38
+# k1 <- [false when +0, Neg. 0, +inf, -inf]
         knotw     k1, k0                                        #75.38
+# zmm4 <- [(-rsq * sr2 + 1.0) * (-rsq * sr2 + 1.0)] -- errorsq
         vmulpd    zmm4, zmm3, zmm3                              #75.38
+# zmm22 <- [sr2 * error + sr2]
         vfmadd213pd zmm22{k1}, zmm3, zmm22                      #75.38
+# zmm22 <- [(sr2 * error + sr2) * errorsq + (sr2 * error + sr2)]
         vfmadd213pd zmm22{k1}, zmm4, zmm22                      #75.38
         vmulpd    zmm17, zmm22, zmm13                           #76.38
         vmulpd    zmm19, zmm22, zmm10                           #77.54
@@ -611,6 +636,7 @@ computeForce:
         vfmadd231pd zmm9{k2}, zmm25, zmm23                      #78.17
         vfmadd231pd zmm8{k2}, zmm25, zmm24                      #79.17
         vfmadd231pd zmm11{k2}, zmm25, zmm26                     #80.17
+# k < numneighs
         cmp       r12d, r14d                                    #67.9
         jb        ..B1.26       # Prob 82%                      #67.9
                                 # LOE rbx rbp rdi r13 r11d r12d r14d xmm6 xmm7 xmm12 ymm15 ymm16 zmm0 zmm1 zmm2 zmm5 zmm8 zmm9 zmm10 zmm11 zmm13 zmm14
