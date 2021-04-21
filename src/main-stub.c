@@ -16,7 +16,7 @@
 #define LATTICE_DISTANCE    10.0
 #define NEIGH_DISTANCE      1.0
 
-extern double computeForce( Parameter*, Atom*, Neighbor*, int, int);
+extern double computeForce( Parameter*, Atom*, Neighbor*, int);
 
 void init(Parameter *param) {
     param->epsilon = 1.0;
