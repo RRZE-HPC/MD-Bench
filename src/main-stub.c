@@ -56,6 +56,7 @@ int main(int argc, const char *argv[]) {
     Atom *atom = (Atom *)(&atom_data);
     Neighbor neighbor;
     Parameter param;
+    int atoms_per_unit_cell = 8;
 
     LIKWID_MARKER_INIT;
     LIKWID_MARKER_REGISTER("force");
@@ -84,12 +85,18 @@ int main(int argc, const char *argv[]) {
             param.nz = atoi(argv[++i]);
             continue;
         }
+        if((strcmp(argv[i], "-na") == 0))
+        {
+            atoms_per_unit_cell = atoi(argv[++i]);
+            continue;
+        }
         if((strcmp(argv[i], "-h") == 0) || (strcmp(argv[i], "--help") == 0))
         {
             printf("MD Bench: A minimalistic re-implementation of miniMD\n");
             printf(HLINE);
             printf("-n / --nsteps <int>:  set number of timesteps for simulation\n");
             printf("-nx/-ny/-nz <int>:    set linear dimension of systembox in x/y/z direction\n");
+            printf("-na <int>:            set number of atoms per unit cell\n");
             printf(HLINE);
             exit(EXIT_SUCCESS);
         }
@@ -103,11 +110,14 @@ int main(int argc, const char *argv[]) {
     initAtom(atom);
 
     DEBUG("Creating atoms...\n");
-    const int atoms_per_unit_cell = 8;
-
     for(int i = 0; i < param.nx; ++i) {
         for(int j = 0; j < param.ny; ++j) {
             for(int k = 0; k < param.nz; ++k) {
+                int added_atoms = 0;
+                int fac_x = 1;
+                int fac_y = 1;
+                int fac_z = 1;
+                int fmod = 0;
                 MD_FLOAT base_x = i * LATTICE_DISTANCE;
                 MD_FLOAT base_y = j * LATTICE_DISTANCE;
                 MD_FLOAT base_z = k * LATTICE_DISTANCE;
@@ -119,40 +129,25 @@ int main(int argc, const char *argv[]) {
                     growAtom(atom);
                 }
 
-                if(atoms_per_unit_cell == 4) {
-                    ADD_ATOM(0.0, 0.0, 0.0, vx, vy, vz);
-                    ADD_ATOM(1.0, 0.0, 0.0, vx, vy, vz);
-                    ADD_ATOM(0.0, 1.0, 0.0, vx, vy, vz);
-                    ADD_ATOM(0.0, 0.0, 1.0, vx, vy, vz);
-                } else if(atoms_per_unit_cell == 8) {
-                    ADD_ATOM(0.0, 0.0, 0.0, vx, vy, vz);
-                    ADD_ATOM(1.0, 0.0, 0.0, vx, vy, vz);
-                    ADD_ATOM(0.0, 1.0, 0.0, vx, vy, vz);
-                    ADD_ATOM(0.0, 0.0, 1.0, vx, vy, vz);
-                    ADD_ATOM(1.0, 1.0, 0.0, vx, vy, vz);
-                    ADD_ATOM(1.0, 0.0, 1.0, vx, vy, vz);
-                    ADD_ATOM(0.0, 1.0, 1.0, vx, vy, vz);
-                    ADD_ATOM(1.0, 1.0, 1.0, vx, vy, vz);
-                } else if(atoms_per_unit_cell == 16) {
-                    ADD_ATOM(0.0, 0.0, 0.0, vx, vy, vz);
-                    ADD_ATOM(1.0, 0.0, 0.0, vx, vy, vz);
-                    ADD_ATOM(0.0, 1.0, 0.0, vx, vy, vz);
-                    ADD_ATOM(0.0, 0.0, 1.0, vx, vy, vz);
-                    ADD_ATOM(1.0, 1.0, 0.0, vx, vy, vz);
-                    ADD_ATOM(1.0, 0.0, 1.0, vx, vy, vz);
-                    ADD_ATOM(0.0, 1.0, 1.0, vx, vy, vz);
-                    ADD_ATOM(1.0, 1.0, 1.0, vx, vy, vz);
-                    ADD_ATOM(0.5, 0.5, 0.5, vx, vy, vz);
-                    ADD_ATOM(1.5, 0.5, 0.5, vx, vy, vz);
-                    ADD_ATOM(0.5, 1.5, 0.5, vx, vy, vz);
-                    ADD_ATOM(0.5, 0.5, 1.5, vx, vy, vz);
-                    ADD_ATOM(1.5, 1.5, 0.5, vx, vy, vz);
-                    ADD_ATOM(1.5, 0.5, 1.5, vx, vy, vz);
-                    ADD_ATOM(0.5, 1.5, 1.5, vx, vy, vz);
-                    ADD_ATOM(1.5, 1.5, 1.5, vx, vy, vz);
-                } else {
-                    printf("Invalid number of atoms per unit cell, must be: 4, 8 or 16\n");
-                    return EXIT_FAILURE;
+                while(fac_x * fac_y * fac_z < atoms_per_unit_cell) {
+                    if(fmod == 0) { fac_x *= 2; }
+                    if(fmod == 1) { fac_y *= 2; }
+                    if(fmod == 2) { fac_z *= 2; }
+                    fmod = (fmod + 1) % 3;
+                }
+
+                MD_FLOAT offset_x = (fac_x > 0) ? 1.0 / (fac_x - 1) : 0.0;
+                MD_FLOAT offset_y = (fac_y > 0) ? 1.0 / (fac_y - 1) : 0.0;
+                MD_FLOAT offset_z = (fac_z > 0) ? 1.0 / (fac_z - 1) : 0.0;
+                for(int ii = 0; ii < fac_x; ++ii) {
+                    for(int jj = 0; jj < fac_y; ++jj) {
+                        for(int kk = 0; kk < fac_z; ++kk) {
+                            if(added_atoms < atoms_per_unit_cell) {
+                                ADD_ATOM(ii * offset_x, jj * offset_y, kk * offset_z, vx, vy, vz);
+                                added_atoms++;
+                            }
+                        }
+                    }
                 }
             }
         }
