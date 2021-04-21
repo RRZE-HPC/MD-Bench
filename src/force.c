@@ -31,8 +31,7 @@ double computeForce(
         Parameter *param,
         Atom *atom,
         Neighbor *neighbor,
-        int profile,
-        int ntimes)
+        int profile)
 {
     int Nlocal = atom->Nlocal;
     int* neighs;
