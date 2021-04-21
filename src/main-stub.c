@@ -57,6 +57,7 @@ int main(int argc, const char *argv[]) {
     Neighbor neighbor;
     Parameter param;
     int atoms_per_unit_cell = 8;
+    int csv = 0;
 
     LIKWID_MARKER_INIT;
     LIKWID_MARKER_REGISTER("force");
@@ -88,6 +89,11 @@ int main(int argc, const char *argv[]) {
         if((strcmp(argv[i], "-na") == 0))
         {
             atoms_per_unit_cell = atoi(argv[++i]);
+            continue;
+        }
+        if((strcmp(argv[i], "-csv") == 0))
+        {
+            csv = 1;
             continue;
         }
         if((strcmp(argv[i], "-h") == 0) || (strcmp(argv[i], "--help") == 0))
@@ -153,17 +159,19 @@ int main(int argc, const char *argv[]) {
         }
     }
 
-    const double estim_volume = (double)
-	    (atom->Nlocal * 6 * sizeof(MD_FLOAT) +
-	     atom->Nlocal * (atoms_per_unit_cell - 1 + 2) * sizeof(int)) / 1000.0;
-    printf("System size (unit cells): %dx%dx%d\n", param.nx, param.ny, param.nz);
-    printf("Atoms per unit cell: %d\n", atoms_per_unit_cell);
-    printf("Total number of atoms: %d\n", atom->Nlocal);
-    printf("Estimated total data volume (kB): %.4f\n", estim_volume );
-    printf("Estimated atom data volume (kB): %.4f\n",
-		    (double)(atom->Nlocal * 3 * sizeof(MD_FLOAT)  / 1000.0));
-    printf("Estimated neighborlist data volume (kB): %.4f\n",
-		    (double)(atom->Nlocal * (atoms_per_unit_cell - 1 + 2) * sizeof(int)) / 1000.0);
+    const double estim_atom_volume = (double)(atom->Nlocal * 3 * sizeof(MD_FLOAT));
+    const double estim_neighbors_volume = (double)(atom->Nlocal * (atoms_per_unit_cell - 1 + 2) * sizeof(int));
+    const double estim_volume = (double)(atom->Nlocal * 6 * sizeof(MD_FLOAT) + estim_neighbors_volume);
+
+    if(!csv) {
+        printf("Number of timesteps: %d\n", param.ntimes);
+        printf("System size (unit cells): %dx%dx%d\n", param.nx, param.ny, param.nz);
+        printf("Atoms per unit cell: %d\n", atoms_per_unit_cell);
+        printf("Total number of atoms: %d\n", atom->Nlocal);
+        printf("Estimated total data volume (kB): %.4f\n", estim_volume / 1000.0);
+        printf("Estimated atom data volume (kB): %.4f\n", estim_atom_volume / 1000.0);
+        printf("Estimated neighborlist data volume (kB): %.4f\n", estim_neighbors_volume / 1000.0);
+    }
 
     DEBUG("Initializing neighbor lists...\n");
     initNeighbor(&neighbor, &param);
@@ -183,9 +191,17 @@ int main(int argc, const char *argv[]) {
     LIKWID_MARKER_STOP("force");
     E = getTimeStamp();
     double T_accum = E-S;
+    const double atoms_updates_per_sec = atom->Nlocal * param.ntimes / T_accum;
 
-    printf("Total time: %.4f, Mega atom updates/s: %.4f\n",
-		    T_accum, atom->Nlocal * param.ntimes/T_accum/1.E6);
+    if(!csv) {
+        printf("Total time: %.4f, Mega atom updates/s: %.4f\n", T_accum, atoms_updates_per_sec / 1.E6);
+    } else {
+        printf("steps,unit cells,atoms/unit cell,total atoms,total vol.(kB),atoms vol.(kB),neigh vol.(kB),time(s),atom upds/s(M)\n");
+        printf("%d,%dx%dx%d,%d,%d,%.4f,%.4f,%.4f,%.4f,%.4f\n",
+            param.ntimes, param.nx, param.ny, param.nz, atoms_per_unit_cell, atom->Nlocal,
+            estim_volume / 1.E3, estim_atom_volume / 1.E3, estim_neighbors_volume / 1.E3, T_accum, atoms_updates_per_sec / 1.E6);
+    }
+
     LIKWID_MARKER_CLOSE;
     return EXIT_SUCCESS;
 }
