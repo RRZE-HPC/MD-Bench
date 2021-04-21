@@ -136,9 +136,9 @@ int main(int argc, const char *argv[]) {
                     fmod = (fmod + 1) % 3;
                 }
 
-                MD_FLOAT offset_x = (fac_x > 0) ? 1.0 / (fac_x - 1) : 0.0;
-                MD_FLOAT offset_y = (fac_y > 0) ? 1.0 / (fac_y - 1) : 0.0;
-                MD_FLOAT offset_z = (fac_z > 0) ? 1.0 / (fac_z - 1) : 0.0;
+                MD_FLOAT offset_x = (fac_x > 1) ? 1.0 / (fac_x - 1) : (int)fac_x;
+                MD_FLOAT offset_y = (fac_y > 1) ? 1.0 / (fac_y - 1) : (int)fac_y;
+                MD_FLOAT offset_z = (fac_z > 1) ? 1.0 / (fac_z - 1) : (int)fac_z;
                 for(int ii = 0; ii < fac_x; ++ii) {
                     for(int jj = 0; jj < fac_y; ++jj) {
                         for(int kk = 0; kk < fac_z; ++kk) {
