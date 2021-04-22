@@ -58,6 +58,7 @@ int main(int argc, const char *argv[]) {
     Parameter param;
     int atoms_per_unit_cell = 8;
     int csv = 0;
+    double freq = 0.0;
 
     LIKWID_MARKER_INIT;
     LIKWID_MARKER_REGISTER("force");
@@ -91,6 +92,11 @@ int main(int argc, const char *argv[]) {
             atoms_per_unit_cell = atoi(argv[++i]);
             continue;
         }
+        if((strcmp(argv[i], "-f") == 0))
+        {
+            freq = atof(argv[++i]) * 1.E9;
+            continue;
+        }
         if((strcmp(argv[i], "-csv") == 0))
         {
             csv = 1;
@@ -103,6 +109,8 @@ int main(int argc, const char *argv[]) {
             printf("-n / --nsteps <int>:  set number of timesteps for simulation\n");
             printf("-nx/-ny/-nz <int>:    set linear dimension of systembox in x/y/z direction\n");
             printf("-na <int>:            set number of atoms per unit cell\n");
+            printf("-f <real>:            set CPU frequency (GHz) and display average cycles per atom and neighbors\n");
+            printf("-csv:                 set output as CSV style\n");
             printf(HLINE);
             exit(EXIT_SUCCESS);
         }
@@ -192,14 +200,29 @@ int main(int argc, const char *argv[]) {
     E = getTimeStamp();
     double T_accum = E-S;
     const double atoms_updates_per_sec = atom->Nlocal * param.ntimes / T_accum;
+    const double cycles_per_atom = T_accum * freq / (atom->Nlocal * param.ntimes);
+    const double cycles_per_neigh = T_accum * freq / (atom->Nlocal * (atoms_per_unit_cell - 1) * param.ntimes);
 
     if(!csv) {
         printf("Total time: %.4f, Mega atom updates/s: %.4f\n", T_accum, atoms_updates_per_sec / 1.E6);
+        if(freq > 0.0) {
+            printf("Cycles per atom: %.4f, Cycles per neighbor: %.4f\n", cycles_per_atom, cycles_per_neigh);
+        }
     } else {
-        printf("steps,unit cells,atoms/unit cell,total atoms,total vol.(kB),atoms vol.(kB),neigh vol.(kB),time(s),atom upds/s(M)\n");
-        printf("%d,%dx%dx%d,%d,%d,%.4f,%.4f,%.4f,%.4f,%.4f\n",
+        printf("steps,unit cells,atoms/unit cell,total atoms,total vol.(kB),atoms vol.(kB),neigh vol.(kB),time(s),atom upds/s(M)");
+        if(freq > 0.0) {
+            printf(",cy/atom,cy/neigh");
+        }
+        printf("\n");
+
+        printf("%d,%dx%dx%d,%d,%d,%.4f,%.4f,%.4f,%.4f,%.4f",
             param.ntimes, param.nx, param.ny, param.nz, atoms_per_unit_cell, atom->Nlocal,
             estim_volume / 1.E3, estim_atom_volume / 1.E3, estim_neighbors_volume / 1.E3, T_accum, atoms_updates_per_sec / 1.E6);
+
+        if(freq > 0.0) {
+            printf(",%.4f,%.4f", cycles_per_atom, cycles_per_neigh);
+        }
+        printf("\n");
     }
 
     LIKWID_MARKER_CLOSE;
