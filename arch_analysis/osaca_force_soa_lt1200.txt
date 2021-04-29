@@ -1,0 +1,69 @@
+iwia021h@testfront1:~/MD-Bench/asm$ /home/hpc/iwia/iwia021h/.local/bin/osaca --ignore-unknown --arch=CSX force_soa_lt1200_markers.s 
+Open Source Architecture Code Analyzer (OSACA) - 0.3.14
+Analyzed file:      force_soa_lt1200_markers.s
+Architecture:       CSX
+Timestamp:          2021-04-29 15:39:58
+
+
+ P - Throughput of LOAD operation can be hidden behind a past or future STORE instruction
+ * - Instruction micro-ops not bound to a port
+ X - No throughput/latency information for this instruction in data file
+
+
+Combined Analysis Report
+------------------------
+                                     Port pressure in cycles                                     
+     |  0   - 0DV  |  1   |  2   -  2D  |  3   -  3D  |  4   |  5   |  6   |  7   ||  CP  | LCD  |
+-------------------------------------------------------------------------------------------------
+ 253 |             |      |             |             |      |      |      |      ||      |      |   # LOE rax rdx rcx rbp rsi rdi r8 r10 r11 r12 r14 ebx r9d r13d xmm8 xmm9 xmm10 ymm17 ymm18 zmm0 zmm1 zmm2 zmm7 zmm11 zmm12 zmm13 zmm14 zmm15 zmm16 zmm19
+ 254 |             |      |             |             |      |      |      |      ||      |      |   ..B1.22:                        # Preds ..B1.22 ..B1.21
+ 255 |             |      |             |             |      |      |      |      ||      |      |   # Execution count [2.50e+01]
+ 256 |             |      |             |             |      |      |      |      ||      |      | X vpcmpeqb  %xmm0, %xmm0, %k2                             #70.36
+ 257 | 0.00        | 0.50 |             |             |      | 0.00 | 0.50 |      ||      |      |   addl      $8, %r9d                                      #67.9
+ 258 |             |      |             |             |      |      |      |      ||      |      | X vpcmpeqb  %xmm0, %xmm0, %k1                             #69.36
+ 259 |             |      |             |             |      |      |      |      ||      |      | X vpcmpeqb  %xmm0, %xmm0, %k3                             #71.36
+ 260 |             |      | 0.50   0.50 | 0.50   0.50 |      |      |      |      ||  4.0 |      |   vmovdqu   (%rcx,%r14,4), %ymm3                          #68.21
+ 261 | 0.00        | 0.50 |             |             |      | 0.00 | 0.50 |      ||      |      |   addq      $8, %r14                                      #67.9
+ 262 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vpxord    %zmm5, %zmm5, %zmm5                           #70.36
+ 263 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vpxord    %zmm4, %zmm4, %zmm4                           #69.36
+ 264 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vpxord    %zmm6, %zmm6, %zmm6                           #71.36
+ 265 | 1.50        | 0.50 | 4.00   0.50 | 4.00   0.50 |      | 0.50 | 0.50 |      ||  4.0 |      |   vgatherdpd (%rax,%ymm3,8), %zmm5{%k2}                   #70.36
+ 266 | 1.50        | 0.50 | 4.00   0.50 | 4.00   0.50 |      | 0.50 | 0.50 |      ||      |      |   vgatherdpd (%rdx,%ymm3,8), %zmm4{%k1}                   #69.36
+ 267 | 1.50        | 0.50 | 4.00   0.50 | 4.00   0.50 |      | 0.50 | 0.50 |      ||      |      |   vgatherdpd (%rsi,%ymm3,8), %zmm6{%k3}                   #71.36
+ 268 | 0.50        |      |             |             |      | 0.50 |      |      ||  4.0 |      |   vsubpd    %zmm5, %zmm1, %zmm29                          #70.36
+ 269 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vsubpd    %zmm4, %zmm0, %zmm28                          #69.36
+ 270 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vsubpd    %zmm6, %zmm2, %zmm31                          #71.36
+ 271 | 0.50        |      |             |             |      | 0.50 |      |      ||  4.0 |      |   vmulpd    %zmm29, %zmm29, %zmm20                        #72.49
+ 272 | 0.50        |      |             |             |      | 0.50 |      |      ||  4.0 |      |   vfmadd231pd %zmm28, %zmm28, %zmm20                      #72.49
+ 273 | 0.50        |      |             |             |      | 0.50 |      |      ||  4.0 |      |   vfmadd231pd %zmm31, %zmm31, %zmm20                      #72.63
+ 274 | 2.50        |      |             |             |      | 0.50 |      |      ||  8.0 |      |   vrcp14pd  %zmm20, %zmm27                                #75.38
+ 275 |             |      |             |             |      | 1.00 |      |      ||      |      |   vcmppd    $1, %zmm16, %zmm20, %k5                       #74.22
+ 276 |             |      |             |             |      | 1.00 |      |      ||      |      |   vfpclasspd $30, %zmm27, %k0                             #75.38
+ 277 | 0.50        |      | 0.50   0.50 | 0.50   0.50 |      | 0.50 |      |      ||  4.0 |      |   vfnmadd213pd .L_2il0floatpacket.5(%rip){1to8}, %zmm27, %zmm20 #75.38
+ 278 | 1.00        |      |             |             |      |      |      |      ||      |      |   knotw     %k0, %k4                                      #75.38
+ 279 | 0.50        |      |             |             |      | 0.50 |      |      ||  4.0 |      |   vmulpd    %zmm20, %zmm20, %zmm21                        #75.38
+ 280 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vfmadd213pd %zmm27, %zmm20, %zmm27{%k4}                 #75.38
+ 281 | 0.50        |      |             |             |      | 0.50 |      |      ||  4.0 |      |   vfmadd213pd %zmm27, %zmm21, %zmm27{%k4}                 #75.38
+ 282 | 0.50        |      |             |             |      | 0.50 |      |      ||  4.0 |      |   vmulpd    %zmm15, %zmm27, %zmm22                        #76.38
+ 283 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vmulpd    %zmm14, %zmm27, %zmm24                        #77.54
+ 284 | 0.50        |      |             |             |      | 0.50 |      |      ||  4.0 |      |   vmulpd    %zmm22, %zmm27, %zmm25                        #76.44
+ 285 | 0.50        |      |             |             |      | 0.50 |      |      ||  4.0 |      |   vmulpd    %zmm25, %zmm27, %zmm23                        #76.50
+ 286 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vfmsub213pd %zmm7, %zmm25, %zmm27                       #77.54
+ 287 | 0.50        |      |             |             |      | 0.50 |      |      ||  4.0 |      |   vmulpd    %zmm24, %zmm23, %zmm26                        #77.61
+ 288 | 0.00        |      |             |             |      | 1.00 |      |      ||  4.0 |      |   vmulpd    %zmm27, %zmm26, %zmm30                        #77.67
+ 289 | 0.00        |      |             |             |      | 1.00 |      |      ||      |      |   vfmadd231pd %zmm28, %zmm30, %zmm13{%k5}                 #78.17
+ 290 | 0.00        |      |             |             |      | 1.00 |      |      ||      |  4.0 |   vfmadd231pd %zmm29, %zmm30, %zmm12{%k5}                 #79.17
+ 291 | 0.00        |      |             |             |      | 1.00 |      |      ||  4.0 |      |   vfmadd231pd %zmm31, %zmm30, %zmm11{%k5}                 #80.17
+ 292 | 0.00        | 0.50 |             |             |      | 0.00 | 0.50 |      ||      |      |   cmpl      %ebx, %r9d                                    #67.9
+ 293 |             |      |             |             |      |      |      |      ||      |      | * jb        ..B1.22       # Prob 82%                      #67.9
+
+       17.5          3.00   13.0   2.50   13.0   2.50          17.5   3.00           68.0    4   
+
+
+Loop-Carried Dependencies Analysis Report
+-----------------------------------------
+ 257 |  1.0 | addl      $8, %r9d                                      #67.9| [257]
+ 261 |  1.0 | addq      $8, %r14                                      #67.9| [261]
+ 290 |  4.0 | vfmadd231pd %zmm29, %zmm30, %zmm12{%k5}                 #79.17| [290]
+ 289 |  4.0 | vfmadd231pd %zmm28, %zmm30, %zmm13{%k5}                 #78.17| [289]
+ 291 |  4.0 | vfmadd231pd %zmm31, %zmm30, %zmm11{%k5}                 #80.17| [291]

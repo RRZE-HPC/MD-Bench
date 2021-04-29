@@ -201,7 +201,7 @@ int main(int argc, const char *argv[]) {
     double T_accum = E-S;
     const double atoms_updates_per_sec = atom->Nlocal * param.ntimes / T_accum;
     const double cycles_per_atom = T_accum * freq / (atom->Nlocal * param.ntimes);
-    const double cycles_per_neigh = T_accum * freq / (atom->Nlocal * (atoms_per_unit_cell - 1) * param.ntimes);
+    const double cycles_per_neigh = cycles_per_atom / (atoms_per_unit_cell - 1);
 
     if(!csv) {
         printf("Total time: %.4f, Mega atom updates/s: %.4f\n", T_accum, atoms_updates_per_sec / 1.E6);
