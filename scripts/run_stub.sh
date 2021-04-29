@@ -1,6 +1,6 @@
 #!/bin/bash
 
-while getopts "a:f:n:r:x:y:z:" flag; do
+while getopts "a:f:n:o:r:x:y:z:" flag; do
     case "${flag}" in
         a) atoms_per_unit_cell=${OPTARG};;
         f) frequency=${OPTARG};;
