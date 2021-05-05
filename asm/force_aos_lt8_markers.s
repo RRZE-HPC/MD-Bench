@@ -355,6 +355,7 @@ computeForce:
         ja        ..B1.38       # Prob 50%                      #67.9
         movl    $111,%ebx       #IACA/OSACA START MARKER
         .byte   100,103,144     #IACA/OSACA START MARKER
+        # LLVM-MCA-BEGIN
                                 # LOE rax rdx rcx rbp rsi rdi r8 r9 r10 r11d r14d xmm6 xmm7 xmm12 ymm15 ymm16 zmm5 zmm8 zmm9 zmm10 zmm11 zmm13 zmm14
 ..B1.33:                        # Preds ..B1.32
                                 # Execution count [2.50e+01]
@@ -415,6 +416,7 @@ computeForce:
         vfmadd231pd %zmm23, %zmm22, %zmm11{%k3}                 #80.17
         movl    $222,%ebx       #IACA/OSACA END MARKER
         .byte   100,103,144     #IACA/OSACA END MARKER
+        # LLVM-MCA-END
                                 # LOE rax rdx rbp rsi rdi r8 r9 r10 ymm15 ymm16 zmm5 zmm8 zmm9 zmm10 zmm11 zmm13 zmm14
 ..B1.38:                        # Preds ..B1.23 ..B1.37 ..B1.32
                                 # Execution count [4.50e+00]

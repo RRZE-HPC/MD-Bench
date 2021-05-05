@@ -27,12 +27,12 @@
 #include <parameter.h>
 #include <atom.h>
 
-double computeForce(
-        Parameter *param,
-        Atom *atom,
-        Neighbor *neighbor,
-        int profile)
-{
+// Number of times to compute the most internal loop
+#ifndef INTERNAL_LOOP_NTIMES
+#define INTERNAL_LOOP_NTIMES    1
+#endif
+
+double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor) {
     int Nlocal = atom->Nlocal;
     int* neighs;
     MD_FLOAT cutforcesq = param->cutforce * param->cutforce;
@@ -45,10 +45,6 @@ double computeForce(
         fx[i] = 0.0;
         fy[i] = 0.0;
         fz[i] = 0.0;
-    }
-
-    if(profile) {
-    //    LIKWID_MARKER_START("force");
     }
 
 #pragma omp parallel for
@@ -64,30 +60,28 @@ double computeForce(
 
 //	printf("%d: %d\n", i, numneighs);
 
-        for(int k = 0; k < numneighs; k++) {
-            int j = neighs[k];
-            MD_FLOAT delx = xtmp - atom_x(j);
-            MD_FLOAT dely = ytmp - atom_y(j);
-            MD_FLOAT delz = ztmp - atom_z(j);
-            MD_FLOAT rsq = delx * delx + dely * dely + delz * delz;
+        for(int n = 0; n < INTERNAL_LOOP_NTIMES; n++) {
+            for(int k = 0; k < numneighs; k++) {
+                int j = neighs[k];
+                MD_FLOAT delx = xtmp - atom_x(j);
+                MD_FLOAT dely = ytmp - atom_y(j);
+                MD_FLOAT delz = ztmp - atom_z(j);
+                MD_FLOAT rsq = delx * delx + dely * dely + delz * delz;
 
-            if(rsq < cutforcesq) {
-                MD_FLOAT sr2 = 1.0 / rsq;
-                MD_FLOAT sr6 = sr2 * sr2 * sr2 * sigma6;
-                MD_FLOAT force = 48.0 * sr6 * (sr6 - 0.5) * sr2 * epsilon;
-                fix += delx * force;
-                fiy += dely * force;
-                fiz += delz * force;
+                if(rsq < cutforcesq) {
+                    MD_FLOAT sr2 = 1.0 / rsq;
+                    MD_FLOAT sr6 = sr2 * sr2 * sr2 * sigma6;
+                    MD_FLOAT force = 48.0 * sr6 * (sr6 - 0.5) * sr2 * epsilon;
+                    fix += delx * force;
+                    fiy += dely * force;
+                    fiz += delz * force;
+                }
             }
         }
 
         fx[i] += fix;
         fy[i] += fiy;
         fz[i] += fiz;
-    }
-
-    if(profile) {
-     //   LIKWID_MARKER_STOP("force");
     }
 
     return 0.0;
