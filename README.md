@@ -2,8 +2,6 @@
 
 A simple, sequential  C implementation of the [Mantevo miniMD](https://github.com/Mantevo/miniMD) benchmark in less than 1000 LOC.
 
-A $x^2$ test.
-
 ## Build
 
 1. Open `config.mk` and edit the `TAG` value according to the tool chain used. Currently supported is GCC, CLANG (LLVM), and ICC (Intel).
