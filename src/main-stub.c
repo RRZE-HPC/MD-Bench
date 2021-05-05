@@ -16,7 +16,7 @@
 #define LATTICE_DISTANCE    10.0
 #define NEIGH_DISTANCE      1.0
 
-extern double computeForce( Parameter*, Atom*, Neighbor*, int);
+extern double computeForce( Parameter*, Atom*, Neighbor*);
 
 void init(Parameter *param) {
     param->epsilon = 1.0;
@@ -188,19 +188,19 @@ int main(int argc, const char *argv[]) {
     DEBUG("Building neighbor lists...\n");
     buildNeighbor(atom, &neighbor);
     DEBUG("Computing forces...\n");
-    computeForce(&param, atom, &neighbor, 0);
+    computeForce(&param, atom, &neighbor);
 
     double S, E;
     S = getTimeStamp();
     LIKWID_MARKER_START("force");
     for(int i = 0; i < param.ntimes; i++) {
-        computeForce(&param, atom, &neighbor, 1);
+        computeForce(&param, atom, &neighbor);
     }
     LIKWID_MARKER_STOP("force");
     E = getTimeStamp();
     double T_accum = E-S;
-    const double atoms_updates_per_sec = atom->Nlocal * param.ntimes / T_accum;
-    const double cycles_per_atom = T_accum * freq / (atom->Nlocal * param.ntimes);
+    const double atoms_updates_per_sec = (double)(atom->Nlocal * INTERNAL_LOOP_NTIMES * param.ntimes) / T_accum;
+    const double cycles_per_atom = T_accum * freq / (double)(atom->Nlocal * param.ntimes * INTERNAL_LOOP_NTIMES);
     const double cycles_per_neigh = cycles_per_atom / (double)(atoms_per_unit_cell - 1);
 
     if(!csv) {
