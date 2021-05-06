@@ -29,6 +29,11 @@
 #define MD_FLOAT double
 #endif
 
+// Number of times to compute the most internal loop
+#ifndef INTERNAL_LOOP_NTIMES
+#define INTERNAL_LOOP_NTIMES 1
+#endif
+
 typedef struct {
     MD_FLOAT epsilon;
     MD_FLOAT sigma6;

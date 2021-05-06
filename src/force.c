@@ -27,11 +27,6 @@
 #include <parameter.h>
 #include <atom.h>
 
-// Number of times to compute the most internal loop
-#ifndef INTERNAL_LOOP_NTIMES
-#define INTERNAL_LOOP_NTIMES    1
-#endif
-
 double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor) {
     int Nlocal = atom->Nlocal;
     int* neighs;
