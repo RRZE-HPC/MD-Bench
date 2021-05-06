@@ -1,0 +1,72 @@
+iwia021h@testfront1:~/MD-Bench/asm$ iaca -arch SKX force_soa_lt1200_markers.o 
+Intel(R) Architecture Code Analyzer Version -  v3.0-28-g1ba2cbb build date: 2017-10-23;16:42:45
+Analyzed File -  force_soa_lt1200_markers.o
+Binary Format - 64Bit
+Architecture  -  SKX
+Analysis Type - Throughput
+
+Throughput Analysis Report
+--------------------------
+Block Throughput: 30.25 Cycles       Throughput Bottleneck: Backend
+Loop Count:  23
+Port Binding In Cycles Per Iteration:
+--------------------------------------------------------------------------------------------------
+|  Port  |   0   -  DV   |   1   |   2   -  D    |   3   -  D    |   4   |   5   |   6   |   7   |
+--------------------------------------------------------------------------------------------------
+| Cycles | 16.0     0.0  |  2.0  | 13.0    13.0  | 13.0    13.0  |  0.0  | 19.0  |  3.0  |  0.0  |
+--------------------------------------------------------------------------------------------------
+
+DV - Divider pipe (on port 0)
+D - Data fetch pipe (on ports 2 and 3)
+F - Macro Fusion with the previous instruction occurred
+* - instruction micro-ops not bound to a port
+^ - Micro Fusion occurred
+# - ESP Tracking sync uop was issued
+@ - SSE instruction followed an AVX256/AVX512 instruction, dozens of cycles penalty is expected
+X - instruction not supported, was not accounted in Analysis
+
+| Num Of   |                    Ports pressure in cycles                         |      |
+|  Uops    |  0  - DV    |  1   |  2  -  D    |  3  -  D    |  4   |  5   |  6   |  7   |
+-----------------------------------------------------------------------------------------
+|   1      |             |      |             |             |      | 1.0  |      |      | vpcmpeqb k2, xmm0, xmm0
+|   1      |             | 1.0  |             |             |      |      |      |      | add r9d, 0x8
+|   1      |             |      |             |             |      | 1.0  |      |      | vpcmpeqb k1, xmm0, xmm0
+|   1      |             |      |             |             |      | 1.0  |      |      | vpcmpeqb k3, xmm0, xmm0
+|   1      |             |      | 1.0     1.0 |             |      |      |      |      | vmovdqu ymm3, ymmword ptr [rcx+r14*4]
+|   1      |             | 1.0  |             |             |      |      |      |      | add r14, 0x8
+|   1*     |             |      |             |             |      |      |      |      | vpxord zmm5, zmm5, zmm5
+|   1*     |             |      |             |             |      |      |      |      | vpxord zmm4, zmm4, zmm4
+|   1*     |             |      |             |             |      |      |      |      | vpxord zmm6, zmm6, zmm6
+|   5^     | 1.0         |      | 4.0     4.0 | 4.0     4.0 |      | 1.0  | 1.0  |      | vgatherdpd zmm5, k2, zmmword ptr [rax+ymm3*8]
+|   5^     | 1.0         |      | 4.0     4.0 | 4.0     4.0 |      | 1.0  | 1.0  |      | vgatherdpd zmm4, k1, zmmword ptr [rdx+ymm3*8]
+|   5^     | 1.0         |      | 4.0     4.0 | 4.0     4.0 |      | 1.0  | 1.0  |      | vgatherdpd zmm6, k3, zmmword ptr [rsi+ymm3*8]
+|   1      |             |      |             |             |      | 1.0  |      |      | vsubpd zmm29, zmm1, zmm5
+|   1      | 1.0         |      |             |             |      |      |      |      | vsubpd zmm28, zmm0, zmm4
+|   1      |             |      |             |             |      | 1.0  |      |      | vsubpd zmm31, zmm2, zmm6
+|   1      | 1.0         |      |             |             |      |      |      |      | vmulpd zmm20, zmm29, zmm29
+|   1      |             |      |             |             |      | 1.0  |      |      | vfmadd231pd zmm20, zmm28, zmm28
+|   1      | 1.0         |      |             |             |      |      |      |      | vfmadd231pd zmm20, zmm31, zmm31
+|   3      | 2.0         |      |             |             |      | 1.0  |      |      | vrcp14pd zmm27, zmm20
+|   1      |             |      |             |             |      | 1.0  |      |      | vcmppd k5, zmm20, zmm16, 0x1
+|   1      |             |      |             |             |      | 1.0  |      |      | vfpclasspd k0, zmm27, 0x1e
+|   2^     | 1.0         |      |             | 1.0     1.0 |      |      |      |      | vfnmadd213pd zmm20, zmm27, qword ptr [rip]{1to8}
+|   1      | 1.0         |      |             |             |      |      |      |      | knotw k4, k0
+|   1      |             |      |             |             |      | 1.0  |      |      | vmulpd zmm21, zmm20, zmm20
+|   1      |             |      |             |             |      | 1.0  |      |      | vfmadd213pd zmm27{k4}, zmm20, zmm27
+|   1      | 1.0         |      |             |             |      |      |      |      | vfmadd213pd zmm27{k4}, zmm21, zmm27
+|   1      |             |      |             |             |      | 1.0  |      |      | vmulpd zmm22, zmm27, zmm15
+|   1      | 1.0         |      |             |             |      |      |      |      | vmulpd zmm24, zmm27, zmm14
+|   1      |             |      |             |             |      | 1.0  |      |      | vmulpd zmm25, zmm27, zmm22
+|   1      | 1.0         |      |             |             |      |      |      |      | vmulpd zmm23, zmm27, zmm25
+|   1      |             |      |             |             |      | 1.0  |      |      | vfmsub213pd zmm27, zmm25, zmm7
+|   1      | 1.0         |      |             |             |      |      |      |      | vmulpd zmm26, zmm23, zmm24
+|   1      |             |      |             |             |      | 1.0  |      |      | vmulpd zmm30, zmm26, zmm27
+|   1      | 1.0         |      |             |             |      |      |      |      | vfmadd231pd zmm13{k5}, zmm30, zmm28
+|   1      |             |      |             |             |      | 1.0  |      |      | vfmadd231pd zmm12{k5}, zmm30, zmm29
+|   1      | 1.0         |      |             |             |      |      |      |      | vfmadd231pd zmm11{k5}, zmm30, zmm31
+|   1*     |             |      |             |             |      |      |      |      | cmp r9d, ebx
+|   0*F    |             |      |             |             |      |      |      |      | jb 0xffffffffffffff22
+Total Num Of Uops: 52
+Analysis Notes:
+Backend allocation was stalled due to unavailable allocation resources.
+There were bubbles in the frontend.
