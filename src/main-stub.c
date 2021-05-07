@@ -199,8 +199,8 @@ int main(int argc, const char *argv[]) {
     LIKWID_MARKER_STOP("force");
     E = getTimeStamp();
     double T_accum = E-S;
-    const double atoms_updates_per_sec = (double)(atom->Nlocal * INTERNAL_LOOP_NTIMES * param.ntimes) / T_accum;
-    const double cycles_per_atom = T_accum * freq / (double)(atom->Nlocal * param.ntimes * INTERNAL_LOOP_NTIMES);
+    const double atoms_updates_per_sec = (double)(atom->Nlocal) / T_accum * (double)(param.ntimes * INTERNAL_LOOP_NTIMES);
+    const double cycles_per_atom = T_accum / (double)(atom->Nlocal) / (double)(param.ntimes * INTERNAL_LOOP_NTIMES) * freq;
     const double cycles_per_neigh = cycles_per_atom / (double)(atoms_per_unit_cell - 1);
 
     if(!csv) {

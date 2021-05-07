@@ -29,7 +29,7 @@ for timesteps in ${TIMESTEPS}; do
             for ny in ${NY}; do
                 for nz in ${NZ}; do
                     best_perf=
-                    best_output=
+                    best_output="invalid"
                     for nruns in ${NRUNS}; do
                         output=$(
                             ./${EXEC} -f ${FREQUENCY} -n ${timesteps} -na ${atoms_per_unit_cell} -nx ${nx} -ny ${ny} -nz ${nz} -csv |
@@ -39,7 +39,7 @@ for timesteps in ${TIMESTEPS}; do
                         if [ -z "$best_perf" ]; then
                             best_perf="$perf"
                             best_output="$output"
-                        elif (( $(echo "$perf < $best_perf" | bc -l) )); then
+                        elif (( $(echo "$perf > 0.0 && $perf < $best_perf" | bc -l) )); then
                             best_perf="$perf"
                             best_output="$output"
                         fi
