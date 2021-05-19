@@ -23,6 +23,10 @@ ifneq ($(INTERNAL_LOOP_NTIMES),)
     DEFINES += -DINTERNAL_LOOP_NTIMES=$(INTERNAL_LOOP_NTIMES)
 endif
 
+ifneq ($(EXPLICIT_TYPES),)
+    DEFINES += -DEXPLICIT_TYPES
+endif
+
 VPATH     = $(SRC_DIR)
 ASM       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.s,$(wildcard $(SRC_DIR)/*.c))
 OBJ       = $(filter-out $(BUILD_DIR)/main%,$(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c)))
