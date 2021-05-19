@@ -196,7 +196,9 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor)
             MD_FLOAT ytmp = atom_y(i);
             MD_FLOAT ztmp = atom_z(i);
             int ibin = coord2bin(xtmp, ytmp, ztmp);
-
+            #ifdef EXPLICIT_TYPES
+            int type_i = atom->type[i];
+            #endif
             for(int k = 0; k < nstencil; k++) {
                 int jbin = ibin + stencil[k];
                 int* loc_bin = &bins[jbin * atoms_per_bin];
@@ -213,7 +215,13 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor)
                     MD_FLOAT delz = ztmp - atom_z(j);
                     MD_FLOAT rsq = delx * delx + dely * dely + delz * delz;
 
-                    if( rsq <= cutneighsq ) {
+                    #ifdef EXPLICIT_TYPES
+                    int type_j = atom->type[j];
+                    const MD_FLOAT cutoff = atom->cutneighsq[type_i * atom->ntypes + type_j];
+                    #else
+                    const MD_FLOAT cutoff = cutneighsq;
+                    #endif
+                    if( rsq <= cutoff ) {
                         neighptr[n++] = j;
                     }
                 }

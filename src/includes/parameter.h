@@ -40,6 +40,7 @@ typedef struct {
     MD_FLOAT temp;
     MD_FLOAT rho;
     MD_FLOAT mass;
+    int ntypes;
     int ntimes;
     int nstat;
     int every;

@@ -16,12 +16,13 @@
 #define LATTICE_DISTANCE    10.0
 #define NEIGH_DISTANCE      1.0
 
-extern double computeForce( Parameter*, Atom*, Neighbor*);
+extern double computeForce( Parameter*, Atom*, Neighbor*, int);
 
 void init(Parameter *param) {
     param->epsilon = 1.0;
     param->sigma6 = 1.0;
     param->rho = 0.8442;
+    param->ntypes = 4;
     param->ntimes = 200;
     param->nx = 4;
     param->ny = 4;
@@ -49,6 +50,7 @@ void init(Parameter *param) {
                                         atom->vx[atom->Nlocal] = vy;                        \
                                         atom->vy[atom->Nlocal] = vy;                        \
                                         atom->vz[atom->Nlocal] = vz;                        \
+                                        atom->type[atom->Nlocal] = rand() % atom->ntypes;   \
                                         atom->Nlocal++
 
 int main(int argc, const char *argv[]) {
@@ -123,6 +125,20 @@ int main(int argc, const char *argv[]) {
     DEBUG("Initializing atoms...\n");
     initAtom(atom);
 
+    #ifdef EXPLICIT_TYPES
+    atom->ntypes = param->ntypes;
+    atom->epsilon = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
+    atom->sigma6 = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
+    atom->cutforcesq = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
+    atom->cutneighsq = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
+    for(int i = 0; i < atom->ntypes * atom->ntypes; i++) {
+        atom->epsilon[i] = param->epsilon;
+        atom->sigma6[i] = param->sigma6;
+        atom->cutneighsq[i] = param->cutneigh * param->cutneigh;
+        atom->cutforcesq[i] = param->cutforce * param->cutforce;
+    }
+    #endif
+
     DEBUG("Creating atoms...\n");
     for(int i = 0; i < param.nx; ++i) {
         for(int j = 0; j < param.ny; ++j) {
@@ -173,6 +189,7 @@ int main(int argc, const char *argv[]) {
 
     if(!csv) {
         printf("Number of timesteps: %d\n", param.ntimes);
+        printf("Number of times to compute the most internal loop: %d\n", INTERNAL_LOOP_NTIMES);
         printf("System size (unit cells): %dx%dx%d\n", param.nx, param.ny, param.nz);
         printf("Atoms per unit cell: %d\n", atoms_per_unit_cell);
         printf("Total number of atoms: %d\n", atom->Nlocal);
@@ -188,13 +205,13 @@ int main(int argc, const char *argv[]) {
     DEBUG("Building neighbor lists...\n");
     buildNeighbor(atom, &neighbor);
     DEBUG("Computing forces...\n");
-    computeForce(&param, atom, &neighbor);
+    computeForce(&param, atom, &neighbor, 1);
 
     double S, E;
     S = getTimeStamp();
     LIKWID_MARKER_START("force");
     for(int i = 0; i < param.ntimes; i++) {
-        computeForce(&param, atom, &neighbor);
+        computeForce(&param, atom, &neighbor, INTERNAL_LOOP_NTIMES);
     }
     LIKWID_MARKER_STOP("force");
     E = getTimeStamp();
