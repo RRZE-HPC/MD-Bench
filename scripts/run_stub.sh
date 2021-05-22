@@ -33,7 +33,8 @@ for timesteps in ${TIMESTEPS}; do
                     for nruns in ${NRUNS}; do
                         output=$(
                             ./${EXEC} -f ${FREQUENCY} -n ${timesteps} -na ${atoms_per_unit_cell} -nx ${nx} -ny ${ny} -nz ${nz} -csv |
-                            grep -v steps
+                            grep -v steps |
+                            grep -iv resize
                         )
                         perf=$(echo $output | cut -d',' -f8)
                         if [ -z "$best_perf" ]; then

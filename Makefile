@@ -46,7 +46,8 @@ ${TARGET}-%: $(BUILD_DIR) $(OBJ) $(SRC_DIR)/main-%.c
 
 asm:  $(BUILD_DIR) $(ASM)
 
-$(BUILD_DIR)/%.o:  %.c
+$(BUILD_DIR)/%.o:  %.s
+#$(BUILD_DIR)/%.o:  %.c
 	@echo "===>  COMPILE  $@"
 	$(Q)$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
 	$(Q)$(CC) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
