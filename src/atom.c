@@ -41,6 +41,14 @@ void initAtom(Atom *atom)
     atom->Nlocal = 0;
     atom->Nghost = 0;
     atom->Nmax   = 0;
+    #ifdef EXPLICIT_TYPES
+    atom->type = NULL;
+    atom->ntypes = 0;
+    atom->epsilon = NULL;
+    atom->sigma6 = NULL;
+    atom->cutforcesq = NULL;
+    atom->cutneighsq = NULL;
+    #endif
 }
 
 void createAtom(Atom *atom, Parameter *param)
@@ -50,6 +58,21 @@ void createAtom(Atom *atom, Parameter *param)
     MD_FLOAT zlo = 0.0; MD_FLOAT zhi = param->zprd;
     atom->Natoms = 4 * param->nx * param->ny * param->nz;
     atom->Nlocal = 0;
+
+    #ifdef EXPLICIT_TYPES
+    atom->ntypes = param->ntypes;
+    atom->epsilon = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
+    atom->sigma6 = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
+    atom->cutforcesq = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
+    atom->cutneighsq = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
+    for(int i = 0; i < atom->ntypes * atom->ntypes; i++) {
+        atom->epsilon[i] = param->epsilon;
+        atom->sigma6[i] = param->sigma6;
+        atom->cutneighsq[i] = param->cutneigh * param->cutneigh;
+        atom->cutforcesq[i] = param->cutforce * param->cutforce;
+    }
+    #endif
+
     MD_FLOAT alat = pow((4.0 / param->rho), (1.0 / 3.0));
     int ilo = (int) (xlo / (0.5 * alat) - 1);
     int ihi = (int) (xhi / (0.5 * alat) + 1);
@@ -119,6 +142,9 @@ void createAtom(Atom *atom, Parameter *param)
                 atom->vx[atom->Nlocal] = vxtmp;
                 atom->vy[atom->Nlocal] = vytmp;
                 atom->vz[atom->Nlocal] = vztmp;
+                #ifdef EXPLICIT_TYPES
+                atom->type[atom->Nlocal] = rand() % atom->ntypes;
+                #endif
                 atom->Nlocal++;
             }
         }
@@ -151,6 +177,9 @@ void growAtom(Atom *atom)
     atom->fx = (MD_FLOAT*) reallocate(atom->fx, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
     atom->fy = (MD_FLOAT*) reallocate(atom->fy, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
     atom->fz = (MD_FLOAT*) reallocate(atom->fz, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
+    #ifdef EXPLICIT_TYPES
+    atom->type = (int *) reallocate(atom->type, ALIGNMENT, atom->Nmax * sizeof(int), nold * sizeof(int));
+    #endif
 }
 
 

@@ -54,6 +54,7 @@ void init(Parameter *param)
     param->epsilon = 1.0;
     param->sigma6 = 1.0;
     param->rho = 0.8442;
+    param->ntypes = 4;
     param->ntimes = 200;
     param->dt = 0.005;
     param->nx = 32;
