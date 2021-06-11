@@ -1,5 +1,5 @@
 # Supported: GCC, CLANG, ICC
-TAG ?= CLANG
+TAG ?= ICC
 ENABLE_LIKWID ?= false
 # SP or DP
 DATA_TYPE ?= DP
