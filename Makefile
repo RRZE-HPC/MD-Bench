@@ -2,12 +2,14 @@
 TARGET	   = MDBench-$(TAG)
 BUILD_DIR  = ./$(TAG)
 SRC_DIR    = ./src
+ASM_DIR    = ./asm
 MAKE_DIR   = ./
 Q         ?= @
 
 #DO NOT EDIT BELOW
 include $(MAKE_DIR)/config.mk
 include $(MAKE_DIR)/include_$(TAG).mk
+include $(MAKE_DIR)/include_LIKWID.mk
 INCLUDES  += -I./src/includes
 
 ifeq ($(strip $(DATA_LAYOUT)),AOS)
@@ -27,10 +29,14 @@ ifneq ($(EXPLICIT_TYPES),)
     DEFINES += -DEXPLICIT_TYPES
 endif
 
-VPATH     = $(SRC_DIR)
+VPATH     = $(SRC_DIR) $(ASM_DIR)
 ASM       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.s,$(wildcard $(SRC_DIR)/*.c))
-OBJ       = $(filter-out $(BUILD_DIR)/main%,$(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c)))
+OVERWRITE:= $(patsubst $(ASM_DIR)/%-new.s, $(BUILD_DIR)/%.o,$(wildcard $(ASM_DIR)/*-new.s))
+OBJ       = $(filter-out $(BUILD_DIR)/main% $(OVERWRITE),$(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c)))
+OBJ      += $(patsubst $(ASM_DIR)/%.s, $(BUILD_DIR)/%.o,$(wildcard $(ASM_DIR)/*.s))
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(OPTIONS) $(INCLUDES)
+
+# $(warning $(OBJ))
 
 ifneq ($(VARIANT),)
 	.DEFAULT_GOAL := ${TARGET}-$(VARIANT)
@@ -44,38 +50,42 @@ ${TARGET}-%: $(BUILD_DIR) $(OBJ) $(SRC_DIR)/main-%.c
 	@echo "===>  LINKING  $(TARGET)-$* "
 	$(Q)${LINKER} $(CPPFLAGS) ${LFLAGS} -o $(TARGET)-$* $(SRC_DIR)/main-$*.c $(OBJ) $(LIBS)
 
-asm:  $(BUILD_DIR) $(ASM)
-
-$(BUILD_DIR)/%.o:  %.s
-#$(BUILD_DIR)/%.o:  %.c
-	@echo "===>  COMPILE  $@"
+$(BUILD_DIR)/%.o:  %.c
+	$(info ===>  COMPILE  $@)
 	$(Q)$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
-	$(Q)$(CC) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
+	$(Q)$(CC) $(CPPFLAGS) -MT $@ -MM  $< > $(BUILD_DIR)/$*.d
 
 $(BUILD_DIR)/%.s:  %.c
-	@echo "===>  GENERATE ASM  $@"
-	$(Q)$(CC) -S $(ASFLAGS)  $(CPPFLAGS) $(CFLAGS) $< -o $@
+	$(info ===>  GENERATE ASM  $@)
+	$(Q)$(CC) -S $(CPPFLAGS) $(CFLAGS) $< -o $@
 
-tags:
-	@echo "===>  GENERATE  TAGS"
-	$(Q)ctags -R
+$(BUILD_DIR)/%.o:  %.s
+	$(info ===>  ASSEMBLE  $@)
+	$(Q)$(AS) $(ASFLAGS) $< -o $@
 
-
-$(BUILD_DIR):
-	@mkdir $(BUILD_DIR)
-
-ifeq ($(findstring $(MAKECMDGOALS),clean),)
--include $(OBJ:.o=.d)
-endif
-
-.PHONY: clean distclean
+.PHONY: clean distclean tags info asm
 
 clean:
-	@echo "===>  CLEAN"
+	$(info ===>  CLEAN)
 	@rm -rf $(BUILD_DIR)
 	@rm -f tags
 
 distclean: clean
-	@echo "===>  DIST CLEAN"
+	$(info ===>  DIST CLEAN)
 	@rm -f $(TARGET)*
 	@rm -f tags
+
+info:
+	$(info $(CFLAGS))
+	$(Q)$(CC) $(VERSION)
+
+asm:  $(BUILD_DIR) $(ASM)
+
+tags:
+	$(info ===>  GENERATE  TAGS)
+	$(Q)ctags -R
+
+$(BUILD_DIR):
+	@mkdir $(BUILD_DIR)
+
+-include $(OBJ:.o=.d)
