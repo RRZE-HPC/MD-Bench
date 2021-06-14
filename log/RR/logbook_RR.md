@@ -62,14 +62,13 @@ Performance Analysis of the MD-Bench mini-app, based on miniMD, focusing on prov
 All steps required to build the software including dependencies
 ------------------------------------------------------------------------------>
 ## How to build software
-
-See README.md.
-Additional notes on the build process:
+* See README.md.
+* Additional notes on the build process:
 **Used Compiler:**  
-Intel Compiler - icc (ICC) 19.0.5.281 20190815
+* Intel Compiler - icc (ICC) 19.0.5.281 20190815
 **Compiler options:**
-AVX512: -Ofast -xCORE-AVX512 -qopt-zmm-usage=high
-AVX2: -fast -xCORE-AVX2
+* AVX512: -Ofast -xCORE-AVX512 -qopt-zmm-usage=high
+* AVX2: -fast -xCORE-AVX2
 
 <!-----------------------------------------------------------------------------
 Describe in detail how to configure and setup the testcases(es)
@@ -92,11 +91,11 @@ the project
 ------------------------------------------------------------------------------>
 # Transfer to Analyst: <NAME-TAG>
 
-* Start date: DD/MM/YYYY
-* Contact HPC center:
-   * Name:
-   * Fon:
-   * E-Mail:
+#* Start date: DD/MM/YYYY
+#* Contact HPC center:
+#   * Name:
+#   * Fon:
+#   * E-Mail:
 
 <!-----------------------------------------------------------------------------
 ###############################################################################
