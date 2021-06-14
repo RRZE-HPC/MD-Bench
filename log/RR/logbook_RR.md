@@ -45,17 +45,19 @@ Formulate a clear and specific performance target
 
 Performance Analysis of the MD-Bench mini-app, based on miniMD, focusing on providing a performance model for molecular dynamics.
 
+<!-----------------------------------------------------------------------------
 ## Customer Info
 
 * Name: <CUSTOMERNAME>
 * E-Mail: john.doe@foo.bar
 * Fon: <PHONENUMBER>
 * Web: <URL>
+------------------------------------------------------------------------------>
 
 ## Application Info
 
-* Name: <APPLICATIONNAME>
-* Domain: <APPLICATIONDOMAIN>
+* Name: MD-Bench
+* Domain: Molecular Dynamics
 * Version: <VERSION>
 
 <!-----------------------------------------------------------------------------
@@ -64,11 +66,11 @@ All steps required to build the software including dependencies
 ## How to build software
 * See README.md.
 * Additional notes on the build process:
-**Used Compiler:**  
-* Intel Compiler - icc (ICC) 19.0.5.281 20190815
-**Compiler options:**
-* AVX512: -Ofast -xCORE-AVX512 -qopt-zmm-usage=high
-* AVX2: -fast -xCORE-AVX2
+* **Used Compiler:**  
+    * Intel Compiler - icc (ICC) 19.0.5.281 20190815
+* **Compiler options:**
+    * AVX512: -Ofast -xCORE-AVX512 -qopt-zmm-usage=high
+    * AVX2: -fast -xCORE-AVX2
 
 <!-----------------------------------------------------------------------------
 Describe in detail how to configure and setup the testcases(es)
@@ -88,14 +90,14 @@ END BLOCK PREAMBLE
 <!-----------------------------------------------------------------------------
 START BLOCK ANALYST - This block is required for any new analyst taking over
 the project
------------------------------------------------------------------------------->
 # Transfer to Analyst: <NAME-TAG>
 
-#* Start date: DD/MM/YYYY
-#* Contact HPC center:
-#   * Name:
-#   * Fon:
-#   * E-Mail:
+* Start date: DD/MM/YYYY
+* Contact HPC center:
+   * Name:
+   * Fon:
+   * E-Mail:
+------------------------------------------------------------------------------>
 
 <!-----------------------------------------------------------------------------
 ###############################################################################
