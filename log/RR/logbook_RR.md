@@ -34,15 +34,16 @@ and maintained during the project.
 * Ticket ID:
 * Home HPC center:
 * Contact HPC center:
-   * Name:
-   * Fon:
-   * E-Mail:
+   * Name: Rafael Ravedutti Lucio Machado
+   * Fon: +49 9131 85 67296
+   * E-Mail: rafael.r.ravedutti@fau.de
 
 <!-----------------------------------------------------------------------------
 Formulate a clear and specific performance target
 ------------------------------------------------------------------------------>
 ## Target
 
+Performance Analysis of the MD-Bench mini-app, based on miniMD, focusing on providing a performance model for molecular dynamics.
 
 ## Customer Info
 
@@ -61,6 +62,14 @@ Formulate a clear and specific performance target
 All steps required to build the software including dependencies
 ------------------------------------------------------------------------------>
 ## How to build software
+
+See README.md.
+Additional notes on the build process:
+**Used Compiler:**  
+Intel Compiler - icc (ICC) 19.0.5.281 20190815
+**Compiler options:**
+AVX512: -Ofast -xCORE-AVX512 -qopt-zmm-usage=high
+AVX2: -fast -xCORE-AVX2
 
 <!-----------------------------------------------------------------------------
 Describe in detail how to configure and setup the testcases(es)
