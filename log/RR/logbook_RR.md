@@ -19,9 +19,17 @@ The Agenda section is a scratchpad area for planning and Todo list
 ------------------------------------------------------------------------------>
 # Agenda
 
-Example for referencing an image:
+* Finish this logbook with current state and results
+* Understand gather-md behavior (AoS and SoA)
+* Use cache simulator with application data access
+    * * How well do we use the gathers?
+* Compare HW. vs SW. gather strategies
+* Disable cache prefetchers
+* Do the same evaluation and results for AVX2
+* Implement EAM potential
 
-![Plot title](figures/example.png "ALT Text")
+
+<!-- ![Plot title](figures/example.png "ALT Text") -->
 
 <!-----------------------------------------------------------------------------
 START BLOCK PREAMBLE -  Global information required in all steps: Add all
@@ -43,7 +51,7 @@ Formulate a clear and specific performance target
 ------------------------------------------------------------------------------>
 ## Target
 
-Performance Analysis of the MD-Bench mini-app, based on miniMD, focusing on providing a performance model for molecular dynamics.
+Performance analysis of the MD-Bench, a molecular dynamics mini-app based on miniMD. The main goal is to provide a performance model for molecular dynamics and evaluate the performance for different strategies on different targets.
 
 <!-----------------------------------------------------------------------------
 ## Customer Info
