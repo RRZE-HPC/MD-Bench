@@ -16,7 +16,7 @@
 #define LATTICE_DISTANCE    10.0
 #define NEIGH_DISTANCE      1.0
 
-extern double computeForce( Parameter*, Atom*, Neighbor*, int);
+extern double computeForce(Parameter*, Atom*, Neighbor*, int);
 
 void init(Parameter *param) {
     param->epsilon = 1.0;
@@ -191,7 +191,7 @@ int main(int argc, const char *argv[]) {
 
     if(!csv) {
         printf("Number of timesteps: %d\n", param.ntimes);
-        printf("Number of times to compute the most internal loop: %d\n", INTERNAL_LOOP_NTIMES);
+        printf("Number of times to compute the neighbors loop: %d\n", NEIGHBORS_LOOP_RUNS);
         printf("System size (unit cells): %dx%dx%d\n", param.nx, param.ny, param.nz);
         printf("Atoms per unit cell: %d\n", atoms_per_unit_cell);
         printf("Total number of atoms: %d\n", atom->Nlocal);
@@ -213,13 +213,13 @@ int main(int argc, const char *argv[]) {
     S = getTimeStamp();
     LIKWID_MARKER_START("force");
     for(int i = 0; i < param.ntimes; i++) {
-        computeForce(&param, atom, &neighbor, INTERNAL_LOOP_NTIMES);
+        computeForce(&param, atom, &neighbor, 0);
     }
     LIKWID_MARKER_STOP("force");
     E = getTimeStamp();
     double T_accum = E-S;
-    const double atoms_updates_per_sec = (double)(atom->Nlocal) / T_accum * (double)(param.ntimes * INTERNAL_LOOP_NTIMES);
-    const double cycles_per_atom = T_accum / (double)(atom->Nlocal) / (double)(param.ntimes * INTERNAL_LOOP_NTIMES) * freq;
+    const double atoms_updates_per_sec = (double)(atom->Nlocal) / T_accum * (double)(param.ntimes * NEIGHBORS_LOOP_RUNS);
+    const double cycles_per_atom = T_accum / (double)(atom->Nlocal) / (double)(param.ntimes * NEIGHBORS_LOOP_RUNS) * freq;
     const double cycles_per_neigh = cycles_per_atom / (double)(atoms_per_unit_cell - 1);
 
     if(!csv) {

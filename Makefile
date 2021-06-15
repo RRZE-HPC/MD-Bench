@@ -21,12 +21,16 @@ else
 DEFINES +=  -DPRECISION=2
 endif
 
-ifneq ($(INTERNAL_LOOP_NTIMES),)
-    DEFINES += -DINTERNAL_LOOP_NTIMES=$(INTERNAL_LOOP_NTIMES)
+ifneq ($(NEIGHBORS_LOOP_RUNS),)
+    DEFINES += -DNEIGHBORS_LOOP_RUNS=$(NEIGHBORS_LOOP_RUNS)
 endif
 
-ifneq ($(EXPLICIT_TYPES),)
+ifeq ($(strip $(EXPLICIT_TYPES)),true)
     DEFINES += -DEXPLICIT_TYPES
+endif
+
+ifeq ($(strip $(MEM_TRACER)),true)
+    DEFINES += -DMEM_TRACER
 endif
 
 VPATH     = $(SRC_DIR) $(ASM_DIR)
@@ -40,6 +44,7 @@ CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(OPTIONS) $(INCLUDES)
 
 ifneq ($(VARIANT),)
 	.DEFAULT_GOAL := ${TARGET}-$(VARIANT)
+    DEFINES += -DVARIANT=$(VARIANT)
 endif
 
 ${TARGET}: $(BUILD_DIR) $(OBJ) $(SRC_DIR)/main.c
