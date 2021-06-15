@@ -47,7 +47,7 @@ typedef enum {
     NUMTIMER
 } timertype;
 
-extern double computeForce( Parameter*, Atom*, Neighbor*, int);
+extern double computeForce(Parameter*, Atom*, Neighbor*, int);
 
 void init(Parameter *param)
 {
@@ -222,7 +222,7 @@ int main (int argc, char** argv)
             timer[NEIGH] += reneighbour(&param, &atom, &neighbor);
         }
 
-        timer[FORCE] += computeForce(&param, &atom, &neighbor, 1);
+        timer[FORCE] += computeForce(&param, &atom, &neighbor, 0);
         finalIntegrate(&param, &atom);
 
         if(!((n + 1) % param.nstat) && (n+1) < param.ntimes) {
