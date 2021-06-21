@@ -33,7 +33,7 @@
 #       define TRACER_INIT              FILE *tracer_fp; \
                                         if(first_exec) { tracer_fp = fopen("mem_tracer.out", "w"); }
 #       define TRACER_END               if(first_exec) { fclose(tracer_fp); }
-#       define TRACER_PRINT(addr, op)   if(first_exec) { fprintf(tracer_fp, "%c: %p\n", op, (void *)(addr)); }
+#       define TRACER_PRINT(addr, op)   if(first_exec) { fprintf(tracer_fp, "%c: %p\n", op, (void *)(&(addr))); }
 #   else
 #       define TRACER_INIT
 #       define TRACER_END
@@ -70,13 +70,13 @@ double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor, int first_
         MD_FLOAT fiy = 0;
         MD_FLOAT fiz = 0;
 
-        TRACER_PRINT(&atom_x(i), 'R');
-        TRACER_PRINT(&atom_y(i), 'R');
-        TRACER_PRINT(&atom_z(i), 'R');
+        TRACER_PRINT(atom_x(i), 'R');
+        TRACER_PRINT(atom_y(i), 'R');
+        TRACER_PRINT(atom_z(i), 'R');
 
         #ifdef EXPLICIT_TYPES
         const int type_i = atom->type[i];
-        TRACER_PRINT(&atom->type(i), 'R');
+        TRACER_PRINT(atom->type(i), 'R');
         #endif
 
         #if VARIANT == stub && defined(NEIGHBORS_LOOP_RUNS) && NEIGHBORS_LOOP_RUNS > 1
@@ -92,10 +92,10 @@ double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor, int first_
                 MD_FLOAT delz = ztmp - atom_z(j);
                 MD_FLOAT rsq = delx * delx + dely * dely + delz * delz;
 
-                TRACER_PRINT(&neighs[k], 'R');
-                TRACER_PRINT(&atom_x(j), 'R');
-                TRACER_PRINT(&atom_y(j), 'R');
-                TRACER_PRINT(&atom_z(j), 'R');
+                TRACER_PRINT(neighs[k], 'R');
+                TRACER_PRINT(atom_x(j), 'R');
+                TRACER_PRINT(atom_y(j), 'R');
+                TRACER_PRINT(atom_z(j), 'R');
 
                 #ifdef EXPLICIT_TYPES
                 const int type_j = atom->type[j];
@@ -103,7 +103,7 @@ double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor, int first_
                 const MD_FLOAT cutforcesq = atom->cutforcesq[type_ij];
                 const MD_FLOAT sigma6 = atom->sigma6[type_ij];
                 const MD_FLOAT epsilon = atom->epsilon[type_ij];
-                TRACER_PRINT(&atom->type(j), 'R');
+                TRACER_PRINT(atom->type(j), 'R');
                 #endif
 
                 if(rsq < cutforcesq) {
@@ -124,9 +124,12 @@ double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor, int first_
         fy[i] += fiy;
         fz[i] += fiz;
 
-        TRACER_PRINT(&fx[i], 'W');
-        TRACER_PRINT(&fy[i], 'W');
-        TRACER_PRINT(&fz[i], 'W');
+        TRACER_PRINT(fx[i], 'R');
+        TRACER_PRINT(fx[i], 'W');
+        TRACER_PRINT(fy[i], 'R');
+        TRACER_PRINT(fy[i], 'W');
+        TRACER_PRINT(fz[i], 'R');
+        TRACER_PRINT(fz[i], 'W');
     }
 
     double E = getTimeStamp();
