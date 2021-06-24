@@ -22,7 +22,7 @@ The Agenda section is a scratchpad area for planning and Todo list
 * Finish this logbook with current state and results
 * Understand gather-md behavior (AoS and SoA)
 * Use cache simulator with application data access
-    * * How well do we use the gathers?
+    * How well do we use the gathers?
 * Compare HW. vs SW. gather strategies
 * Disable cache prefetchers
 * Do the same evaluation and results for AVX2
@@ -85,6 +85,16 @@ Describe in detail how to configure and setup the testcases(es)
 ------------------------------------------------------------------------------>
 ## Testcase description
 
+There are two test cases available:
+
+* **Standard:** Standard setup from miniMD (Cu FCC lattice), atoms are evenly distributed on unit cells (4 atoms per unit cell), and each atom contains about 64 neighbors on average. The number of unit cells can be specified as input parametes, the default is to run a system of 32x32x32 unit cells.
+
+* **Stubbed:** Version to execute within cache sizes, the number of atoms per unit cells and the number of unit cells per dimensions can be specified. All atoms are just neighbors to other atoms in the same unit cell, hence the number of neighbors per atom is fixed as the number of atoms per unit cells minus 1.
+
+<div align="center">
+![Stubbed Force Calculation](figures/stubbed_force_mdbench.png)
+</div>
+
 <!-----------------------------------------------------------------------------
 All steps required to run the testcase and control affinity for application
 ------------------------------------------------------------------------------>
@@ -114,6 +124,7 @@ in directory session-<ID> named <hostname>.txt. Document everything that you
 consider to be relevant for performance.
 ###############################################################################
 ------------------------------------------------------------------------------>
+<!-----------------------------------------------------------------------------
 ## Benchmarking <NAME-TAG>
 
 ### Testsystem
@@ -139,6 +150,7 @@ consider to be relevant for performance.
 * Distribution:
 * Version:
 * Kernel version:
+------------------------------------------------------------------------------>
 
 <!-----------------------------------------------------------------------------
 Create a runtime profile. Which tool was used? How was the profile created.
@@ -156,6 +168,7 @@ Application benchmarking runs. What experiment was done? Add results or
 reference plots in directory session-<NAME-TAG>-<ID>. Number all sections
 consecutivley such that every section has a unique ID.
 ------------------------------------------------------------------------------>
+<!-----------------------------------------------------------------------------
 ## Result <NAME-TAG>-<ID>
 
 ### Problem: <DESCRIPTION>
@@ -178,6 +191,7 @@ Example for table:
 Verbatim Text
 ```
 
+------------------------------------------------------------------------------>
 <!-----------------------------------------------------------------------------
 Document the initial performance which serves as baseline for further progress
 and is used to compute the achieved speedup. Document exactly how the baseline
@@ -220,6 +234,7 @@ Wrap up the final result and discuss the speedup.
 Optional: Document how much time was spent. A simple python command line tool
 for time tracking is [Watson](http://tailordev.github.io/Watson/).
 ------------------------------------------------------------------------------>
+<!-----------------------------------------------------------------------------
 ## Summary
 
 * Time to solution:
@@ -230,6 +245,7 @@ for time tracking is [Watson](http://tailordev.github.io/Watson/).
 
 * Time spent:
 
+------------------------------------------------------------------------------>
 <!-----------------------------------------------------------------------------
 END BLOCK ANALYST
 ------------------------------------------------------------------------------>
@@ -238,6 +254,7 @@ END BLOCK ANALYST
 START BLOCK SUMMARY - This block is only required if multiple analysts worked
 on the project.
 ------------------------------------------------------------------------------>
+<!-----------------------------------------------------------------------------
 # Overall Summary
 
 * End date: DD/MM/YYYY
@@ -246,7 +263,7 @@ on the project.
 
 * Total time spent:
 * Estimated core hours saved:
-
+------------------------------------------------------------------------------>
 <!-----------------------------------------------------------------------------
 END BLOCK SUMMARY
 ------------------------------------------------------------------------------>
