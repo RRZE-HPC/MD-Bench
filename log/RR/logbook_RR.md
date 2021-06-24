@@ -89,17 +89,16 @@ There are two test cases available:
 
 * **Standard:** Standard setup from miniMD (Cu FCC lattice), atoms are evenly distributed on unit cells (4 atoms per unit cell), and each atom contains about 64 neighbors on average. The number of unit cells can be specified as input parametes, the default is to run a system of 32x32x32 unit cells.
 
-* **Stubbed:** Version to execute within cache sizes, the number of atoms per unit cells and the number of unit cells per dimensions can be specified. All atoms are just neighbors to other atoms in the same unit cell, hence the number of neighbors per atom is fixed as the number of atoms per unit cells minus 1.
+* **Stubbed:** Version to execute within cache sizes, the number of atoms per unit cells and the number of unit cells per dimensions can be specified. All atoms are just neighbors to other atoms in the same unit cell, hence the number of neighbors per atom is fixed as the number of atoms per unit cells minus 1. This allow us to derive some properties such as the ones described in the following picture:
 
-<div align="center">
 ![Stubbed Force Calculation](figures/stubbed_force_mdbench.png)
-</div>
 
 <!-----------------------------------------------------------------------------
 All steps required to run the testcase and control affinity for application
 ------------------------------------------------------------------------------>
 ## How to run software
 
+To compile the application, adjust the configurations in the `config.mk` file and use the `make` command, this generates the `MD-Bench-TAG` binary that runs the standard test cases. `TAG` specifies the compiler to be used and it can be either GCC, CLANG or ICC. To compile the stubbed force calculation, simply run `make VARIANT=md`, which generates the `MD-Bench-TAG-stub` binary. The available options for both binaries can be seen with the `-h` option.
 
 <!-----------------------------------------------------------------------------
 END BLOCK PREAMBLE
@@ -157,6 +156,36 @@ Create a runtime profile. Which tool was used? How was the profile created.
 Describe and discuss the runtime profile.
 ------------------------------------------------------------------------------>
 ## Runtime Profile <NAME-TAG>-<ID>
+
+The structure of the main simulation loop is the following:
+
+```C
+for(int n = 0; n < param.ntimes; n++) {
+  initialIntegrate(&param , &atom);
+  if((n + 1) % param.every) {
+    updatePbc(&atom, &param);
+  } else {
+    reneighbour(&param, &atom, &neighbor);
+  }
+  computeForce(&param, &atom , &neighbor);
+  finalIntegrate (&param , &atom);
+  if(!((n + 1) % param.nstat ) && (n + 1) < param.ntimes) {
+    computeThermo(n + 1, &param , &atom);
+  }
+}
+```
+
+From complexity analysis, we should expect that the `reneighbour` and `computeForce` stages should be the most performance-critical ones.
+For the runtime profile we print the time results for each stage separately, as this is also done in the original miniMD application.
+Furthermore, the results displayed on casclakesp2 with array of structures (AoS) layout with AVX512 compilation flags are:
+
+```
+TOTAL 9.30s FORCE 4.81s NEIGH 4.25s REST 0.24s
+```
+
+This confirms our hypothesis, in this case the force computation in the most expensive part.
+However, this can change according to the rebuild frequency and force-field used in the simulation.
+Besides, optimizing the force computation will turn the neighbor list creation to consume a bigger fraction of the overall time, hence both stages should be considered and properly optimized for efficient MD simulations.
 
 <!-----------------------------------------------------------------------------
 Perform a static code review.
