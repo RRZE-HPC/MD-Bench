@@ -2,7 +2,8 @@ import matplotlib.pyplot as plt
 import sys
 
 filename = sys.argv[1]
-output_file = filename.replace(".txt", ".pdf")
+plot_output_file = filename.replace(".txt", ".pdf")
+raw_output_file = filename.replace(".txt", ".csv")
 fig = plt.figure()
 ax = plt.axes()
 plot_data = {}
@@ -20,7 +21,7 @@ with open(filename, 'r') as fp:
     for line in fp.readlines():
         line = line.strip()
 
-        if len(line) <= 0:
+        if len(line) <= 0 or "likwid-pin" in line:
             continue
 
         if line.startswith("Stride,"):
@@ -57,11 +58,42 @@ with open(filename, 'r') as fp:
         plot_data[stride][size] = cycles if size not in plot_data[stride] \
                                   else min(cycles, plot_data[stride][size])
 
+all_sizes = set()
+all_strides = set()
 for stride in plot_data:
     sizes = list(plot_data[stride].keys())
     sizes.sort()
     cycles = [plot_data[stride][size] for size in sizes]
     ax.plot(sizes, cycles, marker='.', label=str(stride))
+
+    for size in sizes:
+        all_sizes.add(size)
+
+    all_strides.add(stride)
+
+all_sizes = list(all_sizes)
+all_sizes.sort()
+all_strides= list(all_strides)
+all_strides.sort()
+with open(raw_output_file, 'w') as wp:
+    wp.write("   size\stride")
+
+    for stride in all_strides:
+        wp.write(",{0:14}".format(stride))
+
+    wp.write("\n")
+
+    for size in all_sizes:
+        wp.write("{:14.6f}".format(size))
+        for stride in all_strides:
+            try:
+                cycles = plot_data[stride][size]
+            except:
+                cycles = ''
+
+            wp.write(",{:14.6f}".format(cycles))
+
+        wp.write("\n")
 
 cy_label = "Cycles per iteration" if md_case else "Cycles per gather"
 ax.vlines([32, 1000], 0, 1, transform=ax.get_xaxis_transform(), linestyles='dashed', color=['#444444', '#777777'])
@@ -71,4 +103,4 @@ ax.set_xscale('log')
 #ax.set_xticks([32, 1000, 28000])
 #ax.set_xlim(0, 200000)
 plt.legend(title="Stride")
-fig.savefig(output_file, bbox_inches = 'tight', pad_inches = 0)
+fig.savefig(plot_output_file, bbox_inches = 'tight', pad_inches = 0)
