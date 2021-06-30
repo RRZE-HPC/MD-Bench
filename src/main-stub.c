@@ -211,11 +211,9 @@ int main(int argc, const char *argv[]) {
 
     double S, E;
     S = getTimeStamp();
-    LIKWID_MARKER_START("force");
     for(int i = 0; i < param.ntimes; i++) {
         computeForce(&param, atom, &neighbor, 0);
     }
-    LIKWID_MARKER_STOP("force");
     E = getTimeStamp();
     double T_accum = E-S;
     const double atoms_updates_per_sec = (double)(atom->Nlocal) / T_accum * (double)(param.ntimes * NEIGHBORS_LOOP_RUNS);
