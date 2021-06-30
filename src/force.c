@@ -59,6 +59,7 @@ double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor, int first_
         fz[i] = 0.0;
     }
 
+    LIKWID_MARKER_START("force");
     #pragma omp parallel for
     for(int i = 0; i < Nlocal; i++) {
         neighs = &neighbor->neighbors[i * neighbor->maxneighs];
@@ -131,6 +132,7 @@ double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor, int first_
         TRACER_PRINT(fz[i], 'R');
         TRACER_PRINT(fz[i], 'W');
     }
+    LIKWID_MARKER_STOP("force");
 
     double E = getTimeStamp();
     TRACER_END;
