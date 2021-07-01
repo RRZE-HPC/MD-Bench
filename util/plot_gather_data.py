@@ -24,7 +24,7 @@ with open(filename, 'r') as fp:
         if len(line) <= 0 or "likwid-pin" in line:
             continue
 
-        if line.startswith("Stride,"):
+        if line.startswith("ISA,"):
             status = 1
             md_case = True if "Dims" in line else False
             continue
@@ -37,9 +37,9 @@ with open(filename, 'r') as fp:
 
         if status == 1:
             if md_case:
-                stride, dims, freq, cl_size, vector_width, cache_lines_per_gather = line.split(',')
+                isa, layout, stride, dims, freq, cl_size, vector_width, cache_lines_per_gather = line.split(',')
             else:
-                stride, freq, cl_size, vector_width, cache_lines_per_gather = line.split(',')
+                isa, stride, freq, cl_size, vector_width, cache_lines_per_gather = line.split(',')
 
             stride = int(stride)
             continue

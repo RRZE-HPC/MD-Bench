@@ -6,7 +6,7 @@ DATA_TYPE ?= DP
 # AOS or SOA
 DATA_LAYOUT ?= AOS
 
-# Number of times to run the neighbors loop
+# Number of times to run the neighbors loop on stubbed variant
 NEIGHBORS_LOOP_RUNS ?= 1
 # Explicitly store and load atom types
 EXPLICIT_TYPES ?= false
