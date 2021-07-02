@@ -3,6 +3,11 @@ import sys
 
 vector_width = 8 # 8 doubles per zmm vector
 
+# Filter condition of which data to plot
+def plot_filter(atoms_per_unit_cell):
+    #return atoms_per_unit_cell < 2048
+    return True
+
 filename = sys.argv[1]
 output_file = filename.replace(".txt", ".pdf")
 fig = plt.figure()
@@ -16,7 +21,7 @@ with open(filename, 'r') as fp:
         vol = float(neigh_vol)
         cy_per_atom = float(cy_per_atom)
 
-        if atoms_per_unit_cell < 2048:
+        if plot_filter(atoms_per_unit_cell):
             if atoms_per_unit_cell not in plot_data:
                 plot_data[atoms_per_unit_cell] = {}
 

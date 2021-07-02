@@ -9,10 +9,10 @@ mem = MainMemory()
 #l1 = Cache("L1", 64, 8, 64, "LRU", store_to=l2, load_from=l2)  # 32KB
 
 # Cascade Lake
-l3 = Cache("L3", 28672, 11, 64, "LRU")  # 28MB: 11-ways with cacheline size of 64 bytes
-l2 = Cache("L2", 1024, 16, 64, "LRU", store_to=l3, load_from=l3)  # 1MB
-l1 = Cache("L1", 32, 8, 64, "LRU", store_to=l2, load_from=l2)  # 32KB
-mem.load_to(l3)
+l3 = Cache("L3", 14336, 16, 64, "LRU", write_allocate=False)
+l2 = Cache("L2", 1024, 16, 64, "LRU", store_to=l3, victims_to=l3)
+l1 = Cache("L1", 64, 8, 64, "LRU", store_to=l2, load_from=l2)
+mem.load_to(l2)
 mem.store_from(l3)
 cs = CacheSimulator(l1, mem)
 
