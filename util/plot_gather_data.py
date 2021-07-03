@@ -73,7 +73,7 @@ for stride in plot_data:
 
 all_sizes = list(all_sizes)
 all_sizes.sort()
-all_strides= list(all_strides)
+all_strides = list(all_strides)
 all_strides.sort()
 with open(raw_output_file, 'w') as wp:
     wp.write("   size\stride")
