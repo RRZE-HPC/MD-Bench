@@ -27,22 +27,63 @@
 #include <parameter.h>
 #include <atom.h>
 
-#ifndef TRACER_PRINT
-#   include <stdio.h>
-#   ifdef MEM_TRACER
-#       define TRACER_INIT              FILE *tracer_fp; \
-                                        if(first_exec) { tracer_fp = fopen("mem_tracer.out", "w"); }
-#       define TRACER_END               if(first_exec) { fclose(tracer_fp); }
-#       define TRACER_PRINT(addr, op)   if(first_exec) { fprintf(tracer_fp, "%c: %p\n", op, (void *)(&(addr))); }
-#   else
-#       define TRACER_INIT
-#       define TRACER_END
-#       define TRACER_PRINT(addr, op)
+#if defined(MEM_TRACER) || defined(INDEX_TRACER)
+#include <stdio.h>
+#include <stdlib.h>
+#endif
+
+#ifdef MEM_TRACER
+#   define MEM_TRACER_INIT          FILE *mem_tracer_fp; \
+                                    if(first_exec) { mem_tracer_fp = fopen("mem_tracer.out", "w"); }
+#   define MEM_TRACER_END           if(first_exec) { fclose(mem_tracer_fp); }
+#   define MEM_TRACE(addr, op)      if(first_exec) { fprintf(mem_tracer_fp, "%c: %p\n", op, (void *)(&(addr))); }
+#else
+#   define MEM_TRACER_INIT
+#   define MEM_TRACER_END
+#   define MEM_TRACE(addr, op)
+#endif
+
+#ifdef INDEX_TRACER
+#   ifndef VECTOR_WIDTH
+#       define VECTOR_WIDTH         8
 #   endif
+
+#   define INDEX_TRACER_INIT        FILE *index_tracer_fp; \
+                                    if(first_exec) { index_tracer_fp = fopen("index_tracer.out", "w"); }
+#   define INDEX_TRACER_END         if(first_exec) { fclose(index_tracer_fp); }
+#   define INDEX_TRACE(l, e)        if(first_exec) { \
+                                        for(int __i = 0; __i < (e); __i += VECTOR_WIDTH) { \
+                                            int __e = (((e) - __i) < VECTOR_WIDTH) ? ((e) - __i) : VECTOR_WIDTH; \
+                                            fprintf(index_tracer_fp, "I: "); \
+                                            for(int __j = 0; __j < __e; ++__j) { \
+                                                fprintf(index_tracer_fp, "%d ", l[__i + __j]); \
+                                            } \
+                                            fprintf(index_tracer_fp, "\n"); \
+                                        } \
+                                    }
+#   define DIST_TRACE(l, e)         if(first_exec) { \
+                                        for(int __i = 0; __i < (e); __i += VECTOR_WIDTH) { \
+                                            int __e = (((e) - __i) < VECTOR_WIDTH) ? ((e) - __i) : VECTOR_WIDTH; \
+                                            if(__e > 1) { \
+                                                fprintf(index_tracer_fp, "D: "); \
+                                                for(int __j = 0; __j < __e - 1; ++__j) { \
+                                                    int __dist = abs(l[__i + __j + 1] - l[__i + __j]); \
+                                                    fprintf(index_tracer_fp, "%d ", __dist); \
+                                                } \
+                                                fprintf(index_tracer_fp, "\n"); \
+                                            } \
+                                        } \
+                                    }
+#else
+#   define INDEX_TRACER_INIT
+#   define INDEX_TRACER_END
+#   define INDEX_TRACE(l, e)
+#   define DIST_TRACE(l, e)
 #endif
 
 double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor, int first_exec) {
-    TRACER_INIT;
+    MEM_TRACER_INIT;
+    INDEX_TRACER_INIT;
     double S = getTimeStamp();
     int Nlocal = atom->Nlocal;
     int* neighs;
@@ -71,13 +112,13 @@ double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor, int first_
         MD_FLOAT fiy = 0;
         MD_FLOAT fiz = 0;
 
-        TRACER_PRINT(atom_x(i), 'R');
-        TRACER_PRINT(atom_y(i), 'R');
-        TRACER_PRINT(atom_z(i), 'R');
+        MEM_TRACE(atom_x(i), 'R');
+        MEM_TRACE(atom_y(i), 'R');
+        MEM_TRACE(atom_z(i), 'R');
 
         #ifdef EXPLICIT_TYPES
         const int type_i = atom->type[i];
-        TRACER_PRINT(atom->type(i), 'R');
+        MEM_TRACE(atom->type(i), 'R');
         #endif
 
         #if VARIANT == stub && defined(NEIGHBORS_LOOP_RUNS) && NEIGHBORS_LOOP_RUNS > 1
@@ -86,6 +127,9 @@ double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor, int first_
         for(int n = 0; n < nmax; n++) {
         #endif
 
+            INDEX_TRACE(neighs, numneighs);
+            DIST_TRACE(neighs, numneighs);
+
             for(int k = 0; k < numneighs; k++) {
                 int j = neighs[k];
                 MD_FLOAT delx = xtmp - atom_x(j);
@@ -93,10 +137,10 @@ double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor, int first_
                 MD_FLOAT delz = ztmp - atom_z(j);
                 MD_FLOAT rsq = delx * delx + dely * dely + delz * delz;
 
-                TRACER_PRINT(neighs[k], 'R');
-                TRACER_PRINT(atom_x(j), 'R');
-                TRACER_PRINT(atom_y(j), 'R');
-                TRACER_PRINT(atom_z(j), 'R');
+                MEM_TRACE(neighs[k], 'R');
+                MEM_TRACE(atom_x(j), 'R');
+                MEM_TRACE(atom_y(j), 'R');
+                MEM_TRACE(atom_z(j), 'R');
 
                 #ifdef EXPLICIT_TYPES
                 const int type_j = atom->type[j];
@@ -104,7 +148,7 @@ double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor, int first_
                 const MD_FLOAT cutforcesq = atom->cutforcesq[type_ij];
                 const MD_FLOAT sigma6 = atom->sigma6[type_ij];
                 const MD_FLOAT epsilon = atom->epsilon[type_ij];
-                TRACER_PRINT(atom->type(j), 'R');
+                MEM_TRACE(atom->type(j), 'R');
                 #endif
 
                 if(rsq < cutforcesq) {
@@ -125,16 +169,17 @@ double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor, int first_
         fy[i] += fiy;
         fz[i] += fiz;
 
-        TRACER_PRINT(fx[i], 'R');
-        TRACER_PRINT(fx[i], 'W');
-        TRACER_PRINT(fy[i], 'R');
-        TRACER_PRINT(fy[i], 'W');
-        TRACER_PRINT(fz[i], 'R');
-        TRACER_PRINT(fz[i], 'W');
+        MEM_TRACE(fx[i], 'R');
+        MEM_TRACE(fx[i], 'W');
+        MEM_TRACE(fy[i], 'R');
+        MEM_TRACE(fy[i], 'W');
+        MEM_TRACE(fz[i], 'R');
+        MEM_TRACE(fz[i], 'W');
     }
     LIKWID_MARKER_STOP("force");
 
     double E = getTimeStamp();
-    TRACER_END;
+    INDEX_TRACER_END;
+    MEM_TRACER_END;
     return E-S;
 }
