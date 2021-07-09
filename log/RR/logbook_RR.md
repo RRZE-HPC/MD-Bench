@@ -20,12 +20,15 @@ The Agenda section is a scratchpad area for planning and Todo list
 # Agenda
 
 * Finish this logbook with current state and results
-* Understand gather-md behavior (AoS and SoA)
-* Use cache simulator with application data access
-    * How well do we use the gathers?
+* Evaluate the impact of disabling prefetchers on standard case
+* Gather behavior:
+    * Compare cache simulator with measurements from likwid (1 timestep)
+    * Print strides and subsequent distances of gathered elements on force kernel
+    * Use these strides as input on gather-md
+    * Provide histogram for distances and evaluate the results based on it
+    * Can we infer number of cache lines touched? (including cut cache-lines)
+* For latency: besides first access, look for more dense regions (atoms with highest amount of neighbors) and match data volume with the cache sizes
 * Compare HW. vs SW. gather strategies
-* Disable cache prefetchers
-* Do the same evaluation and results for AVX2
 * Implement EAM potential
 
 
@@ -175,7 +178,7 @@ for(int n = 0; n < param.ntimes; n++) {
 }
 ```
 
-From complexity analysis, we should expect that the `reneighbour` and `computeForce` stages should be the most performance-critical ones.
+From complexity analysis, we should expect that the `reneighbour` and `computeForce` stages to be the most performance-critical ones.
 For the runtime profile we print the time results for each stage separately, as this is also done in the original miniMD application.
 Furthermore, the results displayed on casclakesp2 with array of structures (AoS) layout with AVX512 compilation flags are:
 
@@ -183,9 +186,9 @@ Furthermore, the results displayed on casclakesp2 with array of structures (AoS)
 TOTAL 9.30s FORCE 4.81s NEIGH 4.25s REST 0.24s
 ```
 
-This confirms our hypothesis, in this case the force computation in the most expensive part.
+This confirms our hypothesis, in this case the force computation is the most expensive part.
 However, this can change according to the rebuild frequency and force-field used in the simulation.
-Besides, optimizing the force computation will turn the neighbor list creation to consume a bigger fraction of the overall time, hence both stages should be considered and properly optimized for efficient MD simulations.
+Also, optimizing the force computation will turn the neighbor list creation to consume a bigger fraction of the overall time, hence both stages should be considered and properly optimized for efficient MD simulations.
 
 <!-----------------------------------------------------------------------------
 Perform a static code review.
