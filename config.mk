@@ -12,6 +12,10 @@ NEIGHBORS_LOOP_RUNS ?= 1
 EXPLICIT_TYPES ?= false
 # Trace memory addresses for cache simulator
 MEM_TRACER ?= false
+# Trace indexes and distances for gather-md
+INDEX_TRACER ?= false
+# Vector width (elements) for index and distance tracer
+VECTOR_WIDTH ?= 8
 
 #Feature options
 OPTIONS =  -DALIGNMENT=64

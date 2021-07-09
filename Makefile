@@ -33,6 +33,14 @@ ifeq ($(strip $(MEM_TRACER)),true)
     DEFINES += -DMEM_TRACER
 endif
 
+ifeq ($(strip $(INDEX_TRACER)),true)
+    DEFINES += -DINDEX_TRACER
+endif
+
+ifneq ($(VECTOR_WIDTH),)
+    DEFINES += -DVECTOR_WIDTH=$(VECTOR_WIDTH)
+endif
+
 VPATH     = $(SRC_DIR) $(ASM_DIR)
 ASM       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.s,$(wildcard $(SRC_DIR)/*.c))
 OVERWRITE:= $(patsubst $(ASM_DIR)/%-new.s, $(BUILD_DIR)/%.o,$(wildcard $(ASM_DIR)/*-new.s))
