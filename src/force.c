@@ -61,6 +61,24 @@
                                             fprintf(index_tracer_fp, "\n"); \
                                         } \
                                     }
+
+#   define DIST_TRACE_SORT(l, e)    if(first_exec) { \
+                                        for(int __i = 0; __i < (e); __i += VECTOR_WIDTH) { \
+                                            int __e = (((e) - __i) < VECTOR_WIDTH) ? ((e) - __i) : VECTOR_WIDTH; \
+                                            if(__e > 1) { \
+                                                for(int __j = __i; __j < __i + __e - 1; ++__j) { \
+                                                    for(int __k = __i; __k < __i + __e - (__j - __i) - 1; ++__k) { \
+                                                        if(l[__k] > l[__k + 1]) { \
+                                                            int __t = l[__k]; \
+                                                            l[__k] = l[__k + 1]; \
+                                                            l[__k + 1] = __t; \
+                                                        } \
+                                                    } \
+                                                } \
+                                            } \
+                                        } \
+                                    }
+
 #   define DIST_TRACE(l, e)         if(first_exec) { \
                                         for(int __i = 0; __i < (e); __i += VECTOR_WIDTH) { \
                                             int __e = (((e) - __i) < VECTOR_WIDTH) ? ((e) - __i) : VECTOR_WIDTH; \
@@ -78,6 +96,7 @@
 #   define INDEX_TRACER_INIT
 #   define INDEX_TRACER_END
 #   define INDEX_TRACE(l, e)
+#   define DIST_TRACE_SORT(l, e)
 #   define DIST_TRACE(l, e)
 #endif
 
@@ -127,6 +146,7 @@ double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor, int first_
         for(int n = 0; n < nmax; n++) {
         #endif
 
+            DIST_TRACE_SORT(neighs, numneighs);
             INDEX_TRACE(neighs, numneighs);
             DIST_TRACE(neighs, numneighs);
 
