@@ -201,6 +201,56 @@ Perform a static code review.
 ------------------------------------------------------------------------------>
 ## Code review <NAME-TAG>-<ID>
 
+To compute the forces, the code must traverse through all atoms in the system and their neighbors.
+The force is computed for every pair of atoms and accumulated into the current atom's position.
+Since we use the neighbor lists approach, the iteration over the neighbors is simply the iteration over the current atoms list.
+The code can be seen below:
+
+```C
+for(int i = 0; i < Nlocal; i++) {
+    neighs = &neighbor->neighbors[i * neighbor->maxneighs];
+    int numneighs = neighbor->numneigh[i];
+    MD_FLOAT xtmp = atom_x(i);
+    MD_FLOAT ytmp = atom_y(i);
+    MD_FLOAT ztmp = atom_z(i);
+    MD_FLOAT fix = 0;
+    MD_FLOAT fiy = 0;
+    MD_FLOAT fiz = 0;
+
+    for(int k = 0; k < numneighs; k++) {
+        int j = neighs[k];
+        MD_FLOAT delx = xtmp - atom_x(j);
+        MD_FLOAT dely = ytmp - atom_y(j);
+        MD_FLOAT delz = ztmp - atom_z(j);
+        MD_FLOAT rsq = delx * delx + dely * dely + delz * delz;
+
+        if(rsq < cutforcesq) {
+            MD_FLOAT sr2 = 1.0 / rsq;
+            MD_FLOAT sr6 = sr2 * sr2 * sr2 * sigma6;
+            MD_FLOAT force = 48.0 * sr6 * (sr6 - 0.5) * sr2 * epsilon;
+            fix += delx * force;
+            fiy += dely * force;
+            fiz += delz * force;
+        }
+    }
+
+    fx[i] += fix;
+    fy[i] += fiy;
+    fz[i] += fiz;
+}
+```
+
+To vectorize the code in the most internal loop, the data for the neighbors must be gathered into the vectors.
+Consequently, instructions such as \textbf{vgather} or other instructions that mimics its behavior must be used.
+We resort to these strategies as hardware and software gathers, respectively.
+In order to understand and detail the performance aspects of gathering the data for these kernels, we developed gather-bench (https://github.com/RRZE-HPC/gather-bench), a benchmark that performs gathering of data from arrays of different sizes in order to evaluate the L1, L2 and L3 cache scenarios.
+The benchmark provides a simple array case and MD variants using Array of Structs (AoS) and Struct of Arrays (SoA) data layouts.
+
+Despite understand the memory latency and bandwidth impacts, we also need to evaluate how the kernel executes on the CPU with respect to instruction throughput.
+For that, we use the already mentioned stubbed force calculation, a benchmark that contains well known data access behavior and fixed amount of neighbors per atom.
+This allow us to make the data size fit into the L1 cache (reduce latency impact) and derive some properties such as the number of cycles per atom.
+Finally, we compare the executed measurements from the stubbed force calculation with OSACA and IACA predictions for the same kernel as a baseline.
+
 <!-----------------------------------------------------------------------------
 Application benchmarking runs. What experiment was done? Add results or
 reference plots in directory session-<NAME-TAG>-<ID>. Number all sections
