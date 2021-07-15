@@ -1,0 +1,57 @@
+--------------------------------------------------------------------------------
+CPU name:	Intel(R) Xeon(R) Gold 6248 CPU @ 2.50GHz
+CPU type:	Intel Cascadelake SP processor
+CPU clock:	2.49 GHz
+--------------------------------------------------------------------------------
+step	temp		pressure
+0	1.440000e+00	1.215639e+00
+1	1.437914e+00	1.213878e+00
+----------------------------------------------------------------------------
+Data layout for positions: AoS
+Using double precision floating point.
+----------------------------------------------------------------------------
+System: 131072 atoms 48219 ghost atoms, Steps: 1
+TOTAL 0.03s FORCE 0.02s NEIGH 0.00s REST 0.00s
+----------------------------------------------------------------------------
+Performance: 5.11 million atom updates per second
+--------------------------------------------------------------------------------
+Region force, Group 1: CACHES_PMC
++-------------------+------------+
+|    Region Info    | HWThread 0 |
++-------------------+------------+
+| RDTSC Runtime [s] |   0.047950 |
+|     call count    |          2 |
++-------------------+------------+
+
++-----------------------+---------+------------+
+|         Event         | Counter | HWThread 0 |
++-----------------------+---------+------------+
+|   INSTR_RETIRED_ANY   |  FIXC0  |  165945400 |
+| CPU_CLK_UNHALTED_CORE |  FIXC1  |  119353400 |
+|  CPU_CLK_UNHALTED_REF |  FIXC2  |  119353500 |
+|    L1D_REPLACEMENT    |   PMC0  |    3098294 |
+|      L1D_M_EVICT      |   PMC1  |      99753 |
+|    L2_LINES_IN_ALL    |   PMC2  |    2181251 |
+|     L2_TRANS_L2_WB    |   PMC3  |    2174293 |
++-----------------------+---------+------------+
+
++-------------------------------------+------------+
+|                Metric               | HWThread 0 |
++-------------------------------------+------------+
+|         Runtime (RDTSC) [s]         |     0.0480 |
+|         Runtime unhalted [s]        |     0.0479 |
+|             Clock [MHz]             |  2494.0882 |
+|                 CPI                 |     0.7192 |
+|  L2 to L1 load bandwidth [MBytes/s] |  4135.3638 |
+|  L2 to L1 load data volume [GBytes] |     0.1983 |
+| L1 to L2 evict bandwidth [MBytes/s] |   133.1426 |
+| L1 to L2 evict data volume [GBytes] |     0.0064 |
+|  L1 to/from L2 bandwidth [MBytes/s] |  4268.5064 |
+|  L1 to/from L2 data volume [GBytes] |     0.2047 |
+|  L3 to L2 load bandwidth [MBytes/s] |  2911.3655 |
+|  L3 to L2 load data volume [GBytes] |     0.1396 |
+| L2 to L3 evict bandwidth [MBytes/s] |  2902.0785 |
+| L2 to L3 evict data volume [GBytes] |     0.1392 |
+|  L2 to/from L3 bandwidth [MBytes/s] |  5813.4440 |
+|  L2 to/from L3 data volume [GBytes] |     0.2788 |
++-------------------------------------+------------+
