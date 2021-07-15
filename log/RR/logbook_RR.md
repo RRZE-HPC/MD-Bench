@@ -29,6 +29,7 @@ The Agenda section is a scratchpad area for planning and Todo list
     * Calculate percentage of cut cache lines
     * Histogram of cache sets used (for different cache levels)
     * Compare cache simulator with measurements from likwid (1 timestep)
+    * Allow flexible behavior on gather-md to simulate "random" accesses:
         * Use strides and distance output from MD-Bench as input on gather-md
         * Use one config for all gather iterations (i.e. specifiy 8 strides on double-precisiong AVX512 version)
     * Histogram for distances between neighbors to be gathered
