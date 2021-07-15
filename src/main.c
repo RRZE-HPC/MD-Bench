@@ -166,8 +166,8 @@ int main (int argc, char** argv)
 #pragma omp parallel
     {
         LIKWID_MARKER_REGISTER("force");
-        LIKWID_MARKER_REGISTER("reneighbour");
-        LIKWID_MARKER_REGISTER("pbc");
+        //LIKWID_MARKER_REGISTER("reneighbour");
+        //LIKWID_MARKER_REGISTER("pbc");
     }
     init(&param);
 
