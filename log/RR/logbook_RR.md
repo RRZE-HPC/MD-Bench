@@ -241,12 +241,12 @@ for(int i = 0; i < Nlocal; i++) {
 ```
 
 To vectorize the code in the most internal loop, the data for the neighbors must be gathered into the vectors.
-Consequently, instructions such as \textbf{vgather} or other instructions that mimics its behavior must be used.
+Consequently, instructions such as **vgather** or other instructions that mimics its behavior must be used.
 We resort to these strategies as hardware and software gathers, respectively.
 In order to understand and detail the performance aspects of gathering the data for these kernels, we developed gather-bench (https://github.com/RRZE-HPC/gather-bench), a benchmark that performs gathering of data from arrays of different sizes in order to evaluate the L1, L2 and L3 cache scenarios.
 The benchmark provides a simple array case and MD variants using Array of Structs (AoS) and Struct of Arrays (SoA) data layouts.
 
-Despite understand the memory latency and bandwidth impacts, we also need to evaluate how the kernel executes on the CPU with respect to instruction throughput.
+Additionaly to understanding the memory latency and bandwidth impacts, we also need to evaluate how the kernel executes on the CPU with respect to instruction throughput.
 For that, we use the already mentioned stubbed force calculation, a benchmark that contains well known data access behavior and fixed amount of neighbors per atom.
 This allow us to make the data size fit into the L1 cache (reduce latency impact) and derive some properties such as the number of cycles per atom.
 Finally, we compare the executed measurements from the stubbed force calculation with OSACA and IACA predictions for the same kernel as a baseline.
