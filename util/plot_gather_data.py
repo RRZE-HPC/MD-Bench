@@ -10,6 +10,7 @@ plot_data = {}
 
 status = 0 # No header found
 md_case = False
+cut_cls_case = False
 stride = None
 dims = None
 freq = None
@@ -21,7 +22,7 @@ with open(filename, 'r') as fp:
     for line in fp.readlines():
         line = line.strip()
 
-        if len(line) <= 0 or "likwid-pin" in line:
+        if len(line) <= 0 or "likwid-pin" in line or "INFO:" in line:
             continue
 
         if line.startswith("ISA,"):
@@ -31,6 +32,7 @@ with open(filename, 'r') as fp:
 
         if line.startswith("N,"):
             status = 2
+            cut_cls_case = True if "cut CLs" in line else False
             continue
 
         assert status == 1 or status == 2, "Invalid input!"
@@ -45,9 +47,15 @@ with open(filename, 'r') as fp:
             continue
 
         if md_case:
-            N, size, total_time, time_per_it, cy_per_iter, cy_per_gather, cy_per_elem  = line.split(',')
+            if cut_cls_case:
+                N, size, cut_cls, total_time, time_per_it, cy_per_iter, cy_per_gather, cy_per_elem  = line.split(',')
+            else:
+                print(line)
+                N, size, total_time, time_per_it, cy_per_iter, cy_per_gather, cy_per_elem  = line.split(',')
+                cut_cls = 0
         else:
             N, size, total_time, time_per_it, cy_per_gather, cy_per_elem  = line.split(',')
+            cut_cls = 0
 
         size = float(size)
         cycles = float(cy_per_iter) if md_case else float(cy_per_gather)
@@ -96,7 +104,7 @@ with open(raw_output_file, 'w') as wp:
         wp.write("\n")
 
 cy_label = "Cycles per iteration" if md_case else "Cycles per gather"
-ax.vlines([32, 1000], 0, 1, transform=ax.get_xaxis_transform(), linestyles='dashed', color=['#444444', '#777777'])
+ax.vlines([48, 1000, 48000], 0, 1, transform=ax.get_xaxis_transform(), linestyles='dashed', color=['#444444', '#777777'])
 #ax.vlines([32, 1000, 28000], 0, 1, transform=ax.get_xaxis_transform(), linestyles='dashed', color=['#444444', '#777777', '#aaaaaa'])
 ax.set(xlabel='Array size (kB)', ylabel=cy_label)
 ax.set_xscale('log')
