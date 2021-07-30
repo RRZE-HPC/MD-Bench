@@ -24,10 +24,6 @@ The Agenda section is a scratchpad area for planning and Todo list
         * Latency (distance between data and registers)
         * Cut cache lines between gathers for each dimension (gather on y dimension may require different cache line than for x)
         * Mapping between data and cache sets (most cache lines can be mapped to only a few cache sets)
-    * Measure gather-bench md variant on different architectures
-    * Measure clocks for only one gather in the loop (one dimension)
-    * Calculate percentage of cut cache lines
-    * Histogram of cache sets used (for different cache levels)
     * Compare cache simulator with measurements from likwid (1 timestep)
     * Allow flexible behavior on gather-md to simulate "random" accesses:
         * Use strides and distance output from MD-Bench as input on gather-md
@@ -241,7 +237,7 @@ for(int i = 0; i < Nlocal; i++) {
 ```
 
 To vectorize the code in the most internal loop, the data for the neighbors must be gathered into the vectors.
-Consequently, instructions such as **vgather** or other instructions that mimics its behavior must be used.
+Consequently, instructions such as **vgather** or other that mimic its behavior must be used.
 We resort to these strategies as hardware and software gathers, respectively.
 In order to understand and detail the performance aspects of gathering the data for these kernels, we developed gather-bench (https://github.com/RRZE-HPC/gather-bench), a benchmark that performs gathering of data from arrays of different sizes in order to evaluate the L1, L2 and L3 cache scenarios.
 The benchmark provides a simple array case and MD variants using Array of Structs (AoS) and Struct of Arrays (SoA) data layouts.
@@ -256,59 +252,162 @@ Application benchmarking runs. What experiment was done? Add results or
 reference plots in directory session-<NAME-TAG>-<ID>. Number all sections
 consecutivley such that every section has a unique ID.
 ------------------------------------------------------------------------------>
-<!-----------------------------------------------------------------------------
-## Result <NAME-TAG>-<ID>
+## Result MD-Bench-stub
 
-### Problem: <DESCRIPTION>
+### Problem: We want to obtain the execution contribution for the LJ kernel with the best memory transfer scenario (all data served from L1). Hence we ran our stubbed force calculation version and obtain the following measurements:
 
+### Measurement MD-Bench-stub.1
 
-### Measurement <NAME-TAG>-<ID>.1
+Experiments executed on Cascade Lake with AoS data layout:
 
-Example for table:
+![Stubbed Force AoS Cascade Lake](figures/md_stub_aos_casclakesp2.png)
 
-| NP | runtime |
-|----|---------|
-| 1  | 2558.89 |
-| 2  | 1425.20 |
-| 4  | 741.97  |
-| 8  | 449.23  |
-| 10 | 371.39  |
-| 20 | 233.90  |
+### Measurement MD-Bench-stub.2
+
+Experiments executed on Cascade Lake with SoA data layout:
+
+![Stubbed Force SoA Cascade Lake](figures/md_stub_soa_casclakesp2.png)
+
+### Measurement MD-Bench-stub.3
+
+Results reported by IACA for CLX architecture with AoS data layout:
 
 ```
-Verbatim Text
+Combined Analysis Report
+------------------------
+                                     Port pressure in cycles                                     
+     |  0   - 0DV  |  1   |  2   -  2D  |  3   -  3D  |  4   |  5   |  6   |  7   ||  CP  | LCD  |
+-------------------------------------------------------------------------------------------------
+ 261 |             |      |             |             |      |      |      |      ||      |      |   ..B1.25:                        # Preds ..B1.24
+ 262 |             |      |             |             |      |      |      |      ||      |      |   # Execution count [4.50e+00]
+ 263 | 0.00        | 0.00 |             |             |      | 0.00 | 1.00 |      ||  1.0 |  1.0 |   movq      %r8, %r13                                     #56.43
+ 264 |             | 1.00 |             |             |      |      |      |      ||  3.0 |  3.0 |   imulq     %rcx, %r13                                    #56.43
+ 265 |             |      |             |             |      | 1.00 |      |      ||      |      |   vbroadcastsd %xmm6, %zmm2                               #58.23
+ 266 |             |      |             |             |      | 1.00 |      |      ||      |      |   vbroadcastsd %xmm7, %zmm1                               #59.23
+ 267 |             |      |             |             |      | 1.00 |      |      ||      |      |   vbroadcastsd %xmm12, %zmm0                              #60.23
+...
+ 337 | 1.00        |      |             |             |      | 0.00 |      |      ||      |      |   vfmadd231pd %zmm23, %zmm25, %zmm9{%k2}                  #78.17
+ 338 | 1.00        |      |             |             |      | 0.00 |      |      ||      |      |   vfmadd231pd %zmm24, %zmm25, %zmm8{%k2}                  #79.17
+ 339 | 1.00        |      |             |             |      | 0.00 |      |      ||  4.0 |      |   vfmadd231pd %zmm26, %zmm25, %zmm11{%k2}                 #80.17
+ 340 | 0.00        | 0.00 |             |             |      | 0.00 | 1.00 |      ||      |      |   cmpl      %r14d, %r12d                                  #67.9
+ 341 |             |      |             |             |      |      |      |      ||      |      | * jb        ..B1.26       # Prob 82%                      #67.9
+ 342 |             |      |             |             |      |      |      |      ||      |      |   # LOE rbx rbp rdi r13 r11d r12d r14d xmm6 xmm7 xmm12 ymm15 ymm16 zmm0 zmm1 zmm2 zmm5 zmm8 zmm9 zmm10 zmm11 zmm13 zmm14
+
+       21.0          11.2   17.0   6.50   17.0   6.50   7.00   17.0   8.83   7.00    75.0   10.0 
+
+
+Loop-Carried Dependencies Analysis Report
+-----------------------------------------
+ 287 |  6.0 | lea       (%r10,%r10,2), %r10d                          #69.36| [269, 283, 287]
+ 291 | 10.0 | lea       (%r8,%r8,2), %r8d                             #69.36| [263, 264, 269, 285, 291]
+ 295 |  9.0 | lea       (%rcx,%rcx,2), %ecx                           #69.36| [264, 269, 288, 295]
+ 314 |  1.0 | addl      $8, %r12d                                     #67.9| [314]
+ 339 |  4.0 | vfmadd231pd %zmm26, %zmm25, %zmm11{%k2}                 #80.17| [339]
+ 338 |  4.0 | vfmadd231pd %zmm24, %zmm25, %zmm8{%k2}                  #79.17| [338]
+ 337 |  4.0 | vfmadd231pd %zmm23, %zmm25, %zmm9{%k2}                  #78.17| [337]
 ```
 
------------------------------------------------------------------------------->
+### Measurement MD-Bench-stub.4
+
+Results reported by IACA for CLX architecture with SoA data layout:
+
+```
+Combined Analysis Report
+------------------------
+                                     Port pressure in cycles                                     
+     |  0   - 0DV  |  1   |  2   -  2D  |  3   -  3D  |  4   |  5   |  6   |  7   ||  CP  | LCD  |
+-------------------------------------------------------------------------------------------------
+ 253 |             |      |             |             |      |      |      |      ||      |      |   # LOE rax rdx rcx rbp rsi rdi r8 r10 r11 r12 r14 ebx r9d r13d xmm8 xmm9 xmm10 ymm17 ymm18 zmm0 zmm1 zmm2 zmm7 zmm11 zmm12 zmm13 zmm14 zmm15 zmm16 zmm19
+ 254 |             |      |             |             |      |      |      |      ||      |      |   ..B1.22:                        # Preds ..B1.22 ..B1.21
+ 255 |             |      |             |             |      |      |      |      ||      |      |   # Execution count [2.50e+01]
+ 256 |             |      |             |             |      |      |      |      ||      |      | X vpcmpeqb  %xmm0, %xmm0, %k2                             #70.36
+ 257 | 0.00        | 0.50 |             |             |      | 0.00 | 0.50 |      ||      |      |   addl      $8, %r9d                                      #67.9
+ 258 |             |      |             |             |      |      |      |      ||      |      | X vpcmpeqb  %xmm0, %xmm0, %k1                             #69.36
+ 259 |             |      |             |             |      |      |      |      ||      |      | X vpcmpeqb  %xmm0, %xmm0, %k3                             #71.36
+...
+ 289 | 0.00        |      |             |             |      | 1.00 |      |      ||      |      |   vfmadd231pd %zmm28, %zmm30, %zmm13{%k5}                 #78.17
+ 290 | 0.00        |      |             |             |      | 1.00 |      |      ||      |  4.0 |   vfmadd231pd %zmm29, %zmm30, %zmm12{%k5}                 #79.17
+ 291 | 0.00        |      |             |             |      | 1.00 |      |      ||  4.0 |      |   vfmadd231pd %zmm31, %zmm30, %zmm11{%k5}                 #80.17
+ 292 | 0.00        | 0.50 |             |             |      | 0.00 | 0.50 |      ||      |      |   cmpl      %ebx, %r9d                                    #67.9
+ 293 |             |      |             |             |      |      |      |      ||      |      | * jb        ..B1.22       # Prob 82%                      #67.9
+
+       17.5          3.00   13.0   2.50   13.0   2.50          17.5   3.00           68.0    4   
+
+
+Loop-Carried Dependencies Analysis Report
+-----------------------------------------
+ 257 |  1.0 | addl      $8, %r9d                                      #67.9| [257]
+ 261 |  1.0 | addq      $8, %r14                                      #67.9| [261]
+ 290 |  4.0 | vfmadd231pd %zmm29, %zmm30, %zmm12{%k5}                 #79.17| [290]
+ 289 |  4.0 | vfmadd231pd %zmm28, %zmm30, %zmm13{%k5}                 #78.17| [289]
+ 291 |  4.0 | vfmadd231pd %zmm31, %zmm30, %zmm11{%k5}                 #80.17| [291]
+```
+
+### Measurement MD-Bench-stub.5
+
+Results reported by IACA for SKX architecture with AoS data layout:
+
+```
+Throughput Analysis Report
+--------------------------
+Block Throughput: 36.70 Cycles       Throughput Bottleneck: Backend
+Loop Count:  23
+Port Binding In Cycles Per Iteration:
+--------------------------------------------------------------------------------------------------
+|  Port  |   0   -  DV   |   1   |   2   -  D    |   3   -  D    |   4   |   5   |   6   |   7   |
+--------------------------------------------------------------------------------------------------
+| Cycles | 17.5     0.0  | 11.0  | 20.5    17.0  | 20.5    17.0  |  7.0  | 20.5  |  7.0  |  0.0  |
+--------------------------------------------------------------------------------------------------
+```
+
+### Measurement MD-Bench-stub.6
+
+Results reported by IACA for SKX architecture with SoA data layout:
+
+```
+Throughput Analysis Report
+--------------------------
+Block Throughput: 30.25 Cycles       Throughput Bottleneck: Backend
+Loop Count:  23
+Port Binding In Cycles Per Iteration:
+--------------------------------------------------------------------------------------------------
+|  Port  |   0   -  DV   |   1   |   2   -  D    |   3   -  D    |   4   |   5   |   6   |   7   |
+--------------------------------------------------------------------------------------------------
+| Cycles | 16.0     0.0  |  2.0  | 13.0    13.0  | 13.0    13.0  |  0.0  | 19.0  |  3.0  |  0.0  |
+--------------------------------------------------------------------------------------------------
+```
+
+![Stubbed Force SoA Cascade Lake](figures/md_stub_soa_casclakesp2.png)
+
 <!-----------------------------------------------------------------------------
 Document the initial performance which serves as baseline for further progress
 and is used to compute the achieved speedup. Document exactly how the baseline
 was created.
------------------------------------------------------------------------------->
 ## Baseline
 
 * Time to solution:
 * Performance:
 
 
+------------------------------------------------------------------------------>
 <!-----------------------------------------------------------------------------
 Explain which tool was used and how the measurements were done. Store and
 reference the results. If applicable discuss and explain profiles.
------------------------------------------------------------------------------->
 ## Performance Profile <NAME-TAG>-<ID>.2
+------------------------------------------------------------------------------>
 
 <!-----------------------------------------------------------------------------
 Analysis and insights extracted from benchmarking results. Planning of more
 benchmarks.
------------------------------------------------------------------------------->
 ## Analysis <NAME-TAG>-<ID>.3
+------------------------------------------------------------------------------>
 
 
 <!-----------------------------------------------------------------------------
 Document all changes with  filepath:linenumber and explanation what was changed
 and why. Create patch if applicable and store patch in referenced file.
------------------------------------------------------------------------------->
 ## Optimisation <NAME-TAG>-<ID>.4: <DESCRIPTION>
+------------------------------------------------------------------------------>
 
 
 <!-----------------------------------------------------------------------------
