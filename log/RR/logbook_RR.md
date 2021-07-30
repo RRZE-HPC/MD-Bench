@@ -254,7 +254,10 @@ consecutivley such that every section has a unique ID.
 ------------------------------------------------------------------------------>
 ## Result MD-Bench-stub
 
-### Problem: We want to obtain the execution contribution for the LJ kernel with the best memory transfer scenario (all data served from L1). Hence we ran our stubbed force calculation version and obtain the following measurements:
+### Problem: Execution contribution
+
+We want to obtain the execution contribution for the LJ kernel with the best memory transfer scenario (all data served from L1).
+Hence we ran our stubbed force calculation version and obtain the following measurements:
 
 ### Measurement MD-Bench-stub.1
 
@@ -377,7 +380,13 @@ Port Binding In Cycles Per Iteration:
 --------------------------------------------------------------------------------------------------
 ```
 
-![Stubbed Force SoA Cascade Lake](figures/md_stub_soa_casclakesp2.png)
+### Measurement MD-Bench-stub.7
+
+![Stubbed Force AoS Cascade Lake](figures/md_stub_aos_casclakesp2_iln100.png)
+
+### Measurement MD-Bench-stub.8
+
+![Stubbed Force SoA Cascade Lake](figures/md_stub_soa_casclakesp2_iln100.png)
 
 <!-----------------------------------------------------------------------------
 Document the initial performance which serves as baseline for further progress
