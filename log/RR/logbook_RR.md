@@ -273,7 +273,7 @@ Experiments executed on Cascade Lake with SoA data layout:
 
 ### Measurement MD-Bench-stub.3
 
-Results reported by IACA for CLX architecture with AoS data layout:
+Results reported by OSACA for CLX architecture with AoS data layout:
 
 ```
 Combined Analysis Report
@@ -312,7 +312,7 @@ Loop-Carried Dependencies Analysis Report
 
 ### Measurement MD-Bench-stub.4
 
-Results reported by IACA for CLX architecture with SoA data layout:
+Results reported by OSACA for CLX architecture with SoA data layout:
 
 ```
 Combined Analysis Report
@@ -382,11 +382,68 @@ Port Binding In Cycles Per Iteration:
 
 ### Measurement MD-Bench-stub.7
 
-![Stubbed Force AoS Cascade Lake](figures/md_stub_aos_casclakesp2_iln100.png)
+![Stubbed Force AoS Cascade Lake Repeat 100 times](figures/md_stub_aos_casclakesp2_iln100.png)
 
 ### Measurement MD-Bench-stub.8
 
-![Stubbed Force SoA Cascade Lake](figures/md_stub_soa_casclakesp2_iln100.png)
+![Stubbed Force SoA Cascade Lake Repeat 100 times](figures/md_stub_soa_casclakesp2_iln100.png)
+
+## Result gather-md
+
+### Problem: Memory contribution
+
+### Measurement gather-md.1
+
+We want to obtain the memory contribution (bandwidth and latency) for gathering the data from atoms positions.
+We used the **gather-md** benchmark and obtained the following measurements:
+
+Experiments executed on Cascade Lake with AoS data layout:
+
+![gather-md aos casclakesp2](figures/gather_md_aos_casclakesp2.png)
+![gather-md aos casclakesp2](figures/gather_md_aos_casclakesp2_more_sizes.png)
+
+### Measurement gather-md.2
+
+Experiments executed on Cascade Lake with AoS data layout and padding byte:
+
+![gather-md aos casclakesp2](figures/gather_md_aos_casclakesp2_padding.png)
+
+### Measurement gather-md.3
+
+Experiments executed on Cascade Lake with AoS data layout and no prefetchers:
+
+![gather-md aos casclakesp2](figures/gather_md_aos_casclakesp2_no_prefetchers.png)
+
+### Measurement gather-md.4
+
+Experiments executed on Cascade Lake with AoS data layout only gathering data on x dimension:
+
+![gather-md aos casclakesp2](figures/gather_md_aos_casclakesp2_one_dim.png)
+
+### Measurement gather-md.5
+
+Experiments executed on Cascade Lake with SoA data layout:
+
+![gather-md soa casclakesp2](figures/gather_md_soa_casclakesp2.png)
+
+### Measurement gather-md.6
+
+Experiments executed on Ice Lake with AoS data layout:
+
+![gather-md aos icx32](figures/gather_md_aos_icx32.png)
+![gather-md aos icx32](figures/gather_md_aos_icx32_more_sizes.png)
+
+### Measurement gather-md.7
+
+Experiments executed on Ice Lake with AoS data layout and padding byte:
+
+![gather-md aos icx32](figures/gather_md_aos_icx32_padding.png)
+
+### Measurement gather-md.8
+
+Experiments executed on Ice Lake with AoS data layout only gathering data on x dimension:
+
+![gather-md aos icx32](figures/gather_md_aos_icx32_one_dim.png)
 
 <!-----------------------------------------------------------------------------
 Document the initial performance which serves as baseline for further progress
