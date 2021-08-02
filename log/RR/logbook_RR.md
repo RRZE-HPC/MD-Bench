@@ -313,14 +313,14 @@ Until now we not only focused on fitting the data size into different cache leve
 Considering that the stride among the elements to be gathered is fixed and the data is properly aligned to the cache line sizes, the number of cache lines touched per gather on the simple array case can be expressed as:
 
 <!-- https://latex.codecogs.com/gif.latex?min\left(max\left(\frac{stride%20*%20vector\_length}{cache\_line\_elements},%201\right),%20vector\_length\right) -->
-![eq\_gather\_simple\_array\_touched\_cache\_lines](eq_gather_simple_array_touched_cache_lines.gif)
+![eq\_gather\_simple\_array\_touched\_cache\_lines](figures/eq_gather_simple_array_touched_cache_lines.gif)
 
 Where **stride** is the specified stride, **vector\_length** is the vector width of the CPU (in doubles) and **cache\_line\_elements** is the size of the cache line in the CPU (in doubles).
 
 For the struct of arrays case, the number of cache lines touched is roughly **dims** times the number for the simple case (because data is gathered in the same fashion but for three distinct arrays), where **dims** is the number of dimensions to be gathered. For array of structures, the number of cache lines touched can be expressed as:
 
 <!-- https://latex.codecogs.com/gif.latex?min\left(\frac{dims%20*%20stride%20*%20vector\_length}{cache\_line\_elements},%20vector\_length\right) -->
-![eq\_gather\_md\_aos\_touched\_cache\_lines](eq_gather_md_aos_touched_cache_lines.gif)
+![eq\_gather\_md\_aos\_touched\_cache\_lines](figures/eq_gather_md_aos_touched_cache_lines.gif)
 
 For our tests on Cascade Lake (**dims = 3, vector\_length = 8, cache\_line\_elements = 8**), it is noticeable from the previous equation that we only touch less cache lines in the cases where the stride is either 1 or 2.
 The remaining cases do not benefit from touching less cache lines on the same dimension.
