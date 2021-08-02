@@ -247,6 +247,61 @@ For that, we use the already mentioned stubbed force calculation, a benchmark th
 This allow us to make the data size fit into the L1 cache (reduce latency impact) and derive some properties such as the number of cycles per atom.
 Finally, we compare the executed measurements from the stubbed force calculation with OSACA and IACA predictions for the same kernel as a baseline.
 
+For the Intel compiler generated assembly, three variants of the most three internal loop are generated (Consider ***rmng_neighs = numneighs - k***):
+
+- **rmng\_neighs < 8:** last iteration, vectors are not fulfilled
+- **rmng\_neighs in ]8, 1200]:** with lea+mov instructions (prefetching?), L1 case? 1200 * 3 * 8 =28.8kB, L1 cache size is 32kB on Cascade Lake
+- **rmng\_neighs >= 1200:** no mov+lea instructions
+
+Unless explicitly stated, our experiments make use of the **rmng\_neighs in ]8, 1200]** variant!
+
+Regarding the mov+lea instructions, these can be perceived in the following snippet:
+
+```Assembly
+vmovdqu   ymm3, YMMWORD PTR [r13+rbx*4]         # ymm3 <- neighs[k]
+vpaddd    ymm4, ymm3, ymm3                      # ymm4 <- neighs[k] * 2
+vpaddd    ymm3, ymm3, ymm4                      # ymm3 <- neighs[k] * 3
+# -------------------- mov+lea instructions (prefetching?) -----------------------
+mov       r10d, DWORD PTR [r13+rbx*4]           # r10d <- neighs[k]
+mov       r9d, DWORD PTR [4+r13+rbx*4]          # r9d  <- neighs[k + 1]
+mov       r8d, DWORD PTR [8+r13+rbx*4]          # r8d  <- neighs[k + 2]
+mov       esi, DWORD PTR [12+r13+rbx*4]         # esi  <- neighs[k + 3]
+lea       r10d, DWORD PTR [r10+r10*2]           # r10d <- neighs[k] * 3
+mov       ecx, DWORD PTR [16+r13+rbx*4]         # ecx  <- neighs[k + 4]
+lea       r9d, DWORD PTR [r9+r9*2]              # r9d  <- neighs[k + 1] * 3
+mov       edx, DWORD PTR [20+r13+rbx*4]         # edx  <- neighs[k + 5]
+lea       r8d, DWORD PTR [r8+r8*2]              # r8d  <- neighs[k + 2] * 3
+mov       eax, DWORD PTR [24+r13+rbx*4]         # edx  <- neighs[k + 6]
+lea       esi, DWORD PTR [rsi+rsi*2]            # esi  <- neighs[k + 3] * 3
+mov       r15d, DWORD PTR [28+r13+rbx*4]        # edx  <- neighs[k + 7]
+lea       ecx, DWORD PTR [rcx+rcx*2]            # ecx  <- neighs[k + 4] * 3
+lea       edx, DWORD PTR [rdx+rdx*2]            # edx  <- neighs[k + 5] * 3
+lea       eax, DWORD PTR [rax+rax*2]            # eax  <- neighs[k + 6] * 3
+lea       r15d, DWORD PTR [r15+r15*2]           # r15d <- neighs[k + 7] * 3
+# -------------------- end of mov+lea instructions -------------------------------
+vpcmpeqb  k1, xmm0, xmm0                        # k1    <- [true for all elements]
+vpcmpeqb  k2, xmm0, xmm0                        # k2    <- [true for all elements]
+vpcmpeqb  k3, xmm0, xmm0                        # k3    <- [true for all elements]
+vpxord    zmm4, zmm4, zmm4                      # zmm4  <- 0.0
+vpxord    zmm17, zmm17, zmm17                   # zmm17 <- 0.0
+vpxord    zmm18, zmm18, zmm18                   # zmm18 <- 0.0
+vgatherdpd zmm4{k1}, QWORD PTR [16+rdi+ymm3*8]  # zmm4  <- atom->x[j * 3 + 2]
+vgatherdpd zmm17{k2}, QWORD PTR [8+rdi+ymm3*8]  # zmm17 <- atom->x[j * 3 + 1]
+vgatherdpd zmm18{k3}, QWORD PTR [rdi+ymm3*8]    # zmm18 <- atom->x[j * 3]
+```
+
+The mov+lea instructions delimited do not interfere with the semantics of the code (the dest registers for lea are not used afterwards in the kernel), hence they are generated either by compilation faults or performance reasons.
+On Cascade Lake, the performance results when removing these instructions are better:
+
+```
+With lea+mov:
+TOTAL 9.30s FORCE 4.81s NEIGH 4.25s REST 0.24s
+Without lea+mov:
+TOTAL 8.95s FORCE 4.43s NEIGH 4.28s REST 0.24s
+```
+
+Therefore at least for this case, we can assure that it is a bad compiler decision to generate such instructions.
+
 <!-----------------------------------------------------------------------------
 Application benchmarking runs. What experiment was done? Add results or
 reference plots in directory session-<NAME-TAG>-<ID>. Number all sections
