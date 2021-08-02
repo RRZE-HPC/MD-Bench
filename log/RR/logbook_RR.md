@@ -437,11 +437,51 @@ Port Binding In Cycles Per Iteration:
 
 ### Measurement MD-Bench-stub.7
 
+There is a high discrepancy between the IACA and OSACA predictions and the measured cycles for the stubbed force calculation.
+The main reason for this is the fact that there is an overhead to fill the CPU pipeline with the instructions on the first iterations of the most internal loop, which increases the cycles per iteration.
+To mitigate this, we need to execute the most internal loop enough times in order to hide this overhead, hence we include a new loop in the code to just repeat the neighbor lists iteration:
+
+```C
+#if VARIANT == stub && defined(NEIGHBORS_LOOP_RUNS) && NEIGHBORS_LOOP_RUNS > 1
+#define REPEAT_NEIGHBORS_LOOP
+int nmax = first_exec ? 1 : NEIGHBORS_LOOP_RUNS;
+for(int n = 0; n < nmax; n++) {
+#endif
+
+    for(int k = 0; k < numneighs; k++) {
+        int j = neighs[k];
+        MD_FLOAT delx = xtmp - atom_x(j);
+        MD_FLOAT dely = ytmp - atom_y(j);
+        MD_FLOAT delz = ztmp - atom_z(j);
+        MD_FLOAT rsq = delx * delx + dely * dely + delz * delz;
+
+        if(rsq < cutforcesq) {
+            MD_FLOAT sr2 = 1.0 / rsq;
+            MD_FLOAT sr6 = sr2 * sr2 * sr2 * sigma6;
+            MD_FLOAT force = 48.0 * sr6 * (sr6 - 0.5) * sr2 * epsilon;
+            fix += delx * force;
+            fiy += dely * force;
+            fiz += delz * force;
+        }
+    }
+
+#ifdef REPEAT_NEIGHBORS_LOOP
+}
+#endif
+```
+
+This introduces the REPEAT\_NEIGHBORS\_LOOP option in the MD-Bench configuration file, which is an integer that defines how many times the most internal loop must be repeated.
+The results for repeating the most internal loop 100 times with AoS data layout on Cascade Lake architecture are shown in the following chart:
+
 ![Stubbed Force AoS Cascade Lake Repeat 100 times](figures/md_stub_aos_casclakesp2_iln100.png)
 
 ### Measurement MD-Bench-stub.8
 
+Results for repeating the most internal loop 100 times with SoA data layout on Cascade Lake architecture:
+
 ![Stubbed Force SoA Cascade Lake Repeat 100 times](figures/md_stub_soa_casclakesp2_iln100.png)
+
+The new results get very close to the IACA predictions (about 5 cycles higher than them in both cases), hence these measurements are a good prediction for the instruction execution contribution of this LJ kernel.
 
 ## Result gather-md
 
