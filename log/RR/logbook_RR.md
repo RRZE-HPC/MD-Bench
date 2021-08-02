@@ -367,13 +367,13 @@ Hence we ran our stubbed force calculation version and obtain the following meas
 
 Experiments executed on Cascade Lake with AoS data layout:
 
-![Stubbed Force AoS Cascade Lake](figures/md_stub_aos_casclakesp2.png)
+![stubbed\_force\_aos\_casclakesp2](figures/md_stub_aos_casclakesp2.png)
 
 ### Measurement MD-Bench-stub.2
 
 Experiments executed on Cascade Lake with SoA data layout:
 
-![Stubbed Force SoA Cascade Lake](figures/md_stub_soa_casclakesp2.png)
+![stubbed\_force\_soa\_casclakesp2](figures/md_stub_soa_casclakesp2.png)
 
 ### Measurement MD-Bench-stub.3
 
@@ -522,13 +522,13 @@ for(int n = 0; n < nmax; n++) {
 This introduces the **NEIGHBORS\_LOOP\_RUNS** option in the MD-Bench configuration file, which is an integer that defines how many times the most internal loop must be repeated.
 The results for repeating the most internal loop 100 times with AoS data layout on Cascade Lake architecture are shown in the following chart:
 
-![Stubbed Force AoS Cascade Lake Repeat 100 times](figures/md_stub_aos_casclakesp2_iln100.png)
+![stubbed\_force\_aos\_casclakesp2\_repeat\_100\_times](figures/md_stub_aos_casclakesp2_iln100.png)
 
 ### Measurement MD-Bench-stub.8
 
 Results for repeating the most internal loop 100 times with SoA data layout on Cascade Lake architecture:
 
-![Stubbed Force SoA Cascade Lake Repeat 100 times](figures/md_stub_soa_casclakesp2_iln100.png)
+![stubbed\_force\_soa\_casclakesp2\_repeat\_100\_times](figures/md_stub_soa_casclakesp2_iln100.png)
 
 The new results get very close to the IACA predictions (about 5 cycles higher than them in both cases), hence these measurements are a good prediction for the instruction execution contribution of this LJ kernel.
 
@@ -543,50 +543,62 @@ We used the **gather-md** benchmark and obtained the following measurements:
 
 Experiments executed on Cascade Lake with AoS data layout:
 
+Raw data: [csv](raw_data/gather_md_aos_casclakesp2.csv) | [txt](raw_data/gather_md_aos_casclakesp2.txt)
 ![gather-md aos casclakesp2](figures/gather_md_aos_casclakesp2.png)
+
+Raw data: [csv](raw_data/gather_md_aos_casclakesp2_more_sizes.csv) | [txt](raw_data/gather_md_aos_casclakesp2_more_sizes.txt)
 ![gather-md aos casclakesp2](figures/gather_md_aos_casclakesp2_more_sizes.png)
 
 ### Measurement gather-md.2
 
 Experiments executed on Cascade Lake with AoS data layout and padding byte:
 
+Raw data: [csv](raw_data/gather_md_aos_casclakesp2_padding.csv) | [txt](raw_data/gather_md_aos_casclakesp2_padding.txt)
 ![gather-md aos casclakesp2](figures/gather_md_aos_casclakesp2_padding.png)
 
 ### Measurement gather-md.3
 
 Experiments executed on Cascade Lake with AoS data layout and no prefetchers:
 
+Raw data: [csv](raw_data/gather_md_aos_casclakesp2_no_prefetchers.csv) | [txt](raw_data/gather_md_aos_casclakesp2_no_prefetchers.txt)
 ![gather-md aos casclakesp2](figures/gather_md_aos_casclakesp2_no_prefetchers.png)
 
 ### Measurement gather-md.4
 
 Experiments executed on Cascade Lake with AoS data layout only gathering data on x dimension:
 
+Raw data: [csv](raw_data/gather_md_aos_casclakesp2_one_dim.csv) | [txt](raw_data/gather_md_aos_casclakesp2_one_dim.txt)
 ![gather-md aos casclakesp2](figures/gather_md_aos_casclakesp2_one_dim.png)
 
 ### Measurement gather-md.5
 
 Experiments executed on Cascade Lake with SoA data layout:
 
+Raw data: [csv](raw_data/gather_md_soa_casclakesp2.csv) | [txt](raw_data/gather_md_soa_casclakesp2.txt)
 ![gather-md soa casclakesp2](figures/gather_md_soa_casclakesp2.png)
 
 ### Measurement gather-md.6
 
 Experiments executed on Ice Lake with AoS data layout:
 
+Raw data: [csv](raw_data/gather_md_aos_icx32.csv) | [txt](raw_data/gather_md_aos_icx32.txt)
 ![gather-md aos icx32](figures/gather_md_aos_icx32.png)
+
+Raw data: [csv](raw_data/gather_md_aos_icx32_more_sizes.csv) | [txt](raw_data/gather_md_aos_icx32_more_sizes.txt)
 ![gather-md aos icx32](figures/gather_md_aos_icx32_more_sizes.png)
 
 ### Measurement gather-md.7
 
 Experiments executed on Ice Lake with AoS data layout and padding byte:
 
+Raw data: [csv](raw_data/gather_md_aos_icx32_padding.csv) | [txt](raw_data/gather_md_aos_icx32_padding.txt)
 ![gather-md aos icx32](figures/gather_md_aos_icx32_padding.png)
 
 ### Measurement gather-md.8
 
 Experiments executed on Ice Lake with AoS data layout only gathering data on x dimension:
 
+Raw data: [csv](raw_data/gather_md_aos_icx32_one_dim.csv) | [txt](raw_data/gather_md_aos_icx32_one_dim.txt)
 ![gather-md aos icx32](figures/gather_md_aos_icx32_one_dim.png)
 
 <!-----------------------------------------------------------------------------
