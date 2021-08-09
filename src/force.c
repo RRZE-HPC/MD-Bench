@@ -51,6 +51,7 @@
 #   define INDEX_TRACER_INIT        FILE *index_tracer_fp; \
                                     if(first_exec) { index_tracer_fp = fopen("index_tracer.out", "w"); }
 #   define INDEX_TRACER_END         if(first_exec) { fclose(index_tracer_fp); }
+#   define INDEX_TRACE_ATOM(a)      if(first_exec) { fprintf(index_tracer_fp, "A: %d\n", a); }
 #   define INDEX_TRACE(l, e)        if(first_exec) { \
                                         for(int __i = 0; __i < (e); __i += VECTOR_WIDTH) { \
                                             int __e = (((e) - __i) < VECTOR_WIDTH) ? ((e) - __i) : VECTOR_WIDTH; \
@@ -95,6 +96,7 @@
 #else
 #   define INDEX_TRACER_INIT
 #   define INDEX_TRACER_END
+#   define INDEX_TRACE_ATOM(a)
 #   define INDEX_TRACE(l, e)
 #   define DIST_TRACE_SORT(l, e)
 #   define DIST_TRACE(l, e)
@@ -134,6 +136,7 @@ double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor, int first_
         MEM_TRACE(atom_x(i), 'R');
         MEM_TRACE(atom_y(i), 'R');
         MEM_TRACE(atom_z(i), 'R');
+        INDEX_TRACE_ATOM(i);
 
         #ifdef EXPLICIT_TYPES
         const int type_i = atom->type[i];
