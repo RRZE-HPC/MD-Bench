@@ -78,7 +78,7 @@ $(BUILD_DIR)/%.s:  %.c
 
 $(BUILD_DIR)/%.o:  %.s
 	$(info ===>  ASSEMBLE  $@)
-	$(Q)$(AS) $(ASFLAGS) $< -o $@
+	$(Q)$(AS) $< -o $@
 
 .PHONY: clean distclean tags info asm
 
