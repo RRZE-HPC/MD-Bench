@@ -302,6 +302,55 @@ TOTAL 8.95s FORCE 4.43s NEIGH 4.28s REST 0.24s
 
 Therefore at least for this case, we can assure that it is a bad compiler decision to generate such instructions.
 
+## gather-bench
+
+In order to understand and experiment with all different gathering strategies, we developed **gather-bench**, a benchmark that contains different kernels which gather data from different places into the CPU registers.
+Currently, gather-bench provides benchmarks for simple array and MD cases (AoS and SoA) with fixed strides on x86\_64 AVX2 and AVX512 processors, but support for different patterns that fit the "randomness" of the MD cases should be supported soon, as well as variants for other architectures.
+The kernels are developed in pure assembly to avoid compiler optimizations and to permit low-level tweaking of the code.
+Our main focus is to understand which factors influence the "cost of gather" and how much they influence.
+
+Until now we not only focused on fitting the data size into different cache levels, but also evaluating the performance based on number of cache lines touched.
+Considering that the stride among the elements to be gathered is fixed and the data is properly aligned to the cache line sizes, the number of cache lines touched per gather on the simple array case can be expressed as:
+
+<!-- https://latex.codecogs.com/gif.latex?min\left(max\left(\frac{stride%20*%20vector\_length}{cache\_line\_elements},%201\right),%20vector\_length\right) -->
+![eq\_gather\_simple\_array\_touched\_cache\_lines](figures/eq_gather_simple_array_touched_cache_lines.gif)
+
+Where **stride** is the specified stride, **vector\_length** is the vector width of the CPU (in doubles) and **cache\_line\_elements** is the size of the cache line in the CPU (in doubles).
+
+For the struct of arrays case, the number of cache lines touched is roughly **dims** times the number for the simple case (because data is gathered in the same fashion but for three distinct arrays), where **dims** is the number of dimensions to be gathered. For array of structures, the number of cache lines touched can be expressed as:
+
+<!-- https://latex.codecogs.com/gif.latex?min\left(\frac{dims%20*%20stride%20*%20vector\_length}{cache\_line\_elements},%20vector\_length\right) -->
+![eq\_gather\_md\_aos\_touched\_cache\_lines](figures/eq_gather_md_aos_touched_cache_lines.gif)
+
+For our tests on Cascade Lake (**dims = 3, vector\_length = 8, cache\_line\_elements = 8**), it is noticeable from the previous equation that we only touch less cache lines in the cases where the stride is either 1 or 2.
+The remaining cases do not benefit from touching less cache lines on the same dimension.
+However, another point to consider is the number of cut cache lines for different dimensions of the same element.
+If for instance the data for the ***x*** dimension is in one cache line and the data from ***y*** and ***z*** dimensions are in another one, we need to load two cache lines.
+Since the number of cut cache lines is not too straightforward to determine, we count it during runtime with the following code snippet:
+
+```C
+#ifdef AOS
+    const int cl_shift = log2_uint((unsigned int) cl_size);
+    for(int i = 0; i < N; i++) {
+        const int first_cl = (idx[i] * snbytes * sizeof(double)) >> cl_shift;
+        const int last_cl = ((idx[i] * snbytes + gathered_dims - 1) * sizeof(double)) >> cl_shift;
+        if(first_cl != last_cl) {
+            cut_cl++;
+        }
+    }
+#endif
+```
+
+Roughly speaking, the number of cut cache lines should be smaller when the stride is multiple of 4, which guarantees the alignment of the data, keeping the data from same element in the same cache line.
+Another possibility to avoid cutting cache lines is to introducing a padding byte on 3-dimensions, which also keeps the data from the same element aligned with respect to the cache lines.
+
+Finally, we list and describe the different options from **gather-bench** with respect to gathering strategies and measurements:
+
+- **DATA\_LAYOUT:** Specifies the data layout (AOS or SOA) for the MD variant.
+- **PADDING:** Includes the padding byte (true or false) for elements.
+- **MEASURE\_GATHER\_CYCLES:** measure cycles for each gather separately (true or false), since it requires memory fences it should be more suitable to measure and analyze the latency.
+- **ONLY\_FIRST\_DIMENSION:** Gather data only for the first dimension (one gather per iteration), useful to isolate effects caused among gathers for other dimensions (such as the impact of cut cache lines).
+
 <!-----------------------------------------------------------------------------
 Application benchmarking runs. What experiment was done? Add results or
 reference plots in directory session-<NAME-TAG>-<ID>. Number all sections
@@ -318,13 +367,13 @@ Hence we ran our stubbed force calculation version and obtain the following meas
 
 Experiments executed on Cascade Lake with AoS data layout:
 
-![Stubbed Force AoS Cascade Lake](figures/md_stub_aos_casclakesp2.png)
+![stubbed\_force\_aos\_casclakesp2](figures/md_stub_aos_casclakesp2.png)
 
 ### Measurement MD-Bench-stub.2
 
 Experiments executed on Cascade Lake with SoA data layout:
 
-![Stubbed Force SoA Cascade Lake](figures/md_stub_soa_casclakesp2.png)
+![stubbed\_force\_soa\_casclakesp2](figures/md_stub_soa_casclakesp2.png)
 
 ### Measurement MD-Bench-stub.3
 
@@ -437,11 +486,51 @@ Port Binding In Cycles Per Iteration:
 
 ### Measurement MD-Bench-stub.7
 
-![Stubbed Force AoS Cascade Lake Repeat 100 times](figures/md_stub_aos_casclakesp2_iln100.png)
+There is a high discrepancy between the IACA and OSACA predictions and the measured cycles for the stubbed force calculation.
+The main reason for this is the fact that there is an overhead to fill the CPU pipeline with the instructions on the first iterations of the most internal loop, which increases the cycles per iteration.
+To mitigate this, we need to execute the most internal loop enough times in order to hide this overhead, hence we include a new loop in the code to just repeat the neighbor lists iteration:
+
+```C
+#if VARIANT == stub && defined(NEIGHBORS_LOOP_RUNS) && NEIGHBORS_LOOP_RUNS > 1
+#define REPEAT_NEIGHBORS_LOOP
+int nmax = first_exec ? 1 : NEIGHBORS_LOOP_RUNS;
+for(int n = 0; n < nmax; n++) {
+#endif
+
+    for(int k = 0; k < numneighs; k++) {
+        int j = neighs[k];
+        MD_FLOAT delx = xtmp - atom_x(j);
+        MD_FLOAT dely = ytmp - atom_y(j);
+        MD_FLOAT delz = ztmp - atom_z(j);
+        MD_FLOAT rsq = delx * delx + dely * dely + delz * delz;
+
+        if(rsq < cutforcesq) {
+            MD_FLOAT sr2 = 1.0 / rsq;
+            MD_FLOAT sr6 = sr2 * sr2 * sr2 * sigma6;
+            MD_FLOAT force = 48.0 * sr6 * (sr6 - 0.5) * sr2 * epsilon;
+            fix += delx * force;
+            fiy += dely * force;
+            fiz += delz * force;
+        }
+    }
+
+#ifdef REPEAT_NEIGHBORS_LOOP
+}
+#endif
+```
+
+This introduces the **NEIGHBORS\_LOOP\_RUNS** option in the MD-Bench configuration file, which is an integer that defines how many times the most internal loop must be repeated.
+The results for repeating the most internal loop 100 times with AoS data layout on Cascade Lake architecture are shown in the following chart:
+
+![stubbed\_force\_aos\_casclakesp2\_repeat\_100\_times](figures/md_stub_aos_casclakesp2_iln100.png)
 
 ### Measurement MD-Bench-stub.8
 
-![Stubbed Force SoA Cascade Lake Repeat 100 times](figures/md_stub_soa_casclakesp2_iln100.png)
+Results for repeating the most internal loop 100 times with SoA data layout on Cascade Lake architecture:
+
+![stubbed\_force\_soa\_casclakesp2\_repeat\_100\_times](figures/md_stub_soa_casclakesp2_iln100.png)
+
+The new results get very close to the IACA predictions (about 5 cycles higher than them in both cases), hence these measurements are a good prediction for the instruction execution contribution of this LJ kernel.
 
 ## Result gather-md
 
@@ -454,50 +543,62 @@ We used the **gather-md** benchmark and obtained the following measurements:
 
 Experiments executed on Cascade Lake with AoS data layout:
 
+Raw data: [csv](raw_data/gather_md_aos_casclakesp2.csv) | [txt](raw_data/gather_md_aos_casclakesp2.txt)
 ![gather-md aos casclakesp2](figures/gather_md_aos_casclakesp2.png)
+
+Raw data: [csv](raw_data/gather_md_aos_casclakesp2_more_sizes.csv) | [txt](raw_data/gather_md_aos_casclakesp2_more_sizes.txt)
 ![gather-md aos casclakesp2](figures/gather_md_aos_casclakesp2_more_sizes.png)
 
 ### Measurement gather-md.2
 
 Experiments executed on Cascade Lake with AoS data layout and padding byte:
 
+Raw data: [csv](raw_data/gather_md_aos_casclakesp2_padding.csv) | [txt](raw_data/gather_md_aos_casclakesp2_padding.txt)
 ![gather-md aos casclakesp2](figures/gather_md_aos_casclakesp2_padding.png)
 
 ### Measurement gather-md.3
 
 Experiments executed on Cascade Lake with AoS data layout and no prefetchers:
 
+Raw data: [csv](raw_data/gather_md_aos_casclakesp2_no_prefetchers.csv) | [txt](raw_data/gather_md_aos_casclakesp2_no_prefetchers.txt)
 ![gather-md aos casclakesp2](figures/gather_md_aos_casclakesp2_no_prefetchers.png)
 
 ### Measurement gather-md.4
 
 Experiments executed on Cascade Lake with AoS data layout only gathering data on x dimension:
 
+Raw data: [csv](raw_data/gather_md_aos_casclakesp2_one_dim.csv) | [txt](raw_data/gather_md_aos_casclakesp2_one_dim.txt)
 ![gather-md aos casclakesp2](figures/gather_md_aos_casclakesp2_one_dim.png)
 
 ### Measurement gather-md.5
 
 Experiments executed on Cascade Lake with SoA data layout:
 
+Raw data: [csv](raw_data/gather_md_soa_casclakesp2.csv) | [txt](raw_data/gather_md_soa_casclakesp2.txt)
 ![gather-md soa casclakesp2](figures/gather_md_soa_casclakesp2.png)
 
 ### Measurement gather-md.6
 
 Experiments executed on Ice Lake with AoS data layout:
 
+Raw data: [csv](raw_data/gather_md_aos_icx32.csv) | [txt](raw_data/gather_md_aos_icx32.txt)
 ![gather-md aos icx32](figures/gather_md_aos_icx32.png)
+
+Raw data: [csv](raw_data/gather_md_aos_icx32_more_sizes.csv) | [txt](raw_data/gather_md_aos_icx32_more_sizes.txt)
 ![gather-md aos icx32](figures/gather_md_aos_icx32_more_sizes.png)
 
 ### Measurement gather-md.7
 
 Experiments executed on Ice Lake with AoS data layout and padding byte:
 
+Raw data: [csv](raw_data/gather_md_aos_icx32_padding.csv) | [txt](raw_data/gather_md_aos_icx32_padding.txt)
 ![gather-md aos icx32](figures/gather_md_aos_icx32_padding.png)
 
 ### Measurement gather-md.8
 
 Experiments executed on Ice Lake with AoS data layout only gathering data on x dimension:
 
+Raw data: [csv](raw_data/gather_md_aos_icx32_one_dim.csv) | [txt](raw_data/gather_md_aos_icx32_one_dim.txt)
 ![gather-md aos icx32](figures/gather_md_aos_icx32_one_dim.png)
 
 <!-----------------------------------------------------------------------------
