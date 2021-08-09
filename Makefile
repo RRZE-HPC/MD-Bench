@@ -21,6 +21,10 @@ else
 DEFINES +=  -DPRECISION=2
 endif
 
+ifneq ($(ASM_SYNTAX), ATT)
+    ASFLAGS += -masm=intel
+endif
+
 ifneq ($(NEIGHBORS_LOOP_RUNS),)
     DEFINES += -DNEIGHBORS_LOOP_RUNS=$(NEIGHBORS_LOOP_RUNS)
 endif
@@ -70,7 +74,7 @@ $(BUILD_DIR)/%.o:  %.c
 
 $(BUILD_DIR)/%.s:  %.c
 	$(info ===>  GENERATE ASM  $@)
-	$(Q)$(CC) -S $(CPPFLAGS) $(CFLAGS) $< -o $@
+	$(Q)$(CC) -S $(ASFLAGS) $(CPPFLAGS) $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/%.o:  %.s
 	$(info ===>  ASSEMBLE  $@)
