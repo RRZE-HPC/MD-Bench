@@ -33,10 +33,10 @@
 #endif
 
 #ifdef MEM_TRACER
-#   define MEM_TRACER_INIT          FILE *mem_tracer_fp; \
-                                    if(first_exec) { mem_tracer_fp = fopen("mem_tracer.out", "w"); }
-#   define MEM_TRACER_END           if(first_exec) { fclose(mem_tracer_fp); }
-#   define MEM_TRACE(addr, op)      if(first_exec) { fprintf(mem_tracer_fp, "%c: %p\n", op, (void *)(&(addr))); }
+#   define MEM_TRACER_INIT              FILE *mem_tracer_fp; \
+                                        if(first_exec) { mem_tracer_fp = fopen("mem_tracer.out", "w"); }
+#   define MEM_TRACER_END               if(first_exec) { fclose(mem_tracer_fp); }
+#   define MEM_TRACE(addr, op)          if(first_exec) { fprintf(mem_tracer_fp, "%c: %p\n", op, (void *)(&(addr))); }
 #else
 #   define MEM_TRACER_INIT
 #   define MEM_TRACER_END
@@ -45,57 +45,59 @@
 
 #ifdef INDEX_TRACER
 #   ifndef VECTOR_WIDTH
-#       define VECTOR_WIDTH         8
+#       define VECTOR_WIDTH             8
 #   endif
 
-#   define INDEX_TRACER_INIT        FILE *index_tracer_fp; \
-                                    if(first_exec) { index_tracer_fp = fopen("index_tracer.out", "w"); }
-#   define INDEX_TRACER_END         if(first_exec) { fclose(index_tracer_fp); }
-#   define INDEX_TRACE_ATOM(a)      if(first_exec) { fprintf(index_tracer_fp, "A: %d\n", a); }
-#   define INDEX_TRACE(l, e)        if(first_exec) { \
-                                        for(int __i = 0; __i < (e); __i += VECTOR_WIDTH) { \
-                                            int __e = (((e) - __i) < VECTOR_WIDTH) ? ((e) - __i) : VECTOR_WIDTH; \
-                                            fprintf(index_tracer_fp, "I: "); \
-                                            for(int __j = 0; __j < __e; ++__j) { \
-                                                fprintf(index_tracer_fp, "%d ", l[__i + __j]); \
+#   define INDEX_TRACER_INIT            FILE *index_tracer_fp; \
+                                        if(first_exec) { index_tracer_fp = fopen("index_tracer.out", "w"); }
+#   define INDEX_TRACER_END             if(first_exec) { fclose(index_tracer_fp); }
+#   define INDEX_TRACE_NATOMS(nl, ng)   if(first_exec) { fprintf(index_tracer_fp, "N: %d, %d\n", nl, ng); }
+#   define INDEX_TRACE_ATOM(a)          if(first_exec) { fprintf(index_tracer_fp, "A: %d\n", a); }
+#   define INDEX_TRACE(l, e)            if(first_exec) { \
+                                            for(int __i = 0; __i < (e); __i += VECTOR_WIDTH) { \
+                                                int __e = (((e) - __i) < VECTOR_WIDTH) ? ((e) - __i) : VECTOR_WIDTH; \
+                                                fprintf(index_tracer_fp, "I: "); \
+                                                for(int __j = 0; __j < __e; ++__j) { \
+                                                    fprintf(index_tracer_fp, "%d ", l[__i + __j]); \
+                                                } \
+                                                fprintf(index_tracer_fp, "\n"); \
                                             } \
-                                            fprintf(index_tracer_fp, "\n"); \
-                                        } \
-                                    }
+                                        }
 
-#   define DIST_TRACE_SORT(l, e)    if(first_exec) { \
-                                        for(int __i = 0; __i < (e); __i += VECTOR_WIDTH) { \
-                                            int __e = (((e) - __i) < VECTOR_WIDTH) ? ((e) - __i) : VECTOR_WIDTH; \
-                                            if(__e > 1) { \
-                                                for(int __j = __i; __j < __i + __e - 1; ++__j) { \
-                                                    for(int __k = __i; __k < __i + __e - (__j - __i) - 1; ++__k) { \
-                                                        if(l[__k] > l[__k + 1]) { \
-                                                            int __t = l[__k]; \
-                                                            l[__k] = l[__k + 1]; \
-                                                            l[__k + 1] = __t; \
+#   define DIST_TRACE_SORT(l, e)        if(first_exec) { \
+                                            for(int __i = 0; __i < (e); __i += VECTOR_WIDTH) { \
+                                                int __e = (((e) - __i) < VECTOR_WIDTH) ? ((e) - __i) : VECTOR_WIDTH; \
+                                                if(__e > 1) { \
+                                                    for(int __j = __i; __j < __i + __e - 1; ++__j) { \
+                                                        for(int __k = __i; __k < __i + __e - (__j - __i) - 1; ++__k) { \
+                                                            if(l[__k] > l[__k + 1]) { \
+                                                                int __t = l[__k]; \
+                                                                l[__k] = l[__k + 1]; \
+                                                                l[__k + 1] = __t; \
+                                                            } \
                                                         } \
                                                     } \
                                                 } \
                                             } \
-                                        } \
-                                    }
+                                        }
 
-#   define DIST_TRACE(l, e)         if(first_exec) { \
-                                        for(int __i = 0; __i < (e); __i += VECTOR_WIDTH) { \
-                                            int __e = (((e) - __i) < VECTOR_WIDTH) ? ((e) - __i) : VECTOR_WIDTH; \
-                                            if(__e > 1) { \
-                                                fprintf(index_tracer_fp, "D: "); \
-                                                for(int __j = 0; __j < __e - 1; ++__j) { \
-                                                    int __dist = abs(l[__i + __j + 1] - l[__i + __j]); \
-                                                    fprintf(index_tracer_fp, "%d ", __dist); \
+#   define DIST_TRACE(l, e)             if(first_exec) { \
+                                            for(int __i = 0; __i < (e); __i += VECTOR_WIDTH) { \
+                                                int __e = (((e) - __i) < VECTOR_WIDTH) ? ((e) - __i) : VECTOR_WIDTH; \
+                                                if(__e > 1) { \
+                                                    fprintf(index_tracer_fp, "D: "); \
+                                                    for(int __j = 0; __j < __e - 1; ++__j) { \
+                                                        int __dist = abs(l[__i + __j + 1] - l[__i + __j]); \
+                                                        fprintf(index_tracer_fp, "%d ", __dist); \
+                                                    } \
+                                                    fprintf(index_tracer_fp, "\n"); \
                                                 } \
-                                                fprintf(index_tracer_fp, "\n"); \
                                             } \
-                                        } \
-                                    }
+                                        }
 #else
 #   define INDEX_TRACER_INIT
 #   define INDEX_TRACER_END
+#   define INDEX_TRACE_NATOMS(nl, ng)
 #   define INDEX_TRACE_ATOM(a)
 #   define INDEX_TRACE(l, e)
 #   define DIST_TRACE_SORT(l, e)
@@ -121,6 +123,7 @@ double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor, int first_
         fz[i] = 0.0;
     }
 
+    INDEX_TRACE_NATOMS(Nlocal, atom->Nghost);
     LIKWID_MARKER_START("force");
     #pragma omp parallel for
     for(int i = 0; i < Nlocal; i++) {
