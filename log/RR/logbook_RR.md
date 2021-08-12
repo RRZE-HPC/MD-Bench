@@ -25,11 +25,7 @@ The Agenda section is a scratchpad area for planning and Todo list
         * Cut cache lines between gathers for each dimension (gather on y dimension may require different cache line than for x)
         * Mapping between data and cache sets (most cache lines can be mapped to only a few cache sets)
     * Compare cache simulator with measurements from likwid (1 timestep)
-    * Allow flexible behavior on gather-md to simulate "random" accesses:
-        * Use strides and distance output from MD-Bench as input on gather-md
-        * Use one config for all gather iterations (i.e. specifiy 8 strides on double-precisiong AVX512 version)
     * Histogram for distances between neighbors to be gathered
-* Evaluate the impact of disabling prefetchers on standard case
 * Compare HW. vs SW. gather strategies
 * Implement EAM potential
 
