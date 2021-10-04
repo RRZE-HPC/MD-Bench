@@ -16,7 +16,7 @@
 #define LATTICE_DISTANCE    10.0
 #define NEIGH_DISTANCE      1.0
 
-extern double computeForce(Parameter*, Atom*, Neighbor*, int);
+extern double computeForce(Parameter*, Atom*, Neighbor*, int, int, int);
 
 void init(Parameter *param) {
     param->epsilon = 1.0;
@@ -207,12 +207,12 @@ int main(int argc, const char *argv[]) {
     DEBUG("Building neighbor lists...\n");
     buildNeighbor(atom, &neighbor);
     DEBUG("Computing forces...\n");
-    computeForce(&param, atom, &neighbor, 1);
+    computeForce(&param, atom, &neighbor, 1, 0, param.every);
 
     double S, E;
     S = getTimeStamp();
     for(int i = 0; i < param.ntimes; i++) {
-        computeForce(&param, atom, &neighbor, 0);
+        computeForce(&param, atom, &neighbor, 0, param.every);
     }
     E = getTimeStamp();
     double T_accum = E-S;
