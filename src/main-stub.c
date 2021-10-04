@@ -212,7 +212,7 @@ int main(int argc, const char *argv[]) {
     double S, E;
     S = getTimeStamp();
     for(int i = 0; i < param.ntimes; i++) {
-        computeForce(&param, atom, &neighbor, 0, param.every);
+        computeForce(&param, atom, &neighbor, 0, i + 1, param.every);
     }
     E = getTimeStamp();
     double T_accum = E-S;
