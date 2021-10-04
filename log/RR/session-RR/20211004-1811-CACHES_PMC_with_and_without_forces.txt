@@ -1,0 +1,261 @@
+iwia021h@skylakesp2:~/repo/gather-bench$ likwid-perfctr -m -g CACHES_PMC -C 0 ./gather-bench-ICC-md-trace -f 2.4 -t index_tracer
+INFO: You are running LIKWID in a cpuset with 1 CPUs. Taking given IDs as logical ID in cpuset
+--------------------------------------------------------------------------------
+CPU name:	Intel(R) Xeon(R) Gold 6148 CPU @ 2.40GHz
+CPU type:	Intel Skylake SP processor
+CPU clock:	2.40 GHz
+--------------------------------------------------------------------------------
+ISA,Layout,Dims,Frequency (GHz),Cache Line Size (B),Vector Width (e)
+avx512,AoS,3,2.400000,64,8
+
+  tot. time(s), time/step(ms), time/iter(us),         cy/it,     cy/gather,       cy/elem
+      2.058570,     10.292851,      0.007878,    151.262540,     50.420847,      0.822120
+--------------------------------------------------------------------------------
+Region gather, Group 1: CACHES_PMC
++-------------------+------------+
+|    Region Info    | HWThread 0 |
++-------------------+------------+
+| RDTSC Runtime [s] |   2.007227 |
+|     call count    |        201 |
++-------------------+------------+
+
++-----------------------+---------+------------+
+|         Event         | Counter | HWThread 0 |
++-----------------------+---------+------------+
+|   INSTR_RETIRED_ANY   |  FIXC0  | 5794568000 |
+| CPU_CLK_UNHALTED_CORE |  FIXC1  | 7201836000 |
+|  CPU_CLK_UNHALTED_REF |  FIXC2  | 4803558000 |
+|    L1D_REPLACEMENT    |   PMC0  |  323586100 |
+|      L1D_M_EVICT      |   PMC1  |    9982314 |
+|    L2_LINES_IN_ALL    |   PMC2  |  230939300 |
+|     L2_TRANS_L2_WB    |   PMC3  |  230283600 |
++-----------------------+---------+------------+
+
++-------------------------------------+------------+
+|                Metric               | HWThread 0 |
++-------------------------------------+------------+
+|         Runtime (RDTSC) [s]         |     2.0072 |
+|         Runtime unhalted [s]        |     3.0008 |
+|             Clock [MHz]             |  3598.2600 |
+|                 CPI                 |     1.2429 |
+|  L2 to L1 load bandwidth [MBytes/s] | 10317.4730 |
+|  L2 to L1 load data volume [GBytes] |    20.7095 |
+| L1 to L2 evict bandwidth [MBytes/s] |   318.2839 |
+| L1 to L2 evict data volume [GBytes] |     0.6389 |
+|  L1 to/from L2 bandwidth [MBytes/s] | 10635.7569 |
+|  L1 to/from L2 data volume [GBytes] |    21.3484 |
+|  L3 to L2 load bandwidth [MBytes/s] |  7363.4498 |
+|  L3 to L2 load data volume [GBytes] |    14.7801 |
+| L2 to L3 evict bandwidth [MBytes/s] |  7342.5429 |
+| L2 to L3 evict data volume [GBytes] |    14.7382 |
+|  L2 to/from L3 bandwidth [MBytes/s] | 14705.9927 |
+|  L2 to/from L3 data volume [GBytes] |    29.5183 |
++-------------------------------------+------------+
+
+iwia021h@skylakesp2:~/repo/gather-bench$ cd ~/repo/MD-Bench/
+iwia021h@skylakesp2:~/repo/MD-Bench$ likwid-perfctr -m -g CACHES_PMC -C 0 ./MDBench-ICC
+INFO: You are running LIKWID in a cpuset with 1 CPUs. Taking given IDs as logical ID in cpuset
+--------------------------------------------------------------------------------
+CPU name:	Intel(R) Xeon(R) Gold 6148 CPU @ 2.40GHz
+CPU type:	Intel Skylake SP processor
+CPU clock:	2.40 GHz
+--------------------------------------------------------------------------------
+step	temp		pressure
+0	1.440000e+00	1.215639e+00
+100	8.200895e-01	6.923143e-01
+200	7.961495e-01	6.721043e-01
+----------------------------------------------------------------------------
+Data layout for positions: AoS
+Using double precision floating point.
+----------------------------------------------------------------------------
+System: 131072 atoms 47265 ghost atoms, Steps: 200
+TOTAL 19.56s FORCE 10.01s NEIGH 3.11s REST 6.44s
+----------------------------------------------------------------------------
+Performance: 1.34 million atom updates per second
+--------------------------------------------------------------------------------
+Region force, Group 1: CACHES_PMC
++-------------------+------------+
+|    Region Info    | HWThread 0 |
++-------------------+------------+
+| RDTSC Runtime [s] |  10.659380 |
+|     call count    |        201 |
++-------------------+------------+
+
++-----------------------+---------+-------------+
+|         Event         | Counter |  HWThread 0 |
++-----------------------+---------+-------------+
+|   INSTR_RETIRED_ANY   |  FIXC0  | 91086380000 |
+| CPU_CLK_UNHALTED_CORE |  FIXC1  | 36505460000 |
+|  CPU_CLK_UNHALTED_REF |  FIXC2  | 24780440000 |
+|    L1D_REPLACEMENT    |   PMC0  |   355277600 |
+|      L1D_M_EVICT      |   PMC1  |    27512390 |
+|    L2_LINES_IN_ALL    |   PMC2  |   225128900 |
+|     L2_TRANS_L2_WB    |   PMC3  |   223672800 |
++-----------------------+---------+-------------+
+
++-------------------------------------+------------+
+|                Metric               | HWThread 0 |
++-------------------------------------+------------+
+|         Runtime (RDTSC) [s]         |    10.6594 |
+|         Runtime unhalted [s]        |    15.2105 |
+|             Clock [MHz]             |  3535.6000 |
+|                 CPI                 |     0.4008 |
+|  L2 to L1 load bandwidth [MBytes/s] |  2133.1228 |
+|  L2 to L1 load data volume [GBytes] |    22.7378 |
+| L1 to L2 evict bandwidth [MBytes/s] |   165.1872 |
+| L1 to L2 evict data volume [GBytes] |     1.7608 |
+|  L1 to/from L2 bandwidth [MBytes/s] |  2298.3100 |
+|  L1 to/from L2 data volume [GBytes] |    24.4986 |
+|  L3 to L2 load bandwidth [MBytes/s] |  1351.6968 |
+|  L3 to L2 load data volume [GBytes] |    14.4082 |
+| L2 to L3 evict bandwidth [MBytes/s] |  1342.9542 |
+| L2 to L3 evict data volume [GBytes] |    14.3151 |
+|  L2 to/from L3 bandwidth [MBytes/s] |  2694.6510 |
+|  L2 to/from L3 data volume [GBytes] |    28.7233 |
++-------------------------------------+------------+
+
+Region reneighbour, Group 1: CACHES_PMC
++-------------------+------------+
+|    Region Info    | HWThread 0 |
++-------------------+------------+
+| RDTSC Runtime [s] |   3.112350 |
+|     call count    |         10 |
++-------------------+------------+
+
++-----------------------+---------+-------------+
+|         Event         | Counter |  HWThread 0 |
++-----------------------+---------+-------------+
+|   INSTR_RETIRED_ANY   |  FIXC0  | 14634920000 |
+| CPU_CLK_UNHALTED_CORE |  FIXC1  | 11425900000 |
+|  CPU_CLK_UNHALTED_REF |  FIXC2  |  7413165000 |
+|    L1D_REPLACEMENT    |   PMC0  |   553744100 |
+|      L1D_M_EVICT      |   PMC1  |    11098990 |
+|    L2_LINES_IN_ALL    |   PMC2  |    20380890 |
+|     L2_TRANS_L2_WB    |   PMC3  |    20033680 |
++-----------------------+---------+-------------+
+
++-------------------------------------+------------+
+|                Metric               | HWThread 0 |
++-------------------------------------+------------+
+|         Runtime (RDTSC) [s]         |     3.1124 |
+|         Runtime unhalted [s]        |     4.7608 |
+|             Clock [MHz]             |  3699.1425 |
+|                 CPI                 |     0.7807 |
+|  L2 to L1 load bandwidth [MBytes/s] | 11386.7728 |
+|  L2 to L1 load data volume [GBytes] |    35.4396 |
+| L1 to L2 evict bandwidth [MBytes/s] |   228.2312 |
+| L1 to L2 evict data volume [GBytes] |     0.7103 |
+|  L1 to/from L2 bandwidth [MBytes/s] | 11615.0040 |
+|  L1 to/from L2 data volume [GBytes] |    36.1500 |
+|  L3 to L2 load bandwidth [MBytes/s] |   419.0971 |
+|  L3 to L2 load data volume [GBytes] |     1.3044 |
+| L2 to L3 evict bandwidth [MBytes/s] |   411.9574 |
+| L2 to L3 evict data volume [GBytes] |     1.2822 |
+|  L2 to/from L3 bandwidth [MBytes/s] |   831.0545 |
+|  L2 to/from L3 data volume [GBytes] |     2.5865 |
++-------------------------------------+------------+
+
+
+iwia021h@skylakesp2:~/repo/MD-Bench$ 
+iwia021h@skylakesp2:~/repo/MD-Bench$ likwid-perfctr -m -g CACHES_PMC -C 0 ./MDBench-ICC
+INFO: You are running LIKWID in a cpuset with 1 CPUs. Taking given IDs as logical ID in cpuset
+--------------------------------------------------------------------------------
+CPU name:	Intel(R) Xeon(R) Gold 6148 CPU @ 2.40GHz
+CPU type:	Intel Skylake SP processor
+CPU clock:	2.40 GHz
+--------------------------------------------------------------------------------
+step	temp		pressure
+0	1.440000e+00	1.215639e+00
+RESIZE 100
+100	1.440000e+00	1.215639e+00
+200	1.440000e+00	1.215639e+00
+----------------------------------------------------------------------------
+Data layout for positions: AoS
+Using double precision floating point.
+----------------------------------------------------------------------------
+System: 131072 atoms 45732 ghost atoms, Steps: 200
+TOTAL 17.30s FORCE 8.39s NEIGH 2.97s REST 5.95s
+----------------------------------------------------------------------------
+Performance: 1.52 million atom updates per second
+--------------------------------------------------------------------------------
+Region force, Group 1: CACHES_PMC
++-------------------+------------+
+|    Region Info    | HWThread 0 |
++-------------------+------------+
+| RDTSC Runtime [s] |   9.076712 |
+|     call count    |        201 |
++-------------------+------------+
+
++-----------------------+---------+-------------+
+|         Event         | Counter |  HWThread 0 |
++-----------------------+---------+-------------+
+|   INSTR_RETIRED_ANY   |  FIXC0  | 78599620000 |
+| CPU_CLK_UNHALTED_CORE |  FIXC1  | 30829440000 |
+|  CPU_CLK_UNHALTED_REF |  FIXC2  | 21066430000 |
+|    L1D_REPLACEMENT    |   PMC0  |   406139000 |
+|      L1D_M_EVICT      |   PMC1  |    26996570 |
+|    L2_LINES_IN_ALL    |   PMC2  |   256537100 |
+|     L2_TRANS_L2_WB    |   PMC3  |   255208500 |
++-----------------------+---------+-------------+
+
++-------------------------------------+------------+
+|                Metric               | HWThread 0 |
++-------------------------------------+------------+
+|         Runtime (RDTSC) [s]         |     9.0767 |
+|         Runtime unhalted [s]        |    12.8457 |
+|             Clock [MHz]             |  3512.2264 |
+|                 CPI                 |     0.3922 |
+|  L2 to L1 load bandwidth [MBytes/s] |  2863.6907 |
+|  L2 to L1 load data volume [GBytes] |    25.9929 |
+| L1 to L2 evict bandwidth [MBytes/s] |   190.3531 |
+| L1 to L2 evict data volume [GBytes] |     1.7278 |
+|  L1 to/from L2 bandwidth [MBytes/s] |  3054.0439 |
+|  L1 to/from L2 data volume [GBytes] |    27.7207 |
+|  L3 to L2 load bandwidth [MBytes/s] |  1808.8460 |
+|  L3 to L2 load data volume [GBytes] |    16.4184 |
+| L2 to L3 evict bandwidth [MBytes/s] |  1799.4780 |
+| L2 to L3 evict data volume [GBytes] |    16.3333 |
+|  L2 to/from L3 bandwidth [MBytes/s] |  3608.3241 |
+|  L2 to/from L3 data volume [GBytes] |    32.7517 |
++-------------------------------------+------------+
+
+Region reneighbour, Group 1: CACHES_PMC
++-------------------+------------+
+|    Region Info    | HWThread 0 |
++-------------------+------------+
+| RDTSC Runtime [s] |   2.962930 |
+|     call count    |         10 |
++-------------------+------------+
+
++-----------------------+---------+-------------+
+|         Event         | Counter |  HWThread 0 |
++-----------------------+---------+-------------+
+|   INSTR_RETIRED_ANY   |  FIXC0  | 15813410000 |
+| CPU_CLK_UNHALTED_CORE |  FIXC1  | 10769490000 |
+|  CPU_CLK_UNHALTED_REF |  FIXC2  |  6987908000 |
+|    L1D_REPLACEMENT    |   PMC0  |   602724300 |
+|      L1D_M_EVICT      |   PMC1  |    12967540 |
+|    L2_LINES_IN_ALL    |   PMC2  |    25475240 |
+|     L2_TRANS_L2_WB    |   PMC3  |    25051690 |
++-----------------------+---------+-------------+
+
++-------------------------------------+------------+
+|                Metric               | HWThread 0 |
++-------------------------------------+------------+
+|         Runtime (RDTSC) [s]         |     2.9629 |
+|         Runtime unhalted [s]        |     4.4873 |
+|             Clock [MHz]             |  3698.7567 |
+|                 CPI                 |     0.6810 |
+|  L2 to L1 load bandwidth [MBytes/s] | 13018.9897 |
+|  L2 to L1 load data volume [GBytes] |    38.5744 |
+| L1 to L2 evict bandwidth [MBytes/s] |   280.1020 |
+| L1 to L2 evict data volume [GBytes] |     0.8299 |
+|  L1 to/from L2 bandwidth [MBytes/s] | 13299.0917 |
+|  L1 to/from L2 data volume [GBytes] |    39.4043 |
+|  L3 to L2 load bandwidth [MBytes/s] |   550.2713 |
+|  L3 to L2 load data volume [GBytes] |     1.6304 |
+| L2 to L3 evict bandwidth [MBytes/s] |   541.1225 |
+| L2 to L3 evict data volume [GBytes] |     1.6033 |
+|  L2 to/from L3 bandwidth [MBytes/s] |  1091.3938 |
+|  L2 to/from L3 data volume [GBytes] |     3.2337 |
++-------------------------------------+------------+
