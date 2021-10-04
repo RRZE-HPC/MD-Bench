@@ -32,11 +32,20 @@
 #include <stdlib.h>
 #endif
 
+#ifndef TRACER_CONDITION
+#   define TRACER_CONDITION                 (!(timestep % every))
+#endif
+
 #ifdef MEM_TRACER
 #   define MEM_TRACER_INIT                  FILE *mem_tracer_fp; \
-                                            if(first_exec) { mem_tracer_fp = fopen("mem_tracer.out", "w"); }
-#   define MEM_TRACER_END                   if(first_exec) { fclose(mem_tracer_fp); }
-#   define MEM_TRACE(addr, op)              if(first_exec) { fprintf(mem_tracer_fp, "%c: %p\n", op, (void *)(&(addr))); }
+                                            if(TRACER_CONDITION) { \
+                                                char mem_tracer_fn[128]; \
+                                                snprintf(mem_tracer_fn, sizeof mem_tracer_fn, "mem_tracer_%d.out", timestep); \
+                                                mem_tracer_fp = fopen(mem_tracer_fn, "w");
+                                            }
+
+#   define MEM_TRACER_END                   if(TRACER_CONDITION) { fclose(mem_tracer_fp); }
+#   define MEM_TRACE(addr, op)              if(TRACER_CONDITION) { fprintf(mem_tracer_fp, "%c: %p\n", op, (void *)(&(addr))); }
 #else
 #   define MEM_TRACER_INIT
 #   define MEM_TRACER_END
@@ -49,11 +58,16 @@
 #   endif
 
 #   define INDEX_TRACER_INIT                FILE *index_tracer_fp; \
-                                            if(first_exec) { index_tracer_fp = fopen("index_tracer.out", "w"); }
-#   define INDEX_TRACER_END                 if(first_exec) { fclose(index_tracer_fp); }
-#   define INDEX_TRACE_NATOMS(nl, ng, mn)   if(first_exec) { fprintf(index_tracer_fp, "N: %d %d %d\n", nl, ng, mn); }
-#   define INDEX_TRACE_ATOM(a)              if(first_exec) { fprintf(index_tracer_fp, "A: %d\n", a); }
-#   define INDEX_TRACE(l, e)                if(first_exec) { \
+                                            if(TRACER_CONDITION) { \
+                                                char index_tracer_fn[128]; \
+                                                snprintf(index_tracer_fn, sizeof index_tracer_fn, "index_tracer_%d.out", timestep); \
+                                                index_tracer_fp = fopen(index_tracer_fn, "w"); \
+                                            }
+
+#   define INDEX_TRACER_END                 if(TRACER_CONDITION) { fclose(index_tracer_fp); }
+#   define INDEX_TRACE_NATOMS(nl, ng, mn)   if(TRACER_CONDITION) { fprintf(index_tracer_fp, "N: %d %d %d\n", nl, ng, mn); }
+#   define INDEX_TRACE_ATOM(a)              if(TRACER_CONDITION) { fprintf(index_tracer_fp, "A: %d\n", a); }
+#   define INDEX_TRACE(l, e)                if(TRACER_CONDITION) { \
                                                 for(int __i = 0; __i < (e); __i += VECTOR_WIDTH) { \
                                                     int __e = (((e) - __i) < VECTOR_WIDTH) ? ((e) - __i) : VECTOR_WIDTH; \
                                                     fprintf(index_tracer_fp, "I: "); \
@@ -64,7 +78,7 @@
                                                 } \
                                             }
 
-#   define DIST_TRACE_SORT(l, e)            if(first_exec) { \
+#   define DIST_TRACE_SORT(l, e)            if(TRACER_CONDITION) { \
                                                 for(int __i = 0; __i < (e); __i += VECTOR_WIDTH) { \
                                                     int __e = (((e) - __i) < VECTOR_WIDTH) ? ((e) - __i) : VECTOR_WIDTH; \
                                                     if(__e > 1) { \
@@ -81,7 +95,7 @@
                                                 } \
                                             }
 
-#   define DIST_TRACE(l, e)                 if(first_exec) { \
+#   define DIST_TRACE(l, e)                 if(TRACER_CONDITION) { \
                                                 for(int __i = 0; __i < (e); __i += VECTOR_WIDTH) { \
                                                     int __e = (((e) - __i) < VECTOR_WIDTH) ? ((e) - __i) : VECTOR_WIDTH; \
                                                     if(__e > 1) { \
@@ -104,7 +118,7 @@
 #   define DIST_TRACE(l, e)
 #endif
 
-double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor, int first_exec) {
+double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor, int first_exec, int timestep, int every) {
     MEM_TRACER_INIT;
     INDEX_TRACER_INIT;
     double S = getTimeStamp();
@@ -152,9 +166,9 @@ double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor, int first_
         for(int n = 0; n < nmax; n++) {
         #endif
 
-            DIST_TRACE_SORT(neighs, numneighs);
+            //DIST_TRACE_SORT(neighs, numneighs);
             INDEX_TRACE(neighs, numneighs);
-            DIST_TRACE(neighs, numneighs);
+            //DIST_TRACE(neighs, numneighs);
 
             for(int k = 0; k < numneighs; k++) {
                 int j = neighs[k];
