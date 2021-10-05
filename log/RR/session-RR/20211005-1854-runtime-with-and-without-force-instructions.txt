@@ -1,0 +1,116 @@
+iwia021h@skylakesp2:~/repo/MD-Bench$ make -j4
+===>  COMPILE  ICC/neighbor.o
+===>  ASSEMBLE  ICC/force-new.o
+===>  LINKING  MDBench-ICC
+./src/main.c(166): warning #3180: unrecognized OpenMP #pragma
+  #pragma omp parallel
+  ^
+
+iwia021h@skylakesp2:~/repo/MD-Bench$ ./MDBench-ICC
+Running without Marker API. Activate Marker API with -m on commandline.
+step	temp		pressure
+0	1.440000e+00	1.215639e+00
+100	1.440000e+00	1.215639e+00
+200	1.440000e+00	1.215639e+00
+----------------------------------------------------------------------------
+Data layout for positions: AoS
+Using double precision floating point.
+----------------------------------------------------------------------------
+System: 131072 atoms 48219 ghost atoms, Steps: 200
+TOTAL 18.30s FORCE 9.13s NEIGH 2.88s REST 6.29s
+----------------------------------------------------------------------------
+Performance: 1.43 million atom updates per second
+iwia021h@skylakesp2:~/repo/MD-Bench$ ./MDBench-ICC
+Running without Marker API. Activate Marker API with -m on commandline.
+step	temp		pressure
+0	1.440000e+00	1.215639e+00
+100	1.440000e+00	1.215639e+00
+200	1.440000e+00	1.215639e+00
+----------------------------------------------------------------------------
+Data layout for positions: AoS
+Using double precision floating point.
+----------------------------------------------------------------------------
+System: 131072 atoms 48219 ghost atoms, Steps: 200
+TOTAL 18.35s FORCE 9.22s NEIGH 2.85s REST 6.28s
+----------------------------------------------------------------------------
+Performance: 1.43 million atom updates per second
+iwia021h@skylakesp2:~/repo/MD-Bench$ ./MDBench-ICC
+Running without Marker API. Activate Marker API with -m on commandline.
+step	temp		pressure
+0	1.440000e+00	1.215639e+00
+100	1.440000e+00	1.215639e+00
+200	1.440000e+00	1.215639e+00
+----------------------------------------------------------------------------
+Data layout for positions: AoS
+Using double precision floating point.
+----------------------------------------------------------------------------
+System: 131072 atoms 48219 ghost atoms, Steps: 200
+TOTAL 18.04s FORCE 8.89s NEIGH 2.84s REST 6.32s
+----------------------------------------------------------------------------
+Performance: 1.45 million atom updates per second
+iwia021h@skylakesp2:~/repo/MD-Bench$ 
+iwia021h@skylakesp2:~/repo/MD-Bench$ 
+iwia021h@skylakesp2:~/repo/MD-Bench$ 
+iwia021h@skylakesp2:~/repo/MD-Bench$ 
+iwia021h@skylakesp2:~/repo/MD-Bench$ 
+iwia021h@skylakesp2:~/repo/MD-Bench$ 
+iwia021h@skylakesp2:~/repo/MD-Bench$ 
+iwia021h@skylakesp2:~/repo/MD-Bench$ 
+iwia021h@skylakesp2:~/repo/MD-Bench$ 
+iwia021h@skylakesp2:~/repo/MD-Bench$ 
+iwia021h@skylakesp2:~/repo/MD-Bench$ 
+iwia021h@skylakesp2:~/repo/MD-Bench$ 
+iwia021h@skylakesp2:~/repo/MD-Bench$ 
+iwia021h@skylakesp2:~/repo/MD-Bench$ make -j4
+===>  COMPILE  ICC/force.o
+./src/force.c(142): warning #3180: unrecognized OpenMP #pragma
+      #pragma omp parallel for
+      ^
+
+===>  LINKING  MDBench-ICC
+./src/main.c(166): warning #3180: unrecognized OpenMP #pragma
+  #pragma omp parallel
+  ^
+
+iwia021h@skylakesp2:~/repo/MD-Bench$ ./MDBench-ICC
+Running without Marker API. Activate Marker API with -m on commandline.
+step	temp		pressure
+0	1.440000e+00	1.215639e+00
+100	1.440000e+00	1.215639e+00
+200	1.440000e+00	1.215639e+00
+----------------------------------------------------------------------------
+Data layout for positions: AoS
+Using double precision floating point.
+----------------------------------------------------------------------------
+System: 131072 atoms 48219 ghost atoms, Steps: 200
+TOTAL 19.52s FORCE 10.57s NEIGH 2.66s REST 6.29s
+----------------------------------------------------------------------------
+Performance: 1.34 million atom updates per second
+iwia021h@skylakesp2:~/repo/MD-Bench$ ./MDBench-ICC
+Running without Marker API. Activate Marker API with -m on commandline.
+step	temp		pressure
+0	1.440000e+00	1.215639e+00
+100	1.440000e+00	1.215639e+00
+200	1.440000e+00	1.215639e+00
+----------------------------------------------------------------------------
+Data layout for positions: AoS
+Using double precision floating point.
+----------------------------------------------------------------------------
+System: 131072 atoms 48219 ghost atoms, Steps: 200
+TOTAL 19.19s FORCE 10.27s NEIGH 2.64s REST 6.29s
+----------------------------------------------------------------------------
+Performance: 1.37 million atom updates per second
+iwia021h@skylakesp2:~/repo/MD-Bench$ ./MDBench-ICC
+Running without Marker API. Activate Marker API with -m on commandline.
+step	temp		pressure
+0	1.440000e+00	1.215639e+00
+100	1.440000e+00	1.215639e+00
+200	1.440000e+00	1.215639e+00
+----------------------------------------------------------------------------
+Data layout for positions: AoS
+Using double precision floating point.
+----------------------------------------------------------------------------
+System: 131072 atoms 48219 ghost atoms, Steps: 200
+TOTAL 19.52s FORCE 10.60s NEIGH 2.64s REST 6.27s
+----------------------------------------------------------------------------
+Performance: 1.34 million atom updates per second
