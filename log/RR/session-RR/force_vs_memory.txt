@@ -1,0 +1,8 @@
+                                        MD-Bench        MD-Bench (mem only)     gather-bench
+Force runtime (s)                       13.19           8.78                    9.64
+L2 to L1 volume (GB)                    17.15           17.05                   17.1113
+L2 to L1 bandwidth (MB/s)               1300.61         1940.53                 1774.78
+L1 to L2 evict volume (GBytes)          0.6529          0.6482                  0.6482
+L1 to L2 evict bandwidth (MB/s)         49.4977         73.7419                 67.2321
+L3 to L2 volume (GB)                    11.9481         11.9414                 11.9557                
+L3 to L2 bandwidth (MB/s)               905.7708        1358.57                 1240.03
