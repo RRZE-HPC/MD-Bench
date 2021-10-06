@@ -1,0 +1,901 @@
+iwia021h@casclakesp2:~/repo/MD-Bench$ likwid-perfctr -m -g MEM -C 0 ./MDBench-ICC
+INFO: You are running LIKWID in a cpuset with 1 CPUs. Taking given IDs as logical ID in cpuset
+--------------------------------------------------------------------------------
+CPU name:	Intel(R) Xeon(R) Gold 6248 CPU @ 2.50GHz
+CPU type:	Intel Cascadelake SP processor
+CPU clock:	2.49 GHz
+--------------------------------------------------------------------------------
+step	temp		pressure
+0	1.440000e+00	1.215639e+00
+100	1.440000e+00	1.215639e+00
+200	1.440000e+00	1.215639e+00
+----------------------------------------------------------------------------
+Data layout for positions: AoS
+Using double precision floating point.
+----------------------------------------------------------------------------
+System: 131072 atoms 48219 ghost atoms, Steps: 200
+TOTAL 17.55s FORCE 13.44s NEIGH 4.03s REST 0.09s
+----------------------------------------------------------------------------
+Performance: 1.49 million atom updates per second
+--------------------------------------------------------------------------------
+Region force, Group 1: MEM
++-------------------+------------+
+|    Region Info    | HWThread 0 |
++-------------------+------------+
+| RDTSC Runtime [s] |  13.220740 |
+|     call count    |        201 |
++-------------------+------------+
+
++-----------------------+---------+-------------+
+|         Event         | Counter |  HWThread 0 |
++-----------------------+---------+-------------+
+|   INSTR_RETIRED_ANY   |  FIXC0  | 16677580000 |
+| CPU_CLK_UNHALTED_CORE |  FIXC1  | 32940980000 |
+|  CPU_CLK_UNHALTED_REF |  FIXC2  | 32940990000 |
+|      CAS_COUNT_RD     | MBOX0C0 |    59046100 |
+|      CAS_COUNT_WR     | MBOX0C1 |     1820161 |
+|      CAS_COUNT_RD     | MBOX1C0 |    58606180 |
+|      CAS_COUNT_WR     | MBOX1C1 |     1815724 |
+|      CAS_COUNT_RD     | MBOX2C0 |    58822790 |
+|      CAS_COUNT_WR     | MBOX2C1 |     1822734 |
+|      CAS_COUNT_RD     | MBOX3C0 |      125683 |
+|      CAS_COUNT_WR     | MBOX3C1 |       84708 |
+|      CAS_COUNT_RD     | MBOX4C0 |      125487 |
+|      CAS_COUNT_WR     | MBOX4C1 |       84575 |
+|      CAS_COUNT_RD     | MBOX5C0 |      125314 |
+|      CAS_COUNT_WR     | MBOX5C1 |       84643 |
++-----------------------+---------+-------------+
+
++-----------------------------------+------------+
+|               Metric              | HWThread 0 |
++-----------------------------------+------------+
+|        Runtime (RDTSC) [s]        |    13.2207 |
+|        Runtime unhalted [s]       |    13.2076 |
+|            Clock [MHz]            |  2494.0867 |
+|                CPI                |     1.9752 |
+|  Memory read bandwidth [MBytes/s] |   856.1169 |
+|  Memory read data volume [GBytes] |    11.3185 |
+| Memory write bandwidth [MBytes/s] |    27.6537 |
+| Memory write data volume [GBytes] |     0.3656 |
+|    Memory bandwidth [MBytes/s]    |   883.7707 |
+|    Memory data volume [GBytes]    |    11.6841 |
++-----------------------------------+------------+
+
+Region reneighbour, Group 1: MEM
++-------------------+------------+
+|    Region Info    | HWThread 0 |
++-------------------+------------+
+| RDTSC Runtime [s] |   4.021722 |
+|     call count    |         10 |
++-------------------+------------+
+
++-----------------------+---------+-------------+
+|         Event         | Counter |  HWThread 0 |
++-----------------------+---------+-------------+
+|   INSTR_RETIRED_ANY   |  FIXC0  | 14652480000 |
+| CPU_CLK_UNHALTED_CORE |  FIXC1  | 10025010000 |
+|  CPU_CLK_UNHALTED_REF |  FIXC2  | 10025030000 |
+|      CAS_COUNT_RD     | MBOX0C0 |     3320800 |
+|      CAS_COUNT_WR     | MBOX0C1 |     2404119 |
+|      CAS_COUNT_RD     | MBOX1C0 |     3342577 |
+|      CAS_COUNT_WR     | MBOX1C1 |     2411940 |
+|      CAS_COUNT_RD     | MBOX2C0 |     3325133 |
+|      CAS_COUNT_WR     | MBOX2C1 |     2405225 |
+|      CAS_COUNT_RD     | MBOX3C0 |       32114 |
+|      CAS_COUNT_WR     | MBOX3C1 |       25467 |
+|      CAS_COUNT_RD     | MBOX4C0 |       32129 |
+|      CAS_COUNT_WR     | MBOX4C1 |       25463 |
+|      CAS_COUNT_RD     | MBOX5C0 |       32018 |
+|      CAS_COUNT_WR     | MBOX5C1 |       25474 |
++-----------------------+---------+-------------+
+
++-----------------------------------+------------+
+|               Metric              | HWThread 0 |
++-----------------------------------+------------+
+|        Runtime (RDTSC) [s]        |     4.0217 |
+|        Runtime unhalted [s]       |     4.0195 |
+|            Clock [MHz]            |  2494.0825 |
+|                CPI                |     0.6842 |
+|  Memory read bandwidth [MBytes/s] |   160.4848 |
+|  Memory read data volume [GBytes] |     0.6454 |
+| Memory write bandwidth [MBytes/s] |   116.1324 |
+| Memory write data volume [GBytes] |     0.4671 |
+|    Memory bandwidth [MBytes/s]    |   276.6172 |
+|    Memory data volume [GBytes]    |     1.1125 |
++-----------------------------------+------------+
+
+iwia021h@casclakesp2:~/repo/MD-Bench$ likwid-setFrequencies -p
+WARN: Intel HWP capabilities enabled. CPU and Uncore frequency changes are ignored but allowed
+Current CPU frequencies:
+HWThread 0: governor  performance min/cur/max 2.4/2.128999/2.4 GHz Turbo 0
+
+Current Uncore frequencies:
+Socket 0: min/max 2.4/2.4 GHz
+iwia021h@casclakesp2:~/repo/MD-Bench$ likwid-setFrequencies -l
+WARN: Intel HWP capabilities enabled. CPU and Uncore frequency changes are ignored but allowed
+Cannot get frequencies from cpufreq module
+The intel_pstate module allows free selection of frequencies in the available range
+Minimal CPU frequency 1.0
+Maximal CPU frequency 3.9
+iwia021h@casclakesp2:~/repo/MD-Bench$ likwid-perfctr -m -g MEM -C 0 ./MDBench-ICC
+INFO: You are running LIKWID in a cpuset with 1 CPUs. Taking given IDs as logical ID in cpuset
+--------------------------------------------------------------------------------
+CPU name:	Intel(R) Xeon(R) Gold 6248 CPU @ 2.50GHz
+CPU type:	Intel Cascadelake SP processor
+CPU clock:	2.49 GHz
+--------------------------------------------------------------------------------
+step	temp		pressure
+0	1.440000e+00	1.215639e+00
+100	1.440000e+00	1.215639e+00
+200	1.440000e+00	1.215639e+00
+----------------------------------------------------------------------------
+Data layout for positions: AoS
+Using double precision floating point.
+----------------------------------------------------------------------------
+System: 131072 atoms 48219 ghost atoms, Steps: 200
+TOTAL 17.52s FORCE 13.40s NEIGH 4.03s REST 0.09s
+----------------------------------------------------------------------------
+Performance: 1.50 million atom updates per second
+--------------------------------------------------------------------------------
+Region force, Group 1: MEM
++-------------------+------------+
+|    Region Info    | HWThread 0 |
++-------------------+------------+
+| RDTSC Runtime [s] |  13.210560 |
+|     call count    |        201 |
++-------------------+------------+
+
++-----------------------+---------+-------------+
+|         Event         | Counter |  HWThread 0 |
++-----------------------+---------+-------------+
+|   INSTR_RETIRED_ANY   |  FIXC0  | 16677580000 |
+| CPU_CLK_UNHALTED_CORE |  FIXC1  | 32915360000 |
+|  CPU_CLK_UNHALTED_REF |  FIXC2  | 32915370000 |
+|      CAS_COUNT_RD     | MBOX0C0 |    58902000 |
+|      CAS_COUNT_WR     | MBOX0C1 |     2044368 |
+|      CAS_COUNT_RD     | MBOX1C0 |    58355550 |
+|      CAS_COUNT_WR     | MBOX1C1 |     2047327 |
+|      CAS_COUNT_RD     | MBOX2C0 |    58626030 |
+|      CAS_COUNT_WR     | MBOX2C1 |     2042960 |
+|      CAS_COUNT_RD     | MBOX3C0 |      127724 |
+|      CAS_COUNT_WR     | MBOX3C1 |       83781 |
+|      CAS_COUNT_RD     | MBOX4C0 |      127738 |
+|      CAS_COUNT_WR     | MBOX4C1 |       83733 |
+|      CAS_COUNT_RD     | MBOX5C0 |      128832 |
+|      CAS_COUNT_WR     | MBOX5C1 |       83855 |
++-----------------------+---------+-------------+
+
++-----------------------------------+------------+
+|               Metric              | HWThread 0 |
++-----------------------------------+------------+
+|        Runtime (RDTSC) [s]        |    13.2106 |
+|        Runtime unhalted [s]       |    13.1974 |
+|            Clock [MHz]            |  2494.0776 |
+|                CPI                |     1.9736 |
+|  Memory read bandwidth [MBytes/s] |   853.9490 |
+|  Memory read data volume [GBytes] |    11.2811 |
+| Memory write bandwidth [MBytes/s] |    30.9378 |
+| Memory write data volume [GBytes] |     0.4087 |
+|    Memory bandwidth [MBytes/s]    |   884.8867 |
+|    Memory data volume [GBytes]    |    11.6898 |
++-----------------------------------+------------+
+
+Region reneighbour, Group 1: MEM
++-------------------+------------+
+|    Region Info    | HWThread 0 |
++-------------------+------------+
+| RDTSC Runtime [s] |   4.020964 |
+|     call count    |         10 |
++-------------------+------------+
+
++-----------------------+---------+-------------+
+|         Event         | Counter |  HWThread 0 |
++-----------------------+---------+-------------+
+|   INSTR_RETIRED_ANY   |  FIXC0  | 14652480000 |
+| CPU_CLK_UNHALTED_CORE |  FIXC1  | 10022880000 |
+|  CPU_CLK_UNHALTED_REF |  FIXC2  | 10022900000 |
+|      CAS_COUNT_RD     | MBOX0C0 |     3309067 |
+|      CAS_COUNT_WR     | MBOX0C1 |     2408358 |
+|      CAS_COUNT_RD     | MBOX1C0 |     3337247 |
+|      CAS_COUNT_WR     | MBOX1C1 |     2405466 |
+|      CAS_COUNT_RD     | MBOX2C0 |     3317977 |
+|      CAS_COUNT_WR     | MBOX2C1 |     2405957 |
+|      CAS_COUNT_RD     | MBOX3C0 |       30475 |
+|      CAS_COUNT_WR     | MBOX3C1 |       25413 |
+|      CAS_COUNT_RD     | MBOX4C0 |       30390 |
+|      CAS_COUNT_WR     | MBOX4C1 |       25397 |
+|      CAS_COUNT_RD     | MBOX5C0 |       30448 |
+|      CAS_COUNT_WR     | MBOX5C1 |       25399 |
++-----------------------+---------+-------------+
+
++-----------------------------------+------------+
+|               Metric              | HWThread 0 |
++-----------------------------------+------------+
+|        Runtime (RDTSC) [s]        |     4.0210 |
+|        Runtime unhalted [s]       |     4.0187 |
+|            Clock [MHz]            |  2494.0734 |
+|                CPI                |     0.6840 |
+|  Memory read bandwidth [MBytes/s] |   160.0508 |
+|  Memory read data volume [GBytes] |     0.6436 |
+| Memory write bandwidth [MBytes/s] |   116.1272 |
+| Memory write data volume [GBytes] |     0.4669 |
+|    Memory bandwidth [MBytes/s]    |   276.1781 |
+|    Memory data volume [GBytes]    |     1.1105 |
++-----------------------------------+------------+
+
+iwia021h@casclakesp2:~/repo/MD-Bench$ likwid-perfctr -m -g MEM -C 0 ./MDBench-ICC
+INFO: You are running LIKWID in a cpuset with 1 CPUs. Taking given IDs as logical ID in cpuset
+--------------------------------------------------------------------------------
+CPU name:	Intel(R) Xeon(R) Gold 6248 CPU @ 2.50GHz
+CPU type:	Intel Cascadelake SP processor
+CPU clock:	2.49 GHz
+--------------------------------------------------------------------------------
+step	temp		pressure
+0	1.440000e+00	1.215639e+00
+100	1.440000e+00	1.215639e+00
+200	1.440000e+00	1.215639e+00
+----------------------------------------------------------------------------
+Data layout for positions: AoS
+Using double precision floating point.
+----------------------------------------------------------------------------
+System: 131072 atoms 48219 ghost atoms, Steps: 200
+TOTAL 17.51s FORCE 13.40s NEIGH 4.03s REST 0.09s
+----------------------------------------------------------------------------
+Performance: 1.50 million atom updates per second
+--------------------------------------------------------------------------------
+Region force, Group 1: MEM
++-------------------+------------+
+|    Region Info    | HWThread 0 |
++-------------------+------------+
+| RDTSC Runtime [s] |  13.202540 |
+|     call count    |        201 |
++-------------------+------------+
+
++-----------------------+---------+-------------+
+|         Event         | Counter |  HWThread 0 |
++-----------------------+---------+-------------+
+|   INSTR_RETIRED_ANY   |  FIXC0  | 16677580000 |
+| CPU_CLK_UNHALTED_CORE |  FIXC1  | 32895370000 |
+|  CPU_CLK_UNHALTED_REF |  FIXC2  | 32895370000 |
+|      CAS_COUNT_RD     | MBOX0C0 |    58211750 |
+|      CAS_COUNT_WR     | MBOX0C1 |     1981804 |
+|      CAS_COUNT_RD     | MBOX1C0 |    58417730 |
+|      CAS_COUNT_WR     | MBOX1C1 |     1986034 |
+|      CAS_COUNT_RD     | MBOX2C0 |    58693640 |
+|      CAS_COUNT_WR     | MBOX2C1 |     1978135 |
+|      CAS_COUNT_RD     | MBOX3C0 |      125335 |
+|      CAS_COUNT_WR     | MBOX3C1 |       83623 |
+|      CAS_COUNT_RD     | MBOX4C0 |      124922 |
+|      CAS_COUNT_WR     | MBOX4C1 |       83605 |
+|      CAS_COUNT_RD     | MBOX5C0 |      125570 |
+|      CAS_COUNT_WR     | MBOX5C1 |       83602 |
++-----------------------+---------+-------------+
+
++-----------------------------------+------------+
+|               Metric              | HWThread 0 |
++-----------------------------------+------------+
+|        Runtime (RDTSC) [s]        |    13.2025 |
+|        Runtime unhalted [s]       |    13.1895 |
+|            Clock [MHz]            |  2494.0558 |
+|                CPI                |     1.9724 |
+|  Memory read bandwidth [MBytes/s] |   851.7098 |
+|  Memory read data volume [GBytes] |    11.2447 |
+| Memory write bandwidth [MBytes/s] |    30.0393 |
+| Memory write data volume [GBytes] |     0.3966 |
+|    Memory bandwidth [MBytes/s]    |   881.7491 |
+|    Memory data volume [GBytes]    |    11.6413 |
++-----------------------------------+------------+
+
+Region reneighbour, Group 1: MEM
++-------------------+------------+
+|    Region Info    | HWThread 0 |
++-------------------+------------+
+| RDTSC Runtime [s] |   4.020379 |
+|     call count    |         10 |
++-------------------+------------+
+
++-----------------------+---------+-------------+
+|         Event         | Counter |  HWThread 0 |
++-----------------------+---------+-------------+
+|   INSTR_RETIRED_ANY   |  FIXC0  | 14652480000 |
+| CPU_CLK_UNHALTED_CORE |  FIXC1  | 10021210000 |
+|  CPU_CLK_UNHALTED_REF |  FIXC2  | 10021230000 |
+|      CAS_COUNT_RD     | MBOX0C0 |     3334706 |
+|      CAS_COUNT_WR     | MBOX0C1 |     2403962 |
+|      CAS_COUNT_RD     | MBOX1C0 |     3320101 |
+|      CAS_COUNT_WR     | MBOX1C1 |     2407385 |
+|      CAS_COUNT_RD     | MBOX2C0 |     3316048 |
+|      CAS_COUNT_WR     | MBOX2C1 |     2409263 |
+|      CAS_COUNT_RD     | MBOX3C0 |       30281 |
+|      CAS_COUNT_WR     | MBOX3C1 |       25366 |
+|      CAS_COUNT_RD     | MBOX4C0 |       30300 |
+|      CAS_COUNT_WR     | MBOX4C1 |       25349 |
+|      CAS_COUNT_RD     | MBOX5C0 |       30236 |
+|      CAS_COUNT_WR     | MBOX5C1 |       25366 |
++-----------------------+---------+-------------+
+
++-----------------------------------+------------+
+|               Metric              | HWThread 0 |
++-----------------------------------+------------+
+|        Runtime (RDTSC) [s]        |     4.0204 |
+|        Runtime unhalted [s]       |     4.0180 |
+|            Clock [MHz]            |  2494.0509 |
+|                CPI                |     0.6839 |
+|  Memory read bandwidth [MBytes/s] |   160.1707 |
+|  Memory read data volume [GBytes] |     0.6439 |
+| Memory write bandwidth [MBytes/s] |   116.1553 |
+| Memory write data volume [GBytes] |     0.4670 |
+|    Memory bandwidth [MBytes/s]    |   276.3260 |
+|    Memory data volume [GBytes]    |     1.1109 |
++-----------------------------------+------------+
+
+iwia021h@casclakesp2:~/repo/MD-Bench$ 
+iwia021h@casclakesp2:~/repo/MD-Bench$ 
+iwia021h@casclakesp2:~/repo/MD-Bench$ 
+iwia021h@casclakesp2:~/repo/MD-Bench$ 
+iwia021h@casclakesp2:~/repo/MD-Bench$ 
+iwia021h@casclakesp2:~/repo/MD-Bench$ 
+iwia021h@casclakesp2:~/repo/MD-Bench$ 
+iwia021h@casclakesp2:~/repo/MD-Bench$ 
+iwia021h@casclakesp2:~/repo/MD-Bench$ 
+iwia021h@casclakesp2:~/repo/MD-Bench$ 
+iwia021h@casclakesp2:~/repo/MD-Bench$ 
+iwia021h@casclakesp2:~/repo/MD-Bench$ 
+iwia021h@casclakesp2:~/repo/MD-Bench$ 
+iwia021h@casclakesp2:~/repo/MD-Bench$ 
+iwia021h@casclakesp2:~/repo/MD-Bench$ 
+iwia021h@casclakesp2:~/repo/MD-Bench$ 
+iwia021h@casclakesp2:~/repo/MD-Bench$ 
+iwia021h@casclakesp2:~/repo/MD-Bench$ 
+iwia021h@casclakesp2:~/repo/MD-Bench$ 
+iwia021h@casclakesp2:~/repo/MD-Bench$ 
+iwia021h@casclakesp2:~/repo/MD-Bench$ 
+iwia021h@casclakesp2:~/repo/MD-Bench$ 
+iwia021h@casclakesp2:~/repo/MD-Bench$ 
+iwia021h@casclakesp2:~/repo/MD-Bench$ 
+iwia021h@casclakesp2:~/repo/MD-Bench$ 
+iwia021h@casclakesp2:~/repo/MD-Bench$ cd asm/
+iwia021h@casclakesp2:~/repo/MD-Bench/asm$ ls -lhtra
+total 1.5K
+-rw-r--r-- 1 iwia021h iwia    0 Jun 11 15:12 .gitkeep
+drwxr-xr-x 2 iwia021h iwia 4.0K Oct  6 15:54 unused
+drwxr-xr-x 3 iwia021h iwia 4.0K Oct  6 15:58 .
+drwxr-xr-x 9 iwia021h iwia 4.0K Oct  7 00:00 ..
+iwia021h@casclakesp2:~/repo/MD-Bench/asm$ ls -lhtra unused/
+total 97K
+-rw-r--r-- 1 iwia021h iwia  40K Aug  9 23:51 force-mem-only.s
+-rw-r--r-- 1 iwia021h iwia  41K Oct  6 15:54 force-mem-only-with-likwid.s
+drwxr-xr-x 2 iwia021h iwia 4.0K Oct  6 15:54 .
+drwxr-xr-x 3 iwia021h iwia 4.0K Oct  6 15:58 ..
+iwia021h@casclakesp2:~/repo/MD-Bench/asm$ cp -p unused/force-mem-only-with-likwid.s force-new.s
+iwia021h@casclakesp2:~/repo/MD-Bench/asm$ 
+iwia021h@casclakesp2:~/repo/MD-Bench/asm$ 
+iwia021h@casclakesp2:~/repo/MD-Bench/asm$ cd ..
+iwia021h@casclakesp2:~/repo/MD-Bench$ make -j4
+===>  ASSEMBLE  ICC/force-new.o
+===>  LINKING  MDBench-ICC
+./src/main.c(166): warning #3180: unrecognized OpenMP #pragma
+  #pragma omp parallel
+  ^
+
+iwia021h@casclakesp2:~/repo/MD-Bench$ 
+iwia021h@casclakesp2:~/repo/MD-Bench$ 
+iwia021h@casclakesp2:~/repo/MD-Bench$ 
+iwia021h@casclakesp2:~/repo/MD-Bench$ ssh test^C
+iwia021h@casclakesp2:~/repo/MD-Bench$ ^C
+iwia021h@casclakesp2:~/repo/MD-Bench$ ^C
+iwia021h@casclakesp2:~/repo/MD-Bench$ ^C
+iwia021h@casclakesp2:~/repo/MD-Bench$ ^C
+iwia021h@casclakesp2:~/repo/MD-Bench$ ^C
+iwia021h@casclakesp2:~/repo/MD-Bench$ likwid-perfctr -m -g MEM -C 0 ./MDBench-ICC
+INFO: You are running LIKWID in a cpuset with 1 CPUs. Taking given IDs as logical ID in cpuset
+--------------------------------------------------------------------------------
+CPU name:	Intel(R) Xeon(R) Gold 6248 CPU @ 2.50GHz
+CPU type:	Intel Cascadelake SP processor
+CPU clock:	2.49 GHz
+--------------------------------------------------------------------------------
+step	temp		pressure
+0	1.440000e+00	1.215639e+00
+100	1.440000e+00	1.215639e+00
+200	1.440000e+00	1.215639e+00
+----------------------------------------------------------------------------
+Data layout for positions: AoS
+Using double precision floating point.
+----------------------------------------------------------------------------
+System: 131072 atoms 48219 ghost atoms, Steps: 200
+TOTAL 13.44s FORCE 9.01s NEIGH 4.35s REST 0.08s
+----------------------------------------------------------------------------
+Performance: 1.95 million atom updates per second
+--------------------------------------------------------------------------------
+Region force, Group 1: MEM
++-------------------+------------+
+|    Region Info    | HWThread 0 |
++-------------------+------------+
+| RDTSC Runtime [s] |   8.797747 |
+|     call count    |        201 |
++-------------------+------------+
+
++-----------------------+---------+-------------+
+|         Event         | Counter |  HWThread 0 |
++-----------------------+---------+-------------+
+|   INSTR_RETIRED_ANY   |  FIXC0  | 10196590000 |
+| CPU_CLK_UNHALTED_CORE |  FIXC1  | 21921870000 |
+|  CPU_CLK_UNHALTED_REF |  FIXC2  | 21921870000 |
+|      CAS_COUNT_RD     | MBOX0C0 |    55639710 |
+|      CAS_COUNT_WR     | MBOX0C1 |     2019722 |
+|      CAS_COUNT_RD     | MBOX1C0 |    55775860 |
+|      CAS_COUNT_WR     | MBOX1C1 |     2005611 |
+|      CAS_COUNT_RD     | MBOX2C0 |    55974050 |
+|      CAS_COUNT_WR     | MBOX2C1 |     1988910 |
+|      CAS_COUNT_RD     | MBOX3C0 |      102021 |
+|      CAS_COUNT_WR     | MBOX3C1 |       55898 |
+|      CAS_COUNT_RD     | MBOX4C0 |      100887 |
+|      CAS_COUNT_WR     | MBOX4C1 |       55851 |
+|      CAS_COUNT_RD     | MBOX5C0 |      100993 |
+|      CAS_COUNT_WR     | MBOX5C1 |       55846 |
++-----------------------+---------+-------------+
+
++-----------------------------------+------------+
+|               Metric              | HWThread 0 |
++-----------------------------------+------------+
+|        Runtime (RDTSC) [s]        |     8.7977 |
+|        Runtime unhalted [s]       |     8.7897 |
+|            Clock [MHz]            |  2494.0466 |
+|                CPI                |     2.1499 |
+|  Memory read bandwidth [MBytes/s] |  1219.9016 |
+|  Memory read data volume [GBytes] |    10.7324 |
+| Memory write bandwidth [MBytes/s] |    44.9703 |
+| Memory write data volume [GBytes] |     0.3956 |
+|    Memory bandwidth [MBytes/s]    |  1264.8719 |
+|    Memory data volume [GBytes]    |    11.1280 |
++-----------------------------------+------------+
+
+Region reneighbour, Group 1: MEM
++-------------------+------------+
+|    Region Info    | HWThread 0 |
++-------------------+------------+
+| RDTSC Runtime [s] |   4.341293 |
+|     call count    |         10 |
++-------------------+------------+
+
++-----------------------+---------+-------------+
+|         Event         | Counter |  HWThread 0 |
++-----------------------+---------+-------------+
+|   INSTR_RETIRED_ANY   |  FIXC0  | 14652480000 |
+| CPU_CLK_UNHALTED_CORE |  FIXC1  | 10821850000 |
+|  CPU_CLK_UNHALTED_REF |  FIXC2  | 10821860000 |
+|      CAS_COUNT_RD     | MBOX0C0 |     3315144 |
+|      CAS_COUNT_WR     | MBOX0C1 |     2406557 |
+|      CAS_COUNT_RD     | MBOX1C0 |     3303195 |
+|      CAS_COUNT_WR     | MBOX1C1 |     2407611 |
+|      CAS_COUNT_RD     | MBOX2C0 |     3295489 |
+|      CAS_COUNT_WR     | MBOX2C1 |     2403797 |
+|      CAS_COUNT_RD     | MBOX3C0 |       34435 |
+|      CAS_COUNT_WR     | MBOX3C1 |       27507 |
+|      CAS_COUNT_RD     | MBOX4C0 |       34341 |
+|      CAS_COUNT_WR     | MBOX4C1 |       27506 |
+|      CAS_COUNT_RD     | MBOX5C0 |       34168 |
+|      CAS_COUNT_WR     | MBOX5C1 |       27502 |
++-----------------------+---------+-------------+
+
++-----------------------------------+------------+
+|               Metric              | HWThread 0 |
++-----------------------------------+------------+
+|        Runtime (RDTSC) [s]        |     4.3413 |
+|        Runtime unhalted [s]       |     4.3391 |
+|            Clock [MHz]            |  2494.0443 |
+|                CPI                |     0.7386 |
+|  Memory read bandwidth [MBytes/s] |   147.6688 |
+|  Memory read data volume [GBytes] |     0.6411 |
+| Memory write bandwidth [MBytes/s] |   107.6248 |
+| Memory write data volume [GBytes] |     0.4672 |
+|    Memory bandwidth [MBytes/s]    |   255.2936 |
+|    Memory data volume [GBytes]    |     1.1083 |
++-----------------------------------+------------+
+
+iwia021h@casclakesp2:~/repo/MD-Bench$ likwid-perfctr -m -g MEM -C 0 ./MDBench-ICC
+INFO: You are running LIKWID in a cpuset with 1 CPUs. Taking given IDs as logical ID in cpuset
+--------------------------------------------------------------------------------
+CPU name:	Intel(R) Xeon(R) Gold 6248 CPU @ 2.50GHz
+CPU type:	Intel Cascadelake SP processor
+CPU clock:	2.49 GHz
+--------------------------------------------------------------------------------
+step	temp		pressure
+0	1.440000e+00	1.215639e+00
+100	1.440000e+00	1.215639e+00
+200	1.440000e+00	1.215639e+00
+----------------------------------------------------------------------------
+Data layout for positions: AoS
+Using double precision floating point.
+----------------------------------------------------------------------------
+System: 131072 atoms 48219 ghost atoms, Steps: 200
+TOTAL 13.43s FORCE 9.01s NEIGH 4.34s REST 0.08s
+----------------------------------------------------------------------------
+Performance: 1.95 million atom updates per second
+--------------------------------------------------------------------------------
+Region force, Group 1: MEM
++-------------------+------------+
+|    Region Info    | HWThread 0 |
++-------------------+------------+
+| RDTSC Runtime [s] |   8.791170 |
+|     call count    |        201 |
++-------------------+------------+
+
++-----------------------+---------+-------------+
+|         Event         | Counter |  HWThread 0 |
++-----------------------+---------+-------------+
+|   INSTR_RETIRED_ANY   |  FIXC0  | 10196590000 |
+| CPU_CLK_UNHALTED_CORE |  FIXC1  | 21905490000 |
+|  CPU_CLK_UNHALTED_REF |  FIXC2  | 21905480000 |
+|      CAS_COUNT_RD     | MBOX0C0 |    55129870 |
+|      CAS_COUNT_WR     | MBOX0C1 |     2272524 |
+|      CAS_COUNT_RD     | MBOX1C0 |    55419780 |
+|      CAS_COUNT_WR     | MBOX1C1 |     2259663 |
+|      CAS_COUNT_RD     | MBOX2C0 |    55531340 |
+|      CAS_COUNT_WR     | MBOX2C1 |     2257521 |
+|      CAS_COUNT_RD     | MBOX3C0 |       97854 |
+|      CAS_COUNT_WR     | MBOX3C1 |       55832 |
+|      CAS_COUNT_RD     | MBOX4C0 |       97079 |
+|      CAS_COUNT_WR     | MBOX4C1 |       55752 |
+|      CAS_COUNT_RD     | MBOX5C0 |       98199 |
+|      CAS_COUNT_WR     | MBOX5C1 |       55842 |
++-----------------------+---------+-------------+
+
++-----------------------------------+------------+
+|               Metric              | HWThread 0 |
++-----------------------------------+------------+
+|        Runtime (RDTSC) [s]        |     8.7912 |
+|        Runtime unhalted [s]       |     8.7830 |
+|            Clock [MHz]            |  2494.0787 |
+|                CPI                |     2.1483 |
+|  Memory read bandwidth [MBytes/s] |  1211.2090 |
+|  Memory read data volume [GBytes] |    10.6479 |
+| Memory write bandwidth [MBytes/s] |    50.6482 |
+| Memory write data volume [GBytes] |     0.4453 |
+|    Memory bandwidth [MBytes/s]    |  1261.8571 |
+|    Memory data volume [GBytes]    |    11.0932 |
++-----------------------------------+------------+
+
+Region reneighbour, Group 1: MEM
++-------------------+------------+
+|    Region Info    | HWThread 0 |
++-------------------+------------+
+| RDTSC Runtime [s] |   4.331682 |
+|     call count    |         10 |
++-------------------+------------+
+
++-----------------------+---------+-------------+
+|         Event         | Counter |  HWThread 0 |
++-----------------------+---------+-------------+
+|   INSTR_RETIRED_ANY   |  FIXC0  | 14652480000 |
+| CPU_CLK_UNHALTED_CORE |  FIXC1  | 10797530000 |
+|  CPU_CLK_UNHALTED_REF |  FIXC2  | 10797550000 |
+|      CAS_COUNT_RD     | MBOX0C0 |     3321141 |
+|      CAS_COUNT_WR     | MBOX0C1 |     2402355 |
+|      CAS_COUNT_RD     | MBOX1C0 |     3298996 |
+|      CAS_COUNT_WR     | MBOX1C1 |     2399003 |
+|      CAS_COUNT_RD     | MBOX2C0 |     3298170 |
+|      CAS_COUNT_WR     | MBOX2C1 |     2401169 |
+|      CAS_COUNT_RD     | MBOX3C0 |       31264 |
+|      CAS_COUNT_WR     | MBOX3C1 |       27297 |
+|      CAS_COUNT_RD     | MBOX4C0 |       31136 |
+|      CAS_COUNT_WR     | MBOX4C1 |       27308 |
+|      CAS_COUNT_RD     | MBOX5C0 |       30988 |
+|      CAS_COUNT_WR     | MBOX5C1 |       27307 |
++-----------------------+---------+-------------+
+
++-----------------------------------+------------+
+|               Metric              | HWThread 0 |
++-----------------------------------+------------+
+|        Runtime (RDTSC) [s]        |     4.3317 |
+|        Runtime unhalted [s]       |     4.3293 |
+|            Clock [MHz]            |  2494.0730 |
+|                CPI                |     0.7369 |
+|  Memory read bandwidth [MBytes/s] |   147.9214 |
+|  Memory read data volume [GBytes] |     0.6407 |
+| Memory write bandwidth [MBytes/s] |   107.6266 |
+| Memory write data volume [GBytes] |     0.4662 |
+|    Memory bandwidth [MBytes/s]    |   255.5480 |
+|    Memory data volume [GBytes]    |     1.1070 |
++-----------------------------------+------------+
+
+iwia021h@casclakesp2:~/repo/MD-Bench$ likwid-perfctr -m -g MEM -C 0 ./MDBench-ICC
+INFO: You are running LIKWID in a cpuset with 1 CPUs. Taking given IDs as logical ID in cpuset
+--------------------------------------------------------------------------------
+CPU name:	Intel(R) Xeon(R) Gold 6248 CPU @ 2.50GHz
+CPU type:	Intel Cascadelake SP processor
+CPU clock:	2.49 GHz
+--------------------------------------------------------------------------------
+step	temp		pressure
+0	1.440000e+00	1.215639e+00
+100	1.440000e+00	1.215639e+00
+200	1.440000e+00	1.215639e+00
+----------------------------------------------------------------------------
+Data layout for positions: AoS
+Using double precision floating point.
+----------------------------------------------------------------------------
+System: 131072 atoms 48219 ghost atoms, Steps: 200
+TOTAL 13.40s FORCE 8.97s NEIGH 4.35s REST 0.08s
+----------------------------------------------------------------------------
+Performance: 1.96 million atom updates per second
+--------------------------------------------------------------------------------
+Region force, Group 1: MEM
++-------------------+------------+
+|    Region Info    | HWThread 0 |
++-------------------+------------+
+| RDTSC Runtime [s] |   8.778616 |
+|     call count    |        201 |
++-------------------+------------+
+
++-----------------------+---------+-------------+
+|         Event         | Counter |  HWThread 0 |
++-----------------------+---------+-------------+
+|   INSTR_RETIRED_ANY   |  FIXC0  | 10196590000 |
+| CPU_CLK_UNHALTED_CORE |  FIXC1  | 21877690000 |
+|  CPU_CLK_UNHALTED_REF |  FIXC2  | 21877680000 |
+|      CAS_COUNT_RD     | MBOX0C0 |    55417740 |
+|      CAS_COUNT_WR     | MBOX0C1 |     1773716 |
+|      CAS_COUNT_RD     | MBOX1C0 |    55583580 |
+|      CAS_COUNT_WR     | MBOX1C1 |     1752076 |
+|      CAS_COUNT_RD     | MBOX2C0 |    55255980 |
+|      CAS_COUNT_WR     | MBOX2C1 |     1748970 |
+|      CAS_COUNT_RD     | MBOX3C0 |       92054 |
+|      CAS_COUNT_WR     | MBOX3C1 |       55682 |
+|      CAS_COUNT_RD     | MBOX4C0 |       91415 |
+|      CAS_COUNT_WR     | MBOX4C1 |       55677 |
+|      CAS_COUNT_RD     | MBOX5C0 |       92082 |
+|      CAS_COUNT_WR     | MBOX5C1 |       55696 |
++-----------------------+---------+-------------+
+
++-----------------------------------+------------+
+|               Metric              | HWThread 0 |
++-----------------------------------+------------+
+|        Runtime (RDTSC) [s]        |     8.7786 |
+|        Runtime unhalted [s]       |     8.7719 |
+|            Clock [MHz]            |  2494.0614 |
+|                CPI                |     2.1456 |
+|  Memory read bandwidth [MBytes/s] |  1214.0983 |
+|  Memory read data volume [GBytes] |    10.6581 |
+| Memory write bandwidth [MBytes/s] |    39.6733 |
+| Memory write data volume [GBytes] |     0.3483 |
+|    Memory bandwidth [MBytes/s]    |  1253.7715 |
+|    Memory data volume [GBytes]    |    11.0064 |
++-----------------------------------+------------+
+
+Region reneighbour, Group 1: MEM
++-------------------+------------+
+|    Region Info    | HWThread 0 |
++-------------------+------------+
+| RDTSC Runtime [s] |   4.343485 |
+|     call count    |         10 |
++-------------------+------------+
+
++-----------------------+---------+-------------+
+|         Event         | Counter |  HWThread 0 |
++-----------------------+---------+-------------+
+|   INSTR_RETIRED_ANY   |  FIXC0  | 14652480000 |
+| CPU_CLK_UNHALTED_CORE |  FIXC1  | 10825230000 |
+|  CPU_CLK_UNHALTED_REF |  FIXC2  | 10825250000 |
+|      CAS_COUNT_RD     | MBOX0C0 |     3367144 |
+|      CAS_COUNT_WR     | MBOX0C1 |     2488705 |
+|      CAS_COUNT_RD     | MBOX1C0 |     3363945 |
+|      CAS_COUNT_WR     | MBOX1C1 |     2491487 |
+|      CAS_COUNT_RD     | MBOX2C0 |     3390783 |
+|      CAS_COUNT_WR     | MBOX2C1 |     2485061 |
+|      CAS_COUNT_RD     | MBOX3C0 |       30993 |
+|      CAS_COUNT_WR     | MBOX3C1 |       27309 |
+|      CAS_COUNT_RD     | MBOX4C0 |       30862 |
+|      CAS_COUNT_WR     | MBOX4C1 |       27322 |
+|      CAS_COUNT_RD     | MBOX5C0 |       30876 |
+|      CAS_COUNT_WR     | MBOX5C1 |       27303 |
++-----------------------+---------+-------------+
+
++-----------------------------------+------------+
+|               Metric              | HWThread 0 |
++-----------------------------------+------------+
+|        Runtime (RDTSC) [s]        |     4.3435 |
+|        Runtime unhalted [s]       |     4.3404 |
+|            Clock [MHz]            |  2494.0556 |
+|                CPI                |     0.7388 |
+|  Memory read bandwidth [MBytes/s] |   150.5092 |
+|  Memory read data volume [GBytes] |     0.6537 |
+| Memory write bandwidth [MBytes/s] |   111.2056 |
+| Memory write data volume [GBytes] |     0.4830 |
+|    Memory bandwidth [MBytes/s]    |   261.7149 |
+|    Memory data volume [GBytes]    |     1.1368 |
++-----------------------------------+------------+
+
+iwia021h@casclakesp2:~/repo/MD-Bench$ 
+iwia021h@casclakesp2:~/repo/MD-Bench$ 
+iwia021h@casclakesp2:~/repo/MD-Bench$ 
+iwia021h@casclakesp2:~/repo/MD-Bench$ cd
+iwia021h@casclakesp2:~$ cd repo/gather-
+gather-bench/  gather-c/      gather-master/ 
+iwia021h@casclakesp2:~$ cd repo/gather-bench/
+config.mk                  .gitignore                 index_tracer_120.out       index_tracer_60.out
+core                       include_CLANG.mk           index_tracer_140.out       index_tracer_80.out
+gather-bench-ICC           include_GCC.mk             index_tracer_160.out       index_tracer.out
+gather-bench-ICC-md        include_ICC.mk             index_tracer_180.out       LICENSE
+gather-bench-ICC-md-trace  include_LIKWID.mk          index_tracer_200.out       Makefile
+GCC/                       index_tracer_0.out         index_tracer_20.out        README.md
+.git/                      index_tracer_100.out       index_tracer_40.out        src/
+iwia021h@casclakesp2:~$ cd repo/gather-bench/
+iwia021h@casclakesp2:~/repo/gather-bench$ make clean
+===>  CLEAN
+iwia021h@casclakesp2:~/repo/gather-bench$ make -j4
+===>  COMPILE  ICC/timing.o
+===>  ASSEMBLE  ICC/gather_aos.o
+===>  COMPILE  ICC/allocate.o
+===>  ASSEMBLE  ICC/load_aos.o
+===>  ASSEMBLE  ICC/gather_md_aos.o
+===>  ASSEMBLE  ICC/gather.o
+===>  ASSEMBLE  ICC/gather_soa.o
+===>  LINKING  gather-bench-ICC
+iwia021h@casclakesp2:~/repo/gather-bench$ 
+iwia021h@casclakesp2:~/repo/gather-bench$ 
+iwia021h@casclakesp2:~/repo/gather-bench$ likwid-perfctr -m -g CACHES_PMC -C 0 ./gather-bench-ICC-md-trace -f 2.4 -t index_tracer
+INFO: You are running LIKWID in a cpuset with 1 CPUs. Taking given IDs as logical ID in cpuset
+--------------------------------------------------------------------------------
+CPU name:	Intel(R) Xeon(R) Gold 6248 CPU @ 2.50GHz
+CPU type:	Intel Cascadelake SP processor
+CPU clock:	2.49 GHz
+--------------------------------------------------------------------------------
+ISA,Layout,Dims,Frequency (GHz),Cache Line Size (B),Vector Width (e)
+avx512,AoS,3,2.400000,64,8
+
+  tot. time(s), time/step(ms), time/iter(us),         cy/it,     cy/gather,       cy/elem
+      9.766534,     48.832668,      0.037071,    711.763470,    237.254490,      3.802156
+--------------------------------------------------------------------------------
+Region gather, Group 1: CACHES_PMC
++-------------------+------------+
+|    Region Info    | HWThread 0 |
++-------------------+------------+
+| RDTSC Runtime [s] |   9.717117 |
+|     call count    |        201 |
++-------------------+------------+
+
++-----------------------+---------+-------------+
+|         Event         | Counter |  HWThread 0 |
++-----------------------+---------+-------------+
+|   INSTR_RETIRED_ANY   |  FIXC0  |  5823143000 |
+| CPU_CLK_UNHALTED_CORE |  FIXC1  | 24218360000 |
+|  CPU_CLK_UNHALTED_REF |  FIXC2  | 24218360000 |
+|    L1D_REPLACEMENT    |   PMC0  |   268583500 |
+|      L1D_M_EVICT      |   PMC1  |    10134180 |
+|    L2_LINES_IN_ALL    |   PMC2  |   186657400 |
+|     L2_TRANS_L2_WB    |   PMC3  |   185777400 |
++-----------------------+---------+-------------+
+
++-------------------------------------+------------+
+|                Metric               | HWThread 0 |
++-------------------------------------+------------+
+|         Runtime (RDTSC) [s]         |     9.7171 |
+|         Runtime unhalted [s]        |     9.7104 |
+|             Clock [MHz]             |  2494.0625 |
+|                 CPI                 |     4.1590 |
+|  L2 to L1 load bandwidth [MBytes/s] |  1768.9757 |
+|  L2 to L1 load data volume [GBytes] |    17.1893 |
+| L1 to L2 evict bandwidth [MBytes/s] |    66.7469 |
+| L1 to L2 evict data volume [GBytes] |     0.6486 |
+|  L1 to/from L2 bandwidth [MBytes/s] |  1835.7226 |
+|  L1 to/from L2 data volume [GBytes] |    17.8379 |
+|  L3 to L2 load bandwidth [MBytes/s] |  1229.3846 |
+|  L3 to L2 load data volume [GBytes] |    11.9461 |
+| L2 to L3 evict bandwidth [MBytes/s] |  1223.5886 |
+| L2 to L3 evict data volume [GBytes] |    11.8898 |
+|  L2 to/from L3 bandwidth [MBytes/s] |  2452.9732 |
+|  L2 to/from L3 data volume [GBytes] |    23.8358 |
++-------------------------------------+------------+
+
+iwia021h@casclakesp2:~/repo/gather-bench$ likwid-perfctr -m -g MEM -C 0 ./gather-bench-ICC-md-trace -f 2.4 -t index_tracer
+INFO: You are running LIKWID in a cpuset with 1 CPUs. Taking given IDs as logical ID in cpuset
+--------------------------------------------------------------------------------
+CPU name:	Intel(R) Xeon(R) Gold 6248 CPU @ 2.50GHz
+CPU type:	Intel Cascadelake SP processor
+CPU clock:	2.49 GHz
+--------------------------------------------------------------------------------
+ISA,Layout,Dims,Frequency (GHz),Cache Line Size (B),Vector Width (e)
+avx512,AoS,3,2.400000,64,8
+
+  tot. time(s), time/step(ms), time/iter(us),         cy/it,     cy/gather,       cy/elem
+      9.775548,     48.877742,      0.037105,    712.420442,    237.473481,      3.805666
+--------------------------------------------------------------------------------
+Region gather, Group 1: MEM
++-------------------+------------+
+|    Region Info    | HWThread 0 |
++-------------------+------------+
+| RDTSC Runtime [s] |   9.677331 |
+|     call count    |        201 |
++-------------------+------------+
+
++-----------------------+---------+-------------+
+|         Event         | Counter |  HWThread 0 |
++-----------------------+---------+-------------+
+|   INSTR_RETIRED_ANY   |  FIXC0  |  5823294000 |
+| CPU_CLK_UNHALTED_CORE |  FIXC1  | 24117810000 |
+|  CPU_CLK_UNHALTED_REF |  FIXC2  | 24117810000 |
+|      CAS_COUNT_RD     | MBOX0C0 |    57977270 |
+|      CAS_COUNT_WR     | MBOX0C1 |     2734198 |
+|      CAS_COUNT_RD     | MBOX1C0 |    57641140 |
+|      CAS_COUNT_WR     | MBOX1C1 |     2699996 |
+|      CAS_COUNT_RD     | MBOX2C0 |    57885010 |
+|      CAS_COUNT_WR     | MBOX2C1 |     2724341 |
+|      CAS_COUNT_RD     | MBOX3C0 |      102218 |
+|      CAS_COUNT_WR     | MBOX3C1 |       61340 |
+|      CAS_COUNT_RD     | MBOX4C0 |      100122 |
+|      CAS_COUNT_WR     | MBOX4C1 |       61363 |
+|      CAS_COUNT_RD     | MBOX5C0 |      101359 |
+|      CAS_COUNT_WR     | MBOX5C1 |       61399 |
++-----------------------+---------+-------------+
+
++-----------------------------------+------------+
+|               Metric              | HWThread 0 |
++-----------------------------------+------------+
+|        Runtime (RDTSC) [s]        |     9.6773 |
+|        Runtime unhalted [s]       |     9.6701 |
+|            Clock [MHz]            |  2494.0644 |
+|                CPI                |     4.1416 |
+|  Memory read bandwidth [MBytes/s] |  1149.4549 |
+|  Memory read data volume [GBytes] |    11.1237 |
+| Memory write bandwidth [MBytes/s] |    55.1731 |
+| Memory write data volume [GBytes] |     0.5339 |
+|    Memory bandwidth [MBytes/s]    |  1204.6281 |
+|    Memory data volume [GBytes]    |    11.6576 |
++-----------------------------------+------------+
+
+iwia021h@casclakesp2:~/repo/gather-bench$ likwid-perfctr -m -g MEM -C 0 ./gather-bench-ICC-md-trace -f 2.4 -t index_tracer
+INFO: You are running LIKWID in a cpuset with 1 CPUs. Taking given IDs as logical ID in cpuset
+--------------------------------------------------------------------------------
+CPU name:	Intel(R) Xeon(R) Gold 6248 CPU @ 2.50GHz
+CPU type:	Intel Cascadelake SP processor
+CPU clock:	2.49 GHz
+--------------------------------------------------------------------------------
+ISA,Layout,Dims,Frequency (GHz),Cache Line Size (B),Vector Width (e)
+avx512,AoS,3,2.400000,64,8
+
+  tot. time(s), time/step(ms), time/iter(us),         cy/it,     cy/gather,       cy/elem
+      9.776585,     48.882927,      0.037109,    712.496025,    237.498675,      3.806070
+--------------------------------------------------------------------------------
+Region gather, Group 1: MEM
++-------------------+------------+
+|    Region Info    | HWThread 0 |
++-------------------+------------+
+| RDTSC Runtime [s] |   9.678449 |
+|     call count    |        201 |
++-------------------+------------+
+
++-----------------------+---------+-------------+
+|         Event         | Counter |  HWThread 0 |
++-----------------------+---------+-------------+
+|   INSTR_RETIRED_ANY   |  FIXC0  |  5823294000 |
+| CPU_CLK_UNHALTED_CORE |  FIXC1  | 24120900000 |
+|  CPU_CLK_UNHALTED_REF |  FIXC2  | 24120900000 |
+|      CAS_COUNT_RD     | MBOX0C0 |    57614070 |
+|      CAS_COUNT_WR     | MBOX0C1 |     2755662 |
+|      CAS_COUNT_RD     | MBOX1C0 |    57818210 |
+|      CAS_COUNT_WR     | MBOX1C1 |     2798336 |
+|      CAS_COUNT_RD     | MBOX2C0 |    57910020 |
+|      CAS_COUNT_WR     | MBOX2C1 |     2836295 |
+|      CAS_COUNT_RD     | MBOX3C0 |      106114 |
+|      CAS_COUNT_WR     | MBOX3C1 |       61357 |
+|      CAS_COUNT_RD     | MBOX4C0 |      104706 |
+|      CAS_COUNT_WR     | MBOX4C1 |       61355 |
+|      CAS_COUNT_RD     | MBOX5C0 |      106722 |
+|      CAS_COUNT_WR     | MBOX5C1 |       61356 |
++-----------------------+---------+-------------+
+
++-----------------------------------+------------+
+|               Metric              | HWThread 0 |
++-----------------------------------+------------+
+|        Runtime (RDTSC) [s]        |     9.6784 |
+|        Runtime unhalted [s]       |     9.6712 |
+|            Clock [MHz]            |  2494.0927 |
+|                CPI                |     4.1421 |
+|  Memory read bandwidth [MBytes/s] |  1148.3482 |
+|  Memory read data volume [GBytes] |    11.1142 |
+| Memory write bandwidth [MBytes/s] |    56.6991 |
+| Memory write data volume [GBytes] |     0.5488 |
+|    Memory bandwidth [MBytes/s]    |  1205.0473 |
+|    Memory data volume [GBytes]    |    11.6630 |
++-----------------------------------+------------+
+
