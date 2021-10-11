@@ -47,7 +47,7 @@ typedef enum {
     NUMTIMER
 } timertype;
 
-extern double computeForce(Parameter*, Atom*, Neighbor*, int, int, int);
+extern double computeForce(Parameter*, Atom*, Neighbor*, int, int);
 
 void init(Parameter *param)
 {
@@ -206,14 +206,13 @@ int main (int argc, char** argv)
 
     setup(&param, &atom, &neighbor);
     computeThermo(0, &param, &atom);
-    computeForce(&param, &atom, &neighbor, 1, 0, param.every);
+    computeForce(&param, &atom, &neighbor, 1, 0);
 
     timer[FORCE] = 0.0;
     timer[NEIGH] = 0.0;
     timer[TOTAL] = getTimeStamp();
 
     for(int n = 0; n < param.ntimes; n++) {
-
         initialIntegrate(&param, &atom);
 
         if((n + 1) % param.every) {
@@ -222,7 +221,7 @@ int main (int argc, char** argv)
             timer[NEIGH] += reneighbour(&param, &atom, &neighbor);
         }
 
-        timer[FORCE] += computeForce(&param, &atom, &neighbor, 0, n + 1, param.every);
+        timer[FORCE] += computeForce(&param, &atom, &neighbor, 0, n + 1);
         finalIntegrate(&param, &atom);
 
         if(!((n + 1) % param.nstat) && (n+1) < param.ntimes) {
@@ -247,7 +246,13 @@ int main (int argc, char** argv)
     printf(HLINE);
     printf("Performance: %.2f million atom updates per second\n",
             1e-6 * (double) atom.Natoms * param.ntimes / timer[TOTAL]);
-
+    double force_useful_volume = 1e-9 * ( (double)(atom.Nlocal * (param.ntimes + 1)) * (sizeof(MD_FLOAT) * 6 + sizeof(int)) +
+                                          (double)(neighbor.totalneighs) * (sizeof(MD_FLOAT) * 3 + sizeof(int)) );
+#ifdef EXPLICIT_TYPES
+    force_useful_volume += 1e-9 * (double)((atom.Nlocal * (param.ntimes + 1)) + neighbor.totalneighs) * sizeof(int);
+#endif
+    printf("total_neighs = %lld/%.2f\n", neighbor.totalneighs, (double)(neighbor.totalneighs));
+    printf("Useful read data volume for force computation: %.2fGB\n", force_useful_volume);
     LIKWID_MARKER_CLOSE;
     return EXIT_SUCCESS;
 }

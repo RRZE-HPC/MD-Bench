@@ -69,6 +69,7 @@ void initNeighbor(Neighbor *neighbor, Parameter *param)
     neighbor->maxneighs = 100;
     neighbor->numneigh = NULL;
     neighbor->neighbors = NULL;
+    neighbor->totalneighs = 0;
 }
 
 void setupNeighbor()

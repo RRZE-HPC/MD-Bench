@@ -33,7 +33,7 @@
 #endif
 
 #ifndef TRACER_CONDITION
-#   define TRACER_CONDITION                 (!(timestep % every))
+#   define TRACER_CONDITION                 (!(timestep % param->every))
 #endif
 
 #ifdef MEM_TRACER
@@ -118,10 +118,9 @@
 #   define DIST_TRACE(l, e)
 #endif
 
-double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor, int first_exec, int timestep, int every) {
+double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor, int first_exec, int timestep) {
     MEM_TRACER_INIT;
     INDEX_TRACER_INIT;
-    double S = getTimeStamp();
     int Nlocal = atom->Nlocal;
     int* neighs;
     MD_FLOAT* fx = atom->fx; MD_FLOAT* fy = atom->fy; MD_FLOAT* fz = atom->fz;
@@ -138,11 +137,13 @@ double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor, int first_
     }
 
     INDEX_TRACE_NATOMS(Nlocal, atom->Nghost, neighbor->maxneighs);
+    double S = getTimeStamp();
     LIKWID_MARKER_START("force");
     #pragma omp parallel for
     for(int i = 0; i < Nlocal; i++) {
         neighs = &neighbor->neighbors[i * neighbor->maxneighs];
         int numneighs = neighbor->numneigh[i];
+        neighbor->totalneighs += numneighs; // Maybe remove this for real time measurements
         MD_FLOAT xtmp = atom_x(i);
         MD_FLOAT ytmp = atom_y(i);
         MD_FLOAT ztmp = atom_z(i);
@@ -217,8 +218,8 @@ double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor, int first_
         MEM_TRACE(fz[i], 'W');
     }
     LIKWID_MARKER_STOP("force");
-
     double E = getTimeStamp();
+
     INDEX_TRACER_END;
     MEM_TRACER_END;
     return E-S;
