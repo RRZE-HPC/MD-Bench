@@ -140,85 +140,96 @@ double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *sta
     INDEX_TRACE_NATOMS(Nlocal, atom->Nghost, neighbor->maxneighs);
     double S = getTimeStamp();
     LIKWID_MARKER_START("force");
-    #pragma omp parallel for
-    for(int i = 0; i < Nlocal; i++) {
-        neighs = &neighbor->neighbors[i * neighbor->maxneighs];
-        int numneighs = neighbor->numneigh[i];
-        MD_FLOAT xtmp = atom_x(i);
-        MD_FLOAT ytmp = atom_y(i);
-        MD_FLOAT ztmp = atom_z(i);
-        MD_FLOAT fix = 0;
-        MD_FLOAT fiy = 0;
-        MD_FLOAT fiz = 0;
 
-        MEM_TRACE(atom_x(i), 'R');
-        MEM_TRACE(atom_y(i), 'R');
-        MEM_TRACE(atom_z(i), 'R');
-        INDEX_TRACE_ATOM(i);
+    #if VARIANT == stub && defined(ATOMS_LOOP_RUNS) && ATOMS_LOOP_RUNS > 1
+    #define REPEAT_ATOMS_LOOP
+    for(int na = 0; na < (first_exec ? 1 : ATOMS_LOOP_RUNS); na++) {
+    #endif
 
-        #ifdef EXPLICIT_TYPES
-        const int type_i = atom->type[i];
-        MEM_TRACE(atom->type(i), 'R');
-        #endif
+        #pragma omp parallel for
+        for(int i = 0; i < Nlocal; i++) {
+            neighs = &neighbor->neighbors[i * neighbor->maxneighs];
+            int numneighs = neighbor->numneigh[i];
+            MD_FLOAT xtmp = atom_x(i);
+            MD_FLOAT ytmp = atom_y(i);
+            MD_FLOAT ztmp = atom_z(i);
+            MD_FLOAT fix = 0;
+            MD_FLOAT fiy = 0;
+            MD_FLOAT fiz = 0;
 
-        #if VARIANT == stub && defined(NEIGHBORS_LOOP_RUNS) && NEIGHBORS_LOOP_RUNS > 1
-        #define REPEAT_NEIGHBORS_LOOP
-        int nmax = first_exec ? 1 : NEIGHBORS_LOOP_RUNS;
-        for(int n = 0; n < nmax; n++) {
-        #endif
+            MEM_TRACE(atom_x(i), 'R');
+            MEM_TRACE(atom_y(i), 'R');
+            MEM_TRACE(atom_z(i), 'R');
+            INDEX_TRACE_ATOM(i);
 
-            //DIST_TRACE_SORT(neighs, numneighs);
-            INDEX_TRACE(neighs, numneighs);
-            //DIST_TRACE(neighs, numneighs);
+            #ifdef EXPLICIT_TYPES
+            const int type_i = atom->type[i];
+            MEM_TRACE(atom->type(i), 'R');
+            #endif
 
-            for(int k = 0; k < numneighs; k++) {
-                int j = neighs[k];
-                MD_FLOAT delx = xtmp - atom_x(j);
-                MD_FLOAT dely = ytmp - atom_y(j);
-                MD_FLOAT delz = ztmp - atom_z(j);
-                MD_FLOAT rsq = delx * delx + dely * dely + delz * delz;
+            #if VARIANT == stub && defined(NEIGHBORS_LOOP_RUNS) && NEIGHBORS_LOOP_RUNS > 1
+            #define REPEAT_NEIGHBORS_LOOP
+            int nmax = first_exec ? 1 : NEIGHBORS_LOOP_RUNS;
+            for(int nn = 0; nn < (first_exec ? 1 : NEIGHBORS_LOOP_RUNS); nn++) {
+            #endif
 
-                MEM_TRACE(neighs[k], 'R');
-                MEM_TRACE(atom_x(j), 'R');
-                MEM_TRACE(atom_y(j), 'R');
-                MEM_TRACE(atom_z(j), 'R');
+                //DIST_TRACE_SORT(neighs, numneighs);
+                INDEX_TRACE(neighs, numneighs);
+                //DIST_TRACE(neighs, numneighs);
 
-                #ifdef EXPLICIT_TYPES
-                const int type_j = atom->type[j];
-                const int type_ij = type_i * atom->ntypes + type_j;
-                const MD_FLOAT cutforcesq = atom->cutforcesq[type_ij];
-                const MD_FLOAT sigma6 = atom->sigma6[type_ij];
-                const MD_FLOAT epsilon = atom->epsilon[type_ij];
-                MEM_TRACE(atom->type(j), 'R');
-                #endif
+                for(int k = 0; k < numneighs; k++) {
+                    int j = neighs[k];
+                    MD_FLOAT delx = xtmp - atom_x(j);
+                    MD_FLOAT dely = ytmp - atom_y(j);
+                    MD_FLOAT delz = ztmp - atom_z(j);
+                    MD_FLOAT rsq = delx * delx + dely * dely + delz * delz;
 
-                if(rsq < cutforcesq) {
-                    MD_FLOAT sr2 = 1.0 / rsq;
-                    MD_FLOAT sr6 = sr2 * sr2 * sr2 * sigma6;
-                    MD_FLOAT force = 48.0 * sr6 * (sr6 - 0.5) * sr2 * epsilon;
-                    fix += delx * force;
-                    fiy += dely * force;
-                    fiz += delz * force;
+                    MEM_TRACE(neighs[k], 'R');
+                    MEM_TRACE(atom_x(j), 'R');
+                    MEM_TRACE(atom_y(j), 'R');
+                    MEM_TRACE(atom_z(j), 'R');
+
+                    #ifdef EXPLICIT_TYPES
+                    const int type_j = atom->type[j];
+                    const int type_ij = type_i * atom->ntypes + type_j;
+                    const MD_FLOAT cutforcesq = atom->cutforcesq[type_ij];
+                    const MD_FLOAT sigma6 = atom->sigma6[type_ij];
+                    const MD_FLOAT epsilon = atom->epsilon[type_ij];
+                    MEM_TRACE(atom->type(j), 'R');
+                    #endif
+
+                    if(rsq < cutforcesq) {
+                        MD_FLOAT sr2 = 1.0 / rsq;
+                        MD_FLOAT sr6 = sr2 * sr2 * sr2 * sigma6;
+                        MD_FLOAT force = 48.0 * sr6 * (sr6 - 0.5) * sr2 * epsilon;
+                        fix += delx * force;
+                        fiy += dely * force;
+                        fiz += delz * force;
+                    }
                 }
+
+            #ifdef REPEAT_NEIGHBORS_LOOP
             }
+            #endif
 
-        #ifdef REPEAT_NEIGHBORS_LOOP
+            fx[i] += fix;
+            fy[i] += fiy;
+            fz[i] += fiz;
+
+            addStat(stats->total_force_neighs, numneighs);
+            addStat(stats->total_force_iters, (numneighs + VECTOR_WIDTH - 1) / VECTOR_WIDTH);
+            MEM_TRACE(fx[i], 'R');
+            MEM_TRACE(fx[i], 'W');
+            MEM_TRACE(fy[i], 'R');
+            MEM_TRACE(fy[i], 'W');
+            MEM_TRACE(fz[i], 'R');
+            MEM_TRACE(fz[i], 'W');
         }
-        #endif
 
-        fx[i] += fix;
-        fy[i] += fiy;
-        fz[i] += fiz;
-
-        addStat(stats->total_force_neighs, numneighs);
-        addStat(stats->total_force_iters, (numneighs + VECTOR_WIDTH - 1) / VECTOR_WIDTH);
-        MEM_TRACE(fx[i], 'R');
-        MEM_TRACE(fx[i], 'W');
-        MEM_TRACE(fy[i], 'R');
-        MEM_TRACE(fy[i], 'W');
-        MEM_TRACE(fz[i], 'R');
-        MEM_TRACE(fz[i], 'W');
+    #ifdef REPEAT_ATOMS_LOOP
     }
+    #endif
+
     LIKWID_MARKER_STOP("force");
     double E = getTimeStamp();
 
