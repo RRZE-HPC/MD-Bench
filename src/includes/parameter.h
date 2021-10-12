@@ -46,5 +46,6 @@ typedef struct {
     int nx, ny, nz;
     MD_FLOAT lattice;
     MD_FLOAT xprd, yprd, zprd;
+    double proc_freq;
 } Parameter;
 #endif
