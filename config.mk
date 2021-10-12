@@ -1,13 +1,13 @@
 # Compiler tag (GCC/CLANG/ICC)
 TAG ?= ICC
 # Enable likwid (true or false)
-ENABLE_LIKWID ?= false
+ENABLE_LIKWID ?= true
 # SP or DP
 DATA_TYPE ?= DP
 # AOS or SOA
 DATA_LAYOUT ?= AOS
 # Assembly syntax to generate (ATT/INTEL)
-ASM_SYNTAX ?= INTEL
+ASM_SYNTAX ?= ATT
 
 # Number of times to run the neighbors loop on stubbed variant
 NEIGHBORS_LOOP_RUNS ?= 1
@@ -19,6 +19,8 @@ MEM_TRACER ?= false
 INDEX_TRACER ?= false
 # Vector width (elements) for index and distance tracer
 VECTOR_WIDTH ?= 8
+# Compute statistics
+COMPUTE_STATS ?= true
 
 #Feature options
 OPTIONS =  -DALIGNMENT=64

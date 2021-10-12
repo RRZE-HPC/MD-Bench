@@ -41,6 +41,10 @@ ifeq ($(strip $(INDEX_TRACER)),true)
     DEFINES += -DINDEX_TRACER
 endif
 
+ifeq ($(strip $(COMPUTE_STATS)),true)
+    DEFINES += -DCOMPUTE_STATS
+endif
+
 ifneq ($(VECTOR_WIDTH),)
     DEFINES += -DVECTOR_WIDTH=$(VECTOR_WIDTH)
 endif

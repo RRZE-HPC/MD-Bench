@@ -35,6 +35,7 @@
 #include <neighbor.h>
 #include <parameter.h>
 #include <atom.h>
+#include <stats.h>
 #include <thermo.h>
 #include <pbc.h>
 
@@ -47,7 +48,7 @@ typedef enum {
     NUMTIMER
 } timertype;
 
-extern double computeForce(Parameter*, Atom*, Neighbor*, int, int);
+extern double computeForce(Parameter*, Atom*, Neighbor*, Stats*, int, int);
 
 void init(Parameter *param)
 {
@@ -67,12 +68,14 @@ void init(Parameter *param)
     param->mass = 1.0;
     param->dtforce = 0.5 * param->dt;
     param->every = 20;
+    param->proc_freq = 2.4;
 }
 
 double setup(
         Parameter *param,
         Atom *atom,
-        Neighbor *neighbor)
+        Neighbor *neighbor,
+        Stats *stats)
 {
     double S, E;
     param->lattice = pow((4.0 / param->rho), (1.0 / 3.0));
@@ -84,6 +87,7 @@ double setup(
     initAtom(atom);
     initNeighbor(neighbor, param);
     initPbc();
+    initStats(stats);
     setupNeighbor();
     createAtom(atom, param);
     setupThermo(param, atom->Natoms);
@@ -160,6 +164,7 @@ int main (int argc, char** argv)
     double timer[NUMTIMER];
     Atom atom;
     Neighbor neighbor;
+    Stats stats;
     Parameter param;
 
     LIKWID_MARKER_INIT;
@@ -193,20 +198,26 @@ int main (int argc, char** argv)
             param.nz = atoi(argv[++i]);
             continue;
         }
+        if((strcmp(argv[i], "-f") == 0))
+        {
+            param.proc_freq = atof(argv[++i]);
+            continue;
+        }
         if((strcmp(argv[i], "-h") == 0) || (strcmp(argv[i], "--help") == 0))
         {
             printf("MD Bench: A minimalistic re-implementation of miniMD\n");
             printf(HLINE);
             printf("-n / --nsteps <int>:  set number of timesteps for simulation\n");
             printf("-nx/-ny/-nz <int>:    set linear dimension of systembox in x/y/z direction\n");
+            printf("-f <real>:            processor frequency (GHz)\n");
             printf(HLINE);
             exit(EXIT_SUCCESS);
         }
     }
 
-    setup(&param, &atom, &neighbor);
+    setup(&param, &atom, &neighbor, &stats);
     computeThermo(0, &param, &atom);
-    computeForce(&param, &atom, &neighbor, 1, 0);
+    computeForce(&param, &atom, &neighbor, &stats, 1, 0);
 
     timer[FORCE] = 0.0;
     timer[NEIGH] = 0.0;
@@ -221,7 +232,7 @@ int main (int argc, char** argv)
             timer[NEIGH] += reneighbour(&param, &atom, &neighbor);
         }
 
-        timer[FORCE] += computeForce(&param, &atom, &neighbor, 0, n + 1);
+        timer[FORCE] += computeForce(&param, &atom, &neighbor, &stats, 0, n + 1);
         finalIntegrate(&param, &atom);
 
         if(!((n + 1) % param.nstat) && (n+1) < param.ntimes) {
@@ -246,13 +257,21 @@ int main (int argc, char** argv)
     printf(HLINE);
     printf("Performance: %.2f million atom updates per second\n",
             1e-6 * (double) atom.Natoms * param.ntimes / timer[TOTAL]);
+
+#ifdef COMPUTE_STATS
     double force_useful_volume = 1e-9 * ( (double)(atom.Nlocal * (param.ntimes + 1)) * (sizeof(MD_FLOAT) * 6 + sizeof(int)) +
-                                          (double)(neighbor.totalneighs) * (sizeof(MD_FLOAT) * 3 + sizeof(int)) );
+                                          (double)(stats.total_force_neighs) * (sizeof(MD_FLOAT) * 3 + sizeof(int)) );
 #ifdef EXPLICIT_TYPES
-    force_useful_volume += 1e-9 * (double)((atom.Nlocal * (param.ntimes + 1)) + neighbor.totalneighs) * sizeof(int);
+    force_useful_volume += 1e-9 * (double)((atom.Nlocal * (param.ntimes + 1)) + stats.total_force_neighs) * sizeof(int);
 #endif
-    printf("total_neighs = %lld/%.2f\n", neighbor.totalneighs, (double)(neighbor.totalneighs));
-    printf("Useful read data volume for force computation: %.2fGB\n", force_useful_volume);
+    printf("Statistics:\n");
+    printf("\tVector width: %d, Processor frequency: %.4f GHz\n", VECTOR_WIDTH, param.proc_freq);
+    printf("\tTotal number of computed pair interactions: %lld\n", stats.total_force_neighs);
+    printf("\tTotal number of most SIMD iterations: %lld\n", stats.total_force_iters);
+    printf("\tUseful read data volume for force computation: %.2fGB\n", force_useful_volume);
+    printf("\tCycles/SIMD iteration: %.4f\n", timer[FORCE] * param.proc_freq * 1e9 / stats.total_force_iters);
+#endif
+
     LIKWID_MARKER_CLOSE;
     return EXIT_SUCCESS;
 }

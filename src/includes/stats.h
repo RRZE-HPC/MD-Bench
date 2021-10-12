@@ -23,18 +23,23 @@
 #include <atom.h>
 #include <parameter.h>
 
-#ifndef __NEIGHBOR_H_
-#define __NEIGHBOR_H_
+#ifndef __STATS_H_
+#define __STATS_H_
 typedef struct {
-    int every;
-    int ncalls;
-    int* neighbors;
-    int maxneighs;
-    int* numneigh;
-} Neighbor;
+    long long int total_force_neighs;
+    long long int total_force_iters;
+} Stats;
 
-extern void initNeighbor(Neighbor*, Parameter*);
-extern void setupNeighbor();
-extern void binatoms(Atom*);
-extern void buildNeighbor(Atom*, Neighbor*);
+void initStats(Stats *s);
+
+#ifdef COMPUTE_STATS
+#   define addStat(stat, value)     stat += value;
+#   define beginStatTimer()         double Si = getTimeStamp();
+#   define endStatTimer(stat)       stat += getTimeStamp() - Si;
+#else
+#   define addStat(stat, value)
+#   define beginStatTimer()
+#   define endStatTimer(stat)
+#endif
+
 #endif

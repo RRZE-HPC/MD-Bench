@@ -26,10 +26,15 @@
 #include <neighbor.h>
 #include <parameter.h>
 #include <atom.h>
+#include <stats.h>
 
 #if defined(MEM_TRACER) || defined(INDEX_TRACER)
 #include <stdio.h>
 #include <stdlib.h>
+#endif
+
+#ifndef VECTOR_WIDTH
+#   define VECTOR_WIDTH                 8
 #endif
 
 #ifndef TRACER_CONDITION
@@ -53,10 +58,6 @@
 #endif
 
 #ifdef INDEX_TRACER
-#   ifndef VECTOR_WIDTH
-#       define VECTOR_WIDTH                 8
-#   endif
-
 #   define INDEX_TRACER_INIT                FILE *index_tracer_fp; \
                                             if(TRACER_CONDITION) { \
                                                 char index_tracer_fn[128]; \
@@ -118,7 +119,7 @@
 #   define DIST_TRACE(l, e)
 #endif
 
-double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor, int first_exec, int timestep) {
+double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *stats, int first_exec, int timestep) {
     MEM_TRACER_INIT;
     INDEX_TRACER_INIT;
     int Nlocal = atom->Nlocal;
@@ -143,7 +144,6 @@ double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor, int first_
     for(int i = 0; i < Nlocal; i++) {
         neighs = &neighbor->neighbors[i * neighbor->maxneighs];
         int numneighs = neighbor->numneigh[i];
-        neighbor->totalneighs += numneighs; // Maybe remove this for real time measurements
         MD_FLOAT xtmp = atom_x(i);
         MD_FLOAT ytmp = atom_y(i);
         MD_FLOAT ztmp = atom_z(i);
@@ -210,6 +210,8 @@ double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor, int first_
         fy[i] += fiy;
         fz[i] += fiz;
 
+        addStat(stats->total_force_neighs, numneighs);
+        addStat(stats->total_force_iters, (numneighs + VECTOR_WIDTH - 1) / VECTOR_WIDTH);
         MEM_TRACE(fx[i], 'R');
         MEM_TRACE(fx[i], 'W');
         MEM_TRACE(fy[i], 'R');
