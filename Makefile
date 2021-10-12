@@ -25,6 +25,10 @@ ifneq ($(ASM_SYNTAX), ATT)
     ASFLAGS += -masm=intel
 endif
 
+ifneq ($(ATOMS_LOOP_RUNS),)
+    DEFINES += -DATOMS_LOOP_RUNS=$(ATOMS_LOOP_RUNS)
+endif
+
 ifneq ($(NEIGHBORS_LOOP_RUNS),)
     DEFINES += -DNEIGHBORS_LOOP_RUNS=$(NEIGHBORS_LOOP_RUNS)
 endif

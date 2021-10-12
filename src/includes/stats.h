@@ -31,6 +31,7 @@ typedef struct {
 } Stats;
 
 void initStats(Stats *s);
+void displayStatistics(Atom *atom, Parameter *param, Stats *stats, double *timer);
 
 #ifdef COMPUTE_STATS
 #   define addStat(stat, value)     stat += value;

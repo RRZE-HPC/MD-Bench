@@ -8,15 +8,17 @@
 #include <neighbor.h>
 #include <parameter.h>
 #include <atom.h>
+#include <stats.h>
 #include <thermo.h>
 #include <pbc.h>
+#include <timers.h>
 
 #define HLINE "----------------------------------------------------------------------------\n"
 
 #define LATTICE_DISTANCE    10.0
 #define NEIGH_DISTANCE      1.0
 
-extern double computeForce(Parameter*, Atom*, Neighbor*, int, int);
+extern double computeForce(Parameter*, Atom*, Neighbor*, Stats*, int, int);
 
 void init(Parameter *param) {
     param->epsilon = 1.0;
@@ -37,6 +39,7 @@ void init(Parameter *param) {
     param->nstat = 100;
     param->temp = 1.44;
     param->every = 20;
+    param->proc_freq = 0.0;
 }
 
 // Show debug messages
@@ -56,10 +59,10 @@ int main(int argc, const char *argv[]) {
     Atom atom_data;
     Atom *atom = (Atom *)(&atom_data);
     Neighbor neighbor;
+    Stats stats;
     Parameter param;
     int atoms_per_unit_cell = 8;
     int csv = 0;
-    double freq = 0.0;
 
     LIKWID_MARKER_INIT;
     LIKWID_MARKER_REGISTER("force");
@@ -95,7 +98,7 @@ int main(int argc, const char *argv[]) {
         }
         if((strcmp(argv[i], "-f") == 0))
         {
-            freq = atof(argv[++i]) * 1.E9;
+            param.proc_freq = atof(argv[++i]);
             continue;
         }
         if((strcmp(argv[i], "-csv") == 0))
@@ -123,6 +126,7 @@ int main(int argc, const char *argv[]) {
 
     DEBUG("Initializing atoms...\n");
     initAtom(atom);
+    initStats(&stats);
 
     #ifdef EXPLICIT_TYPES
     atom->ntypes = param.ntypes;
@@ -191,6 +195,7 @@ int main(int argc, const char *argv[]) {
 
     if(!csv) {
         printf("Number of timesteps: %d\n", param.ntimes);
+        printf("Number of times to compute the atoms loop: %d\n", ATOMS_LOOP_RUNS);
         printf("Number of times to compute the neighbors loop: %d\n", NEIGHBORS_LOOP_RUNS);
         printf("System size (unit cells): %dx%dx%d\n", param.nx, param.ny, param.nz);
         printf("Atoms per unit cell: %d\n", atoms_per_unit_cell);
@@ -207,41 +212,46 @@ int main(int argc, const char *argv[]) {
     DEBUG("Building neighbor lists...\n");
     buildNeighbor(atom, &neighbor);
     DEBUG("Computing forces...\n");
-    computeForce(&param, atom, &neighbor, 1, 0);
+    computeForce(&param, atom, &neighbor, &stats, 1, 1);
 
     double S, E;
     S = getTimeStamp();
     for(int i = 0; i < param.ntimes; i++) {
-        computeForce(&param, atom, &neighbor, 0, i + 1);
+        computeForce(&param, atom, &neighbor, &stats, 0, i + 1);
     }
     E = getTimeStamp();
     double T_accum = E-S;
-    const double atoms_updates_per_sec = (double)(atom->Nlocal) / T_accum * (double)(param.ntimes * NEIGHBORS_LOOP_RUNS);
-    const double cycles_per_atom = T_accum / (double)(atom->Nlocal) / (double)(param.ntimes * NEIGHBORS_LOOP_RUNS) * freq;
+    double freq_hz = param.proc_freq * 1.e9;
+    const double repeats = ATOMS_LOOP_RUNS * NEIGHBORS_LOOP_RUNS;
+    const double atoms_updates_per_sec = (double)(atom->Nlocal) / T_accum * (double)(param.ntimes * repeats);
+    const double cycles_per_atom = T_accum / (double)(atom->Nlocal) / (double)(param.ntimes * repeats) * freq_hz;
     const double cycles_per_neigh = cycles_per_atom / (double)(atoms_per_unit_cell - 1);
 
     if(!csv) {
-        printf("Total time: %.4f, Mega atom updates/s: %.4f\n", T_accum, atoms_updates_per_sec / 1.E6);
-        if(freq > 0.0) {
+        printf("Total time: %.4f, Mega atom updates/s: %.4f\n", T_accum, atoms_updates_per_sec / 1.e6);
+        if(param.proc_freq > 0.0) {
             printf("Cycles per atom: %.4f, Cycles per neighbor: %.4f\n", cycles_per_atom, cycles_per_neigh);
         }
     } else {
         printf("steps,unit cells,atoms/unit cell,total atoms,total vol.(kB),atoms vol.(kB),neigh vol.(kB),time(s),atom upds/s(M)");
-        if(freq > 0.0) {
+        if(param.proc_freq > 0.0) {
             printf(",cy/atom,cy/neigh");
         }
         printf("\n");
 
         printf("%d,%dx%dx%d,%d,%d,%.4f,%.4f,%.4f,%.4f,%.4f",
             param.ntimes, param.nx, param.ny, param.nz, atoms_per_unit_cell, atom->Nlocal,
-            estim_volume / 1.E3, estim_atom_volume / 1.E3, estim_neighbors_volume / 1.E3, T_accum, atoms_updates_per_sec / 1.E6);
+            estim_volume / 1.e3, estim_atom_volume / 1.e3, estim_neighbors_volume / 1.e3, T_accum, atoms_updates_per_sec / 1.e6);
 
-        if(freq > 0.0) {
+        if(param.proc_freq > 0.0) {
             printf(",%.4f,%.4f", cycles_per_atom, cycles_per_neigh);
         }
         printf("\n");
     }
 
+    double timer[NUMTIMER];
+    timer[FORCE] = T_accum;
+    displayStatistics(atom, &param, &stats, timer);
     LIKWID_MARKER_CLOSE;
     return EXIT_SUCCESS;
 }
