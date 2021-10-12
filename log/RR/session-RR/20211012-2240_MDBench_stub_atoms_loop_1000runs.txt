@@ -1,0 +1,57 @@
+iwia021h@casclakesp2:~/repo/MD-Bench$ ./MDBench-ICC-stub -f 2.4
+Running without Marker API. Activate Marker API with -m on commandline.
+Number of timesteps: 200
+Number of times to compute the atoms loop: 1000
+Number of times to compute the neighbors loop: 1
+System size (unit cells): 4x4x2
+Atoms per unit cell: 8
+Total number of atoms: 256
+Estimated total data volume (kB): 21.5040
+Estimated atom data volume (kB): 6.1440
+Estimated neighborlist data volume (kB): 9.2160
+Total time: 1.6769, Mega atom updates/s: 30.5326
+Cycles per atom: 78.6046, Cycles per neighbor: 11.2292
+Statistics:
+	Vector width: 8, Processor frequency: 2.4000 GHz
+	Total number of computed pair interactions: 358401792
+	Total number of most SIMD iterations: 51200256
+	Useful read data volume for force computation: 10.04GB
+	Cycles/SIMD iteration: 78.6042
+iwia021h@casclakesp2:~/repo/MD-Bench$ ./MDBench-ICC-stub -f 2.4
+Running without Marker API. Activate Marker API with -m on commandline.
+Number of timesteps: 200
+Number of times to compute the atoms loop: 1000
+Number of times to compute the neighbors loop: 1
+System size (unit cells): 4x4x2
+Atoms per unit cell: 8
+Total number of atoms: 256
+Estimated total data volume (kB): 21.5040
+Estimated atom data volume (kB): 6.1440
+Estimated neighborlist data volume (kB): 9.2160
+Total time: 1.6668, Mega atom updates/s: 30.7177
+Cycles per atom: 78.1309, Cycles per neighbor: 11.1616
+Statistics:
+	Vector width: 8, Processor frequency: 2.4000 GHz
+	Total number of computed pair interactions: 358401792
+	Total number of most SIMD iterations: 51200256
+	Useful read data volume for force computation: 10.04GB
+	Cycles/SIMD iteration: 78.1305
+iwia021h@casclakesp2:~/repo/MD-Bench$ ./MDBench-ICC-stub -f 2.4
+Running without Marker API. Activate Marker API with -m on commandline.
+Number of timesteps: 200
+Number of times to compute the atoms loop: 1000
+Number of times to compute the neighbors loop: 1
+System size (unit cells): 4x4x2
+Atoms per unit cell: 8
+Total number of atoms: 256
+Estimated total data volume (kB): 21.5040
+Estimated atom data volume (kB): 6.1440
+Estimated neighborlist data volume (kB): 9.2160
+Total time: 1.6652, Mega atom updates/s: 30.7475
+Cycles per atom: 78.0550, Cycles per neighbor: 11.1507
+Statistics:
+	Vector width: 8, Processor frequency: 2.4000 GHz
+	Total number of computed pair interactions: 358401792
+	Total number of most SIMD iterations: 51200256
+	Useful read data volume for force computation: 10.04GB
+	Cycles/SIMD iteration: 78.0546
