@@ -90,6 +90,7 @@ All steps required to build the software including dependencies
 * **Skylake** or **SKX**: Intel Xeon “Skylake” Gold 6148 CPU (2x 20 cores + SMT) @ 2.40GHz, 96 GiB RAM
     * Unless specified, turbo mode is off and frequency is fixed at 2.401GHz
 * **Broadwell** or **BDW**: Dual Intel Xeon “Broadwell” CPU E5-2697 v4 (2x 18 cores + SMT) @ 2.30GHz, 128 GiB RAM
+    * Unless specified, turbo mode is off and frequency is fixed at 2.301GHz
 
 <!-----------------------------------------------------------------------------
 Describe in detail how to configure and setup the testcases(es)
