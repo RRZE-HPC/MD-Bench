@@ -81,6 +81,16 @@ All steps required to build the software including dependencies
     * AVX512: -Ofast -xCORE-AVX512 -qopt-zmm-usage=high
     * AVX2: -fast -xCORE-AVX2
 
+
+## Hardware
+* **Cascade Lake** or **CLX**: Dual  Intel Xeon “Cascade Lake” Gold 6248 CPU (2x 20 cores + SMT) @ 2.50GHz, 384 GiB RAM
+    * Unless specified, turbo mode is off and frequency is fixed at 2.4GHz
+* **Ice Lake** or **ICX**: Dual Intel Xeon “Icelake” Platinum 8358 CPU (2x 32 cores + SMT) @ 2.60GHz, 256 GiB RAM
+    * Unless specified, turbo mode is off and frequency is fixed at 2.4GHz
+* **Skylake** or **SKX**: Intel Xeon “Skylake” Gold 6148 CPU (2x 20 cores + SMT) @ 2.40GHz, 96 GiB RAM
+    * Unless specified, turbo mode is off and frequency is fixed at 2.401GHz
+* **Broadwell** or **BDW**: Dual Intel Xeon “Broadwell” CPU E5-2697 v4 (2x 18 cores + SMT) @ 2.30GHz, 128 GiB RAM
+
 <!-----------------------------------------------------------------------------
 Describe in detail how to configure and setup the testcases(es)
 ------------------------------------------------------------------------------>
@@ -511,11 +521,11 @@ for(int n = 0; n < nmax; n++) {
 
 This introduces the **NEIGHBORS\_LOOP\_RUNS** option in the MD-Bench configuration file, which is an integer that defines how many times the most internal loop must be repeated.
 
-### Measurement 7: MD-Bench stubbed force calculation in Cascade Lake with AoS data layout, repeating the most internal loop 100 times:
+### Measurement 7: MD-Bench stubbed force calculation in CLX with AoS data layout, repeating the most internal loop 100 times:
 
 ![stubbed\_force\_aos\_casclakesp2\_repeat\_100\_times](figures/md_stub_aos_casclakesp2_iln100.png)
 
-### Measurement 8: MD-Bench stubbed force calculation in Cascade Lake with SoA data layout, repeating the most internal loop 100 times:
+### Measurement 8: MD-Bench stubbed force calculation in CLX with SoA data layout, repeating the most internal loop 100 times:
 
 ![stubbed\_force\_soa\_casclakesp2\_repeat\_100\_times](figures/md_stub_soa_casclakesp2_iln100.png)
 
@@ -530,7 +540,7 @@ Second, we want to separate memory and instructions contributions in the MD-Benc
 We then compute the average cycles per SIMD iteration on both versions to evaluate and understand the effects emerged from latency and bandwidth.
 In the other way around, we also compare the standard case execution with the md-trace variant performing the same data access pattern, evaluating the impact caused by presence of the LJ computation instructions.
 
-### Measurement 1: gather-bench md variant on Cascade Lake with AoS data layout
+### Measurement 1: gather-bench md variant on CLX with AoS data layout
 
 Raw data: [csv](raw_data/gather_md_aos_casclakesp2.csv) | [txt](raw_data/gather_md_aos_casclakesp2.txt)
 ![gather-md aos casclakesp2](figures/gather_md_aos_casclakesp2.png)
@@ -538,33 +548,27 @@ Raw data: [csv](raw_data/gather_md_aos_casclakesp2.csv) | [txt](raw_data/gather_
 Raw data: [csv](raw_data/gather_md_aos_casclakesp2_more_sizes.csv) | [txt](raw_data/gather_md_aos_casclakesp2_more_sizes.txt)
 ![gather-md aos casclakesp2](figures/gather_md_aos_casclakesp2_more_sizes.png)
 
-### Measurement 2: gather-bench md variant on Cascade Lake with AoS data layout and padding byte
-
-Experiments executed on Cascade Lake with AoS data layout and padding byte:
+### Measurement 2: gather-bench md variant on CLX with AoS data layout and padding byte
 
 Raw data: [csv](raw_data/gather_md_aos_casclakesp2_padding.csv) | [txt](raw_data/gather_md_aos_casclakesp2_padding.txt)
 ![gather-md aos casclakesp2](figures/gather_md_aos_casclakesp2_padding.png)
 
-### Measurement 3: gather-bench md variant on Cascade Lake with AoS data layout and no prefetchers
-
-Experiments executed on Cascade Lake with AoS data layout and no prefetchers:
+### Measurement 3: gather-bench md variant on CLX with AoS data layout and no prefetchers
 
 Raw data: [csv](raw_data/gather_md_aos_casclakesp2_no_prefetchers.csv) | [txt](raw_data/gather_md_aos_casclakesp2_no_prefetchers.txt)
 ![gather-md aos casclakesp2](figures/gather_md_aos_casclakesp2_no_prefetchers.png)
 
-### Measurement 4: gather-bench md variant on Cascade Lake with AoS data layout gathering data only on the x dimension
-
-Experiments executed on Cascade Lake with AoS data layout only gathering data on x dimension:
+### Measurement 4: gather-bench md variant on CLX with AoS data layout gathering data only on the x dimension
 
 Raw data: [csv](raw_data/gather_md_aos_casclakesp2_one_dim.csv) | [txt](raw_data/gather_md_aos_casclakesp2_one_dim.txt)
 ![gather-md aos casclakesp2](figures/gather_md_aos_casclakesp2_one_dim.png)
 
-### Measurement 5: gather-bench md variant on Cascade Lake with SoA data layout
+### Measurement 5: gather-bench md variant on CLX with SoA data layout
 
 Raw data: [csv](raw_data/gather_md_soa_casclakesp2.csv) | [txt](raw_data/gather_md_soa_casclakesp2.txt)
 ![gather-md soa casclakesp2](figures/gather_md_soa_casclakesp2.png)
 
-### Measurement 6: gather-bench md variant on Ice Lake with AoS data layout
+### Measurement 6: gather-bench md variant on ICX with AoS data layout
 
 Raw data: [csv](raw_data/gather_md_aos_icx32.csv) | [txt](raw_data/gather_md_aos_icx32.txt)
 ![gather-md aos icx32](figures/gather_md_aos_icx32.png)
@@ -572,12 +576,12 @@ Raw data: [csv](raw_data/gather_md_aos_icx32.csv) | [txt](raw_data/gather_md_aos
 Raw data: [csv](raw_data/gather_md_aos_icx32_more_sizes.csv) | [txt](raw_data/gather_md_aos_icx32_more_sizes.txt)
 ![gather-md aos icx32](figures/gather_md_aos_icx32_more_sizes.png)
 
-### Measurement 7: gather-bench md variant on Ice Lake with AoS data layout and padding byte
+### Measurement 7: gather-bench md variant on ICX with AoS data layout and padding byte
 
 Raw data: [csv](raw_data/gather_md_aos_icx32_padding.csv) | [txt](raw_data/gather_md_aos_icx32_padding.txt)
 ![gather-md aos icx32](figures/gather_md_aos_icx32_padding.png)
 
-### Measurement 8: gather-bench md variant on Ice Lake with AoS data layout gathering data only on the x dimension
+### Measurement 8: gather-bench md variant on ICX with AoS data layout gathering data only on the x dimension
 
 Raw data: [csv](raw_data/gather_md_aos_icx32_one_dim.csv) | [txt](raw_data/gather_md_aos_icx32_one_dim.txt)
 ![gather-md aos icx32](figures/gather_md_aos_icx32_one_dim.png)
