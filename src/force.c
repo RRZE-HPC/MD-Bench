@@ -141,11 +141,7 @@ double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *sta
     double S = getTimeStamp();
     LIKWID_MARKER_START("force");
 
-    #if VARIANT == stub && defined(ATOMS_LOOP_RUNS) && ATOMS_LOOP_RUNS > 1
-    #define REPEAT_ATOMS_LOOP
     for(int na = 0; na < (first_exec ? 1 : ATOMS_LOOP_RUNS); na++) {
-    #endif
-
         #pragma omp parallel for
         for(int i = 0; i < Nlocal; i++) {
             neighs = &neighbor->neighbors[i * neighbor->maxneighs];
@@ -167,7 +163,7 @@ double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *sta
             MEM_TRACE(atom->type(i), 'R');
             #endif
 
-            #if VARIANT == stub && defined(NEIGHBORS_LOOP_RUNS) && NEIGHBORS_LOOP_RUNS > 1
+            #if defined(VARIANT) && VARIANT == stub && defined(NEIGHBORS_LOOP_RUNS) && NEIGHBORS_LOOP_RUNS > 1
             #define REPEAT_NEIGHBORS_LOOP
             int nmax = first_exec ? 1 : NEIGHBORS_LOOP_RUNS;
             for(int nn = 0; nn < (first_exec ? 1 : NEIGHBORS_LOOP_RUNS); nn++) {
@@ -225,10 +221,7 @@ double computeForce(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *sta
             MEM_TRACE(fz[i], 'R');
             MEM_TRACE(fz[i], 'W');
         }
-
-    #ifdef REPEAT_ATOMS_LOOP
     }
-    #endif
 
     LIKWID_MARKER_STOP("force");
     double E = getTimeStamp();
