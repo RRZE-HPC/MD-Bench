@@ -1,0 +1,7 @@
+            Skylake     Skylake-X   Cascade Lake    Ice Lake
+uiCA 	    Error 	    25.71 	    26.71 	        26.43
+IACA 3.0 	Error 	    36.70
+IACA 2.3 	8.24 	    42.43
+llvm-mca 	Error 	    74.33 	    74.33 	        74.33
+OSACA 	    19.00 	    19.00 	    20.50 	        23.00
+CQA 	    21.75   	21.75 		                26.00

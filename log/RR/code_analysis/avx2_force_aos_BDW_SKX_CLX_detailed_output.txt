@@ -1,0 +1,1394 @@
+Detailed Output
+
+    uiCA (Broadwell)
+
+    Throughput (in cycles per iteration): 26.00
+    Bottleneck: Dependencies
+
+    M - Macro-fused with previous instruction
+
+    ┌───────────────────────┬────────┬───────┬─────────────────────────────────────────────────────────────────────────────┬───────┐
+    │ MITE   MS   DSB   LSD │ Issued │ Exec. │ Port 0   Port 1   Port 2   Port 3   Port 4   Port 5   Port 6   Port 7   Div │ Notes │
+    ├───────────────────────┼────────┼───────┼─────────────────────────────────────────────────────────────────────────────┼───────┤
+    │              1        │   1    │   1   │                    0.5      0.5                                             │       │ vmovdqu xmm0, xmmword ptr [r11+r13*4]
+    │              1        │   1    │   1   │   1                                                                         │       │ vmovq rbx, xmm0
+    │              1        │   1    │   1   │                                                1                            │       │ vpunpckhqdq xmm2, xmm0, xmm0
+    │              1        │   1    │   1   │   1                                                                         │       │ vmovq r15, xmm2
+    │              1        │   1    │       │                                                                             │       │ mov r8d, ebx
+    │              1        │   1    │   1   │                                                         1                   │       │ shr rbx, 0x20
+    │              1        │   1    │   1   │                                                1                            │       │ lea r9d, ptr [rbx+rbx*2]
+    │              1        │   1    │   1   │                                                1                            │       │ lea r8d, ptr [r8+r8*2]
+    │              1        │   1    │   1   │                                                         1                   │       │ movsxd rbx, r8d
+    │              1        │   1    │   1   │                                                         1                   │       │ movsxd r8, r9d
+    │              1        │   1    │       │                                                                             │       │ mov r9d, r15d
+    │              1        │   1    │   1   │                                                         1                   │       │ shr r15, 0x20
+    │              1        │   1    │   1   │                    0.5      0.5                                             │       │ vmovups xmm7, xmmword ptr [rcx+rbx*8]
+    │              1        │   1    │   1   │                    0.5      0.5                                             │       │ vmovups xmm6, xmmword ptr [rcx+r8*8]
+    │              1        │   1    │   1   │                    0.5      0.5                                             │       │ vmovq xmm14, qword ptr [rcx+rbx*8+0x10]
+    │              1        │   1    │   1   │                                                1                            │       │ lea r9d, ptr [r9+r9*2]
+    │              1        │   1    │   1   │                                                         1                   │       │ movsxd r9, r9d
+    │              1        │   1    │   1   │                                                1                            │       │ lea r15d, ptr [r15+r15*2]
+    │              1        │   1    │   1   │                                                         1                   │       │ movsxd r15, r15d
+    │              1        │   2    │   2   │                    0.5      0.5                1                            │       │ vmovhpd xmm15, xmm14, qword ptr [rcx+r8*8+0x10]
+    │              2        │   2    │   2   │           0.12     0.5      0.5               0.88                          │       │ vinsertf128 ymm1, ymm7, xmmword ptr [rcx+r9*8], 0x1
+    │              1        │   1    │   1   │                    0.5      0.5                                             │       │ vmovq xmm0, qword ptr [rcx+r9*8+0x10]
+    │              2        │   2    │   2   │                    0.5      0.5                1                            │       │ vinsertf128 ymm6, ymm6, xmmword ptr [rcx+r15*8], 0x1
+    │              1        │   2    │   2   │                    0.5      0.5                1                            │       │ vmovhpd xmm2, xmm0, qword ptr [rcx+r15*8+0x10]
+    │              1        │   1    │   1   │                                                1                            │       │ vunpcklpd ymm14, ymm1, ymm6
+    │              1        │   1    │   1   │                                                1                            │       │ vunpckhpd ymm1, ymm1, ymm6
+    │              1        │   1    │   1   │            1                                                                │       │ vsubpd ymm6, ymm10, ymm14
+    │              1        │   1    │   1   │                                                1                            │       │ vinsertf128 ymm7, ymm15, xmm2, 0x1
+    │              1        │   1    │   1   │            1                                                                │       │ vsubpd ymm2, ymm9, ymm1
+    │              1        │   1    │   1   │            1                                                                │       │ vsubpd ymm0, ymm8, ymm7
+    │              1        │   1    │   1   │   1                                                                         │       │ vmulpd ymm14, ymm2, ymm2
+    │              1        │   1    │   1   │   1                                                                         │       │ vfmadd231pd ymm14, ymm6, ymm6
+    │              1        │   1    │   1   │   1                                                                         │       │ vfmadd231pd ymm14, ymm0, ymm0
+    │              1        │   1    │   1   │            1                                                                │       │ vcmppd ymm1, ymm14, ymm5, 0x1
+    │              1        │   1    │   1   │                                                1                            │       │ vpcmpeqd ymm7, ymm7, ymm7
+    │              2        │   2    │   2   │   1                                            1                            │       │ vptest ymm1, ymm7
+    │              1        │   1    │   1   │                                                         1                   │       │ jz 0x52
+    │              3        │   3    │   3   │  2.5                                          0.5                       16  │       │ vdivpd ymm7, ymm4, ymm14
+    │              1        │   1    │   2   │  0.62     0.38     0.5      0.5                                             │       │ vmulpd ymm14, ymm7, ymmword ptr [rsp+0x80]
+    │              1        │   1    │   1   │  0.25     0.75                                                              │       │ vmulpd ymm14, ymm7, ymm14
+    │              1        │   1    │   1   │  0.5      0.5                                                               │       │ vmulpd ymm15, ymm7, ymm14
+    │              1        │   1    │   1   │  0.25     0.75                                                              │       │ vfmsub213pd ymm14, ymm7, ymm3
+    │              1        │   1    │   2   │  0.5      0.5      0.5      0.5                                             │       │ vmulpd ymm7, ymm7, ymmword ptr [rsp+0x60]
+    │              1        │   1    │   1   │  0.62     0.38                                                              │       │ vmulpd ymm15, ymm15, ymm7
+    │              1        │   1    │   1   │  0.5      0.5                                                               │       │ vmulpd ymm7, ymm15, ymm14
+    │              1        │   1    │   1   │  0.62     0.38                                                              │       │ vmulpd ymm6, ymm6, ymm7
+    │              1        │   1    │   1   │  0.5      0.5                                                               │       │ vmulpd ymm2, ymm2, ymm7
+    │              1        │   1    │   1   │                                                1                            │       │ vandpd ymm6, ymm1, ymm6
+    │              1        │   1    │   1   │            1                                                                │       │ vaddpd ymm13, ymm13, ymm6
+    │              1        │   1    │   1   │  0.88     0.12                                                              │       │ vmulpd ymm6, ymm0, ymm7
+    │              1        │   1    │   1   │                                                1                            │       │ vandpd ymm0, ymm1, ymm2
+    │              1        │   1    │   1   │                                                1                            │       │ vandpd ymm1, ymm1, ymm6
+    │              1        │   1    │   1   │            1                                                                │       │ vaddpd ymm12, ymm12, ymm0
+    │              1        │   1    │   1   │            1                                                                │       │ vaddpd ymm11, ymm11, ymm1
+    │              1        │   1    │   1   │                                                         1                   │       │ add r13, 0x4
+    │              1        │   1    │   1   │                                                         1                   │       │ cmp r13, r12
+    │                       │        │       │                                                                             │   M   │ jb 0x6
+    ├───────────────────────┼────────┼───────┼─────────────────────────────────────────────────────────────────────────────┼───────┤
+    │             61        │   63   │  63   │ 13.75    11.88     5.5      5.5              17.38      9               16  │       │ Total
+    └───────────────────────┴────────┴───────┴─────────────────────────────────────────────────────────────────────────────┴───────┘
+
+    uiCA (Skylake)
+
+    Throughput (in cycles per iteration): 21.33
+    Bottleneck: Dependencies
+
+    J - Block not in DSB due to JCC erratum
+    M - Macro-fused with previous instruction
+
+    ┌───────────────────────┬────────┬───────┬─────────────────────────────────────────────────────────────────────────────┬───────┐
+    │ MITE   MS   DSB   LSD │ Issued │ Exec. │ Port 0   Port 1   Port 2   Port 3   Port 4   Port 5   Port 6   Port 7   Div │ Notes │
+    ├───────────────────────┼────────┼───────┼─────────────────────────────────────────────────────────────────────────────┼───────┤
+    │              1        │   1    │   1   │                    0.5      0.5                                             │       │ vmovdqu xmm0, xmmword ptr [r11+r13*4]
+    │              1        │   1    │   1   │   1                                                                         │       │ vmovq rbx, xmm0
+    │              1        │   1    │   1   │                                                1                            │       │ vpunpckhqdq xmm2, xmm0, xmm0
+    │              1        │   1    │   1   │   1                                                                         │       │ vmovq r15, xmm2
+    │              1        │   1    │       │                                                                             │       │ mov r8d, ebx
+    │              1        │   1    │   1   │                                                         1                   │       │ shr rbx, 0x20
+    │              1        │   1    │   1   │                                                1                            │       │ lea r9d, ptr [rbx+rbx*2]
+    │              1        │   1    │   1   │                                                1                            │       │ lea r8d, ptr [r8+r8*2]
+    │              1        │   1    │   1   │                                                         1                   │       │ movsxd rbx, r8d
+    │              1        │   1    │   1   │                                                         1                   │       │ movsxd r8, r9d
+    │              1        │   1    │       │                                                                             │       │ mov r9d, r15d
+    │              1        │   1    │   1   │                                                         1                   │       │ shr r15, 0x20
+    │              1        │   1    │   1   │                    0.5      0.5                                             │       │ vmovups xmm7, xmmword ptr [rcx+rbx*8]
+    │              1        │   1    │   1   │                    0.5      0.5                                             │       │ vmovups xmm6, xmmword ptr [rcx+r8*8]
+    │              1        │   1    │   1   │                    0.5      0.5                                             │       │ vmovq xmm14, qword ptr [rcx+rbx*8+0x10]
+    │              1        │   1    │   1   │                                                1                            │       │ lea r9d, ptr [r9+r9*2]
+    │              1        │   1    │   1   │                                                         1                   │       │ movsxd r9, r9d
+    │              1        │   1    │   1   │                                                1                            │       │ lea r15d, ptr [r15+r15*2]
+    │              1        │   1    │   1   │                                                         1                   │       │ movsxd r15, r15d
+    │              1        │   2    │   2   │                    0.5      0.5                1                            │       │ vmovhpd xmm15, xmm14, qword ptr [rcx+r8*8+0x10]
+    │              2        │   2    │   2   │  0.1      0.2      0.5      0.5               0.7                           │       │ vinsertf128 ymm1, ymm7, xmmword ptr [rcx+r9*8], 0x1
+    │              1        │   1    │   1   │                    0.5      0.5                                             │       │ vmovq xmm0, qword ptr [rcx+r9*8+0x10]
+    │              2        │   2    │   2   │           0.1      0.5      0.5               0.9                           │       │ vinsertf128 ymm6, ymm6, xmmword ptr [rcx+r15*8], 0x1
+    │              1        │   2    │   2   │                    0.5      0.5                1                            │       │ vmovhpd xmm2, xmm0, qword ptr [rcx+r15*8+0x10]
+    │              1        │   1    │   1   │                                                1                            │       │ vunpcklpd ymm14, ymm1, ymm6
+    │              1        │   1    │   1   │                                                1                            │       │ vunpckhpd ymm1, ymm1, ymm6
+    │              1        │   1    │   1   │  0.4      0.6                                                               │       │ vsubpd ymm6, ymm10, ymm14
+    │              1        │   1    │   1   │                                                1                            │       │ vinsertf128 ymm7, ymm15, xmm2, 0x1
+    │              1        │   1    │   1   │  0.4      0.6                                                               │       │ vsubpd ymm2, ymm9, ymm1
+    │              1        │   1    │   1   │  0.4      0.6                                                               │       │ vsubpd ymm0, ymm8, ymm7
+    │              1        │   1    │   1   │  0.7      0.3                                                               │       │ vmulpd ymm14, ymm2, ymm2
+    │              1        │   1    │   1   │  0.3      0.7                                                               │       │ vfmadd231pd ymm14, ymm6, ymm6
+    │              1        │   1    │   1   │  0.7      0.3                                                               │       │ vfmadd231pd ymm14, ymm0, ymm0
+    │              1        │   1    │   1   │  0.2      0.8                                                               │       │ vcmppd ymm1, ymm14, ymm5, 0x1
+    │              1        │   1    │   1   │  0.7      0.3                                                               │       │ vpcmpeqd ymm7, ymm7, ymm7
+    │              2        │   2    │   2   │   1                                            1                            │       │ vptest ymm1, ymm7
+    │              1        │   1    │   1   │                                                         1                   │       │ jz 0x52
+    │              1        │   1    │   1   │   1                                                                      8  │       │ vdivpd ymm7, ymm4, ymm14
+    │              1        │   1    │   2   │  0.4      0.6      0.5      0.5                                             │       │ vmulpd ymm14, ymm7, ymmword ptr [rsp+0x80]
+    │              1        │   1    │   1   │  0.5      0.5                                                               │       │ vmulpd ymm14, ymm7, ymm14
+    │              1        │   1    │   1   │  0.4      0.6                                                               │       │ vmulpd ymm15, ymm7, ymm14
+    │  1                    │   1    │   1   │  0.4      0.6                                                               │       │ vfmsub213pd ymm14, ymm7, ymm3
+    │  1                    │   1    │   2   │  0.3      0.7      0.5      0.5                                             │       │ vmulpd ymm7, ymm7, ymmword ptr [rsp+0x60]
+    │  1                    │   1    │   1   │  0.4      0.6                                                               │       │ vmulpd ymm15, ymm15, ymm7
+    │  1                    │   1    │   1   │  0.4      0.6                                                               │       │ vmulpd ymm7, ymm15, ymm14
+    │  1                    │   1    │   1   │  0.7      0.3                                                               │       │ vmulpd ymm6, ymm6, ymm7
+    │  1                    │   1    │   1   │  0.4      0.6                                                               │       │ vmulpd ymm2, ymm2, ymm7
+    │  1                    │   1    │   1   │                                                1                            │       │ vandpd ymm6, ymm1, ymm6
+    │  1                    │   1    │   1   │  0.5      0.5                                                               │       │ vaddpd ymm13, ymm13, ymm6
+    │  1                    │   1    │   1   │  0.4      0.6                                                               │       │ vmulpd ymm6, ymm0, ymm7
+    │  1                    │   1    │   1   │                                                1                            │       │ vandpd ymm0, ymm1, ymm2
+    │  1                    │   1    │   1   │                                                1                            │       │ vandpd ymm1, ymm1, ymm6
+    │  1                    │   1    │   1   │  0.4      0.6                                                               │       │ vaddpd ymm12, ymm12, ymm0
+    │  1                    │   1    │   1   │  0.6      0.4                                                               │       │ vaddpd ymm11, ymm11, ymm1
+    │  1                    │   1    │   1   │                                                         1                   │       │ add r13, 0x4
+    │  1                    │   1    │   1   │                                                         1                   │   J   │ cmp r13, r12
+    │                       │        │       │                                                                             │   M   │ jb 0x6
+    ├───────────────────────┼────────┼───────┼─────────────────────────────────────────────────────────────────────────────┼───────┤
+    │  15         44        │   61   │  61   │  13.7     11.7     5.5      5.5               15.6      9                8  │       │ Total
+    └───────────────────────┴────────┴───────┴─────────────────────────────────────────────────────────────────────────────┴───────┘
+
+    uiCA (Cascade Lake)
+
+    Throughput (in cycles per iteration): 21.33
+    Bottleneck: Dependencies
+
+    J - Block not in DSB due to JCC erratum
+    M - Macro-fused with previous instruction
+
+    ┌───────────────────────┬────────┬───────┬─────────────────────────────────────────────────────────────────────────────┬───────┐
+    │ MITE   MS   DSB   LSD │ Issued │ Exec. │ Port 0   Port 1   Port 2   Port 3   Port 4   Port 5   Port 6   Port 7   Div │ Notes │
+    ├───────────────────────┼────────┼───────┼─────────────────────────────────────────────────────────────────────────────┼───────┤
+    │              1        │   1    │   1   │                    0.5      0.5                                             │       │ vmovdqu xmm0, xmmword ptr [r11+r13*4]
+    │              1        │   1    │   1   │   1                                                                         │       │ vmovq rbx, xmm0
+    │              1        │   1    │   1   │                                                1                            │       │ vpunpckhqdq xmm2, xmm0, xmm0
+    │              1        │   1    │   1   │   1                                                                         │       │ vmovq r15, xmm2
+    │              1        │   1    │       │                                                                             │       │ mov r8d, ebx
+    │              1        │   1    │   1   │                                                         1                   │       │ shr rbx, 0x20
+    │              1        │   1    │   1   │                                                1                            │       │ lea r9d, ptr [rbx+rbx*2]
+    │              1        │   1    │   1   │                                                1                            │       │ lea r8d, ptr [r8+r8*2]
+    │              1        │   1    │   1   │                                                         1                   │       │ movsxd rbx, r8d
+    │              1        │   1    │   1   │                                                         1                   │       │ movsxd r8, r9d
+    │              1        │   1    │       │                                                                             │       │ mov r9d, r15d
+    │              1        │   1    │   1   │                                                         1                   │       │ shr r15, 0x20
+    │              1        │   1    │   1   │                    0.5      0.5                                             │       │ vmovups xmm7, xmmword ptr [rcx+rbx*8]
+    │              1        │   1    │   1   │                    0.5      0.5                                             │       │ vmovups xmm6, xmmword ptr [rcx+r8*8]
+    │              1        │   1    │   1   │                    0.5      0.5                                             │       │ vmovq xmm14, qword ptr [rcx+rbx*8+0x10]
+    │              1        │   1    │   1   │                                                1                            │       │ lea r9d, ptr [r9+r9*2]
+    │              1        │   1    │   1   │                                                         1                   │       │ movsxd r9, r9d
+    │              1        │   1    │   1   │                                                1                            │       │ lea r15d, ptr [r15+r15*2]
+    │              1        │   1    │   1   │                                                         1                   │       │ movsxd r15, r15d
+    │              1        │   2    │   2   │                    0.5      0.5                1                            │       │ vmovhpd xmm15, xmm14, qword ptr [rcx+r8*8+0x10]
+    │              2        │   2    │   2   │  0.1      0.2      0.5      0.5               0.7                           │       │ vinsertf128 ymm1, ymm7, xmmword ptr [rcx+r9*8], 0x1
+    │              1        │   1    │   1   │                    0.5      0.5                                             │       │ vmovq xmm0, qword ptr [rcx+r9*8+0x10]
+    │              2        │   2    │   2   │           0.1      0.5      0.5               0.9                           │       │ vinsertf128 ymm6, ymm6, xmmword ptr [rcx+r15*8], 0x1
+    │              1        │   2    │   2   │                    0.5      0.5                1                            │       │ vmovhpd xmm2, xmm0, qword ptr [rcx+r15*8+0x10]
+    │              1        │   1    │   1   │                                                1                            │       │ vunpcklpd ymm14, ymm1, ymm6
+    │              1        │   1    │   1   │                                                1                            │       │ vunpckhpd ymm1, ymm1, ymm6
+    │              1        │   1    │   1   │  0.4      0.6                                                               │       │ vsubpd ymm6, ymm10, ymm14
+    │              1        │   1    │   1   │                                                1                            │       │ vinsertf128 ymm7, ymm15, xmm2, 0x1
+    │              1        │   1    │   1   │  0.4      0.6                                                               │       │ vsubpd ymm2, ymm9, ymm1
+    │              1        │   1    │   1   │  0.4      0.6                                                               │       │ vsubpd ymm0, ymm8, ymm7
+    │              1        │   1    │   1   │  0.7      0.3                                                               │       │ vmulpd ymm14, ymm2, ymm2
+    │              1        │   1    │   1   │  0.3      0.7                                                               │       │ vfmadd231pd ymm14, ymm6, ymm6
+    │              1        │   1    │   1   │  0.7      0.3                                                               │       │ vfmadd231pd ymm14, ymm0, ymm0
+    │              1        │   1    │   1   │  0.2      0.8                                                               │       │ vcmppd ymm1, ymm14, ymm5, 0x1
+    │              1        │   1    │   1   │  0.7      0.3                                                               │       │ vpcmpeqd ymm7, ymm7, ymm7
+    │              2        │   2    │   2   │   1                                            1                            │       │ vptest ymm1, ymm7
+    │              1        │   1    │   1   │                                                         1                   │       │ jz 0x52
+    │              1        │   1    │   1   │   1                                                                      8  │       │ vdivpd ymm7, ymm4, ymm14
+    │              1        │   1    │   2   │  0.4      0.6      0.5      0.5                                             │       │ vmulpd ymm14, ymm7, ymmword ptr [rsp+0x80]
+    │              1        │   1    │   1   │  0.5      0.5                                                               │       │ vmulpd ymm14, ymm7, ymm14
+    │              1        │   1    │   1   │  0.4      0.6                                                               │       │ vmulpd ymm15, ymm7, ymm14
+    │  1                    │   1    │   1   │  0.4      0.6                                                               │       │ vfmsub213pd ymm14, ymm7, ymm3
+    │  1                    │   1    │   2   │  0.3      0.7      0.5      0.5                                             │       │ vmulpd ymm7, ymm7, ymmword ptr [rsp+0x60]
+    │  1                    │   1    │   1   │  0.4      0.6                                                               │       │ vmulpd ymm15, ymm15, ymm7
+    │  1                    │   1    │   1   │  0.4      0.6                                                               │       │ vmulpd ymm7, ymm15, ymm14
+    │  1                    │   1    │   1   │  0.7      0.3                                                               │       │ vmulpd ymm6, ymm6, ymm7
+    │  1                    │   1    │   1   │  0.4      0.6                                                               │       │ vmulpd ymm2, ymm2, ymm7
+    │  1                    │   1    │   1   │                                                1                            │       │ vandpd ymm6, ymm1, ymm6
+    │  1                    │   1    │   1   │  0.5      0.5                                                               │       │ vaddpd ymm13, ymm13, ymm6
+    │  1                    │   1    │   1   │  0.4      0.6                                                               │       │ vmulpd ymm6, ymm0, ymm7
+    │  1                    │   1    │   1   │                                                1                            │       │ vandpd ymm0, ymm1, ymm2
+    │  1                    │   1    │   1   │                                                1                            │       │ vandpd ymm1, ymm1, ymm6
+    │  1                    │   1    │   1   │  0.4      0.6                                                               │       │ vaddpd ymm12, ymm12, ymm0
+    │  1                    │   1    │   1   │  0.6      0.4                                                               │       │ vaddpd ymm11, ymm11, ymm1
+    │  1                    │   1    │   1   │                                                         1                   │       │ add r13, 0x4
+    │  1                    │   1    │   1   │                                                         1                   │   J   │ cmp r13, r12
+    │                       │        │       │                                                                             │   M   │ jb 0x6
+    ├───────────────────────┼────────┼───────┼─────────────────────────────────────────────────────────────────────────────┼───────┤
+    │  15         44        │   61   │  61   │  13.7     11.7     5.5      5.5               15.6      9                8  │       │ Total
+    └───────────────────────┴────────┴───────┴─────────────────────────────────────────────────────────────────────────────┴───────┘
+
+    IACA 3.0 (Broadwell)
+
+    Intel(R) Architecture Code Analyzer Version -  v3.0-28-g1ba2cbb build date: 2017-10-23;16:42:45
+    Analyzed File -  /tmp/38528acf5d2c48d78661edddad8b8d63.bm
+    Binary Format - 64Bit
+    Architecture  -  BDW
+    Analysis Type - Throughput
+
+    Throughput Analysis Report
+    --------------------------
+    Block Throughput: 24.32 Cycles       Throughput Bottleneck: Backend
+    Loop Count:  22
+    Port Binding In Cycles Per Iteration:
+    --------------------------------------------------------------------------------------------------
+    |  Port  |   0   -  DV   |   1   |   2   -  D    |   3   -  D    |   4   |   5   |   6   |   7   |
+    --------------------------------------------------------------------------------------------------
+    | Cycles | 14.3    16.0  | 14.3  |  5.5     5.5  |  5.5     5.5  |  0.0  | 14.4  |  8.0  |  0.0  |
+    --------------------------------------------------------------------------------------------------
+
+    DV - Divider pipe (on port 0)
+    D - Data fetch pipe (on ports 2 and 3)
+    F - Macro Fusion with the previous instruction occurred
+    * - instruction micro-ops not bound to a port
+    ^ - Micro Fusion occurred
+    # - ESP Tracking sync uop was issued
+    @ - SSE instruction followed an AVX256/AVX512 instruction, dozens of cycles penalty is expected
+    X - instruction not supported, was not accounted in Analysis
+
+    | Num Of   |                    Ports pressure in cycles                         |      |
+    |  Uops    |  0  - DV    |  1   |  2  -  D    |  3  -  D    |  4   |  5   |  6   |  7   |
+    -----------------------------------------------------------------------------------------
+    |   1      |             |      | 0.5     0.5 | 0.5     0.5 |      |      |      |      | vmovdqu xmm0, xmmword ptr [r11+r13*4]
+    |   1      | 1.0         |      |             |             |      |      |      |      | vmovq rbx, xmm0
+    |   1      |             |      |             |             |      | 1.0  |      |      | vpunpckhqdq xmm2, xmm0, xmm0
+    |   1      | 1.0         |      |             |             |      |      |      |      | vmovq r15, xmm2
+    |   1*     |             |      |             |             |      |      |      |      | mov r8d, ebx
+    |   1      |             |      |             |             |      |      | 1.0  |      | shr rbx, 0x20
+    |   1      |             |      |             |             |      | 1.0  |      |      | lea r9d, ptr [rbx+rbx*2]
+    |   1      |             |      |             |             |      | 1.0  |      |      | lea r8d, ptr [r8+r8*2]
+    |   1      |             |      |             |             |      |      | 1.0  |      | movsxd rbx, r8d
+    |   1      |             |      |             |             |      |      | 1.0  |      | movsxd r8, r9d
+    |   1*     |             |      |             |             |      |      |      |      | mov r9d, r15d
+    |   1      |             |      |             |             |      |      | 1.0  |      | shr r15, 0x20
+    |   1      |             |      | 0.5     0.5 | 0.5     0.5 |      |      |      |      | vmovups xmm7, xmmword ptr [rcx+rbx*8]
+    |   1      |             |      | 0.5     0.5 | 0.5     0.5 |      |      |      |      | vmovups xmm6, xmmword ptr [rcx+r8*8]
+    |   1      |             |      | 0.5     0.5 | 0.5     0.5 |      |      |      |      | vmovq xmm14, qword ptr [rcx+rbx*8+0x10]
+    |   1      |             |      |             |             |      | 1.0  |      |      | lea r9d, ptr [r9+r9*2]
+    |   1      |             |      |             |             |      |      | 1.0  |      | movsxd r9, r9d
+    |   1      |             |      |             |             |      | 1.0  |      |      | lea r15d, ptr [r15+r15*2]
+    |   1      |             |      |             |             |      |      | 1.0  |      | movsxd r15, r15d
+    |   2      |             |      | 0.5     0.5 | 0.5     0.5 |      | 1.0  |      |      | vmovhpd xmm15, xmm14, qword ptr [rcx+r8*8+0x10]
+    |   2      | 0.7         | 0.3  | 0.5     0.5 | 0.5     0.5 |      |      |      |      | vinsertf128 ymm1, ymm7, xmmword ptr [rcx+r9*8], 0x1
+    |   1      |             |      | 0.5     0.5 | 0.5     0.5 |      |      |      |      | vmovq xmm0, qword ptr [rcx+r9*8+0x10]
+    |   2      | 0.3         | 0.7  | 0.5     0.5 | 0.5     0.5 |      |      |      |      | vinsertf128 ymm6, ymm6, xmmword ptr [rcx+r15*8], 0x1
+    |   2      |             |      | 0.5     0.5 | 0.5     0.5 |      | 1.0  |      |      | vmovhpd xmm2, xmm0, qword ptr [rcx+r15*8+0x10]
+    |   1      |             |      |             |             |      | 1.0  |      |      | vunpcklpd ymm14, ymm1, ymm6
+    |   1      |             |      |             |             |      | 1.0  |      |      | vunpckhpd ymm1, ymm1, ymm6
+    |   1      |             | 1.0  |             |             |      |      |      |      | vsubpd ymm6, ymm10, ymm14
+    |   1      |             |      |             |             |      | 1.0  |      |      | vinsertf128 ymm7, ymm15, xmm2, 0x1
+    |   1      |             | 1.0  |             |             |      |      |      |      | vsubpd ymm2, ymm9, ymm1
+    |   1      |             | 1.0  |             |             |      |      |      |      | vsubpd ymm0, ymm8, ymm7
+    |   1      | 1.0         |      |             |             |      |      |      |      | vmulpd ymm14, ymm2, ymm2
+    |   1      | 1.0         |      |             |             |      |      |      |      | vfmadd231pd ymm14, ymm6, ymm6
+    |   1      | 1.0         |      |             |             |      |      |      |      | vfmadd231pd ymm14, ymm0, ymm0
+    |   1      |             | 1.0  |             |             |      |      |      |      | vcmppd ymm1, ymm14, ymm5, 0x1
+    |   1      |             | 0.6  |             |             |      | 0.4  |      |      | vpcmpeqd ymm7, ymm7, ymm7
+    |   2      | 1.0         |      |             |             |      | 1.0  |      |      | vptest ymm1, ymm7
+    |   1      |             |      |             |             |      |      | 1.0  |      | jz 0x52
+    |   3      | 2.0    16.0 | 1.0  |             |             |      |      |      |      | vdivpd ymm7, ymm4, ymm14
+    |   2^     | 0.3         | 0.7  | 0.5     0.5 | 0.5     0.5 |      |      |      |      | vmulpd ymm14, ymm7, ymmword ptr [rsp+0x80]
+    |   1      | 0.7         | 0.3  |             |             |      |      |      |      | vmulpd ymm14, ymm7, ymm14
+    |   1      | 0.3         | 0.7  |             |             |      |      |      |      | vmulpd ymm15, ymm7, ymm14
+    |   1      | 0.7         | 0.3  |             |             |      |      |      |      | vfmsub213pd ymm14, ymm7, ymm3
+    |   2^     | 0.3         | 0.7  | 0.5     0.5 | 0.5     0.5 |      |      |      |      | vmulpd ymm7, ymm7, ymmword ptr [rsp+0x60]
+    |   1      | 0.7         | 0.3  |             |             |      |      |      |      | vmulpd ymm15, ymm15, ymm7
+    |   1      | 0.3         | 0.7  |             |             |      |      |      |      | vmulpd ymm7, ymm15, ymm14
+    |   1      | 0.7         | 0.3  |             |             |      |      |      |      | vmulpd ymm6, ymm6, ymm7
+    |   1      | 0.3         | 0.7  |             |             |      |      |      |      | vmulpd ymm2, ymm2, ymm7
+    |   1      |             |      |             |             |      | 1.0  |      |      | vandpd ymm6, ymm1, ymm6
+    |   1      |             | 1.0  |             |             |      |      |      |      | vaddpd ymm13, ymm13, ymm6
+    |   1      | 1.0         |      |             |             |      |      |      |      | vmulpd ymm6, ymm0, ymm7
+    |   1      |             |      |             |             |      | 1.0  |      |      | vandpd ymm0, ymm1, ymm2
+    |   1      |             |      |             |             |      | 1.0  |      |      | vandpd ymm1, ymm1, ymm6
+    |   1      |             | 1.0  |             |             |      |      |      |      | vaddpd ymm12, ymm12, ymm0
+    |   1      |             | 1.0  |             |             |      |      |      |      | vaddpd ymm11, ymm11, ymm1
+    |   1      |             |      |             |             |      |      | 1.0  |      | add r13, 0x4
+    |   1*     |             |      |             |             |      |      |      |      | cmp r13, r12
+    |   0*F    |             |      |             |             |      |      |      |      | jb 0x6
+    Total Num Of Uops: 65
+    Analysis Notes:
+    Backend allocation was stalled due to unavailable allocation resources.
+
+    IACA 3.0 (Skylake)
+
+    Intel(R) Architecture Code Analyzer Version -  v3.0-28-g1ba2cbb build date: 2017-10-23;16:42:45
+    Analyzed File -  /tmp/38528acf5d2c48d78661edddad8b8d63.bm
+    Binary Format - 64Bit
+    Architecture  -  SKL
+    Analysis Type - Throughput
+
+    Throughput Analysis Report
+    --------------------------
+    Block Throughput: 25.58 Cycles       Throughput Bottleneck: Backend
+    Loop Count:  22
+    Port Binding In Cycles Per Iteration:
+    --------------------------------------------------------------------------------------------------
+    |  Port  |   0   -  DV   |   1   |   2   -  D    |   3   -  D    |   4   |   5   |   6   |   7   |
+    --------------------------------------------------------------------------------------------------
+    | Cycles | 13.7     8.0  | 13.6  |  5.5     5.5  |  5.5     5.5  |  0.0  | 13.7  |  8.0  |  0.0  |
+    --------------------------------------------------------------------------------------------------
+
+    DV - Divider pipe (on port 0)
+    D - Data fetch pipe (on ports 2 and 3)
+    F - Macro Fusion with the previous instruction occurred
+    * - instruction micro-ops not bound to a port
+    ^ - Micro Fusion occurred
+    # - ESP Tracking sync uop was issued
+    @ - SSE instruction followed an AVX256/AVX512 instruction, dozens of cycles penalty is expected
+    X - instruction not supported, was not accounted in Analysis
+
+    | Num Of   |                    Ports pressure in cycles                         |      |
+    |  Uops    |  0  - DV    |  1   |  2  -  D    |  3  -  D    |  4   |  5   |  6   |  7   |
+    -----------------------------------------------------------------------------------------
+    |   1      |             |      | 0.5     0.5 | 0.5     0.5 |      |      |      |      | vmovdqu xmm0, xmmword ptr [r11+r13*4]
+    |   1      | 1.0         |      |             |             |      |      |      |      | vmovq rbx, xmm0
+    |   1      |             |      |             |             |      | 1.0  |      |      | vpunpckhqdq xmm2, xmm0, xmm0
+    |   1      | 1.0         |      |             |             |      |      |      |      | vmovq r15, xmm2
+    |   1*     |             |      |             |             |      |      |      |      | mov r8d, ebx
+    |   1      |             |      |             |             |      |      | 1.0  |      | shr rbx, 0x20
+    |   1      |             |      |             |             |      | 1.0  |      |      | lea r9d, ptr [rbx+rbx*2]
+    |   1      |             |      |             |             |      | 1.0  |      |      | lea r8d, ptr [r8+r8*2]
+    |   1      |             |      |             |             |      |      | 1.0  |      | movsxd rbx, r8d
+    |   1      |             |      |             |             |      |      | 1.0  |      | movsxd r8, r9d
+    |   1*     |             |      |             |             |      |      |      |      | mov r9d, r15d
+    |   1      |             |      |             |             |      |      | 1.0  |      | shr r15, 0x20
+    |   1      |             |      | 0.5     0.5 | 0.5     0.5 |      |      |      |      | vmovups xmm7, xmmword ptr [rcx+rbx*8]
+    |   1      |             |      | 0.5     0.5 | 0.5     0.5 |      |      |      |      | vmovups xmm6, xmmword ptr [rcx+r8*8]
+    |   1      |             |      | 0.5     0.5 | 0.5     0.5 |      |      |      |      | vmovq xmm14, qword ptr [rcx+rbx*8+0x10]
+    |   1      |             | 0.3  |             |             |      | 0.7  |      |      | lea r9d, ptr [r9+r9*2]
+    |   1      |             |      |             |             |      |      | 1.0  |      | movsxd r9, r9d
+    |   1      |             | 0.7  |             |             |      | 0.3  |      |      | lea r15d, ptr [r15+r15*2]
+    |   1      |             |      |             |             |      |      | 1.0  |      | movsxd r15, r15d
+    |   2      |             |      | 0.5     0.5 | 0.5     0.5 |      | 1.0  |      |      | vmovhpd xmm15, xmm14, qword ptr [rcx+r8*8+0x10]
+    |   2      |             | 1.0  | 0.5     0.5 | 0.5     0.5 |      |      |      |      | vinsertf128 ymm1, ymm7, xmmword ptr [rcx+r9*8], 0x1
+    |   1      |             |      | 0.5     0.5 | 0.5     0.5 |      |      |      |      | vmovq xmm0, qword ptr [rcx+r9*8+0x10]
+    |   2      |             | 0.3  | 0.5     0.5 | 0.5     0.5 |      | 0.7  |      |      | vinsertf128 ymm6, ymm6, xmmword ptr [rcx+r15*8], 0x1
+    |   2      |             |      | 0.5     0.5 | 0.5     0.5 |      | 1.0  |      |      | vmovhpd xmm2, xmm0, qword ptr [rcx+r15*8+0x10]
+    |   1      |             |      |             |             |      | 1.0  |      |      | vunpcklpd ymm14, ymm1, ymm6
+    |   1      |             |      |             |             |      | 1.0  |      |      | vunpckhpd ymm1, ymm1, ymm6
+    |   1      | 0.7         | 0.3  |             |             |      |      |      |      | vsubpd ymm6, ymm10, ymm14
+    |   1      |             |      |             |             |      | 1.0  |      |      | vinsertf128 ymm7, ymm15, xmm2, 0x1
+    |   1      | 0.3         | 0.7  |             |             |      |      |      |      | vsubpd ymm2, ymm9, ymm1
+    |   1      | 0.7         | 0.3  |             |             |      |      |      |      | vsubpd ymm0, ymm8, ymm7
+    |   1      | 0.3         | 0.7  |             |             |      |      |      |      | vmulpd ymm14, ymm2, ymm2
+    |   1      | 0.7         | 0.3  |             |             |      |      |      |      | vfmadd231pd ymm14, ymm6, ymm6
+    |   1      | 0.3         | 0.7  |             |             |      |      |      |      | vfmadd231pd ymm14, ymm0, ymm0
+    |   1      | 0.7         | 0.3  |             |             |      |      |      |      | vcmppd ymm1, ymm14, ymm5, 0x1
+    |   1      | 0.3         | 0.7  |             |             |      |      |      |      | vpcmpeqd ymm7, ymm7, ymm7
+    |   2      | 1.0         |      |             |             |      | 1.0  |      |      | vptest ymm1, ymm7
+    |   1      |             |      |             |             |      |      | 1.0  |      | jz 0x52
+    |   1      | 1.0     8.0 |      |             |             |      |      |      |      | vdivpd ymm7, ymm4, ymm14
+    |   2^     |             | 1.0  | 0.5     0.5 | 0.5     0.5 |      |      |      |      | vmulpd ymm14, ymm7, ymmword ptr [rsp+0x80]
+    |   1      |             | 1.0  |             |             |      |      |      |      | vmulpd ymm14, ymm7, ymm14
+    |   1      | 0.7         | 0.3  |             |             |      |      |      |      | vmulpd ymm15, ymm7, ymm14
+    |   1      | 0.3         | 0.7  |             |             |      |      |      |      | vfmsub213pd ymm14, ymm7, ymm3
+    |   2^     | 0.7         | 0.3  | 0.5     0.5 | 0.5     0.5 |      |      |      |      | vmulpd ymm7, ymm7, ymmword ptr [rsp+0x60]
+    |   1      | 0.3         | 0.7  |             |             |      |      |      |      | vmulpd ymm15, ymm15, ymm7
+    |   1      | 0.7         | 0.3  |             |             |      |      |      |      | vmulpd ymm7, ymm15, ymm14
+    |   1      | 0.3         | 0.7  |             |             |      |      |      |      | vmulpd ymm6, ymm6, ymm7
+    |   1      | 0.7         | 0.3  |             |             |      |      |      |      | vmulpd ymm2, ymm2, ymm7
+    |   1      |             |      |             |             |      | 1.0  |      |      | vandpd ymm6, ymm1, ymm6
+    |   1      | 0.3         | 0.7  |             |             |      |      |      |      | vaddpd ymm13, ymm13, ymm6
+    |   1      | 0.7         | 0.3  |             |             |      |      |      |      | vmulpd ymm6, ymm0, ymm7
+    |   1      |             |      |             |             |      | 1.0  |      |      | vandpd ymm0, ymm1, ymm2
+    |   1      |             |      |             |             |      | 1.0  |      |      | vandpd ymm1, ymm1, ymm6
+    |   1      | 0.3         | 0.7  |             |             |      |      |      |      | vaddpd ymm12, ymm12, ymm0
+    |   1      | 0.7         | 0.3  |             |             |      |      |      |      | vaddpd ymm11, ymm11, ymm1
+    |   1      |             |      |             |             |      |      | 1.0  |      | add r13, 0x4
+    |   1*     |             |      |             |             |      |      |      |      | cmp r13, r12
+    |   0*F    |             |      |             |             |      |      |      |      | jb 0x6
+    Total Num Of Uops: 63
+    Analysis Notes:
+    Backend allocation was stalled due to unavailable allocation resources.
+
+    IACA 2.3 (Broadwell)
+
+    Intel(R) Architecture Code Analyzer Version - 2.3 build:246dfea (Thu, 6 Jul 2017 13:38:05 +0300)
+    Analyzed File - /tmp/38528acf5d2c48d78661edddad8b8d63.bm
+    Binary Format - 64Bit
+    Architecture  - BDW
+    Analysis Type - Throughput
+
+    Throughput Analysis Report
+    --------------------------
+    Block Throughput: 27.81 Cycles       Throughput Bottleneck: Dependency chains (possibly between iterations)
+
+    Port Binding In Cycles Per Iteration:
+    ---------------------------------------------------------------------------------------
+    |  Port  |  0   -  DV  |  1   |  2   -  D   |  3   -  D   |  4   |  5   |  6   |  7   |
+    ---------------------------------------------------------------------------------------
+    | Cycles | 12.5   16.0 | 12.5 | 5.5    5.5  | 5.5    5.5  | 0.0  | 18.0 | 9.0  | 0.0  |
+    ---------------------------------------------------------------------------------------
+
+    N - port number or number of cycles resource conflict caused delay, DV - Divider pipe (on port 0)
+    D - Data fetch pipe (on ports 2 and 3), CP - on a critical path
+    F - Macro Fusion with the previous instruction occurred
+    * - instruction micro-ops not bound to a port
+    ^ - Micro Fusion happened
+    # - ESP Tracking sync uop was issued
+    @ - SSE instruction followed an AVX256/AVX512 instruction, dozens of cycles penalty is expected
+    X - instruction not supported, was not accounted in Analysis
+
+    | Num Of |                          Ports pressure in cycles                          |    |
+    |  Uops  |  0   -  DV  |  1   |  2   -  D   |  3   -  D   |  4   |  5   |  6   |  7   |    |
+    --------------------------------------------------------------------------------------------
+    |   1    |             |      | 0.5    0.5  | 0.5    0.5  |      |      |      |      |    | vmovdqu xmm0, xmmword ptr [r11+r13*4]
+    |   1    | 1.0         |      |             |             |      |      |      |      |    | vmovq rbx, xmm0
+    |   1    |             |      |             |             |      | 1.0  |      |      |    | vpunpckhqdq xmm2, xmm0, xmm0
+    |   1    | 1.0         |      |             |             |      |      |      |      |    | vmovq r15, xmm2
+    |   1*   |             |      |             |             |      |      |      |      |    | mov r8d, ebx
+    |   1    |             |      |             |             |      |      | 1.0  |      |    | shr rbx, 0x20
+    |   1    |             |      |             |             |      | 1.0  |      |      |    | lea r9d, ptr [rbx+rbx*2]
+    |   1    |             |      |             |             |      | 1.0  |      |      |    | lea r8d, ptr [r8+r8*2]
+    |   1    |             |      |             |             |      |      | 1.0  |      |    | movsxd rbx, r8d
+    |   1    |             |      |             |             |      |      | 1.0  |      |    | movsxd r8, r9d
+    |   1*   |             |      |             |             |      |      |      |      |    | mov r9d, r15d
+    |   1    |             |      |             |             |      |      | 1.0  |      |    | shr r15, 0x20
+    |   1    |             |      | 0.5    0.5  | 0.5    0.5  |      |      |      |      |    | vmovups xmm7, xmmword ptr [rcx+rbx*8]
+    |   1    |             |      | 0.5    0.5  | 0.5    0.5  |      |      |      |      |    | vmovups xmm6, xmmword ptr [rcx+r8*8]
+    |   1    |             |      | 0.5    0.5  | 0.5    0.5  |      |      |      |      |    | vmovq xmm14, qword ptr [rcx+rbx*8+0x10]
+    |   1    |             |      |             |             |      | 1.0  |      |      |    | lea r9d, ptr [r9+r9*2]
+    |   1    |             |      |             |             |      |      | 1.0  |      |    | movsxd r9, r9d
+    |   1    |             |      |             |             |      | 1.0  |      |      |    | lea r15d, ptr [r15+r15*2]
+    |   1    |             |      |             |             |      |      | 1.0  |      |    | movsxd r15, r15d
+    |   2    |             |      | 0.5    0.5  | 0.5    0.5  |      | 1.0  |      |      |    | vmovhpd xmm15, xmm14, qword ptr [rcx+r8*8+0x10]
+    |   2    |             |      | 0.5    0.5  | 0.5    0.5  |      | 1.0  |      |      |    | vinsertf128 ymm1, ymm7, xmmword ptr [rcx+r9*8],
+    |   1    |             |      | 0.5    0.5  | 0.5    0.5  |      |      |      |      |    | vmovq xmm0, qword ptr [rcx+r9*8+0x10]
+    |   2    |             |      | 0.5    0.5  | 0.5    0.5  |      | 1.0  |      |      |    | vinsertf128 ymm6, ymm6, xmmword ptr [rcx+r15*8]
+    |   2    |             |      | 0.5    0.5  | 0.5    0.5  |      | 1.0  |      |      |    | vmovhpd xmm2, xmm0, qword ptr [rcx+r15*8+0x10]
+    |   1    |             |      |             |             |      | 1.0  |      |      |    | vunpcklpd ymm14, ymm1, ymm6
+    |   1    |             |      |             |             |      | 1.0  |      |      |    | vunpckhpd ymm1, ymm1, ymm6
+    |   1    |             | 1.0  |             |             |      |      |      |      |    | vsubpd ymm6, ymm10, ymm14
+    |   1    |             |      |             |             |      | 1.0  |      |      |    | vinsertf128 ymm7, ymm15, xmm2, 0x1
+    |   1    |             | 1.0  |             |             |      |      |      |      |    | vsubpd ymm2, ymm9, ymm1
+    |   1    |             | 1.0  |             |             |      |      |      |      |    | vsubpd ymm0, ymm8, ymm7
+    |   1    | 0.9         | 0.1  |             |             |      |      |      |      |    | vmulpd ymm14, ymm2, ymm2
+    |   1    | 1.0         |      |             |             |      |      |      |      |    | vfmadd231pd ymm14, ymm6, ymm6
+    |   1    | 1.0         |      |             |             |      |      |      |      |    | vfmadd231pd ymm14, ymm0, ymm0
+    |   1    |             | 1.0  |             |             |      |      |      |      |    | vcmppd ymm1, ymm14, ymm5, 0x1
+    |   1    |             |      |             |             |      | 1.0  |      |      |    | vpcmpeqd ymm7, ymm7, ymm7
+    |   2    | 1.0         |      |             |             |      | 1.0  |      |      |    | vptest ymm1, ymm7
+    |   1    |             |      |             |             |      |      | 1.0  |      |    | jz 0x52
+    |   3    | 2.0    16.0 |      |             |             |      | 1.0  |      |      |    | vdivpd ymm7, ymm4, ymm14
+    |   2    |             | 1.0  | 0.5    0.5  | 0.5    0.5  |      |      |      |      |    | vmulpd ymm14, ymm7, ymmword ptr [rsp+0x80]
+    |   1    | 0.1         | 0.9  |             |             |      |      |      |      |    | vmulpd ymm14, ymm7, ymm14
+    |   1    | 0.4         | 0.6  |             |             |      |      |      |      |    | vmulpd ymm15, ymm7, ymm14
+    |   1    | 0.6         | 0.4  |             |             |      |      |      |      |    | vfmsub213pd ymm14, ymm7, ymm3
+    |   2    | 0.4         | 0.6  | 0.5    0.5  | 0.5    0.5  |      |      |      |      |    | vmulpd ymm7, ymm7, ymmword ptr [rsp+0x60]
+    |   1    | 0.6         | 0.4  |             |             |      |      |      |      |    | vmulpd ymm15, ymm15, ymm7
+    |   1    | 0.4         | 0.6  |             |             |      |      |      |      |    | vmulpd ymm7, ymm15, ymm14
+    |   1    | 0.5         | 0.5  |             |             |      |      |      |      |    | vmulpd ymm6, ymm6, ymm7
+    |   1    | 0.5         | 0.5  |             |             |      |      |      |      |    | vmulpd ymm2, ymm2, ymm7
+    |   1    |             |      |             |             |      | 1.0  |      |      |    | vandpd ymm6, ymm1, ymm6
+    |   1    |             | 1.0  |             |             |      |      |      |      |    | vaddpd ymm13, ymm13, ymm6
+    |   1    | 1.0         |      |             |             |      |      |      |      |    | vmulpd ymm6, ymm0, ymm7
+    |   1    |             |      |             |             |      | 1.0  |      |      |    | vandpd ymm0, ymm1, ymm2
+    |   1    |             |      |             |             |      | 1.0  |      |      |    | vandpd ymm1, ymm1, ymm6
+    |   1    |             | 1.0  |             |             |      |      |      |      |    | vaddpd ymm12, ymm12, ymm0
+    |   1    |             | 1.0  |             |             |      |      |      |      |    | vaddpd ymm11, ymm11, ymm1
+    |   1    |             |      |             |             |      |      | 1.0  |      |    | add r13, 0x4
+    |   1    |             |      |             |             |      |      | 1.0  |      |    | cmp r13, r12
+    |   0F   |             |      |             |             |      |      |      |      |    | jb 0x6
+    Total Num Of Uops: 65
+
+    IACA 2.3 (Skylake)
+
+    Intel(R) Architecture Code Analyzer Version - 2.3 build:246dfea (Thu, 6 Jul 2017 13:38:05 +0300)
+    Analyzed File - /tmp/38528acf5d2c48d78661edddad8b8d63.bm
+    Binary Format - 64Bit
+    Architecture  - SKL
+    Analysis Type - Throughput
+
+    Throughput Analysis Report
+    --------------------------
+    Block Throughput: 21.86 Cycles       Throughput Bottleneck: Dependency chains (possibly between iterations)
+
+    Port Binding In Cycles Per Iteration:
+    ---------------------------------------------------------------------------------------
+    |  Port  |  0   -  DV  |  1   |  2   -  D   |  3   -  D   |  4   |  5   |  6   |  7   |
+    ---------------------------------------------------------------------------------------
+    | Cycles | 12.1   8.0  | 11.9 | 5.5    5.5  | 5.5    5.5  | 0.0  | 17.0 | 9.0  | 0.0  |
+    ---------------------------------------------------------------------------------------
+
+    N - port number or number of cycles resource conflict caused delay, DV - Divider pipe (on port 0)
+    D - Data fetch pipe (on ports 2 and 3), CP - on a critical path
+    F - Macro Fusion with the previous instruction occurred
+    * - instruction micro-ops not bound to a port
+    ^ - Micro Fusion happened
+    # - ESP Tracking sync uop was issued
+    @ - SSE instruction followed an AVX256/AVX512 instruction, dozens of cycles penalty is expected
+    X - instruction not supported, was not accounted in Analysis
+
+    | Num Of |                    Ports pressure in cycles                     |    |
+    |  Uops  |  0  - DV  |  1  |  2  -  D  |  3  -  D  |  4  |  5  |  6  |  7  |    |
+    ---------------------------------------------------------------------------------
+    |   1    |           |     | 0.5   0.5 | 0.5   0.5 |     |     |     |     |    | vmovdqu xmm0, xmmword ptr [r11+r13*4]
+    |   1    | 1.0       |     |           |           |     |     |     |     |    | vmovq rbx, xmm0
+    |   1    |           |     |           |           |     | 1.0 |     |     |    | vpunpckhqdq xmm2, xmm0, xmm0
+    |   1    | 1.0       |     |           |           |     |     |     |     |    | vmovq r15, xmm2
+    |   1*   |           |     |           |           |     |     |     |     |    | mov r8d, ebx
+    |   1    |           |     |           |           |     |     | 1.0 |     |    | shr rbx, 0x20
+    |   1    |           |     |           |           |     | 1.0 |     |     |    | lea r9d, ptr [rbx+rbx*2]
+    |   1    |           |     |           |           |     | 1.0 |     |     |    | lea r8d, ptr [r8+r8*2]
+    |   1    |           |     |           |           |     |     | 1.0 |     |    | movsxd rbx, r8d
+    |   1    |           |     |           |           |     |     | 1.0 |     |    | movsxd r8, r9d
+    |   1*   |           |     |           |           |     |     |     |     |    | mov r9d, r15d
+    |   1    |           |     |           |           |     |     | 1.0 |     |    | shr r15, 0x20
+    |   1    |           |     | 0.5   0.5 | 0.5   0.5 |     |     |     |     |    | vmovups xmm7, xmmword ptr [rcx+rbx*8]
+    |   1    |           |     | 0.5   0.5 | 0.5   0.5 |     |     |     |     |    | vmovups xmm6, xmmword ptr [rcx+r8*8]
+    |   1    |           |     | 0.5   0.5 | 0.5   0.5 |     |     |     |     |    | vmovq xmm14, qword ptr [rcx+rbx*8+0x10]
+    |   1    |           |     |           |           |     | 1.0 |     |     |    | lea r9d, ptr [r9+r9*2]
+    |   1    |           |     |           |           |     |     | 1.0 |     |    | movsxd r9, r9d
+    |   1    |           |     |           |           |     | 1.0 |     |     |    | lea r15d, ptr [r15+r15*2]
+    |   1    |           |     |           |           |     |     | 1.0 |     |    | movsxd r15, r15d
+    |   2    |           |     | 0.5   0.5 | 0.5   0.5 |     | 1.0 |     |     |    | vmovhpd xmm15, xmm14, qword ptr [rcx+r8*8+0x10]
+    |   2    |           |     | 0.5   0.5 | 0.5   0.5 |     | 1.0 |     |     |    | vinsertf128 ymm1, ymm7, xmmword ptr [rcx+r9*8], 0x1
+    |   1    |           |     | 0.5   0.5 | 0.5   0.5 |     |     |     |     |    | vmovq xmm0, qword ptr [rcx+r9*8+0x10]
+    |   2    |           |     | 0.5   0.5 | 0.5   0.5 |     | 1.0 |     |     |    | vinsertf128 ymm6, ymm6, xmmword ptr [rcx+r15*8], 0x1
+    |   2    |           |     | 0.5   0.5 | 0.5   0.5 |     | 1.0 |     |     |    | vmovhpd xmm2, xmm0, qword ptr [rcx+r15*8+0x10]
+    |   1    |           |     |           |           |     | 1.0 |     |     |    | vunpcklpd ymm14, ymm1, ymm6
+    |   1    |           |     |           |           |     | 1.0 |     |     |    | vunpckhpd ymm1, ymm1, ymm6
+    |   1    |           | 1.0 |           |           |     |     |     |     |    | vsubpd ymm6, ymm10, ymm14
+    |   1    |           |     |           |           |     | 1.0 |     |     |    | vinsertf128 ymm7, ymm15, xmm2, 0x1
+    |   1    | 0.2       | 0.9 |           |           |     |     |     |     |    | vsubpd ymm2, ymm9, ymm1
+    |   1    |           | 1.0 |           |           |     |     |     |     |    | vsubpd ymm0, ymm8, ymm7
+    |   1    | 0.8       | 0.2 |           |           |     |     |     |     |    | vmulpd ymm14, ymm2, ymm2
+    |   1    | 0.2       | 0.8 |           |           |     |     |     |     |    | vfmadd231pd ymm14, ymm6, ymm6
+    |   1    | 0.9       | 0.2 |           |           |     |     |     |     |    | vfmadd231pd ymm14, ymm0, ymm0
+    |   1    |           |     |           |           |     | 1.0 |     |     |    | vcmppd ymm1, ymm14, ymm5, 0x1
+    |   1    | 0.2       | 0.9 |           |           |     |     |     |     |    | vpcmpeqd ymm7, ymm7, ymm7
+    |   2    | 1.0       |     |           |           |     | 1.0 |     |     |    | vptest ymm1, ymm7
+    |   1    |           |     |           |           |     |     | 1.0 |     |    | jz 0x52
+    |   1    | 1.0   8.0 |     |           |           |     |     |     |     |    | vdivpd ymm7, ymm4, ymm14
+    |   2    | 0.1       | 0.9 | 0.5   0.5 | 0.5   0.5 |     |     |     |     |    | vmulpd ymm14, ymm7, ymmword ptr [rsp+0x80]
+    |   1    | 0.1       | 0.9 |           |           |     |     |     |     |    | vmulpd ymm14, ymm7, ymm14
+    |   1    | 1.0       |     |           |           |     |     |     |     |    | vmulpd ymm15, ymm7, ymm14
+    |   1    |           | 1.0 |           |           |     |     |     |     |    | vfmsub213pd ymm14, ymm7, ymm3
+    |   2    | 0.9       | 0.1 | 0.5   0.5 | 0.5   0.5 |     |     |     |     |    | vmulpd ymm7, ymm7, ymmword ptr [rsp+0x60]
+    |   1    | 0.1       | 0.9 |           |           |     |     |     |     |    | vmulpd ymm15, ymm15, ymm7
+    |   1    | 0.9       | 0.1 |           |           |     |     |     |     |    | vmulpd ymm7, ymm15, ymm14
+    |   1    | 0.1       | 0.9 |           |           |     |     |     |     |    | vmulpd ymm6, ymm6, ymm7
+    |   1    | 0.9       | 0.1 |           |           |     |     |     |     |    | vmulpd ymm2, ymm2, ymm7
+    |   1    |           |     |           |           |     | 1.0 |     |     |    | vandpd ymm6, ymm1, ymm6
+    |   1    | 0.1       | 0.9 |           |           |     |     |     |     |    | vaddpd ymm13, ymm13, ymm6
+    |   1    | 0.8       | 0.2 |           |           |     |     |     |     |    | vmulpd ymm6, ymm0, ymm7
+    |   1    |           |     |           |           |     | 1.0 |     |     |    | vandpd ymm0, ymm1, ymm2
+    |   1    |           |     |           |           |     | 1.0 |     |     |    | vandpd ymm1, ymm1, ymm6
+    |   1    | 0.2       | 0.8 |           |           |     |     |     |     |    | vaddpd ymm12, ymm12, ymm0
+    |   1    | 0.9       | 0.2 |           |           |     |     |     |     |    | vaddpd ymm11, ymm11, ymm1
+    |   1    |           |     |           |           |     |     | 1.0 |     |    | add r13, 0x4
+    |   1    |           |     |           |           |     |     | 1.0 |     |    | cmp r13, r12
+    |   0F   |           |     |           |           |     |     |     |     |    | jb 0x6
+    Total Num Of Uops: 63
+
+    llvm-mca (Broadwell)
+
+    Iterations:        100
+    Instructions:      5700
+    Total Cycles:      2554
+    Total uOps:        6600
+
+    Dispatch Width:    4
+    uOps Per Cycle:    2.58
+    IPC:               2.23
+    Block RThroughput: 16.5
+
+
+    Instruction Info:
+    [1]: #uOps
+    [2]: Latency
+    [3]: RThroughput
+    [4]: MayLoad
+    [5]: MayStore
+    [6]: HasSideEffects (U)
+
+    [1]    [2]    [3]    [4]    [5]    [6]    Instructions:
+     1      5     0.50    *                   vmovdqu	(%r11,%r13,4), %xmm0
+     1      1     1.00                        vmovq	%xmm0, %rbx
+     1      1     1.00                        vpunpckhqdq	%xmm0, %xmm0, %xmm2
+     1      1     1.00                        vmovq	%xmm2, %r15
+     1      1     0.25                        movl	%ebx, %r8d
+     1      1     0.50                        shrq	$32, %rbx
+     1      1     0.50                        leal	(%rbx,%rbx,2), %r9d
+     1      1     0.50                        leal	(%r8,%r8,2), %r8d
+     1      1     0.25                        movslq	%r8d, %rbx
+     1      1     0.25                        movslq	%r9d, %r8
+     1      1     0.25                        movl	%r15d, %r9d
+     1      1     0.50                        shrq	$32, %r15
+     1      5     0.50    *                   vmovups	(%rcx,%rbx,8), %xmm7
+     1      5     0.50    *                   vmovups	(%rcx,%r8,8), %xmm6
+     1      5     0.50    *                   vmovq	16(%rcx,%rbx,8), %xmm14
+     1      1     0.50                        leal	(%r9,%r9,2), %r9d
+     1      1     0.25                        movslq	%r9d, %r9
+     1      1     0.50                        leal	(%r15,%r15,2), %r15d
+     1      1     0.25                        movslq	%r15d, %r15
+     2      6     1.00    *                   vmovhpd	16(%rcx,%r8,8), %xmm14, %xmm15
+     2      6     0.50    *                   vinsertf128	$1, (%rcx,%r9,8), %ymm7, %ymm1
+     1      5     0.50    *                   vmovq	16(%rcx,%r9,8), %xmm0
+     2      6     0.50    *                   vinsertf128	$1, (%rcx,%r15,8), %ymm6, %ymm6
+     2      6     1.00    *                   vmovhpd	16(%rcx,%r15,8), %xmm0, %xmm2
+     1      1     1.00                        vunpcklpd	%ymm6, %ymm1, %ymm14
+     1      1     1.00                        vunpckhpd	%ymm6, %ymm1, %ymm1
+     1      3     1.00                        vsubpd	%ymm14, %ymm10, %ymm6
+     1      3     1.00                        vinsertf128	$1, %xmm2, %ymm15, %ymm7
+     1      3     1.00                        vsubpd	%ymm1, %ymm9, %ymm2
+     1      3     1.00                        vsubpd	%ymm7, %ymm8, %ymm0
+     1      3     0.50                        vmulpd	%ymm2, %ymm2, %ymm14
+     1      5     0.50                        vfmadd231pd	%ymm6, %ymm6, %ymm14
+     1      5     0.50                        vfmadd231pd	%ymm0, %ymm0, %ymm14
+     1      3     1.00                        vcmpltpd	%ymm5, %ymm14, %ymm1
+     1      1     0.50                        vpcmpeqd	%ymm7, %ymm7, %ymm7
+     2      4     1.00                        vptest	%ymm7, %ymm1
+     1      1     0.50                        je	80
+     3      23    16.00                       vdivpd	%ymm14, %ymm4, %ymm7
+     2      9     0.50    *                   vmulpd	128(%rsp), %ymm7, %ymm14
+     1      3     0.50                        vmulpd	%ymm14, %ymm7, %ymm14
+     1      3     0.50                        vmulpd	%ymm14, %ymm7, %ymm15
+     1      5     0.50                        vfmsub213pd	%ymm3, %ymm7, %ymm14
+     2      9     0.50    *                   vmulpd	96(%rsp), %ymm7, %ymm7
+     1      3     0.50                        vmulpd	%ymm7, %ymm15, %ymm15
+     1      3     0.50                        vmulpd	%ymm14, %ymm15, %ymm7
+     1      3     0.50                        vmulpd	%ymm7, %ymm6, %ymm6
+     1      3     0.50                        vmulpd	%ymm7, %ymm2, %ymm2
+     1      1     1.00                        vandpd	%ymm6, %ymm1, %ymm6
+     1      3     1.00                        vaddpd	%ymm6, %ymm13, %ymm13
+     1      3     0.50                        vmulpd	%ymm7, %ymm0, %ymm6
+     1      1     1.00                        vandpd	%ymm2, %ymm1, %ymm0
+     1      1     1.00                        vandpd	%ymm6, %ymm1, %ymm1
+     1      3     1.00                        vaddpd	%ymm0, %ymm12, %ymm12
+     1      3     1.00                        vaddpd	%ymm1, %ymm11, %ymm11
+     1      1     0.25                        addq	$4, %r13
+     1      1     0.25                        cmpq	%r12, %r13
+     1      1     0.50                        jb	0
+
+
+    Resources:
+    [0]   - BWDivider
+    [1]   - BWFPDivider
+    [2]   - BWPort0
+    [3]   - BWPort1
+    [4]   - BWPort2
+    [5]   - BWPort3
+    [6]   - BWPort4
+    [7]   - BWPort5
+    [8]   - BWPort6
+    [9]   - BWPort7
+
+
+    Resource pressure per iteration:
+    [0]    [1]    [2]    [3]    [4]    [5]    [6]    [7]    [8]    [9]    
+     -     16.00  15.95  15.09  5.50   5.50    -     15.11  8.85    -     
+
+    Resource pressure by instruction:
+    [0]    [1]    [2]    [3]    [4]    [5]    [6]    [7]    [8]    [9]    Instructions:
+     -      -      -      -     0.50   0.50    -      -      -      -     vmovdqu	(%r11,%r13,4), %xmm0
+     -      -     1.00    -      -      -      -      -      -      -     vmovq	%xmm0, %rbx
+     -      -      -      -      -      -      -     1.00    -      -     vpunpckhqdq	%xmm0, %xmm0, %xmm2
+     -      -     1.00    -      -      -      -      -      -      -     vmovq	%xmm2, %r15
+     -      -      -      -      -      -      -     0.01   0.99    -     movl	%ebx, %r8d
+     -      -     0.03    -      -      -      -      -     0.97    -     shrq	$32, %rbx
+     -      -      -     0.05    -      -      -     0.95    -      -     leal	(%rbx,%rbx,2), %r9d
+     -      -      -     0.47    -      -      -     0.53    -      -     leal	(%r8,%r8,2), %r8d
+     -      -     0.02   0.01    -      -      -      -     0.97    -     movslq	%r8d, %rbx
+     -      -      -     0.01    -      -      -     0.04   0.95    -     movslq	%r9d, %r8
+     -      -     0.48   0.03    -      -      -     0.02   0.47    -     movl	%r15d, %r9d
+     -      -     0.95    -      -      -      -      -     0.05    -     shrq	$32, %r15
+     -      -      -      -     0.50   0.50    -      -      -      -     vmovups	(%rcx,%rbx,8), %xmm7
+     -      -      -      -     0.50   0.50    -      -      -      -     vmovups	(%rcx,%r8,8), %xmm6
+     -      -      -      -     0.50   0.50    -      -      -      -     vmovq	16(%rcx,%rbx,8), %xmm14
+     -      -      -     0.06    -      -      -     0.94    -      -     leal	(%r9,%r9,2), %r9d
+     -      -     0.03    -      -      -      -     0.01   0.96    -     movslq	%r9d, %r9
+     -      -      -     0.48    -      -      -     0.52    -      -     leal	(%r15,%r15,2), %r15d
+     -      -     0.02   0.45    -      -      -     0.04   0.49    -     movslq	%r15d, %r15
+     -      -      -      -     0.51   0.49    -     1.00    -      -     vmovhpd	16(%rcx,%r8,8), %xmm14, %xmm15
+     -      -     0.94   0.03   0.04   0.96    -     0.03    -      -     vinsertf128	$1, (%rcx,%r9,8), %ymm7, %ymm1
+     -      -      -      -     0.95   0.05    -      -      -      -     vmovq	16(%rcx,%r9,8), %xmm0
+     -      -     0.04   0.94   0.05   0.95    -     0.02    -      -     vinsertf128	$1, (%rcx,%r15,8), %ymm6, %ymm6
+     -      -      -      -     0.95   0.05    -     1.00    -      -     vmovhpd	16(%rcx,%r15,8), %xmm0, %xmm2
+     -      -      -      -      -      -      -     1.00    -      -     vunpcklpd	%ymm6, %ymm1, %ymm14
+     -      -      -      -      -      -      -     1.00    -      -     vunpckhpd	%ymm6, %ymm1, %ymm1
+     -      -      -     1.00    -      -      -      -      -      -     vsubpd	%ymm14, %ymm10, %ymm6
+     -      -      -      -      -      -      -     1.00    -      -     vinsertf128	$1, %xmm2, %ymm15, %ymm7
+     -      -      -     1.00    -      -      -      -      -      -     vsubpd	%ymm1, %ymm9, %ymm2
+     -      -      -     1.00    -      -      -      -      -      -     vsubpd	%ymm7, %ymm8, %ymm0
+     -      -     0.98   0.02    -      -      -      -      -      -     vmulpd	%ymm2, %ymm2, %ymm14
+     -      -     0.50   0.50    -      -      -      -      -      -     vfmadd231pd	%ymm6, %ymm6, %ymm14
+     -      -     0.48   0.52    -      -      -      -      -      -     vfmadd231pd	%ymm0, %ymm0, %ymm14
+     -      -      -     1.00    -      -      -      -      -      -     vcmpltpd	%ymm5, %ymm14, %ymm1
+     -      -      -     0.01    -      -      -     0.99    -      -     vpcmpeqd	%ymm7, %ymm7, %ymm7
+     -      -     1.00    -      -      -      -     1.00    -      -     vptest	%ymm7, %ymm1
+     -      -     0.47    -      -      -      -      -     0.53    -     je	80
+     -     16.00  2.00    -      -      -      -     1.00    -      -     vdivpd	%ymm14, %ymm4, %ymm7
+     -      -     0.51   0.49   0.49   0.51    -      -      -      -     vmulpd	128(%rsp), %ymm7, %ymm14
+     -      -     0.99   0.01    -      -      -      -      -      -     vmulpd	%ymm14, %ymm7, %ymm14
+     -      -     0.06   0.94    -      -      -      -      -      -     vmulpd	%ymm14, %ymm7, %ymm15
+     -      -     0.94   0.06    -      -      -      -      -      -     vfmsub213pd	%ymm3, %ymm7, %ymm14
+     -      -     0.96   0.04   0.51   0.49    -      -      -      -     vmulpd	96(%rsp), %ymm7, %ymm7
+     -      -     0.05   0.95    -      -      -      -      -      -     vmulpd	%ymm7, %ymm15, %ymm15
+     -      -     0.95   0.05    -      -      -      -      -      -     vmulpd	%ymm14, %ymm15, %ymm7
+     -      -     0.05   0.95    -      -      -      -      -      -     vmulpd	%ymm7, %ymm6, %ymm6
+     -      -     0.95   0.05    -      -      -      -      -      -     vmulpd	%ymm7, %ymm2, %ymm2
+     -      -      -      -      -      -      -     1.00    -      -     vandpd	%ymm6, %ymm1, %ymm6
+     -      -      -     1.00    -      -      -      -      -      -     vaddpd	%ymm6, %ymm13, %ymm13
+     -      -     0.05   0.95    -      -      -      -      -      -     vmulpd	%ymm7, %ymm0, %ymm6
+     -      -      -      -      -      -      -     1.00    -      -     vandpd	%ymm2, %ymm1, %ymm0
+     -      -      -      -      -      -      -     1.00    -      -     vandpd	%ymm6, %ymm1, %ymm1
+     -      -      -     1.00    -      -      -      -      -      -     vaddpd	%ymm0, %ymm12, %ymm12
+     -      -      -     1.00    -      -      -      -      -      -     vaddpd	%ymm1, %ymm11, %ymm11
+     -      -      -      -      -      -      -      -     1.00    -     addq	$4, %r13
+     -      -     0.01   0.02    -      -      -     0.01   0.96    -     cmpq	%r12, %r13
+     -      -     0.49    -      -      -      -      -     0.51    -     jb	0
+
+    llvm-mca (Skylake)
+
+    Iterations:        100
+    Instructions:      5700
+    Total Cycles:      2565
+    Total uOps:        6400
+
+    Dispatch Width:    6
+    uOps Per Cycle:    2.50
+    IPC:               2.22
+    Block RThroughput: 10.7
+
+
+    Instruction Info:
+    [1]: #uOps
+    [2]: Latency
+    [3]: RThroughput
+    [4]: MayLoad
+    [5]: MayStore
+    [6]: HasSideEffects (U)
+
+    [1]    [2]    [3]    [4]    [5]    [6]    Instructions:
+     1      6     0.50    *                   vmovdqu	(%r11,%r13,4), %xmm0
+     1      2     1.00                        vmovq	%xmm0, %rbx
+     1      1     1.00                        vpunpckhqdq	%xmm0, %xmm0, %xmm2
+     1      2     1.00                        vmovq	%xmm2, %r15
+     1      1     0.25                        movl	%ebx, %r8d
+     1      1     0.50                        shrq	$32, %rbx
+     1      1     0.50                        leal	(%rbx,%rbx,2), %r9d
+     1      1     0.50                        leal	(%r8,%r8,2), %r8d
+     1      1     0.25                        movslq	%r8d, %rbx
+     1      1     0.25                        movslq	%r9d, %r8
+     1      1     0.25                        movl	%r15d, %r9d
+     1      1     0.50                        shrq	$32, %r15
+     1      6     0.50    *                   vmovups	(%rcx,%rbx,8), %xmm7
+     1      6     0.50    *                   vmovups	(%rcx,%r8,8), %xmm6
+     1      5     0.50    *                   vmovq	16(%rcx,%rbx,8), %xmm14
+     1      1     0.50                        leal	(%r9,%r9,2), %r9d
+     1      1     0.25                        movslq	%r9d, %r9
+     1      1     0.50                        leal	(%r15,%r15,2), %r15d
+     1      1     0.25                        movslq	%r15d, %r15
+     2      6     1.00    *                   vmovhpd	16(%rcx,%r8,8), %xmm14, %xmm15
+     2      7     0.50    *                   vinsertf128	$1, (%rcx,%r9,8), %ymm7, %ymm1
+     1      5     0.50    *                   vmovq	16(%rcx,%r9,8), %xmm0
+     2      7     0.50    *                   vinsertf128	$1, (%rcx,%r15,8), %ymm6, %ymm6
+     2      6     1.00    *                   vmovhpd	16(%rcx,%r15,8), %xmm0, %xmm2
+     1      1     1.00                        vunpcklpd	%ymm6, %ymm1, %ymm14
+     1      1     1.00                        vunpckhpd	%ymm6, %ymm1, %ymm1
+     1      4     0.50                        vsubpd	%ymm14, %ymm10, %ymm6
+     1      3     1.00                        vinsertf128	$1, %xmm2, %ymm15, %ymm7
+     1      4     0.50                        vsubpd	%ymm1, %ymm9, %ymm2
+     1      4     0.50                        vsubpd	%ymm7, %ymm8, %ymm0
+     1      4     0.50                        vmulpd	%ymm2, %ymm2, %ymm14
+     1      4     0.50                        vfmadd231pd	%ymm6, %ymm6, %ymm14
+     1      4     0.50                        vfmadd231pd	%ymm0, %ymm0, %ymm14
+     1      4     0.50                        vcmpltpd	%ymm5, %ymm14, %ymm1
+     1      1     0.50                        vpcmpeqd	%ymm7, %ymm7, %ymm7
+     2      3     1.00                        vptest	%ymm7, %ymm1
+     1      1     0.50                        je	80
+     1      14    5.00                        vdivpd	%ymm14, %ymm4, %ymm7
+     2      11    0.50    *                   vmulpd	128(%rsp), %ymm7, %ymm14
+     1      4     0.50                        vmulpd	%ymm14, %ymm7, %ymm14
+     1      4     0.50                        vmulpd	%ymm14, %ymm7, %ymm15
+     1      4     0.50                        vfmsub213pd	%ymm3, %ymm7, %ymm14
+     2      11    0.50    *                   vmulpd	96(%rsp), %ymm7, %ymm7
+     1      4     0.50                        vmulpd	%ymm7, %ymm15, %ymm15
+     1      4     0.50                        vmulpd	%ymm14, %ymm15, %ymm7
+     1      4     0.50                        vmulpd	%ymm7, %ymm6, %ymm6
+     1      4     0.50                        vmulpd	%ymm7, %ymm2, %ymm2
+     1      1     0.33                        vandpd	%ymm6, %ymm1, %ymm6
+     1      4     0.50                        vaddpd	%ymm6, %ymm13, %ymm13
+     1      4     0.50                        vmulpd	%ymm7, %ymm0, %ymm6
+     1      1     0.33                        vandpd	%ymm2, %ymm1, %ymm0
+     1      1     0.33                        vandpd	%ymm6, %ymm1, %ymm1
+     1      4     0.50                        vaddpd	%ymm0, %ymm12, %ymm12
+     1      4     0.50                        vaddpd	%ymm1, %ymm11, %ymm11
+     1      1     0.25                        addq	$4, %r13
+     1      1     0.25                        cmpq	%r12, %r13
+     1      1     0.50                        jb	0
+
+
+    Resources:
+    [0]   - SKLDivider
+    [1]   - SKLFPDivider
+    [2]   - SKLPort0
+    [3]   - SKLPort1
+    [4]   - SKLPort2
+    [5]   - SKLPort3
+    [6]   - SKLPort4
+    [7]   - SKLPort5
+    [8]   - SKLPort6
+    [9]   - SKLPort7
+
+
+    Resource pressure per iteration:
+    [0]    [1]    [2]    [3]    [4]    [5]    [6]    [7]    [8]    [9]    
+     -     5.00   15.70  14.63  5.50   5.50    -     13.44  9.23    -     
+
+    Resource pressure by instruction:
+    [0]    [1]    [2]    [3]    [4]    [5]    [6]    [7]    [8]    [9]    Instructions:
+     -      -      -      -     0.51   0.49    -      -      -      -     vmovdqu	(%r11,%r13,4), %xmm0
+     -      -     1.00    -      -      -      -      -      -      -     vmovq	%xmm0, %rbx
+     -      -      -      -      -      -      -     1.00    -      -     vpunpckhqdq	%xmm0, %xmm0, %xmm2
+     -      -     1.00    -      -      -      -      -      -      -     vmovq	%xmm2, %r15
+     -      -      -      -      -      -      -      -     1.00    -     movl	%ebx, %r8d
+     -      -     0.08    -      -      -      -      -     0.92    -     shrq	$32, %rbx
+     -      -      -     0.03    -      -      -     0.97    -      -     leal	(%rbx,%rbx,2), %r9d
+     -      -      -     0.02    -      -      -     0.98    -      -     leal	(%r8,%r8,2), %r8d
+     -      -     0.01   0.02    -      -      -      -     0.97    -     movslq	%r8d, %rbx
+     -      -      -     0.02    -      -      -     0.03   0.95    -     movslq	%r9d, %r8
+     -      -     0.02   0.43    -      -      -     0.04   0.51    -     movl	%r15d, %r9d
+     -      -     0.56    -      -      -      -      -     0.44    -     shrq	$32, %r15
+     -      -      -      -     0.52   0.48    -      -      -      -     vmovups	(%rcx,%rbx,8), %xmm7
+     -      -      -      -     0.47   0.53    -      -      -      -     vmovups	(%rcx,%r8,8), %xmm6
+     -      -      -      -     0.51   0.49    -      -      -      -     vmovq	16(%rcx,%rbx,8), %xmm14
+     -      -      -     0.10    -      -      -     0.90    -      -     leal	(%r9,%r9,2), %r9d
+     -      -     0.43    -      -      -      -     0.44   0.13    -     movslq	%r9d, %r9
+     -      -      -     0.51    -      -      -     0.49    -      -     leal	(%r15,%r15,2), %r15d
+     -      -     0.07   0.01    -      -      -     0.06   0.86    -     movslq	%r15d, %r15
+     -      -      -      -     0.50   0.50    -     1.00    -      -     vmovhpd	16(%rcx,%r8,8), %xmm14, %xmm15
+     -      -     0.01   0.48   0.50   0.50    -     0.51    -      -     vinsertf128	$1, (%rcx,%r9,8), %ymm7, %ymm1
+     -      -      -      -     0.50   0.50    -      -      -      -     vmovq	16(%rcx,%r9,8), %xmm0
+     -      -     0.02   0.49   0.50   0.50    -     0.49    -      -     vinsertf128	$1, (%rcx,%r15,8), %ymm6, %ymm6
+     -      -      -      -     0.50   0.50    -     1.00    -      -     vmovhpd	16(%rcx,%r15,8), %xmm0, %xmm2
+     -      -      -      -      -      -      -     1.00    -      -     vunpcklpd	%ymm6, %ymm1, %ymm14
+     -      -      -      -      -      -      -     1.00    -      -     vunpckhpd	%ymm6, %ymm1, %ymm1
+     -      -     0.06   0.94    -      -      -      -      -      -     vsubpd	%ymm14, %ymm10, %ymm6
+     -      -      -      -      -      -      -     1.00    -      -     vinsertf128	$1, %xmm2, %ymm15, %ymm7
+     -      -     0.90   0.10    -      -      -      -      -      -     vsubpd	%ymm1, %ymm9, %ymm2
+     -      -     0.85   0.15    -      -      -      -      -      -     vsubpd	%ymm7, %ymm8, %ymm0
+     -      -     0.08   0.92    -      -      -      -      -      -     vmulpd	%ymm2, %ymm2, %ymm14
+     -      -     0.52   0.48    -      -      -      -      -      -     vfmadd231pd	%ymm6, %ymm6, %ymm14
+     -      -     0.87   0.13    -      -      -      -      -      -     vfmadd231pd	%ymm0, %ymm0, %ymm14
+     -      -     0.53   0.47    -      -      -      -      -      -     vcmpltpd	%ymm5, %ymm14, %ymm1
+     -      -     0.95   0.05    -      -      -      -      -      -     vpcmpeqd	%ymm7, %ymm7, %ymm7
+     -      -     1.00    -      -      -      -     1.00    -      -     vptest	%ymm7, %ymm1
+     -      -     0.47    -      -      -      -      -     0.53    -     je	80
+     -     5.00   1.00    -      -      -      -      -      -      -     vdivpd	%ymm14, %ymm4, %ymm7
+     -      -     0.10   0.90   0.50   0.50    -      -      -      -     vmulpd	128(%rsp), %ymm7, %ymm14
+     -      -     0.47   0.53    -      -      -      -      -      -     vmulpd	%ymm14, %ymm7, %ymm14
+     -      -     0.53   0.47    -      -      -      -      -      -     vmulpd	%ymm14, %ymm7, %ymm15
+     -      -     0.47   0.53    -      -      -      -      -      -     vfmsub213pd	%ymm3, %ymm7, %ymm14
+     -      -     0.89   0.11   0.49   0.51    -      -      -      -     vmulpd	96(%rsp), %ymm7, %ymm7
+     -      -     0.05   0.95    -      -      -      -      -      -     vmulpd	%ymm7, %ymm15, %ymm15
+     -      -     0.08   0.92    -      -      -      -      -      -     vmulpd	%ymm14, %ymm15, %ymm7
+     -      -     0.05   0.95    -      -      -      -      -      -     vmulpd	%ymm7, %ymm6, %ymm6
+     -      -     0.95   0.05    -      -      -      -      -      -     vmulpd	%ymm7, %ymm2, %ymm2
+     -      -     0.01   0.45    -      -      -     0.54    -      -     vandpd	%ymm6, %ymm1, %ymm6
+     -      -     0.09   0.91    -      -      -      -      -      -     vaddpd	%ymm6, %ymm13, %ymm13
+     -      -     0.05   0.95    -      -      -      -      -      -     vmulpd	%ymm7, %ymm0, %ymm6
+     -      -     0.04   0.54    -      -      -     0.42    -      -     vandpd	%ymm2, %ymm1, %ymm0
+     -      -     0.44   0.02    -      -      -     0.54    -      -     vandpd	%ymm6, %ymm1, %ymm1
+     -      -     0.49   0.51    -      -      -      -      -      -     vaddpd	%ymm0, %ymm12, %ymm12
+     -      -     0.51   0.49    -      -      -      -      -      -     vaddpd	%ymm1, %ymm11, %ymm11
+     -      -     0.01    -      -      -      -      -     0.99    -     addq	$4, %r13
+     -      -      -      -      -      -      -     0.03   0.97    -     cmpq	%r12, %r13
+     -      -     0.04    -      -      -      -      -     0.96    -     jb	0
+
+    llvm-mca (Cascade Lake)
+
+    Iterations:        100
+    Instructions:      5700
+    Total Cycles:      2451
+    Total uOps:        6400
+
+    Dispatch Width:    6
+    uOps Per Cycle:    2.61
+    IPC:               2.33
+    Block RThroughput: 10.7
+
+
+    Instruction Info:
+    [1]: #uOps
+    [2]: Latency
+    [3]: RThroughput
+    [4]: MayLoad
+    [5]: MayStore
+    [6]: HasSideEffects (U)
+
+    [1]    [2]    [3]    [4]    [5]    [6]    Instructions:
+     1      6     0.50    *                   vmovdqu	(%r11,%r13,4), %xmm0
+     1      2     1.00                        vmovq	%xmm0, %rbx
+     1      1     1.00                        vpunpckhqdq	%xmm0, %xmm0, %xmm2
+     1      2     1.00                        vmovq	%xmm2, %r15
+     1      1     0.25                        movl	%ebx, %r8d
+     1      1     0.50                        shrq	$32, %rbx
+     1      1     0.50                        leal	(%rbx,%rbx,2), %r9d
+     1      1     0.50                        leal	(%r8,%r8,2), %r8d
+     1      1     0.25                        movslq	%r8d, %rbx
+     1      1     0.25                        movslq	%r9d, %r8
+     1      1     0.25                        movl	%r15d, %r9d
+     1      1     0.50                        shrq	$32, %r15
+     1      6     0.50    *                   vmovups	(%rcx,%rbx,8), %xmm7
+     1      6     0.50    *                   vmovups	(%rcx,%r8,8), %xmm6
+     1      5     0.50    *                   vmovq	16(%rcx,%rbx,8), %xmm14
+     1      1     0.50                        leal	(%r9,%r9,2), %r9d
+     1      1     0.25                        movslq	%r9d, %r9
+     1      1     0.50                        leal	(%r15,%r15,2), %r15d
+     1      1     0.25                        movslq	%r15d, %r15
+     2      6     1.00    *                   vmovhpd	16(%rcx,%r8,8), %xmm14, %xmm15
+     2      7     0.50    *                   vinsertf128	$1, (%rcx,%r9,8), %ymm7, %ymm1
+     1      5     0.50    *                   vmovq	16(%rcx,%r9,8), %xmm0
+     2      7     0.50    *                   vinsertf128	$1, (%rcx,%r15,8), %ymm6, %ymm6
+     2      6     1.00    *                   vmovhpd	16(%rcx,%r15,8), %xmm0, %xmm2
+     1      1     1.00                        vunpcklpd	%ymm6, %ymm1, %ymm14
+     1      1     1.00                        vunpckhpd	%ymm6, %ymm1, %ymm1
+     1      4     0.50                        vsubpd	%ymm14, %ymm10, %ymm6
+     1      3     1.00                        vinsertf128	$1, %xmm2, %ymm15, %ymm7
+     1      4     0.50                        vsubpd	%ymm1, %ymm9, %ymm2
+     1      4     0.50                        vsubpd	%ymm7, %ymm8, %ymm0
+     1      4     0.50                        vmulpd	%ymm2, %ymm2, %ymm14
+     1      4     0.50                        vfmadd231pd	%ymm6, %ymm6, %ymm14
+     1      4     0.50                        vfmadd231pd	%ymm0, %ymm0, %ymm14
+     1      4     0.50                        vcmpltpd	%ymm5, %ymm14, %ymm1
+     1      1     0.50                        vpcmpeqd	%ymm7, %ymm7, %ymm7
+     2      3     1.00                        vptest	%ymm7, %ymm1
+     1      1     0.50                        je	80
+     1      14    5.00                        vdivpd	%ymm14, %ymm4, %ymm7
+     2      11    0.50    *                   vmulpd	128(%rsp), %ymm7, %ymm14
+     1      4     0.50                        vmulpd	%ymm14, %ymm7, %ymm14
+     1      4     0.50                        vmulpd	%ymm14, %ymm7, %ymm15
+     1      4     0.50                        vfmsub213pd	%ymm3, %ymm7, %ymm14
+     2      11    0.50    *                   vmulpd	96(%rsp), %ymm7, %ymm7
+     1      4     0.50                        vmulpd	%ymm7, %ymm15, %ymm15
+     1      4     0.50                        vmulpd	%ymm14, %ymm15, %ymm7
+     1      4     0.50                        vmulpd	%ymm7, %ymm6, %ymm6
+     1      4     0.50                        vmulpd	%ymm7, %ymm2, %ymm2
+     1      1     0.33                        vandpd	%ymm6, %ymm1, %ymm6
+     1      4     0.50                        vaddpd	%ymm6, %ymm13, %ymm13
+     1      4     0.50                        vmulpd	%ymm7, %ymm0, %ymm6
+     1      1     0.33                        vandpd	%ymm2, %ymm1, %ymm0
+     1      1     0.33                        vandpd	%ymm6, %ymm1, %ymm1
+     1      4     0.50                        vaddpd	%ymm0, %ymm12, %ymm12
+     1      4     0.50                        vaddpd	%ymm1, %ymm11, %ymm11
+     1      1     0.25                        addq	$4, %r13
+     1      1     0.25                        cmpq	%r12, %r13
+     1      1     0.50                        jb	0
+
+
+    Resources:
+    [0]   - SKXDivider
+    [1]   - SKXFPDivider
+    [2]   - SKXPort0
+    [3]   - SKXPort1
+    [4]   - SKXPort2
+    [5]   - SKXPort3
+    [6]   - SKXPort4
+    [7]   - SKXPort5
+    [8]   - SKXPort6
+    [9]   - SKXPort7
+
+
+    Resource pressure per iteration:
+    [0]    [1]    [2]    [3]    [4]    [5]    [6]    [7]    [8]    [9]    
+     -     5.00   15.10  15.06  5.50   5.50    -     13.93  8.91    -     
+
+    Resource pressure by instruction:
+    [0]    [1]    [2]    [3]    [4]    [5]    [6]    [7]    [8]    [9]    Instructions:
+     -      -      -      -     0.50   0.50    -      -      -      -     vmovdqu	(%r11,%r13,4), %xmm0
+     -      -     1.00    -      -      -      -      -      -      -     vmovq	%xmm0, %rbx
+     -      -      -      -      -      -      -     1.00    -      -     vpunpckhqdq	%xmm0, %xmm0, %xmm2
+     -      -     1.00    -      -      -      -      -      -      -     vmovq	%xmm2, %r15
+     -      -      -      -      -      -      -     0.01   0.99    -     movl	%ebx, %r8d
+     -      -     0.05    -      -      -      -      -     0.95    -     shrq	$32, %rbx
+     -      -      -     0.02    -      -      -     0.98    -      -     leal	(%rbx,%rbx,2), %r9d
+     -      -      -     0.03    -      -      -     0.97    -      -     leal	(%r8,%r8,2), %r8d
+     -      -     0.01   0.01    -      -      -     0.02   0.96    -     movslq	%r8d, %rbx
+     -      -     0.01   0.02    -      -      -      -     0.97    -     movslq	%r9d, %r8
+     -      -     0.02   0.93    -      -      -      -     0.05    -     movl	%r15d, %r9d
+     -      -     0.96    -      -      -      -      -     0.04    -     shrq	$32, %r15
+     -      -      -      -     0.48   0.52    -      -      -      -     vmovups	(%rcx,%rbx,8), %xmm7
+     -      -      -      -     0.50   0.50    -      -      -      -     vmovups	(%rcx,%r8,8), %xmm6
+     -      -      -      -     0.52   0.48    -      -      -      -     vmovq	16(%rcx,%rbx,8), %xmm14
+     -      -      -     0.01    -      -      -     0.99    -      -     leal	(%r9,%r9,2), %r9d
+     -      -     0.94    -      -      -      -     0.01   0.05    -     movslq	%r9d, %r9
+     -      -      -     0.04    -      -      -     0.96    -      -     leal	(%r15,%r15,2), %r15d
+     -      -     0.04    -      -      -      -     0.01   0.95    -     movslq	%r15d, %r15
+     -      -      -      -     0.51   0.49    -     1.00    -      -     vmovhpd	16(%rcx,%r8,8), %xmm14, %xmm15
+     -      -     0.94   0.03   0.50   0.50    -     0.03    -      -     vinsertf128	$1, (%rcx,%r9,8), %ymm7, %ymm1
+     -      -      -      -     0.50   0.50    -      -      -      -     vmovq	16(%rcx,%r9,8), %xmm0
+     -      -     0.02   0.01   0.49   0.51    -     0.97    -      -     vinsertf128	$1, (%rcx,%r15,8), %ymm6, %ymm6
+     -      -      -      -     0.50   0.50    -     1.00    -      -     vmovhpd	16(%rcx,%r15,8), %xmm0, %xmm2
+     -      -      -      -      -      -      -     1.00    -      -     vunpcklpd	%ymm6, %ymm1, %ymm14
+     -      -      -      -      -      -      -     1.00    -      -     vunpckhpd	%ymm6, %ymm1, %ymm1
+     -      -     0.94   0.06    -      -      -      -      -      -     vsubpd	%ymm14, %ymm10, %ymm6
+     -      -      -      -      -      -      -     1.00    -      -     vinsertf128	$1, %xmm2, %ymm15, %ymm7
+     -      -     0.02   0.98    -      -      -      -      -      -     vsubpd	%ymm1, %ymm9, %ymm2
+     -      -     0.04   0.96    -      -      -      -      -      -     vsubpd	%ymm7, %ymm8, %ymm0
+     -      -     0.94   0.06    -      -      -      -      -      -     vmulpd	%ymm2, %ymm2, %ymm14
+     -      -     0.94   0.06    -      -      -      -      -      -     vfmadd231pd	%ymm6, %ymm6, %ymm14
+     -      -     0.02   0.98    -      -      -      -      -      -     vfmadd231pd	%ymm0, %ymm0, %ymm14
+     -      -     0.03   0.97    -      -      -      -      -      -     vcmpltpd	%ymm5, %ymm14, %ymm1
+     -      -     0.04   0.96    -      -      -      -      -      -     vpcmpeqd	%ymm7, %ymm7, %ymm7
+     -      -     1.00    -      -      -      -     1.00    -      -     vptest	%ymm7, %ymm1
+     -      -     0.01    -      -      -      -      -     0.99    -     je	80
+     -     5.00   1.00    -      -      -      -      -      -      -     vdivpd	%ymm14, %ymm4, %ymm7
+     -      -     0.01   0.99   0.48   0.52    -      -      -      -     vmulpd	128(%rsp), %ymm7, %ymm14
+     -      -     0.04   0.96    -      -      -      -      -      -     vmulpd	%ymm14, %ymm7, %ymm14
+     -      -     0.03   0.97    -      -      -      -      -      -     vmulpd	%ymm14, %ymm7, %ymm15
+     -      -     0.97   0.03    -      -      -      -      -      -     vfmsub213pd	%ymm3, %ymm7, %ymm14
+     -      -     0.99   0.01   0.52   0.48    -      -      -      -     vmulpd	96(%rsp), %ymm7, %ymm7
+     -      -     0.01   0.99    -      -      -      -      -      -     vmulpd	%ymm7, %ymm15, %ymm15
+     -      -     0.02   0.98    -      -      -      -      -      -     vmulpd	%ymm14, %ymm15, %ymm7
+     -      -     0.97   0.03    -      -      -      -      -      -     vmulpd	%ymm7, %ymm6, %ymm6
+     -      -     0.03   0.97    -      -      -      -      -      -     vmulpd	%ymm7, %ymm2, %ymm2
+     -      -      -     0.02    -      -      -     0.98    -      -     vandpd	%ymm6, %ymm1, %ymm6
+     -      -     0.03   0.97    -      -      -      -      -      -     vaddpd	%ymm6, %ymm13, %ymm13
+     -      -     0.97   0.03    -      -      -      -      -      -     vmulpd	%ymm7, %ymm0, %ymm6
+     -      -     0.02   0.98    -      -      -      -      -      -     vandpd	%ymm2, %ymm1, %ymm0
+     -      -     0.02    -      -      -      -     0.98    -      -     vandpd	%ymm6, %ymm1, %ymm1
+     -      -     0.95   0.05    -      -      -      -      -      -     vaddpd	%ymm0, %ymm12, %ymm12
+     -      -     0.05   0.95    -      -      -      -      -      -     vaddpd	%ymm1, %ymm11, %ymm11
+     -      -     0.01    -      -      -      -      -     0.99    -     addq	$4, %r13
+     -      -      -      -      -      -      -     0.02   0.98    -     cmpq	%r12, %r13
+     -      -     0.01    -      -      -      -      -     0.99    -     jb	0
+
+    OSACA (Broadwell)
+
+    Open Source Architecture Code Analyzer (OSACA) - 0.4.5
+    Analyzed file:      /tmp/38528acf5d2c48d78661edddad8b8d63.osaca
+    Architecture:       BDW
+    Timestamp:          2021-10-18 20:30:51
+
+
+     P - Throughput of LOAD operation can be hidden behind a past or future STORE instruction
+     * - Instruction micro-ops not bound to a port
+     X - No throughput/latency information for this instruction in data file
+
+
+    Combined Analysis Report
+    ------------------------
+                                         Port pressure in cycles                                     
+         |  0   -  0DV  |  1   |  2   -  2D  |  3   -  3D  |  4   |  5   |  6   |  7   ||  CP  | LCD  |
+    -------------------------------------------------------------------------------------------------
+       2 |              |      | 0.50   0.50 | 0.50   0.50 |      |      |      |      ||  4.0 |      |   vmovdqu (%r11,%r13,4),%xmm0
+       3 | 1.00         |      |             |             |      |      |      |      ||  1.0 |      |   vmovq  %xmm0,%rbx
+       4 |              |      |             |             |      | 1.00 |      |      ||      |      |   vpunpckhqdq %xmm0,%xmm0,%xmm2
+       5 | 1.00         |      |             |             |      |      |      |      ||      |      |   vmovq  %xmm2,%r15
+       6 | 0.00         | 0.00 |             |             |      | 0.00 | 1.00 |      ||  1.0 |      |   mov    %ebx,%r8d
+       7 | 0.00         |      |             |             |      |      | 1.00 |      ||      |      |   shr    $0x20,%rbx
+       8 |              | 0.50 |             |             |      | 0.50 |      |      ||      |      |   lea    (%rbx,%rbx,2),%r9d
+       9 |              | 0.50 |             |             |      | 0.50 |      |      ||  1.0 |      |   lea    (%r8,%r8,2),%r8d
+      10 | 0.00         | 0.00 |             |             |      | 0.00 | 1.00 |      ||  1.0 |      |   movslq %r8d,%rbx
+      11 | 0.00         | 0.00 |             |             |      | 0.00 | 1.00 |      ||      |      |   movslq %r9d,%r8
+      12 | 0.00         | 0.00 |             |             |      | 0.00 | 1.00 |      ||      |      |   mov    %r15d,%r9d
+      13 | 0.00         |      |             |             |      |      | 1.00 |      ||      |      |   shr    $0x20,%r15
+      14 |              |      | 0.50   0.50 | 0.50   0.50 |      |      |      |      ||  4.0 |      |   vmovups (%rcx,%rbx,8),%xmm7
+      15 |              |      | 0.50   0.50 | 0.50   0.50 |      |      |      |      ||      |      |   vmovups (%rcx,%r8,8),%xmm6
+      16 |              |      | 0.50   0.50 | 0.50   0.50 |      |      |      |      ||      |      |   vmovq  0x10(%rcx,%rbx,8),%xmm14
+      17 |              | 0.00 |             |             |      | 1.00 |      |      ||      |      |   lea    (%r9,%r9,2),%r9d
+      18 | 0.00         | 0.00 |             |             |      | 0.00 | 1.00 |      ||      |      |   movslq %r9d,%r9
+      19 |              | 0.00 |             |             |      | 1.00 |      |      ||      |      |   lea    (%r15,%r15,2),%r15d
+      20 | 0.00         | 0.00 |             |             |      | 0.00 | 1.00 |      ||      |      |   movslq %r15d,%r15
+      21 |              |      | 0.50   0.50 | 0.50   0.50 |      | 1.00 |      |      ||      |      |   vmovhpd 0x10(%rcx,%r8,8),%xmm14,%xmm15
+      22 | 0.50         | 0.50 | 0.50   0.50 | 0.50   0.50 |      |      |      |      ||  1.0 |      |   vinsertf128 $0x1,(%rcx,%r9,8),%ymm7,%ymm1
+      23 |              |      | 0.50   0.50 | 0.50   0.50 |      |      |      |      ||      |      |   vmovq  0x10(%rcx,%r9,8),%xmm0
+      24 | 0.50         | 0.50 | 0.50   0.50 | 0.50   0.50 |      |      |      |      ||      |      |   vinsertf128 $0x1,(%rcx,%r15,8),%ymm6,%ymm6
+      25 |              |      | 0.50   0.50 | 0.50   0.50 |      | 1.00 |      |      ||      |      |   vmovhpd 0x10(%rcx,%r15,8),%xmm0,%xmm2
+      26 |              |      |             |             |      | 1.00 |      |      ||      |      |   vunpcklpd %ymm6,%ymm1,%ymm14
+      27 |              |      |             |             |      | 1.00 |      |      ||  1.0 |      |   vunpckhpd %ymm6,%ymm1,%ymm1
+      28 |              | 1.00 |             |             |      |      |      |      ||      |      |   vsubpd %ymm14,%ymm10,%ymm6
+      29 |              |      |             |             |      | 1.00 |      |      ||      |      |   vinsertf128 $0x1,%xmm2,%ymm15,%ymm7
+      30 |              | 1.00 |             |             |      |      |      |      ||  3.0 |      |   vsubpd %ymm1,%ymm9,%ymm2
+      31 |              | 1.00 |             |             |      |      |      |      ||      |      |   vsubpd %ymm7,%ymm8,%ymm0
+      32 | 0.50         | 0.50 |             |             |      |      |      |      ||  3.0 |      |   vmulpd %ymm2,%ymm2,%ymm14
+      33 | 0.50         | 0.50 |             |             |      |      |      |      ||  5.0 |      |   vfmadd231pd %ymm6,%ymm6,%ymm14
+      34 | 0.25         | 0.75 |             |             |      |      |      |      ||  5.0 |      |   vfmadd231pd %ymm0,%ymm0,%ymm14
+      35 |              |      |             |             |      |      |      |      ||      |      | X vcmpltpd %ymm5,%ymm14,%ymm1
+      36 |              | 0.00 |             |             |      | 1.00 |      |      ||      |      |   vpcmpeqd %ymm7,%ymm7,%ymm7
+      37 | 1.00         |      |             |             |      | 1.00 |      |      ||      |      |   vptest %ymm7,%ymm1
+      38 |              |      |             |             |      |      |      |      ||      |      | X je     0xfb
+      39 | 2.50   16.00 | 0.50 |             |             |      |      |      |      || 23.0 |      |   vdivpd %ymm14,%ymm4,%ymm7
+      40 | 0.50         | 0.50 | 0.50   0.50 | 0.50   0.50 |      |      |      |      ||  3.0 |      |   vmulpd 0x80(%rsp),%ymm7,%ymm14
+      41 | 0.50         | 0.50 |             |             |      |      |      |      ||  3.0 |      |   vmulpd %ymm14,%ymm7,%ymm14
+      42 | 0.50         | 0.50 |             |             |      |      |      |      ||  3.0 |      |   vmulpd %ymm14,%ymm7,%ymm15
+      43 | 0.50         | 0.50 |             |             |      |      |      |      ||      |      |   vfmsub213pd %ymm3,%ymm7,%ymm14
+      44 | 0.50         | 0.50 | 0.50   0.50 | 0.50   0.50 |      |      |      |      ||      |      |   vmulpd 0x60(%rsp),%ymm7,%ymm7
+      45 | 0.50         | 0.50 |             |             |      |      |      |      ||  3.0 |      |   vmulpd %ymm7,%ymm15,%ymm15
+      46 | 0.50         | 0.50 |             |             |      |      |      |      ||  3.0 |      |   vmulpd %ymm14,%ymm15,%ymm7
+      47 | 0.75         | 0.25 |             |             |      |      |      |      ||  3.0 |      |   vmulpd %ymm7,%ymm6,%ymm6
+      48 | 1.00         | 0.00 |             |             |      |      |      |      ||      |      |   vmulpd %ymm7,%ymm2,%ymm2
+      49 |              |      |             |             |      | 1.00 |      |      ||  1.0 |      |   vandpd %ymm6,%ymm1,%ymm6
+      50 |              | 1.00 |             |             |      |      |      |      ||  0.0 |      |   vaddpd %ymm6,%ymm13,%ymm13
+      51 | 1.00         | 0.00 |             |             |      |      |      |      ||      |      |   vmulpd %ymm7,%ymm0,%ymm6
+      52 |              |      |             |             |      | 1.00 |      |      ||      |      |   vandpd %ymm2,%ymm1,%ymm0
+      53 |              |      |             |             |      | 1.00 |      |      ||      |      |   vandpd %ymm6,%ymm1,%ymm1
+      54 |              | 1.00 |             |             |      |      |      |      ||      |      |   vaddpd %ymm0,%ymm12,%ymm12
+      55 |              | 1.00 |             |             |      |      |      |      ||      |  3.0 |   vaddpd %ymm1,%ymm11,%ymm11
+      56 | 0.00         | 0.00 |             |             |      | 0.00 | 1.00 |      ||      |      |   add    $0x4,%r13
+      57 | 0.00         | 0.00 |             |             |      | 0.00 | 1.00 |      ||      |      |   cmp    %r12,%r13
+      58 |              |      |             |             |      |      |      |      ||      |      | X jb     0x108
+
+           14.0   16.00   14.0   5.50   5.50   5.50   5.50          14.0   10.0           72.0   3.0  
+
+
+
+
+    Loop-Carried Dependencies Analysis Report
+    -----------------------------------------
+      55 |  3.0 | vaddpd %ymm1,%ymm11,%ymm11          | [55]
+      54 |  3.0 | vaddpd %ymm0,%ymm12,%ymm12          | [54]
+      50 |  3.0 | vaddpd %ymm6,%ymm13,%ymm13          | [50]
+      56 |  1.0 | add    $0x4,%r13                    | [56]
+
+    OSACA (Skylake)
+
+    Open Source Architecture Code Analyzer (OSACA) - 0.4.5
+    Analyzed file:      /tmp/38528acf5d2c48d78661edddad8b8d63.osaca
+    Architecture:       SKX
+    Timestamp:          2021-10-18 20:30:51
+
+
+     P - Throughput of LOAD operation can be hidden behind a past or future STORE instruction
+     * - Instruction micro-ops not bound to a port
+     X - No throughput/latency information for this instruction in data file
+
+
+    Combined Analysis Report
+    ------------------------
+                                        Port pressure in cycles                                     
+         |  0   - 0DV  |  1   |  2   -  2D  |  3   -  3D  |  4   |  5   |  6   |  7   ||  CP  | LCD  |
+    ------------------------------------------------------------------------------------------------
+       2 |             |      | 0.50   0.50 | 0.50   0.50 |      |      |      |      ||  4.0 |      |   vmovdqu (%r11,%r13,4),%xmm0
+       3 | 1.00        |      |             |             |      |      |      |      ||  1.0 |      |   vmovq  %xmm0,%rbx
+       4 |             |      |             |             |      | 1.00 |      |      ||      |      |   vpunpckhqdq %xmm0,%xmm0,%xmm2
+       5 | 1.00        |      |             |             |      |      |      |      ||      |      |   vmovq  %xmm2,%r15
+       6 | 0.00        | 0.00 |             |             |      | 0.00 | 1.00 |      ||  1.0 |      |   mov    %ebx,%r8d
+       7 | 0.00        |      |             |             |      |      | 1.00 |      ||      |      |   shr    $0x20,%rbx
+       8 |             | 0.50 |             |             |      | 0.50 |      |      ||      |      |   lea    (%rbx,%rbx,2),%r9d
+       9 |             | 0.50 |             |             |      | 0.50 |      |      ||  1.0 |      |   lea    (%r8,%r8,2),%r8d
+      10 | 0.00        | 0.00 |             |             |      | 0.00 | 1.00 |      ||  1.0 |      |   movslq %r8d,%rbx
+      11 | 0.00        | 0.00 |             |             |      | 0.00 | 1.00 |      ||      |      |   movslq %r9d,%r8
+      12 | 0.00        | 0.00 |             |             |      | 0.00 | 1.00 |      ||      |      |   mov    %r15d,%r9d
+      13 | 0.00        |      |             |             |      |      | 1.00 |      ||      |      |   shr    $0x20,%r15
+      14 |             |      | 0.50   0.50 | 0.50   0.50 |      |      |      |      ||  4.0 |      |   vmovups (%rcx,%rbx,8),%xmm7
+      15 |             |      | 0.50   0.50 | 0.50   0.50 |      |      |      |      ||      |      |   vmovups (%rcx,%r8,8),%xmm6
+      16 |             |      | 0.50   0.50 | 0.50   0.50 |      |      |      |      ||      |      |   vmovq  0x10(%rcx,%rbx,8),%xmm14
+      17 |             | 0.50 |             |             |      | 0.50 |      |      ||      |      |   lea    (%r9,%r9,2),%r9d
+      18 | 0.00        | 0.00 |             |             |      | 0.00 | 1.00 |      ||      |      |   movslq %r9d,%r9
+      19 |             | 0.50 |             |             |      | 0.50 |      |      ||      |      |   lea    (%r15,%r15,2),%r15d
+      20 | 0.00        | 0.00 |             |             |      | 0.00 | 1.00 |      ||      |      |   movslq %r15d,%r15
+      21 |             |      | 0.50   0.50 | 0.50   0.50 |      | 1.00 |      |      ||      |      |   vmovhpd 0x10(%rcx,%r8,8),%xmm14,%xmm15
+      22 |             |      | 0.50   0.50 | 0.50   0.50 |      | 1.00 |      |      ||  3.0 |      |   vinsertf128 $0x1,(%rcx,%r9,8),%ymm7,%ymm1
+      23 |             |      | 0.50   0.50 | 0.50   0.50 |      |      |      |      ||      |      |   vmovq  0x10(%rcx,%r9,8),%xmm0
+      24 |             |      | 0.50   0.50 | 0.50   0.50 |      | 1.00 |      |      ||      |      |   vinsertf128 $0x1,(%rcx,%r15,8),%ymm6,%ymm6
+      25 |             |      | 0.50   0.50 | 0.50   0.50 |      | 1.00 |      |      ||      |      |   vmovhpd 0x10(%rcx,%r15,8),%xmm0,%xmm2
+      26 |             |      |             |             |      | 1.00 |      |      ||      |      |   vunpcklpd %ymm6,%ymm1,%ymm14
+      27 |             |      |             |             |      | 1.00 |      |      ||  1.0 |      |   vunpckhpd %ymm6,%ymm1,%ymm1
+      28 | 0.50        | 0.50 |             |             |      |      |      |      ||      |      |   vsubpd %ymm14,%ymm10,%ymm6
+      29 |             |      |             |             |      | 1.00 |      |      ||      |      |   vinsertf128 $0x1,%xmm2,%ymm15,%ymm7
+      30 | 0.50        | 0.50 |             |             |      |      |      |      ||  4.0 |      |   vsubpd %ymm1,%ymm9,%ymm2
+      31 | 0.50        | 0.50 |             |             |      |      |      |      ||      |      |   vsubpd %ymm7,%ymm8,%ymm0
+      32 | 0.50        | 0.50 |             |             |      |      |      |      ||  4.0 |      |   vmulpd %ymm2,%ymm2,%ymm14
+      33 | 0.50        | 0.50 |             |             |      |      |      |      ||  4.0 |      |   vfmadd231pd %ymm6,%ymm6,%ymm14
+      34 | 0.50        | 0.50 |             |             |      |      |      |      ||  4.0 |      |   vfmadd231pd %ymm0,%ymm0,%ymm14
+      35 |             |      |             |             |      |      |      |      ||      |      | X vcmpltpd %ymm5,%ymm14,%ymm1
+      36 | 0.50        | 0.50 |             |             |      |      |      |      ||      |      |   vpcmpeqd %ymm7,%ymm7,%ymm7
+      37 | 1.00        |      |             |             |      | 1.00 |      |      ||      |      |   vptest %ymm7,%ymm1
+      38 |             |      |             |             |      |      |      |      ||      |      | X je     0xfb
+      39 | 1.00   8.00 |      |             |             |      |      |      |      || 15.0 |      |   vdivpd %ymm14,%ymm4,%ymm7
+      40 | 0.50        | 0.50 | 0.50   0.50 | 0.50   0.50 |      |      |      |      ||  4.0 |      |   vmulpd 0x80(%rsp),%ymm7,%ymm14
+      41 | 0.50        | 0.50 |             |             |      |      |      |      ||  4.0 |      |   vmulpd %ymm14,%ymm7,%ymm14
+      42 | 0.50        | 0.50 |             |             |      |      |      |      ||  4.0 |      |   vmulpd %ymm14,%ymm7,%ymm15
+      43 | 0.50        | 0.50 |             |             |      |      |      |      ||      |      |   vfmsub213pd %ymm3,%ymm7,%ymm14
+      44 | 0.50        | 0.50 | 0.50   0.50 | 0.50   0.50 |      |      |      |      ||      |      |   vmulpd 0x60(%rsp),%ymm7,%ymm7
+      45 | 0.50        | 0.50 |             |             |      |      |      |      ||  4.0 |      |   vmulpd %ymm7,%ymm15,%ymm15
+      46 | 0.50        | 0.50 |             |             |      |      |      |      ||  4.0 |      |   vmulpd %ymm14,%ymm15,%ymm7
+      47 | 0.50        | 0.50 |             |             |      |      |      |      ||  4.0 |      |   vmulpd %ymm7,%ymm6,%ymm6
+      48 | 0.50        | 0.50 |             |             |      |      |      |      ||      |      |   vmulpd %ymm7,%ymm2,%ymm2
+      49 | 0.17        | 0.16 |             |             |      | 0.66 |      |      ||  1.0 |      |   vandpd %ymm6,%ymm1,%ymm6
+      50 | 0.50        | 0.50 |             |             |      |      |      |      ||  0.0 |      |   vaddpd %ymm6,%ymm13,%ymm13
+      51 | 0.00        | 1.00 |             |             |      |      |      |      ||      |      |   vmulpd %ymm7,%ymm0,%ymm6
+      52 | 0.00        | 0.00 |             |             |      | 1.00 |      |      ||      |      |   vandpd %ymm2,%ymm1,%ymm0
+      53 | 0.00        | 0.00 |             |             |      | 1.00 |      |      ||      |      |   vandpd %ymm6,%ymm1,%ymm1
+      54 | 0.00        | 1.00 |             |             |      |      |      |      ||      |      |   vaddpd %ymm0,%ymm12,%ymm12
+      55 | 0.00        | 1.00 |             |             |      |      |      |      ||      |  4.0 |   vaddpd %ymm1,%ymm11,%ymm11
+      56 | 0.00        | 0.00 |             |             |      | 0.00 | 1.00 |      ||      |      |   add    $0x4,%r13
+      57 | 0.00        | 0.00 |             |             |      | 0.00 | 1.00 |      ||      |      |   cmp    %r12,%r13
+      58 |             |      |             |             |      |      |      |      ||      |      | X jb     0x108
+
+           12.7   8.00   13.7   5.50   5.50   5.50   5.50          13.7   10.0           72.0   4.0  
+
+
+
+
+    Loop-Carried Dependencies Analysis Report
+    -----------------------------------------
+      55 |  4.0 | vaddpd %ymm1,%ymm11,%ymm11          | [55]
+      54 |  4.0 | vaddpd %ymm0,%ymm12,%ymm12          | [54]
+      50 |  4.0 | vaddpd %ymm6,%ymm13,%ymm13          | [50]
+      56 |  1.0 | add    $0x4,%r13                    | [56]
+
+    OSACA (Cascade Lake)
+
+    Open Source Architecture Code Analyzer (OSACA) - 0.4.5
+    Analyzed file:      /tmp/38528acf5d2c48d78661edddad8b8d63.osaca
+    Architecture:       CSX
+    Timestamp:          2021-10-18 20:30:52
+
+
+     P - Throughput of LOAD operation can be hidden behind a past or future STORE instruction
+     * - Instruction micro-ops not bound to a port
+     X - No throughput/latency information for this instruction in data file
+
+
+    Combined Analysis Report
+    ------------------------
+                                        Port pressure in cycles                                     
+         |  0   - 0DV  |  1   |  2   -  2D  |  3   -  3D  |  4   |  5   |  6   |  7   ||  CP  | LCD  |
+    ------------------------------------------------------------------------------------------------
+       2 |             |      | 0.50   0.50 | 0.50   0.50 |      |      |      |      ||  4.0 |      |   vmovdqu (%r11,%r13,4),%xmm0
+       3 | 1.00        |      |             |             |      |      |      |      ||  1.0 |      |   vmovq  %xmm0,%rbx
+       4 |             |      |             |             |      | 1.00 |      |      ||      |      |   vpunpckhqdq %xmm0,%xmm0,%xmm2
+       5 | 1.00        |      |             |             |      |      |      |      ||      |      |   vmovq  %xmm2,%r15
+       6 | 0.00        | 0.00 |             |             |      | 0.00 | 1.00 |      ||  1.0 |      |   mov    %ebx,%r8d
+       7 | 0.00        |      |             |             |      |      | 1.00 |      ||      |      |   shr    $0x20,%rbx
+       8 |             | 0.50 |             |             |      | 0.50 |      |      ||      |      |   lea    (%rbx,%rbx,2),%r9d
+       9 |             | 0.50 |             |             |      | 0.50 |      |      ||  1.0 |      |   lea    (%r8,%r8,2),%r8d
+      10 | 0.00        | 0.00 |             |             |      | 0.00 | 1.00 |      ||  1.0 |      |   movslq %r8d,%rbx
+      11 | 0.00        | 0.00 |             |             |      | 0.00 | 1.00 |      ||      |      |   movslq %r9d,%r8
+      12 | 0.00        | 0.00 |             |             |      | 0.00 | 1.00 |      ||      |      |   mov    %r15d,%r9d
+      13 | 0.00        |      |             |             |      |      | 1.00 |      ||      |      |   shr    $0x20,%r15
+      14 |             |      | 0.50   0.50 | 0.50   0.50 |      |      |      |      ||  4.0 |      |   vmovups (%rcx,%rbx,8),%xmm7
+      15 |             |      | 0.50   0.50 | 0.50   0.50 |      |      |      |      ||      |      |   vmovups (%rcx,%r8,8),%xmm6
+      16 |             |      | 0.50   0.50 | 0.50   0.50 |      |      |      |      ||      |      |   vmovq  0x10(%rcx,%rbx,8),%xmm14
+      17 |             | 0.50 |             |             |      | 0.50 |      |      ||      |      |   lea    (%r9,%r9,2),%r9d
+      18 | 0.00        | 0.00 |             |             |      | 0.00 | 1.00 |      ||      |      |   movslq %r9d,%r9
+      19 |             | 0.50 |             |             |      | 0.50 |      |      ||      |      |   lea    (%r15,%r15,2),%r15d
+      20 | 0.00        | 0.00 |             |             |      | 0.00 | 1.00 |      ||      |      |   movslq %r15d,%r15
+      21 |             |      | 0.50   0.50 | 0.50   0.50 |      | 1.00 |      |      ||      |      |   vmovhpd 0x10(%rcx,%r8,8),%xmm14,%xmm15
+      22 |             |      | 0.50   0.50 | 0.50   0.50 |      | 1.00 |      |      ||  3.0 |      |   vinsertf128 $0x1,(%rcx,%r9,8),%ymm7,%ymm1
+      23 |             |      | 0.50   0.50 | 0.50   0.50 |      |      |      |      ||      |      |   vmovq  0x10(%rcx,%r9,8),%xmm0
+      24 |             |      | 0.50   0.50 | 0.50   0.50 |      | 1.00 |      |      ||      |      |   vinsertf128 $0x1,(%rcx,%r15,8),%ymm6,%ymm6
+      25 |             |      | 0.50   0.50 | 0.50   0.50 |      | 1.00 |      |      ||      |      |   vmovhpd 0x10(%rcx,%r15,8),%xmm0,%xmm2
+      26 |             |      |             |             |      | 1.00 |      |      ||      |      |   vunpcklpd %ymm6,%ymm1,%ymm14
+      27 |             |      |             |             |      | 1.00 |      |      ||  1.0 |      |   vunpckhpd %ymm6,%ymm1,%ymm1
+      28 | 0.50        | 0.50 |             |             |      |      |      |      ||      |      |   vsubpd %ymm14,%ymm10,%ymm6
+      29 |             |      |             |             |      | 1.00 |      |      ||      |      |   vinsertf128 $0x1,%xmm2,%ymm15,%ymm7
+      30 | 0.50        | 0.50 |             |             |      |      |      |      ||  4.0 |      |   vsubpd %ymm1,%ymm9,%ymm2
+      31 | 0.50        | 0.50 |             |             |      |      |      |      ||      |      |   vsubpd %ymm7,%ymm8,%ymm0
+      32 | 0.50        | 0.50 |             |             |      |      |      |      ||  4.0 |      |   vmulpd %ymm2,%ymm2,%ymm14
+      33 | 0.50        | 0.50 |             |             |      |      |      |      ||  4.0 |      |   vfmadd231pd %ymm6,%ymm6,%ymm14
+      34 | 0.50        | 0.50 |             |             |      |      |      |      ||  4.0 |      |   vfmadd231pd %ymm0,%ymm0,%ymm14
+      35 |             |      |             |             |      |      |      |      ||      |      | X vcmpltpd %ymm5,%ymm14,%ymm1
+      36 | 0.50        | 0.50 |             |             |      |      |      |      ||      |      |   vpcmpeqd %ymm7,%ymm7,%ymm7
+      37 | 1.00        |      |             |             |      | 1.00 |      |      ||      |      |   vptest %ymm7,%ymm1
+      38 |             |      |             |             |      |      |      |      ||      |      | X je     0xfb
+      39 | 1.00   8.00 |      |             |             |      |      |      |      || 15.0 |      |   vdivpd %ymm14,%ymm4,%ymm7
+      40 | 0.50        | 0.50 | 0.50   0.50 | 0.50   0.50 |      |      |      |      ||  4.0 |      |   vmulpd 0x80(%rsp),%ymm7,%ymm14
+      41 | 0.50        | 0.50 |             |             |      |      |      |      ||  4.0 |      |   vmulpd %ymm14,%ymm7,%ymm14
+      42 | 0.50        | 0.50 |             |             |      |      |      |      ||  4.0 |      |   vmulpd %ymm14,%ymm7,%ymm15
+      43 | 0.50        | 0.50 |             |             |      |      |      |      ||      |      |   vfmsub213pd %ymm3,%ymm7,%ymm14
+      44 | 0.50        | 0.50 | 0.50   0.50 | 0.50   0.50 |      |      |      |      ||      |      |   vmulpd 0x60(%rsp),%ymm7,%ymm7
+      45 | 0.50        | 0.50 |             |             |      |      |      |      ||  4.0 |      |   vmulpd %ymm7,%ymm15,%ymm15
+      46 | 0.50        | 0.50 |             |             |      |      |      |      ||  4.0 |      |   vmulpd %ymm14,%ymm15,%ymm7
+      47 | 0.50        | 0.50 |             |             |      |      |      |      ||  4.0 |      |   vmulpd %ymm7,%ymm6,%ymm6
+      48 | 0.50        | 0.50 |             |             |      |      |      |      ||      |      |   vmulpd %ymm7,%ymm2,%ymm2
+      49 | 0.17        | 0.16 |             |             |      | 0.66 |      |      ||  1.0 |      |   vandpd %ymm6,%ymm1,%ymm6
+      50 | 0.50        | 0.50 |             |             |      |      |      |      ||  0.0 |      |   vaddpd %ymm6,%ymm13,%ymm13
+      51 | 0.00        | 1.00 |             |             |      |      |      |      ||      |      |   vmulpd %ymm7,%ymm0,%ymm6
+      52 | 0.00        | 0.00 |             |             |      | 1.00 |      |      ||      |      |   vandpd %ymm2,%ymm1,%ymm0
+      53 | 0.00        | 0.00 |             |             |      | 1.00 |      |      ||      |      |   vandpd %ymm6,%ymm1,%ymm1
+      54 | 0.00        | 1.00 |             |             |      |      |      |      ||      |      |   vaddpd %ymm0,%ymm12,%ymm12
+      55 | 0.00        | 1.00 |             |             |      |      |      |      ||      |  4.0 |   vaddpd %ymm1,%ymm11,%ymm11
+      56 | 0.00        | 0.00 |             |             |      | 0.00 | 1.00 |      ||      |      |   add    $0x4,%r13
+      57 | 0.00        | 0.00 |             |             |      | 0.00 | 1.00 |      ||      |      |   cmp    %r12,%r13
+      58 |             |      |             |             |      |      |      |      ||      |      | X jb     0x108
+
+           12.7   8.00   13.7   5.50   5.50   5.50   5.50          13.7   10.0           72.0   4.0  
+
+
+
+
+    Loop-Carried Dependencies Analysis Report
+    -----------------------------------------
+      55 |  4.0 | vaddpd %ymm1,%ymm11,%ymm11          | [55]
+      54 |  4.0 | vaddpd %ymm0,%ymm12,%ymm12          | [54]
+      50 |  4.0 | vaddpd %ymm6,%ymm13,%ymm13          | [50]
+      56 |  1.0 | add    $0x4,%r13                    | [56]
+
+    CQA (Broadwell)
+
+    Target micro-architecture is: Broadwell (run maqao --list-procs to review related processors).
+
+    Info: No innermost loops in the function .text@start
+
+    CQA (Skylake)
+
+    Target micro-architecture is: Skylake (run maqao --list-procs to review related processors).
+
+    Info: No innermost loops in the function .text@start
+
+    objdump
+
+    0000000000000000 <.text>:
+       0:	c4 81 7a 6f 04 ab    	vmovdqu xmm0,XMMWORD PTR [r11+r13*4]
+       6:	c4 e1 f9 7e c3       	vmovq  rbx,xmm0
+       b:	c5 f9 6d d0          	vpunpckhqdq xmm2,xmm0,xmm0
+       f:	c4 c1 f9 7e d7       	vmovq  r15,xmm2
+      14:	41 89 d8             	mov    r8d,ebx
+      17:	48 c1 eb 20          	shr    rbx,0x20
+      1b:	44 8d 0c 5b          	lea    r9d,[rbx+rbx*2]
+      1f:	47 8d 04 40          	lea    r8d,[r8+r8*2]
+      23:	49 63 d8             	movsxd rbx,r8d
+      26:	4d 63 c1             	movsxd r8,r9d
+      29:	45 89 f9             	mov    r9d,r15d
+      2c:	49 c1 ef 20          	shr    r15,0x20
+      30:	c5 f8 10 3c d9       	vmovups xmm7,XMMWORD PTR [rcx+rbx*8]
+      35:	c4 a1 78 10 34 c1    	vmovups xmm6,XMMWORD PTR [rcx+r8*8]
+      3b:	c5 7a 7e 74 d9 10    	vmovq  xmm14,QWORD PTR [rcx+rbx*8+0x10]
+      41:	47 8d 0c 49          	lea    r9d,[r9+r9*2]
+      45:	4d 63 c9             	movsxd r9,r9d
+      48:	47 8d 3c 7f          	lea    r15d,[r15+r15*2]
+      4c:	4d 63 ff             	movsxd r15,r15d
+      4f:	c4 21 09 16 7c c1 10 	vmovhpd xmm15,xmm14,QWORD PTR [rcx+r8*8+0x10]
+      56:	c4 a3 45 18 0c c9 01 	vinsertf128 ymm1,ymm7,XMMWORD PTR [rcx+r9*8],0x1
+      5d:	c4 a1 7a 7e 44 c9 10 	vmovq  xmm0,QWORD PTR [rcx+r9*8+0x10]
+      64:	c4 a3 4d 18 34 f9 01 	vinsertf128 ymm6,ymm6,XMMWORD PTR [rcx+r15*8],0x1
+      6b:	c4 a1 79 16 54 f9 10 	vmovhpd xmm2,xmm0,QWORD PTR [rcx+r15*8+0x10]
+      72:	c5 75 14 f6          	vunpcklpd ymm14,ymm1,ymm6
+      76:	c5 f5 15 ce          	vunpckhpd ymm1,ymm1,ymm6
+      7a:	c4 c1 2d 5c f6       	vsubpd ymm6,ymm10,ymm14
+      7f:	c4 e3 05 18 fa 01    	vinsertf128 ymm7,ymm15,xmm2,0x1
+      85:	c5 b5 5c d1          	vsubpd ymm2,ymm9,ymm1
+      89:	c5 bd 5c c7          	vsubpd ymm0,ymm8,ymm7
+      8d:	c5 6d 59 f2          	vmulpd ymm14,ymm2,ymm2
+      91:	c4 62 cd b8 f6       	vfmadd231pd ymm14,ymm6,ymm6
+      96:	c4 62 fd b8 f0       	vfmadd231pd ymm14,ymm0,ymm0
+      9b:	c5 8d c2 cd 01       	vcmpltpd ymm1,ymm14,ymm5
+      a0:	c5 c5 76 ff          	vpcmpeqd ymm7,ymm7,ymm7
+      a4:	c4 e2 7d 17 cf       	vptest ymm1,ymm7
+      a9:	74 50                	je     0xfb
+      ab:	c4 c1 5d 5e fe       	vdivpd ymm7,ymm4,ymm14
+      b0:	c5 45 59 b4 24 80 00 	vmulpd ymm14,ymm7,YMMWORD PTR [rsp+0x80]
+      b7:	00 00 
+      b9:	c4 41 45 59 f6       	vmulpd ymm14,ymm7,ymm14
+      be:	c4 41 45 59 fe       	vmulpd ymm15,ymm7,ymm14
+      c3:	c4 62 c5 aa f3       	vfmsub213pd ymm14,ymm7,ymm3
+      c8:	c5 c5 59 7c 24 60    	vmulpd ymm7,ymm7,YMMWORD PTR [rsp+0x60]
+      ce:	c5 05 59 ff          	vmulpd ymm15,ymm15,ymm7
+      d2:	c4 c1 05 59 fe       	vmulpd ymm7,ymm15,ymm14
+      d7:	c5 cd 59 f7          	vmulpd ymm6,ymm6,ymm7
+      db:	c5 ed 59 d7          	vmulpd ymm2,ymm2,ymm7
+      df:	c5 f5 54 f6          	vandpd ymm6,ymm1,ymm6
+      e3:	c5 15 58 ee          	vaddpd ymm13,ymm13,ymm6
+      e7:	c5 fd 59 f7          	vmulpd ymm6,ymm0,ymm7
+      eb:	c5 f5 54 c2          	vandpd ymm0,ymm1,ymm2
+      ef:	c5 f5 54 ce          	vandpd ymm1,ymm1,ymm6
+      f3:	c5 1d 58 e0          	vaddpd ymm12,ymm12,ymm0
+      f7:	c5 25 58 d9          	vaddpd ymm11,ymm11,ymm1
+      fb:	49 83 c5 04          	add    r13,0x4
+      ff:	4d 39 e5             	cmp    r13,r12
+     102:	0f 82 00 00 00 00    	jb     0x108
+
+
