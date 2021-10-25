@@ -33,6 +33,7 @@
 #endif
 
 typedef struct {
+    int force_field;
     char* input_file;
     MD_FLOAT epsilon;
     MD_FLOAT sigma6;

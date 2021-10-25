@@ -1,16 +1,23 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <allocate.h>
 #include <atom.h>
 #include <eam.h>
 #include <parameter.h>
+#include <util.h>
+
+#ifndef MAXLINE
+#define MAXLINE 4096
+#endif
 
 void initEam(Eam* eam, const char *input_file, int ntypes) {
     eam->nmax = 0;
     eam->fp = NULL;
     eam->ntypes = ntypes;
     eam->cutforcesq = (MD_FLOAT *) allocate(ALIGNMENT, ntypes * ntypes * sizeof(MD_FLOAT));
+    coeff(eam, input_file);
 }
 
 void coeff(Eam* eam, const char* arg) {
@@ -46,7 +53,7 @@ void read_file(Funcfl* file, const char* filename) {
     sscanf(line, "%d %lg %d %lg %lg", &file->nrho, &file->drho, &file->nr, &file->dr, &file->cut);
 
     //printf("Read: %lf %i %lf %i %lf %lf\n",file->mass,file->nrho,file->drho,file->nr,file->dr,file->cut);
-    file->frho = (MD_FLOAT *) allocate(ALIGNMENT, (file->nhro + 1) * sizeof(MD_FLOAT));
+    file->frho = (MD_FLOAT *) allocate(ALIGNMENT, (file->nrho + 1) * sizeof(MD_FLOAT));
     file->rhor = (MD_FLOAT *) allocate(ALIGNMENT, (file->nr + 1) * sizeof(MD_FLOAT));
     file->zr = (MD_FLOAT *) allocate(ALIGNMENT, (file->nr + 1) * sizeof(MD_FLOAT));
     grab(fptr, file->nrho, file->frho);
@@ -66,18 +73,18 @@ void file2array(Eam* eam) {
     // active means some element is pointing at it via map
     int active;
     double rmax, rhomax;
-    dr = drho = rmax = rhomax = 0.0;
+    eam->dr = eam->drho = rmax = rhomax = 0.0;
     active = 0;
     Funcfl* file = eam->file;
-    dr = MAX(dr, file->dr);
-    drho = MAX(drho, file->drho);
+    eam->dr = MAX(eam->dr, file->dr);
+    eam->drho = MAX(eam->drho, file->drho);
     rmax = MAX(rmax, (file->nr - 1) * file->dr);
     rhomax = MAX(rhomax, (file->nrho - 1) * file->drho);
 
     // set nr,nrho from cutoff and spacings
     // 0.5 is for round-off in divide
-    eam->nr = static_cast<int>(rmax / dr + 0.5);
-    eam->nrho = static_cast<int>(rhomax / drho + 0.5);
+    eam->nr = (int)(rmax / eam->dr + 0.5);
+    eam->nrho = (int)(rhomax / eam->drho + 0.5);
 
     // ------------------------------------------------------------------
     // setup frho arrays
@@ -85,16 +92,16 @@ void file2array(Eam* eam) {
 
     // allocate frho arrays
     // nfrho = # of funcfl files + 1 for zero array
-    eam->frho = (MD_FLOAT *) allocate(ALIGNMENT, (eam->nhro + 1) * sizeof(MD_FLOAT));
+    eam->frho = (MD_FLOAT *) allocate(ALIGNMENT, (eam->nrho + 1) * sizeof(MD_FLOAT));
 
     // interpolate each file's frho to a single grid and cutoff
     double r, p, cof1, cof2, cof3, cof4;
     n = 0;
 
     for(m = 1; m <= eam->nrho; m++) {
-        r = (m - 1) * drho;
+        r = (m - 1) * eam->drho;
         p = r / file->drho + 1.0;
-        k = static_cast<int>(p);
+        k = (int)(p);
         k = MIN(k, file->nrho - 2);
         k = MAX(k, 2);
         p -= k;
@@ -118,9 +125,9 @@ void file2array(Eam* eam) {
 
     // interpolate each file's rhor to a single grid and cutoff
     for(m = 1; m <= eam->nr; m++) {
-        r = (m - 1) * dr;
+        r = (m - 1) * eam->dr;
         p = r / file->dr + 1.0;
-        k = static_cast<int>(p);
+        k = (int)(p);
         k = MIN(k, file->nr - 2);
         k = MAX(k, 2);
         p -= k;
@@ -153,9 +160,9 @@ void file2array(Eam* eam) {
     Funcfl* jfile = eam->file;
 
     for(m = 1; m <= eam->nr; m++) {
-        r = (m - 1) * dr;
+        r = (m - 1) * eam->dr;
         p = r / ifile->dr + 1.0;
-        k = static_cast<int>(p);
+        k = (int)(p);
         k = MIN(k, ifile->nr - 2);
         k = MAX(k, 2);
         p -= k;
@@ -168,7 +175,7 @@ void file2array(Eam* eam) {
         cof3 * ifile->zr[k + 1] + cof4 * ifile->zr[k + 2];
 
         p = r / jfile->dr + 1.0;
-        k = static_cast<int>(p);
+        k = (int)(p);
         k = MIN(k, jfile->nr - 2);
         k = MAX(k, 2);
         p -= k;
@@ -185,33 +192,33 @@ void file2array(Eam* eam) {
 }
 
 void array2spline(Eam* eam) {
-    rdr = 1.0 / eam->dr;
-    rdrho = 1.0 / eam->drho;
-    nrho_tot = (eam->nrho + 1) * 7 + 64;
-    nr_tot = (eam->nr + 1) * 7 + 64;
-    nrho_tot -= nrho_tot%64;
-    nr_tot -= nr_tot%64;
+    eam->rdr = 1.0 / eam->dr;
+    eam->rdrho = 1.0 / eam->drho;
+    eam->nrho_tot = (eam->nrho + 1) * 7 + 64;
+    eam->nr_tot = (eam->nr + 1) * 7 + 64;
+    eam->nrho_tot -= eam->nrho_tot%64;
+    eam->nr_tot -= eam->nr_tot%64;
 
     int ntypes = eam->ntypes;
-    eam->frho_spline = (MD_FLOAT *) allocate(ALIGNMENT, ntypes * ntypes * nrho_tot * sizeof(MD_FLOAT));
-    eam->rhor_spline = (MD_FLOAT *) allocate(ALIGNMENT, ntypes * ntypes * nr_tot * sizeof(MD_FLOAT));
-    eam->z2r_spline = (MD_FLOAT *) allocate(ALIGNMENT, ntypes * ntypes * nr_tot * sizeof(MD_FLOAT));
+    eam->frho_spline = (MD_FLOAT *) allocate(ALIGNMENT, ntypes * ntypes * eam->nrho_tot * sizeof(MD_FLOAT));
+    eam->rhor_spline = (MD_FLOAT *) allocate(ALIGNMENT, ntypes * ntypes * eam->nr_tot * sizeof(MD_FLOAT));
+    eam->z2r_spline = (MD_FLOAT *) allocate(ALIGNMENT, ntypes * ntypes * eam->nr_tot * sizeof(MD_FLOAT));
     interpolate(eam->nrho, eam->drho, eam->frho, eam->frho_spline);
     interpolate(eam->nr, eam->dr, eam->rhor, eam->rhor_spline);
     interpolate(eam->nr, eam->dr, eam->z2r, eam->z2r_spline);
 
     // replicate data for multiple types;
     for(int tt = 0; tt < ntypes * ntypes; tt++) {
-        for(int k = 0; k < nrho_tot; k++)
-            eam->frho_spline[tt*nrho_tot + k] = eam->frho_spline[k];
-        for(int k = 0; k < nr_tot; k++)
-            eam->rhor_spline[tt*nr_tot + k] = eam->rhor_spline[k];
-        for(int k = 0; k < nr_tot; k++)
-            eam->z2r_spline[tt*nr_tot + k] = eam->z2r_spline[k];
+        for(int k = 0; k < eam->nrho_tot; k++)
+            eam->frho_spline[tt*eam->nrho_tot + k] = eam->frho_spline[k];
+        for(int k = 0; k < eam->nr_tot; k++)
+            eam->rhor_spline[tt*eam->nr_tot + k] = eam->rhor_spline[k];
+        for(int k = 0; k < eam->nr_tot; k++)
+            eam->z2r_spline[tt*eam->nr_tot + k] = eam->z2r_spline[k];
     }
 }
 
-void interpolate(MMD_int n, MMD_float delta, MMD_float* f, MMD_float* spline) {
+void interpolate(int n, MD_FLOAT delta, MD_FLOAT* f, MD_FLOAT* spline) {
     for(int m = 1; m <= n; m++) spline[m * 7 + 6] = f[m];
 
     spline[1 * 7 + 5] = spline[2 * 7 + 6] - spline[1 * 7 + 6];
@@ -240,7 +247,7 @@ void interpolate(MMD_int n, MMD_float delta, MMD_float* f, MMD_float* spline) {
     }
 }
 
-void grab(FILE* fptr, MMD_int n, MMD_float* list) {
+void grab(FILE* fptr, int n, MD_FLOAT* list) {
     char* ptr;
     char line[MAXLINE];
     int i = 0;

@@ -21,6 +21,7 @@
  * =======================================================================================
  */
 #include <likwid-marker.h>
+#include <math.h>
 
 #include <allocate.h>
 #include <timing.h>
@@ -29,18 +30,21 @@
 #include <atom.h>
 #include <stats.h>
 #include <eam.h>
+#include <util.h>
 
 double computeForceEam(Eam* eam, Atom *atom, Neighbor *neighbor, Stats *stats, int first_exec, int timestep) {
-    if(atom->nmax > eam->nmax) {
-        eam->nmax = atom->nmax;
+    if(eam->nmax < atom->Nmax) {
+        eam->nmax = atom->Nmax;
         if(eam->fp != NULL) { free(eam->fp); }
-        eam->fp = (MD_FLOAT *) allocate(ALIGNMENT, atom->nmax * sizeof(MD_FLOAT));
+        eam->fp = (MD_FLOAT *) allocate(ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT));
     }
 
     int Nlocal = atom->Nlocal;
     int* neighs;
     MD_FLOAT* fx = atom->fx; MD_FLOAT* fy = atom->fy; MD_FLOAT* fz = atom->fz; MD_FLOAT* fp = eam->fp;
-    MD_FLOAT* rhor_spline = eam->rhor_spline; MD_FLOAT* fhro_spline = eam->fhro_spline; MD_FLOAT* z2r_spline = eam->z2r_spline;
+    MD_FLOAT* rhor_spline = eam->rhor_spline; MD_FLOAT* frho_spline = eam->frho_spline; MD_FLOAT* z2r_spline = eam->z2r_spline;
+    int rdr = eam->rdr; int nr = eam->nr; int nr_tot = eam->nr_tot; int rdrho = eam->rdrho;
+    int nrho = eam->nrho; int nrho_tot = eam->nrho_tot;
     double S = getTimeStamp();
     LIKWID_MARKER_START("force_eam_fp");
 
@@ -67,7 +71,7 @@ double computeForceEam(Eam* eam, Atom *atom, Neighbor *neighbor, Stats *stats, i
 
             if(rsq < cutforcesq) {
                 MD_FLOAT p = sqrt(rsq) * rdr + 1.0;
-                int m = static_cast<int>(p);
+                int m = (int)(p);
                 m = m < nr - 1 ? m : nr - 1;
                 p -= m;
                 p = p < 1.0 ? p : 1.0;
@@ -81,7 +85,7 @@ double computeForceEam(Eam* eam, Atom *atom, Neighbor *neighbor, Stats *stats, i
 
         const int type_ii = type_i * type_i;
         MD_FLOAT p = 1.0 * rhoi * rdrho + 1.0;
-        int m = static_cast<int>(p);
+        int m = (int)(p);
         m = MAX(1, MIN(m, nrho - 1));
         p -= m;
         p = MIN(p, 1.0);
@@ -116,9 +120,9 @@ double computeForceEam(Eam* eam, Atom *atom, Neighbor *neighbor, Stats *stats, i
             const MD_FLOAT cutforcesq = atom->cutforcesq[type_ij];
 
             if(rsq < cutforcesq) {
-                MMD_float r = sqrt(rsq);
-                MMD_float p = r * rdr + 1.0;
-                int m = static_cast<int>(p);
+                MD_FLOAT r = sqrt(rsq);
+                MD_FLOAT p = r * rdr + 1.0;
+                int m = (int)(p);
                 m = m < nr - 1 ? m : nr - 1;
                 p -= m;
                 p = p < 1.0 ? p : 1.0;
@@ -134,24 +138,24 @@ double computeForceEam(Eam* eam, Atom *atom, Neighbor *neighbor, Stats *stats, i
                 //   terms of embed eng: Fi(sum rho_ij) and Fj(sum rho_ji)
                 //   hence embed' = Fi(sum rho_ij) rhojp + Fj(sum rho_ji) rhoip
 
-                MMD_float rhoip = (rhor_spline[type_ij * nr_tot + m * 7 + 0] * p +
+                MD_FLOAT rhoip = (rhor_spline[type_ij * nr_tot + m * 7 + 0] * p +
                                    rhor_spline[type_ij * nr_tot + m * 7 + 1]) * p +
                                    rhor_spline[type_ij * nr_tot + m * 7 + 2];
 
-                MMD_float z2p = (z2r_spline[type_ij * nr_tot + m * 7 + 0] * p +
+                MD_FLOAT z2p = (z2r_spline[type_ij * nr_tot + m * 7 + 0] * p +
                                  z2r_spline[type_ij * nr_tot + m * 7 + 1]) * p +
                                  z2r_spline[type_ij * nr_tot + m * 7 + 2];
 
-                MMD_float z2 = ((z2r_spline[type_ij * nr_tot + m * 7 + 3] * p +
+                MD_FLOAT z2 = ((z2r_spline[type_ij * nr_tot + m * 7 + 3] * p +
                                  z2r_spline[type_ij * nr_tot + m * 7 + 4]) * p +
                                  z2r_spline[type_ij * nr_tot + m * 7 + 5]) * p +
                                  z2r_spline[type_ij * nr_tot + m * 7 + 6];
 
-                MMD_float recip = 1.0 / r;
-                MMD_float phi = z2 * recip;
-                MMD_float phip = z2p * recip - phi * recip;
-                MMD_float psip = fp[i] * rhoip + fp[j] * rhoip + phip;
-                MMD_float fpair = -psip * recip;
+                MD_FLOAT recip = 1.0 / r;
+                MD_FLOAT phi = z2 * recip;
+                MD_FLOAT phip = z2p * recip - phi * recip;
+                MD_FLOAT psip = fp[i] * rhoip + fp[j] * rhoip + phip;
+                MD_FLOAT fpair = -psip * recip;
 
                 fix += delx * fpair;
                 fiy += dely * fpair;
