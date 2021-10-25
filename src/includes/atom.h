@@ -30,14 +30,12 @@ typedef struct {
     MD_FLOAT *x, *y, *z;
     MD_FLOAT *vx, *vy, *vz;
     MD_FLOAT *fx, *fy, *fz;
-    #ifdef EXPLICIT_TYPES
     int *type;
     int ntypes;
     MD_FLOAT *epsilon;
     MD_FLOAT *sigma6;
     MD_FLOAT *cutforcesq;
     MD_FLOAT *cutneighsq;
-    #endif
 } Atom;
 
 extern void initAtom(Atom*);

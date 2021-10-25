@@ -20,6 +20,8 @@
  *   with MD-Bench.  If not, see <https://www.gnu.org/licenses/>.
  * =======================================================================================
  */
+#include <stdio.h>
+
 #include <atom.h>
 #include <parameter.h>
 
@@ -34,6 +36,7 @@ typedef struct {
 typedef struct {
     MD_FLOAT* fp;
     int nmax;
+    int ntypes;
     int nrho, nr;
     int nrho_tot, nr_tot;
     MD_FLOAT dr, rdr, drho, rdrho;
@@ -43,12 +46,12 @@ typedef struct {
     Funcfl* file;
 } Eam;
 
-void init_eam(Eam* eam, int ntypes);
+void initEam(Eam* eam, const char* input_file, int ntypes);
 void coeff(Eam* eam, const char* arg);
 void init_style(Eam* eam);
 void read_file(Funcfl* file, const char* filename);
 void file2array(Eam* eam);
 void array2spline(Eam* eam);
-void interpolate(MMD_int n, MMD_float delta, MMD_float* f, MMD_float* spline);
-void grab(FILE* fptr, MMD_int n, MMD_float* list);
+void interpolate(int n, MD_FLOAT delta, MD_FLOAT* f, MD_FLOAT* spline);
+void grab(FILE* fptr, int n, MD_FLOAT* list);
 #endif
