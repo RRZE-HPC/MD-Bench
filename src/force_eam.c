@@ -139,17 +139,17 @@ double computeForceEam(Eam* eam, Atom *atom, Neighbor *neighbor, Stats *stats, i
                 //   hence embed' = Fi(sum rho_ij) rhojp + Fj(sum rho_ji) rhoip
 
                 MD_FLOAT rhoip = (rhor_spline[type_ij * nr_tot + m * 7 + 0] * p +
-                                   rhor_spline[type_ij * nr_tot + m * 7 + 1]) * p +
-                                   rhor_spline[type_ij * nr_tot + m * 7 + 2];
+                                  rhor_spline[type_ij * nr_tot + m * 7 + 1]) * p +
+                                  rhor_spline[type_ij * nr_tot + m * 7 + 2];
 
                 MD_FLOAT z2p = (z2r_spline[type_ij * nr_tot + m * 7 + 0] * p +
-                                 z2r_spline[type_ij * nr_tot + m * 7 + 1]) * p +
-                                 z2r_spline[type_ij * nr_tot + m * 7 + 2];
+                                z2r_spline[type_ij * nr_tot + m * 7 + 1]) * p +
+                                z2r_spline[type_ij * nr_tot + m * 7 + 2];
 
                 MD_FLOAT z2 = ((z2r_spline[type_ij * nr_tot + m * 7 + 3] * p +
-                                 z2r_spline[type_ij * nr_tot + m * 7 + 4]) * p +
-                                 z2r_spline[type_ij * nr_tot + m * 7 + 5]) * p +
-                                 z2r_spline[type_ij * nr_tot + m * 7 + 6];
+                                z2r_spline[type_ij * nr_tot + m * 7 + 4]) * p +
+                                z2r_spline[type_ij * nr_tot + m * 7 + 5]) * p +
+                                z2r_spline[type_ij * nr_tot + m * 7 + 6];
 
                 MD_FLOAT recip = 1.0 / r;
                 MD_FLOAT phi = z2 * recip;

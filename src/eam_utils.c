@@ -1,3 +1,25 @@
+/*
+ * =======================================================================================
+ *
+ *   Author:   Jan Eitzinger (je), jan.eitzinger@fau.de
+ *   Copyright (c) 2020 RRZE, University Erlangen-Nuremberg
+ *
+ *   This file is part of MD-Bench.
+ *
+ *   MD-Bench is free software: you can redistribute it and/or modify it
+ *   under the terms of the GNU Lesser General Public License as published
+ *   by the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   MD-Bench is distributed in the hope that it will be useful, but WITHOUT ANY
+ *   WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+ *   PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more
+ *   details.
+ *
+ *   You should have received a copy of the GNU Lesser General Public License along
+ *   with MD-Bench.  If not, see <https://www.gnu.org/licenses/>.
+ * =======================================================================================
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,19 +34,20 @@
 #define MAXLINE 4096
 #endif
 
-void initEam(Eam* eam, const char *input_file, int ntypes) {
+void initEam(Eam* eam, const char* input_file, int ntypes) {
     eam->nmax = 0;
     eam->fp = NULL;
     eam->ntypes = ntypes;
     eam->cutforcesq = (MD_FLOAT *) allocate(ALIGNMENT, ntypes * ntypes * sizeof(MD_FLOAT));
     coeff(eam, input_file);
+    init_style(eam);
 }
 
 void coeff(Eam* eam, const char* arg) {
-    read_file(eam->file, arg);
+    read_file(&eam->file, arg);
     int n = strlen(arg) + 1;
     int ntypes = eam->ntypes;
-    double cutmax = eam->file->cut;
+    double cutmax = eam->file.cut;
     for(int i=0; i<ntypes*ntypes; i++)
         eam->cutforcesq[i] = cutmax * cutmax;
 }
@@ -75,7 +98,7 @@ void file2array(Eam* eam) {
     double rmax, rhomax;
     eam->dr = eam->drho = rmax = rhomax = 0.0;
     active = 0;
-    Funcfl* file = eam->file;
+    Funcfl* file = &eam->file;
     eam->dr = MAX(eam->dr, file->dr);
     eam->drho = MAX(eam->drho, file->drho);
     rmax = MAX(rmax, (file->nr - 1) * file->dr);
@@ -156,8 +179,8 @@ void file2array(Eam* eam) {
     // create a z2r array for each file against other files, only for I >= J
     // interpolate zri and zrj to a single grid and cutoff
     double zri, zrj;
-    Funcfl* ifile = eam->file;
-    Funcfl* jfile = eam->file;
+    Funcfl* ifile = &eam->file;
+    Funcfl* jfile = &eam->file;
 
     for(m = 1; m <= eam->nr; m++) {
         r = (m - 1) * eam->dr;

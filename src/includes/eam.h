@@ -43,7 +43,7 @@ typedef struct {
     MD_FLOAT *frho, *rhor, *z2r;
     MD_FLOAT *rhor_spline, *frho_spline, *z2r_spline;
     MD_FLOAT *cutforcesq;
-    Funcfl* file;
+    Funcfl file;
 } Eam;
 
 void initEam(Eam* eam, const char* input_file, int ntypes);
