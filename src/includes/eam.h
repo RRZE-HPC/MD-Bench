@@ -20,36 +20,35 @@
  *   with MD-Bench.  If not, see <https://www.gnu.org/licenses/>.
  * =======================================================================================
  */
-#ifndef __PARAMETER_H_
-#define __PARAMETER_H_
+#include <atom.h>
+#include <parameter.h>
 
-#define FF_LJ   0
-#define FF_EAM  1
-
-#if PRECISION == 1
-#define MD_FLOAT float
-#else
-#define MD_FLOAT double
-#endif
+#ifndef __EAM_H_
+#define __EAM_H_
+typedef struct {
+    int nrho, nr;
+    MD_FLOAT drho, dr, cut, mass;
+    MD_FLOAT *frho, *rhor, *zr;
+} Funcfl;
 
 typedef struct {
-    char* input_file;
-    MD_FLOAT epsilon;
-    MD_FLOAT sigma6;
-    MD_FLOAT temp;
-    MD_FLOAT rho;
-    MD_FLOAT mass;
-    int ntypes;
-    int ntimes;
-    int nstat;
-    int every;
-    MD_FLOAT dt;
-    MD_FLOAT dtforce;
-    MD_FLOAT cutforce;
-    MD_FLOAT cutneigh;
-    int nx, ny, nz;
-    MD_FLOAT lattice;
-    MD_FLOAT xprd, yprd, zprd;
-    double proc_freq;
-} Parameter;
+    MD_FLOAT* fp;
+    int nmax;
+    int nrho, nr;
+    int nrho_tot, nr_tot;
+    MD_FLOAT dr, rdr, drho, rdrho;
+    MD_FLOAT *frho, *rhor, *z2r;
+    MD_FLOAT *rhor_spline, *frho_spline, *z2r_spline;
+    MD_FLOAT *cutforcesq;
+    Funcfl* file;
+} Eam;
+
+void init_eam(Eam* eam, int ntypes);
+void coeff(Eam* eam, const char* arg);
+void init_style(Eam* eam);
+void read_file(Funcfl* file, const char* filename);
+void file2array(Eam* eam);
+void array2spline(Eam* eam);
+void interpolate(MMD_int n, MMD_float delta, MMD_float* f, MMD_float* spline);
+void grab(FILE* fptr, MMD_int n, MMD_float* list);
 #endif
