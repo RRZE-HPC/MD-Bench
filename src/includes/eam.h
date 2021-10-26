@@ -2,7 +2,7 @@
  * =======================================================================================
  *
  *   Author:   Jan Eitzinger (je), jan.eitzinger@fau.de
- *   Copyright (c) 2021 RRZE, University Erlangen-Nuremberg
+ *   Copyright (c) 2020 RRZE, University Erlangen-Nuremberg
  *
  *   This file is part of MD-Bench.
  *
@@ -20,38 +20,38 @@
  *   with MD-Bench.  If not, see <https://www.gnu.org/licenses/>.
  * =======================================================================================
  */
+#include <stdio.h>
+
+#include <atom.h>
 #include <parameter.h>
 
-#ifndef __ATOM_H_
-#define __ATOM_H_
+#ifndef __EAM_H_
+#define __EAM_H_
+typedef struct {
+    int nrho, nr;
+    MD_FLOAT drho, dr, cut, mass;
+    MD_FLOAT *frho, *rhor, *zr;
+} Funcfl;
 
 typedef struct {
-    int Natoms, Nlocal, Nghost, Nmax;
-    MD_FLOAT *x, *y, *z;
-    MD_FLOAT *vx, *vy, *vz;
-    MD_FLOAT *fx, *fy, *fz;
-    int *type;
+    MD_FLOAT* fp;
+    int nmax;
     int ntypes;
-    MD_FLOAT *epsilon;
-    MD_FLOAT *sigma6;
+    int nrho, nr;
+    int nrho_tot, nr_tot;
+    MD_FLOAT dr, rdr, drho, rdrho;
+    MD_FLOAT *frho, *rhor, *z2r;
+    MD_FLOAT *rhor_spline, *frho_spline, *z2r_spline;
     MD_FLOAT *cutforcesq;
-    MD_FLOAT *cutneighsq;
-} Atom;
+    Funcfl file;
+} Eam;
 
-extern void initAtom(Atom*);
-extern void createAtom(Atom*, Parameter*);
-extern void growAtom(Atom*);
-
-#ifdef AOS
-#define POS_DATA_LAYOUT     "AoS"
-#define atom_x(i)           atom->x[(i) * 3 + 0]
-#define atom_y(i)           atom->x[(i) * 3 + 1]
-#define atom_z(i)           atom->x[(i) * 3 + 2]
-#else
-#define POS_DATA_LAYOUT     "SoA"
-#define atom_x(i)           atom->x[i]
-#define atom_y(i)           atom->y[i]
-#define atom_z(i)           atom->z[i]
-#endif
-
+void initEam(Eam* eam, const char* input_file, int ntypes);
+void coeff(Eam* eam, const char* arg);
+void init_style(Eam* eam);
+void read_file(Funcfl* file, const char* filename);
+void file2array(Eam* eam);
+void array2spline(Eam* eam);
+void interpolate(int n, MD_FLOAT delta, MD_FLOAT* f, MD_FLOAT* spline);
+void grab(FILE* fptr, int n, MD_FLOAT* list);
 #endif

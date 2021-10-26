@@ -23,6 +23,9 @@
 #ifndef __PARAMETER_H_
 #define __PARAMETER_H_
 
+#define FF_LJ   0
+#define FF_EAM  1
+
 #if PRECISION == 1
 #define MD_FLOAT float
 #else
@@ -30,6 +33,8 @@
 #endif
 
 typedef struct {
+    int force_field;
+    char* input_file;
     MD_FLOAT epsilon;
     MD_FLOAT sigma6;
     MD_FLOAT temp;

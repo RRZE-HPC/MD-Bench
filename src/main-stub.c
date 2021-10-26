@@ -128,7 +128,6 @@ int main(int argc, const char *argv[]) {
     initAtom(atom);
     initStats(&stats);
 
-    #ifdef EXPLICIT_TYPES
     atom->ntypes = param.ntypes;
     atom->epsilon = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
     atom->sigma6 = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
@@ -140,7 +139,6 @@ int main(int argc, const char *argv[]) {
         atom->cutneighsq[i] = param.cutneigh * param.cutneigh;
         atom->cutforcesq[i] = param.cutforce * param.cutforce;
     }
-    #endif
 
     DEBUG("Creating atoms...\n");
     for(int i = 0; i < param.nx; ++i) {
@@ -176,9 +174,7 @@ int main(int argc, const char *argv[]) {
                     for(int jj = 0; jj < fac_y; ++jj) {
                         for(int kk = 0; kk < fac_z; ++kk) {
                             if(added_atoms < atoms_per_unit_cell) {
-                                #ifdef EXPLICIT_TYPES
                                 atom->type[atom->Nlocal] = rand() % atom->ntypes;
-                                #endif
                                 ADD_ATOM(ii * offset_x, jj * offset_y, kk * offset_z, vx, vy, vz);
                                 added_atoms++;
                             }

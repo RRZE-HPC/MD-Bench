@@ -33,9 +33,6 @@ ifneq ($(NEIGHBORS_LOOP_RUNS),)
     DEFINES += -DNEIGHBORS_LOOP_RUNS=$(NEIGHBORS_LOOP_RUNS)
 endif
 
-ifeq ($(strip $(PRINT_STATS)),true)
-    DEFINES += -DPRINT_STATS
-endif
 ifeq ($(strip $(EXPLICIT_TYPES)),true)
     DEFINES += -DEXPLICIT_TYPES
 endif
