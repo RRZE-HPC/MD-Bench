@@ -17,7 +17,7 @@ void displayStatistics(Atom *atom, Parameter *param, Stats *stats, double *timer
     double avg_neigh = stats->total_force_neighs / (double)(atom->Nlocal * (param->ntimes + 1));
     double avg_simd = stats->total_force_iters / (double)(atom->Nlocal * (param->ntimes + 1));
 #ifdef EXPLICIT_TYPES
-    force_useful_volume += 1e-9 * (double)((atom.Nlocal * (param.ntimes + 1)) + stats.total_force_neighs) * sizeof(int);
+    force_useful_volume += 1e-9 * (double)((atom->Nlocal * (param->ntimes + 1)) + stats->total_force_neighs) * sizeof(int);
 #endif
     printf("Statistics:\n");
     printf("\tVector width: %d, Processor frequency: %.4f GHz\n", VECTOR_WIDTH, param->proc_freq);

@@ -41,10 +41,10 @@ double computeForceEam(Eam* eam, Atom *atom, Neighbor *neighbor, Stats *stats, i
 
     int Nlocal = atom->Nlocal;
     int* neighs;
-    MD_FLOAT* fx = atom->fx; MD_FLOAT* fy = atom->fy; MD_FLOAT* fz = atom->fz; MD_FLOAT* fp = eam->fp;
+    MD_FLOAT* fx = atom->fx; MD_FLOAT* fy = atom->fy; MD_FLOAT* fz = atom->fz; int ntypes = atom->ntypes; MD_FLOAT* fp = eam->fp;
     MD_FLOAT* rhor_spline = eam->rhor_spline; MD_FLOAT* frho_spline = eam->frho_spline; MD_FLOAT* z2r_spline = eam->z2r_spline;
     int rdr = eam->rdr; int nr = eam->nr; int nr_tot = eam->nr_tot; int rdrho = eam->rdrho;
-    int nrho = eam->nrho; int nrho_tot = eam->nrho_tot; int ntypes = eam->ntypes;
+    int nrho = eam->nrho; int nrho_tot = eam->nrho_tot;
     double S = getTimeStamp();
     LIKWID_MARKER_START("force_eam_fp");
 
@@ -67,7 +67,7 @@ double computeForceEam(Eam* eam, Atom *atom, Neighbor *neighbor, Stats *stats, i
             MD_FLOAT rsq = delx * delx + dely * dely + delz * delz;
             const int type_j = atom->type[j];
             const int type_ij = type_i * ntypes + type_j;
-            const MD_FLOAT cutforcesq = eam->cutforcesq[type_ij];
+            const MD_FLOAT cutforcesq = atom->cutforcesq[type_ij];
 
             if(rsq < cutforcesq) {
                 MD_FLOAT p = sqrt(rsq) * rdr + 1.0;
@@ -115,7 +115,7 @@ double computeForceEam(Eam* eam, Atom *atom, Neighbor *neighbor, Stats *stats, i
             MD_FLOAT rsq = delx * delx + dely * dely + delz * delz;
             const int type_j = atom->type[j];
             const int type_ij = type_i * ntypes + type_j;
-            const MD_FLOAT cutforcesq = eam->cutforcesq[type_ij];
+            const MD_FLOAT cutforcesq = atom->cutforcesq[type_ij];
 
             if(rsq < cutforcesq) {
                 MD_FLOAT r = sqrt(rsq);

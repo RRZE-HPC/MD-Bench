@@ -84,7 +84,7 @@ double setup(
     param->zprd = param->nz * param->lattice;
 
     S = getTimeStamp();
-    if(param->force_field == FF_EAM) { initEam(eam, param->input_file, param->ntypes); }
+    if(param->force_field == FF_EAM) { initEam(eam, param); }
     initAtom(atom);
     initNeighbor(neighbor, param);
     initPbc();
