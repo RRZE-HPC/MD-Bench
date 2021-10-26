@@ -45,7 +45,10 @@ void initEam(Eam* eam, Parameter* param) {
 void coeff(Eam* eam, Parameter* param) {
     read_file(&eam->file, param->input_file);
     param->cutforce = eam->file.cut;
-    param->cutneigh = param->cutforce + 0.3;
+    param->cutneigh = param->cutforce + 1.0;
+    param->temp = 600.0;
+    param->dt = 0.001;
+    param->rho = 0.07041125;
 }
 
 void init_style(Eam* eam, Parameter* param) {

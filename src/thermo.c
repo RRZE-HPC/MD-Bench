@@ -50,11 +50,20 @@ void setupThermo(Parameter *param, int natoms)
     engarr = (MD_FLOAT*) malloc(maxstat * sizeof(MD_FLOAT));
     prsarr = (MD_FLOAT*) malloc(maxstat * sizeof(MD_FLOAT));
 
-    mvv2e = 1.0;
-    dof_boltz = (natoms * 3 - 3);
-    t_scale = mvv2e / dof_boltz;
-    p_scale = 1.0 / 3 / param->xprd / param->yprd / param->zprd;
-    e_scale = 0.5;
+    if(param->force_field == FF_LJ) {
+        mvv2e = 1.0;
+        dof_boltz = (natoms * 3 - 3);
+        t_scale = mvv2e / dof_boltz;
+        p_scale = 1.0 / 3 / param->xprd / param->yprd / param->zprd;
+        e_scale = 0.5;
+    } else {
+        mvv2e = 1.036427e-04;
+        dof_boltz = (natoms * 3 - 3) * 8.617343e-05;
+        t_scale = mvv2e / dof_boltz;
+        p_scale = 1.602176e+06 / 3 / param->xprd / param->yprd / param->zprd;
+        e_scale = 524287.985533;//16.0;
+        param->dtforce /= mvv2e;
+    }
 
     printf("step\ttemp\t\tpressure\n");
 }
