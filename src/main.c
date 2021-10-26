@@ -42,7 +42,8 @@
 
 #define HLINE "----------------------------------------------------------------------------\n"
 
-extern double computeForce(Parameter*, Atom*, Neighbor*, Stats*, int, int);
+extern double computeForce(Parameter*, Atom*, Neighbor*);
+extern double computeForceTracing(Parameter*, Atom*, Neighbor*, Stats*, int, int);
 
 void init(Parameter *param)
 {
@@ -211,7 +212,11 @@ int main (int argc, char** argv)
 
     setup(&param, &atom, &neighbor, &stats);
     computeThermo(0, &param, &atom);
-    computeForce(&param, &atom, &neighbor, &stats, 1, 0);
+#if defined(MEM_TRACER) || defined(INDEX_TRACER) || defined(PRINT_STATS)
+    computeForceTracing(&param, &atom, &neighbor, &stats, 1, 0);
+#else
+    computeForce(&param, &atom, &neighbor);
+#endif
 
     timer[FORCE] = 0.0;
     timer[NEIGH] = 0.0;
@@ -226,7 +231,11 @@ int main (int argc, char** argv)
             timer[NEIGH] += reneighbour(&param, &atom, &neighbor);
         }
 
-        timer[FORCE] += computeForce(&param, &atom, &neighbor, &stats, 0, n + 1);
+#if defined(MEM_TRACER) || defined(INDEX_TRACER) || defined(PRINT_STATS)
+        timer[FORCE] += computeForceTracing(&param, &atom, &neighbor, &stats, 0, n + 1);
+#else
+        timer[FORCE] += computeForce(&param, &atom, &neighbor);
+#endif
         finalIntegrate(&param, &atom);
 
         if(!((n + 1) % param.nstat) && (n+1) < param.ntimes) {
@@ -251,7 +260,9 @@ int main (int argc, char** argv)
     printf(HLINE);
     printf("Performance: %.2f million atom updates per second\n",
             1e-6 * (double) atom.Natoms * param.ntimes / timer[TOTAL]);
+#ifdef PRINT_STATS
     displayStatistics(&atom, &param, &stats, timer);
+#endif
     LIKWID_MARKER_CLOSE;
     return EXIT_SUCCESS;
 }
