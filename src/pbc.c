@@ -93,12 +93,14 @@ void updateAtomsPbc(Atom *atom, Parameter *param)
  * defining ghost atoms around domain
  * only creates mapping and coordinate corrections
  * that are then enforced in updatePbc */
-#define ADDGHOST(dx,dy,dz) \
-    Nghost++;              \
-    BorderMap[Nghost] = i; \
-    PBCx[Nghost] = dx;     \
-    PBCy[Nghost] = dy;     \
-    PBCz[Nghost] = dz;
+#define ADDGHOST(dx,dy,dz)                              \
+    Nghost++;                                           \
+    BorderMap[Nghost] = i;                              \
+    PBCx[Nghost] = dx;                                  \
+    PBCy[Nghost] = dy;                                  \
+    PBCz[Nghost] = dz;                                  \
+    atom->type[atom->Nlocal + Nghost] = atom->type[i]
+
 void setupPbc(Atom *atom, Parameter *param)
 {
     MD_FLOAT xprd = param->xprd;
