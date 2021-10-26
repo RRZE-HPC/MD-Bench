@@ -1,7 +1,7 @@
 # Compiler tag (GCC/CLANG/ICC)
-TAG ?= ICC
+TAG ?= CLANG
 # Enable likwid (true or false)
-ENABLE_LIKWID ?= true
+ENABLE_LIKWID ?= false
 # SP or DP
 DATA_TYPE ?= DP
 # AOS or SOA
