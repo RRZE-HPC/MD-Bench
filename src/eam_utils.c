@@ -34,28 +34,24 @@
 #define MAXLINE 4096
 #endif
 
-void initEam(Eam* eam, const char* input_file, int ntypes) {
+void initEam(Eam* eam, Parameter* param) {
+    int ntypes = param->ntypes;
     eam->nmax = 0;
     eam->fp = NULL;
-    eam->ntypes = ntypes;
-    eam->cutforcesq = (MD_FLOAT *) allocate(ALIGNMENT, ntypes * ntypes * sizeof(MD_FLOAT));
-    coeff(eam, input_file);
-    init_style(eam);
+    coeff(eam, param);
+    init_style(eam, param);
 }
 
-void coeff(Eam* eam, const char* arg) {
-    read_file(&eam->file, arg);
-    int n = strlen(arg) + 1;
-    int ntypes = eam->ntypes;
-    double cutmax = eam->file.cut;
-    for(int i=0; i<ntypes*ntypes; i++)
-        eam->cutforcesq[i] = cutmax * cutmax;
+void coeff(Eam* eam, Parameter* param) {
+    read_file(&eam->file, param->input_file);
+    param->cutforce = eam->file.cut;
+    param->cutneigh = param->cutforce + 0.3;
 }
 
-void init_style(Eam* eam) {
+void init_style(Eam* eam, Parameter* param) {
     // convert read-in file(s) to arrays and spline them
     file2array(eam);
-    array2spline(eam);
+    array2spline(eam, param);
 }
 
 void read_file(Funcfl* file, const char* filename) {
@@ -214,7 +210,7 @@ void file2array(Eam* eam) {
     }
 }
 
-void array2spline(Eam* eam) {
+void array2spline(Eam* eam, Parameter* param) {
     eam->rdr = 1.0 / eam->dr;
     eam->rdrho = 1.0 / eam->drho;
     eam->nrho_tot = (eam->nrho + 1) * 7 + 64;
@@ -222,7 +218,7 @@ void array2spline(Eam* eam) {
     eam->nrho_tot -= eam->nrho_tot%64;
     eam->nr_tot -= eam->nr_tot%64;
 
-    int ntypes = eam->ntypes;
+    int ntypes = param->ntypes;
     eam->frho_spline = (MD_FLOAT *) allocate(ALIGNMENT, ntypes * ntypes * eam->nrho_tot * sizeof(MD_FLOAT));
     eam->rhor_spline = (MD_FLOAT *) allocate(ALIGNMENT, ntypes * ntypes * eam->nr_tot * sizeof(MD_FLOAT));
     eam->z2r_spline = (MD_FLOAT *) allocate(ALIGNMENT, ntypes * ntypes * eam->nr_tot * sizeof(MD_FLOAT));
