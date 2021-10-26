@@ -43,7 +43,8 @@
 
 #define HLINE "----------------------------------------------------------------------------\n"
 
-extern double computeForce(Parameter*, Atom*, Neighbor*, Stats*, int, int);
+extern double computeForce(Parameter*, Atom*, Neighbor*);
+extern double computeForceTracing(Parameter*, Atom*, Neighbor*, Stats*, int, int);
 extern double computeForceEam(Eam* eam, Atom *atom, Neighbor *neighbor, Stats *stats, int first_exec, int timestep);
 
 void init(Parameter *param)
@@ -152,11 +153,11 @@ void printAtomState(Atom *atom)
     printf("Atom counts: Natoms=%d Nlocal=%d Nghost=%d Nmax=%d\n",
             atom->Natoms, atom->Nlocal, atom->Nghost, atom->Nmax);
 
-/*     int nall = atom->Nlocal + atom->Nghost; */
+    /*     int nall = atom->Nlocal + atom->Nghost; */
 
-/*     for (int i=0; i<nall; i++) { */
-/*         printf("%d  %f %f %f\n", i, atom->x[i], atom->y[i], atom->z[i]); */
-/*     } */
+    /*     for (int i=0; i<nall; i++) { */
+    /*         printf("%d  %f %f %f\n", i, atom->x[i], atom->y[i], atom->z[i]); */
+    /*     } */
 }
 
 int str2ff(const char *string)
@@ -247,11 +248,14 @@ int main(int argc, char** argv)
 
     setup(&param, &eam, &atom, &neighbor, &stats);
     computeThermo(0, &param, &atom);
-
     if(param.force_field == FF_EAM) {
         computeForceEam(&eam, &atom, &neighbor, &stats, 1, 0);
     } else {
-        computeForce(&param, &atom, &neighbor, &stats, 1, 0);
+#if defined(MEM_TRACER) || defined(INDEX_TRACER) || defined(COMPUTE_STATS)
+        computeForceTracing(&param, &atom, &neighbor, &stats, 1, 0);
+#else
+        computeForce(&param, &atom, &neighbor);
+#endif
     }
 
     timer[FORCE] = 0.0;
@@ -270,9 +274,12 @@ int main(int argc, char** argv)
         if(param.force_field == FF_EAM) {
             timer[FORCE] += computeForceEam(&eam, &atom, &neighbor, &stats, 0, n + 1);
         } else {
-            timer[FORCE] += computeForce(&param, &atom, &neighbor, &stats, 0, n + 1);
+#if defined(MEM_TRACER) || defined(INDEX_TRACER) || defined(COMPUTE_STATS)
+            timer[FORCE] += computeForceTracing(&param, &atom, &neighbor, &stats, 0, n + 1);
+#else
+            timer[FORCE] += computeForce(&param, &atom, &neighbor);
+#endif
         }
-
         finalIntegrate(&param, &atom);
 
         if(!((n + 1) % param.nstat) && (n+1) < param.ntimes) {
@@ -298,7 +305,9 @@ int main(int argc, char** argv)
     printf(HLINE);
     printf("Performance: %.2f million atom updates per second\n",
             1e-6 * (double) atom.Natoms * param.ntimes / timer[TOTAL]);
+#ifdef COMPUTE_STATS
     displayStatistics(&atom, &param, &stats, timer);
+#endif
     LIKWID_MARKER_CLOSE;
     return EXIT_SUCCESS;
 }
