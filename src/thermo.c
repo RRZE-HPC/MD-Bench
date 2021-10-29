@@ -31,7 +31,7 @@ static MD_FLOAT *tmparr;
 static MD_FLOAT *engarr;
 static MD_FLOAT *prsarr;
 static MD_FLOAT mvv2e;
-static int dof_boltz;
+static MD_FLOAT dof_boltz;
 static MD_FLOAT t_scale;
 static MD_FLOAT p_scale;
 static MD_FLOAT e_scale;
@@ -81,7 +81,6 @@ void computeThermo(int iflag, Parameter *param, Atom *atom)
 
     t = t * t_scale;
     p = (t * dof_boltz) * p_scale;
-
     int istep = iflag;
 
     if(iflag == -1){

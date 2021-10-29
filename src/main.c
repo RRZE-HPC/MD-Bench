@@ -40,6 +40,7 @@
 #include <pbc.h>
 #include <timers.h>
 #include <eam.h>
+#include <vtk.h>
 
 #define HLINE "----------------------------------------------------------------------------\n"
 
@@ -50,6 +51,7 @@ extern double computeForceEam(Eam* eam, Atom *atom, Neighbor *neighbor, Stats *s
 void init(Parameter *param)
 {
     param->input_file = NULL;
+    param->vtk_file = NULL;
     param->force_field = FF_LJ;
     param->epsilon = 1.0;
     param->sigma6 = 1.0;
@@ -77,6 +79,7 @@ double setup(
         Neighbor *neighbor,
         Stats *stats)
 {
+    if(param->force_field == FF_EAM) { initEam(eam, param); }
     double S, E;
     param->lattice = pow((4.0 / param->rho), (1.0 / 3.0));
     param->xprd = param->nx * param->lattice;
@@ -84,7 +87,6 @@ double setup(
     param->zprd = param->nz * param->lattice;
 
     S = getTimeStamp();
-    if(param->force_field == FF_EAM) { initEam(eam, param); }
     initAtom(atom);
     initNeighbor(neighbor, param);
     initPbc();
@@ -232,6 +234,11 @@ int main(int argc, char** argv)
             param.proc_freq = atof(argv[++i]);
             continue;
         }
+        if((strcmp(argv[i], "--vtk") == 0))
+        {
+            param.vtk_file = strdup(argv[++i]);
+            continue;
+        }
         if((strcmp(argv[i], "-h") == 0) || (strcmp(argv[i], "--help") == 0))
         {
             printf("MD Bench: A minimalistic re-implementation of miniMD\n");
@@ -241,6 +248,7 @@ int main(int argc, char** argv)
             printf("-n / --nsteps <int>:  set number of timesteps for simulation\n");
             printf("-nx/-ny/-nz <int>:    set linear dimension of systembox in x/y/z direction\n");
             printf("--freq <real>:        processor frequency (GHz)\n");
+            printf("--vtk <string>:       VTK file for visualization\n");
             printf(HLINE);
             exit(EXIT_SUCCESS);
         }
@@ -261,6 +269,10 @@ int main(int argc, char** argv)
     timer[FORCE] = 0.0;
     timer[NEIGH] = 0.0;
     timer[TOTAL] = getTimeStamp();
+
+    if(param.vtk_file != NULL) {
+        write_atoms_to_vtk_file(param.vtk_file, &atom, 0);
+    }
 
     for(int n = 0; n < param.ntimes; n++) {
         initialIntegrate(&param, &atom);
@@ -284,6 +296,10 @@ int main(int argc, char** argv)
 
         if(!((n + 1) % param.nstat) && (n+1) < param.ntimes) {
             computeThermo(n + 1, &param, &atom);
+        }
+
+        if(param.vtk_file != NULL) {
+            write_atoms_to_vtk_file(param.vtk_file, &atom, n + 1);
         }
     }
 

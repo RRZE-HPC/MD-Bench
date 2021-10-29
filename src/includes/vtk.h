@@ -20,38 +20,9 @@
  *   with MD-Bench.  If not, see <https://www.gnu.org/licenses/>.
  * =======================================================================================
  */
-#ifndef __PARAMETER_H_
-#define __PARAMETER_H_
+#include <atom.h>
 
-#define FF_LJ   0
-#define FF_EAM  1
-
-#if PRECISION == 1
-#define MD_FLOAT float
-#else
-#define MD_FLOAT double
-#endif
-
-typedef struct {
-    int force_field;
-    char* input_file;
-    char* vtk_file;
-    MD_FLOAT epsilon;
-    MD_FLOAT sigma6;
-    MD_FLOAT temp;
-    MD_FLOAT rho;
-    MD_FLOAT mass;
-    int ntypes;
-    int ntimes;
-    int nstat;
-    int every;
-    MD_FLOAT dt;
-    MD_FLOAT dtforce;
-    MD_FLOAT cutforce;
-    MD_FLOAT cutneigh;
-    int nx, ny, nz;
-    MD_FLOAT lattice;
-    MD_FLOAT xprd, yprd, zprd;
-    double proc_freq;
-} Parameter;
+#ifndef __VTK_H_
+#define __VTK_H_
+extern int write_atoms_to_vtk_file(const char* filename, Atom* atom, int timestep);
 #endif
