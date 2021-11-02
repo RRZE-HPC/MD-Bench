@@ -135,7 +135,7 @@ void file2array(Eam* eam) {
         cof3 = -0.5 * p * (p + 1.0) * (p - 2.0);
         cof4 = sixth * p * (p * p - 1.0);
         eam->frho[m] = cof1 * file->frho[k - 1] + cof2 * file->frho[k] +
-        cof3 * file->frho[k + 1] + cof4 * file->frho[k + 2];
+                       cof3 * file->frho[k + 1] + cof4 * file->frho[k + 2];
     }
 
 
@@ -161,7 +161,7 @@ void file2array(Eam* eam) {
         cof3 = -0.5 * p * (p + 1.0) * (p - 2.0);
         cof4 = sixth * p * (p * p - 1.0);
         eam->rhor[m] = cof1 * file->rhor[k - 1] + cof2 * file->rhor[k] +
-        cof3 * file->rhor[k + 1] + cof4 * file->rhor[k + 2];
+                       cof3 * file->rhor[k + 1] + cof4 * file->rhor[k + 2];
         //if(m==119)printf("BuildRho: %e %e %e %e %e %e\n",rhor[m],cof1,cof2,cof3,cof4,file->rhor[k]);
     }
 
