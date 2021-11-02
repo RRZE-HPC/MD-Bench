@@ -46,7 +46,7 @@
 
 extern double computeForce(Parameter*, Atom*, Neighbor*);
 extern double computeForceTracing(Parameter*, Atom*, Neighbor*, Stats*, int, int);
-extern double computeForceEam(Eam* eam, Atom *atom, Neighbor *neighbor, Stats *stats, int first_exec, int timestep);
+extern double computeForceEam(Eam* eam, Parameter*, Atom *atom, Neighbor *neighbor, Stats *stats, int first_exec, int timestep);
 
 void init(Parameter *param)
 {
@@ -89,7 +89,7 @@ double setup(
     S = getTimeStamp();
     initAtom(atom);
     initNeighbor(neighbor, param);
-    initPbc();
+    initPbc(atom);
     initStats(stats);
     setupNeighbor();
     createAtom(atom, param);
@@ -115,7 +115,7 @@ double reneighbour(
     updateAtomsPbc(atom, param);
     setupPbc(atom, param);
     updatePbc(atom, param);
-    /* sortAtom(); */
+    //sortAtom(atom);
     buildNeighbor(atom, neighbor);
     LIKWID_MARKER_STOP("reneighbour");
     E = getTimeStamp();
@@ -257,7 +257,7 @@ int main(int argc, char** argv)
     setup(&param, &eam, &atom, &neighbor, &stats);
     computeThermo(0, &param, &atom);
     if(param.force_field == FF_EAM) {
-        computeForceEam(&eam, &atom, &neighbor, &stats, 1, 0);
+        computeForceEam(&eam, &param, &atom, &neighbor, &stats, 1, 0);
     } else {
 #if defined(MEM_TRACER) || defined(INDEX_TRACER) || defined(COMPUTE_STATS)
         computeForceTracing(&param, &atom, &neighbor, &stats, 1, 0);
@@ -284,7 +284,7 @@ int main(int argc, char** argv)
         }
 
         if(param.force_field == FF_EAM) {
-            timer[FORCE] += computeForceEam(&eam, &atom, &neighbor, &stats, 0, n + 1);
+            timer[FORCE] += computeForceEam(&eam, &param, &atom, &neighbor, &stats, 0, n + 1);
         } else {
 #if defined(MEM_TRACER) || defined(INDEX_TRACER) || defined(COMPUTE_STATS)
             timer[FORCE] += computeForceTracing(&param, &atom, &neighbor, &stats, 0, n + 1);

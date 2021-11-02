@@ -340,3 +340,57 @@ void binatoms(Atom *atom)
         }
     }
 }
+
+void sortAtom(Atom* atom) {
+    binatoms(atom);
+    int Nmax = atom->Nmax;
+    int* binpos = bincount;
+
+    for(int i=1; i<mbins; i++) {
+        binpos[i] += binpos[i-1];
+    }
+
+#ifdef AOS
+    double* new_x = (double*) malloc(Nmax * sizeof(MD_FLOAT) * 3);
+#else
+    double* new_x = (double*) malloc(Nmax * sizeof(MD_FLOAT));
+    double* new_y = (double*) malloc(Nmax * sizeof(MD_FLOAT));
+    double* new_z = (double*) malloc(Nmax * sizeof(MD_FLOAT));
+#endif
+    double* new_vx = (double*) malloc(Nmax * sizeof(MD_FLOAT));
+    double* new_vy = (double*) malloc(Nmax * sizeof(MD_FLOAT));
+    double* new_vz = (double*) malloc(Nmax * sizeof(MD_FLOAT));
+    double* old_x = atom->x; double* old_y = atom->y; double* old_z = atom->z;
+    double* old_vx = atom->vx; double* old_vy = atom->vy; double* old_vz = atom->vz;
+
+    for(int mybin = 0; mybin<mbins; mybin++) {
+        int start = mybin>0?binpos[mybin-1]:0;
+        int count = binpos[mybin] - start;
+        for(int k=0; k<count; k++) {
+            int new_i = start + k;
+            int old_i = bins[mybin * atoms_per_bin + k];
+#ifdef AOS
+            new_x[new_i * 3 + 0] = old_x[old_i * 3 + 0];
+            new_x[new_i * 3 + 1] = old_x[old_i * 3 + 1];
+            new_x[new_i * 3 + 2] = old_x[old_i * 3 + 2];
+#else
+            new_x[new_i] = old_x[old_i];
+            new_y[new_i] = old_y[old_i];
+            new_z[new_i] = old_z[old_i];
+#endif
+            new_vx[new_i] = old_vx[old_i];
+            new_vy[new_i] = old_vy[old_i];
+            new_vz[new_i] = old_vz[old_i];
+        }
+    }
+
+    free(atom->x);
+    atom->x = new_x;
+#ifndef AOS
+    free(atom->y);
+    free(atom->z);
+    atom->y = new_y; atom->z = new_z;
+#endif
+    free(atom->vx); free(atom->vy); free(atom->vz);
+    atom->vx = new_vx; atom->vy = new_vy; atom->vz = new_vz;
+}

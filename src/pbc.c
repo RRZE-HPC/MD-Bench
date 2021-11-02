@@ -30,16 +30,15 @@
 #define DELTA 20000
 
 static int NmaxGhost;
-static int *BorderMap;
 static int *PBCx, *PBCy, *PBCz;
 
-static void growPbc();
+static void growPbc(Atom*);
 
 /* exported subroutines */
-void initPbc()
+void initPbc(Atom* atom)
 {
     NmaxGhost = 0;
-    BorderMap = NULL;
+    atom->border_map = NULL;
     PBCx = NULL; PBCy = NULL; PBCz = NULL;
 }
 
@@ -47,15 +46,16 @@ void initPbc()
 /* uses mapping created in setupPbc */
 void updatePbc(Atom *atom, Parameter *param)
 {
+    int *border_map = atom->border_map;
     int nlocal = atom->Nlocal;
     MD_FLOAT xprd = param->xprd;
     MD_FLOAT yprd = param->yprd;
     MD_FLOAT zprd = param->zprd;
 
     for(int i = 0; i < atom->Nghost; i++) {
-        atom_x(nlocal + i) = atom_x(BorderMap[i]) + PBCx[i] * xprd;
-        atom_y(nlocal + i) = atom_y(BorderMap[i]) + PBCy[i] * yprd;
-        atom_z(nlocal + i) = atom_z(BorderMap[i]) + PBCz[i] * zprd;
+        atom_x(nlocal + i) = atom_x(border_map[i]) + PBCx[i] * xprd;
+        atom_y(nlocal + i) = atom_y(border_map[i]) + PBCy[i] * yprd;
+        atom_z(nlocal + i) = atom_z(border_map[i]) + PBCz[i] * zprd;
     }
 }
 
@@ -95,7 +95,7 @@ void updateAtomsPbc(Atom *atom, Parameter *param)
  * that are then enforced in updatePbc */
 #define ADDGHOST(dx,dy,dz)                              \
     Nghost++;                                           \
-    BorderMap[Nghost] = i;                              \
+    border_map[Nghost] = i;                             \
     PBCx[Nghost] = dx;                                  \
     PBCy[Nghost] = dy;                                  \
     PBCz[Nghost] = dz;                                  \
@@ -103,6 +103,7 @@ void updateAtomsPbc(Atom *atom, Parameter *param)
 
 void setupPbc(Atom *atom, Parameter *param)
 {
+    int *border_map = atom->border_map;
     MD_FLOAT xprd = param->xprd;
     MD_FLOAT yprd = param->yprd;
     MD_FLOAT zprd = param->zprd;
@@ -115,7 +116,8 @@ void setupPbc(Atom *atom, Parameter *param)
             growAtom(atom);
         }
         if (Nghost + 7 >= NmaxGhost) {
-            growPbc();
+            growPbc(atom);
+            border_map = atom->border_map;
         }
 
         MD_FLOAT x = atom_x(i);
@@ -158,12 +160,12 @@ void setupPbc(Atom *atom, Parameter *param)
 }
 
 /* internal subroutines */
-void growPbc()
+void growPbc(Atom* atom)
 {
     int nold = NmaxGhost;
     NmaxGhost += DELTA;
 
-    BorderMap = (int*) reallocate(BorderMap, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));
+    atom->border_map = (int*) reallocate(atom->border_map, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));
     PBCx = (int*) reallocate(PBCx, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));
     PBCy = (int*) reallocate(PBCy, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));
     PBCz = (int*) reallocate(PBCz, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));

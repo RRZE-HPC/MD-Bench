@@ -30,6 +30,7 @@ typedef struct {
     MD_FLOAT *x, *y, *z;
     MD_FLOAT *vx, *vy, *vz;
     MD_FLOAT *fx, *fy, *fz;
+    int *border_map;
     int *type;
     int ntypes;
     MD_FLOAT *epsilon;
