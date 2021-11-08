@@ -20,6 +20,8 @@
  *   with MD-Bench.  If not, see <https://www.gnu.org/licenses/>.
  * =======================================================================================
  */
+#include <cuda_runtime.h>
+
 #include <likwid-marker.h>
 
 #include <timing.h>

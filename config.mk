@@ -1,5 +1,5 @@
-# Compiler tag (GCC/CLANG/ICC)
-TAG ?= CLANG
+# Compiler tag (GCC/CLANG/ICC/NVCC)
+TAG ?= NVCC
 # Enable likwid (true or false)
 ENABLE_LIKWID ?= false
 # SP or DP
