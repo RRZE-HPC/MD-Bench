@@ -14,9 +14,9 @@ computeForce:
         push      r15
         push      rbx
         mov       r9d, DWORD PTR [4+rsi]                            # r9d <- atom->Nlocal
-        vmovsd    xmm2, QWORD PTR [72+rdi]                          # xmm2 <- param->cutforce
-        vmovsd    xmm1, QWORD PTR [8+rdi]                           # xmm1 <- param->sigma6
-        vmovsd    xmm0, QWORD PTR [rdi]                             # xmm0 <- param->epsilon
+        vmovsd    xmm2, QWORD PTR [96+rdi]                          # xmm2 <- param->cutforce
+        vmovsd    xmm1, QWORD PTR [32+rdi]                          # xmm1 <- param->sigma6
+        vmovsd    xmm0, QWORD PTR [24+rdi]                          # xmm0 <- param->epsilon
         mov       r13, QWORD PTR [64+rsi]                           # r13 <- atom->fx
         mov       r14, QWORD PTR [72+rsi]                           # r14 <- atom->fy
         mov       rdi, QWORD PTR [80+rsi]                           # rdi <- atom->fz
@@ -174,14 +174,14 @@ computeForce:
         vpaddd     ymm4, ymm3, ymm3
         vpaddd     ymm3, ymm3, ymm4
         vpxord     zmm4, zmm4, zmm4
-        vgatherdpd zmm4{k1}, QWORD PTR [rdx+ymm3*8]
-        vgatherdpd zmm5{k2}, QWORD PTR [8+rdx+ymm3*8]
-        vgatherdpd zmm6{k3}, QWORD PTR [16+rdx+ymm3*8]
+        vgatherdpd zmm4{k1}, [rdx+ymm3*8]
+        vgatherdpd zmm5{k2}, [8+rdx+ymm3*8]
+        vgatherdpd zmm6{k3}, [16+rdx+ymm3*8]
         ### SOA
         #vpxord     zmm4, zmm4, zmm4
-        #vgatherdpd zmm5{k2}, QWORD PTR [rax+ymm3*8]
-        #vgatherdpd zmm4{k1}, QWORD PTR [rdx+ymm3*8]
-        #vgatherdpd zmm6{k3}, QWORD PTR [rsi+ymm3*8]
+        #vgatherdpd zmm5{k2}, [rax+ymm3*8]
+        #vgatherdpd zmm4{k1}, [rdx+ymm3*8]
+        #vgatherdpd zmm6{k3}, [rsi+ymm3*8]
         ###
 
         vsubpd    zmm29, zmm1, zmm5                                 # zmm29 <- atom_y(i) - atom_y(j) -- dely
@@ -217,9 +217,9 @@ computeForce:
         vpbroadcastd ymm0, r14d
         vpcmpgtd  k1, ymm0, ymm17
         kmovw     r15d, k1
-        vmovdqu   ymm3{k3}{z}, YMMWORD PTR [rcx+r9*4]
-        kmov      k2, k1
-        kmov      k3, k1
+        vmovdqu32 ymm3{k3}{z}, YMMWORD PTR [rcx+r9*4]
+        kmovw     k2, k1
+        kmovw     k3, k1
         vpxord    zmm5, zmm5, zmm5
         vpxord    zmm6, zmm6, zmm6
 
@@ -227,14 +227,14 @@ computeForce:
         vpaddd     ymm4, ymm3, ymm3
         vpaddd     ymm3, ymm3, ymm4
         vpxord     zmm4, zmm4, zmm4
-        vgatherdpd zmm4{k1}, QWORD PTR [rdx+ymm3*8]
-        vgatherdpd zmm5{k2}, QWORD PTR [8+rdx+ymm3*8]
-        vgatherdpd zmm6{k3}, QWORD PTR [16+rdx+ymm3*8]
+        vgatherdpd zmm4{k1}, [rdx+ymm3*8]
+        vgatherdpd zmm5{k2}, [8+rdx+ymm3*8]
+        vgatherdpd zmm6{k3}, [16+rdx+ymm3*8]
         ### SOA
         #vpxord     zmm4, zmm4, zmm4
-        #vgatherdpd zmm5{k2}, QWORD PTR [rax+ymm3*8]
-        #vgatherdpd zmm4{k1}, QWORD PTR [rdx+ymm3*8]
-        #vgatherdpd zmm6{k3}, QWORD PTR [rsi+ymm3*8]
+        #vgatherdpd zmm5{k2}, [rax+ymm3*8]
+        #vgatherdpd zmm4{k1}, [rdx+ymm3*8]
+        #vgatherdpd zmm6{k3}, [rsi+ymm3*8]
         ###
 
         vsubpd    zmm29, zmm1, zmm5                                 # zmm29 <- atom_y(i) - atom_y(j) -- dely
