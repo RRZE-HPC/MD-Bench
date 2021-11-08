@@ -7,9 +7,12 @@ computeForce:
 # parameter 1: rdi Parameter*
 # parameter 2: rsi Atom*
 # parameter 3: rdx Neighbor*
+        push      rbp
         push      r12
         push      r13
         push      r14
+        push      r15
+        push      rbx
         mov       r9d, DWORD PTR [4+rsi]                            # r9d <- atom->Nlocal
         vmovsd    xmm2, QWORD PTR [72+rdi]                          # xmm2 <- param->cutforce
         vmovsd    xmm1, QWORD PTR [8+rdi]                           # xmm1 <- param->sigma6
@@ -18,19 +21,17 @@ computeForce:
         mov       r14, QWORD PTR [72+rsi]                           # r14 <- atom->fy
         mov       rdi, QWORD PTR [80+rsi]                           # rdi <- atom->fz
         test      r9d, r9d                                          # atom->Nlocal <= 0
-        jle       ..exit_func
-
-..B1.2:
+        jle       ..atom_loop_exit
         xor       r10d, r10d                                        # r10d <- 0
         mov       ecx, r9d                                          # ecx <- atom->Nlocal
         xor       r8d, r8d                                          # r8d <- 0
         mov       r11d, 1                                           # r11d <- 1
         xor       eax, eax                                          # eax <- 0
         shr       ecx, 1                                            # ecx <- atom->Nlocal >> 1
-        je        ..B1.6                                            # ecx == 0
+        je        ..zero_last_element                               # ecx == 0
 
-# Init forces to zero loop
-..B1.4:
+# Init forces to zero loop (unroll factor = 2)
+..init_force_loop:
         mov       QWORD PTR [r8+r13], rax                           # fx[i] <- 0
         mov       QWORD PTR [r8+r14], rax                           # fy[i] <- 0
         mov       QWORD PTR [r8+rdi], rax                           # fz[i] <- 0
@@ -40,24 +41,25 @@ computeForce:
         add       r8, 16                                            # i++
         inc       r10                                               # i++
         cmp       r10, rcx                                          # i < Nlocal
-        jb        ..B1.4
+        jb        ..init_force_loop
 
-..B1.5:
+# Trick to make r11d contain value of last element to be zeroed plus 1
+# Maybe we can directly put r10+10 here and zero r11d above, then remove the -1 below
         lea       r11d, DWORD PTR [1+r10+r10]                       # r11d <- i * 2 + 1
-..B1.6:
-        lea       ecx, DWORD PTR [-1+r11]                           # r11d <- i * 2
-        cmp       ecx, r9d                                          # i < Nlocal
-        jae       ..B1.8
+..zero_last_element:
+        lea       ecx, DWORD PTR [-1+r11]                           # ecx <- i * 2
+        cmp       ecx, r9d                                          # i >= Nlocal
+        jae       ..before_atom_loop
 
-..B1.7:
+        # Set last element to zero
         movsxd    r11, r11d                                         # r11 <- i * 2
         mov       QWORD PTR [-8+r13+r11*8], rax                     # fx[i] <- 0
         mov       QWORD PTR [-8+r14+r11*8], rax                     # fy[i] <- 0
         mov       QWORD PTR [-8+rdi+r11*8], rax                     # fz[i] <- 0
 
-..B1.8:
+# Initialize registers to be used within atom loop
+..before_atom_loop:
         vmulsd    xmm15, xmm2, xmm2                                 # xmm15 <- cutforcesq
-        xor       r8d, r8d                                          # r8d <- 0
         vmovdqu32 ymm18, YMMWORD PTR .L_2il0floatpacket.0[rip]      # ymm18 <- [8, ...]
         vmulsd    xmm0, xmm0, QWORD PTR .L_2il0floatpacket.3[rip]   # xmm0 <- 48 *  epsilon
         vmovdqu32 ymm17, YMMWORD PTR .L_2il0floatpacket.1[rip]      # ymm17 <- [0..7]
@@ -71,15 +73,15 @@ computeForce:
         mov       r11, QWORD PTR [8+rdx]                            # r11 <- neighbor->neighbors
         movsxd    r12, DWORD PTR [16+rdx]                           # r12 <- neighbor->maxneighs
         mov       rdx, QWORD PTR [16+rsi]                           # rdx <- atom->x
-
         ### AOS
         xor        eax, eax
         ### SOA
-        #mov       rax, QWORD PTR [24+rsi]                           # rax <- atom->y
-        #mov       rsi, QWORD PTR [32+rsi]                           # rsi <- atom->z
+        #mov       rax, QWORD PTR [24+rsi]                          # rax <- atom->y
+        #mov       rsi, QWORD PTR [32+rsi]                          # rsi <- atom->z
         ###
-
         shl       r12, 2                                            # r12 <- neighbor->maxneighs * 4
+
+        # Register spilling
         mov       QWORD PTR [-32+rsp], r9                           # [-32+rsp] <- atom->Nlocal
         mov       QWORD PTR [-24+rsp], rcx                          # [-24+rsp] <- neighbor->numneigh
         mov       QWORD PTR [-16+rsp], r14                          # [-16+rsp] <- atom->fy
@@ -87,8 +89,7 @@ computeForce:
         mov       QWORD PTR [-40+rsp], r15                          # [-40+rsp] <- r15
         mov       QWORD PTR [-48+rsp], rbx                          # [-48+rsp] <- rbx
 
-# Loop over all atoms
-..B1.9:
+..atom_loop_begin:
         mov       rcx, QWORD PTR [-24+rsp]                          # rcx <- neighbor->numneigh
         vxorpd    xmm25, xmm25, xmm25                               # xmm25 <- 0
         vmovapd   xmm20, xmm25                                      # xmm20 <- 0
@@ -104,21 +105,27 @@ computeForce:
         #vmovsd    xmm9, QWORD PTR [rax+r10*8]                      # xmm9 <- atom->y[i]
         #vmovsd    xmm10, QWORD PTR [rsi+r10*8]                     # xmm10 <- atom->z[i]
         ###
-
+        vbroadcastsd zmm0, xmm8                                     # zmm0 <- atom_x(i)
+        vbroadcastsd zmm1, xmm9                                     # zmm1 <- atom_y(i)
+        vbroadcastsd zmm2, xmm10                                    # zmm2 <- atom_z(i)
         test      r13d, r13d                                        # numneighs <= 0
-        jle       ..exit_func
+        jle       ..atom_loop_exit
 
-..B1.10:
         vpxord    zmm13, zmm13, zmm13                               # zmm13 <- 0 (fix)
         vmovaps   zmm12, zmm13                                      # zmm12 <- 0 (fiy)
         vmovaps   zmm11, zmm12                                      # zmm11 <- 0 (fiz)
-
-        mov       r14d, r13d                                        # r14d <- numneighs
+        mov       rcx, r12
+        imul      rcx, r10
+        add       rcx, r11                                          # rcx <- &neighbor->neighbors[neighbor->maxneighs * i (r10)]
         xor       r11d, r11d                                        # r11d <- 0
-        and       r14d, -8                                          # r14d <- numneighs & (-8)
-        lea       r9d, DWORD PTR [8+r11]                            # r9d <- 8 (why lea?)
-        cmp       r14d, r9d                                         # r14d < r9d
-        jl        ..B1.33
+        mov       r14d, r13d                                        # r14d <- numneighs
+        cmp       r14d, 8
+        jl        ..compute_forces_remainder
+
+#       and       r14d, -8                                          # r14d <- numneighs & (-8)
+#       lea       r9d, DWORD PTR [8+r11]                            # r9d <- 8 (why lea?)
+#       cmp       r14d, r9d                                         # r14d < r9d
+#       jl        ..B1.33
 
 #        cmp       r13d, 8                                           # numneighs < 8
 #        jl        ..B1.32
@@ -126,9 +133,6 @@ computeForce:
 #        cmp       r13d, 1200                                        # numneighs < 1200
 #        jl        ..B1.31
 #..B1.12:
-#        mov       rcx, r12
-#        imul      rcx, r8
-#        add       rcx, r11                                          # rcx <- &neighbor->neighbors[neighbor->maxneighs * i (r8)]
 #        mov       r9, rcx                                           # r9 <- neighs
 #        and       r9, 63                                            # r9 <- neighs & 63
 #        test      r9d, 3                                            # (r9d & 3) == 0 => r9d divisible by 8
@@ -158,22 +162,11 @@ computeForce:
 #        cmp       ebx, ecx                                          # -((numneighs - r9d) & 7) + numneighs < neighs
 #        jl        ..B1.24
 
-..B1.21:
-        mov       rcx, r12
-        imul      rcx, r8
-        vbroadcastsd zmm0, xmm8
-        vbroadcastsd zmm1, xmm9
-        vbroadcastsd zmm2, xmm10
-        movsxd    r14, r9d
-        add       rcx, r11
-
-..B1.22:
-        vpcmpeqb  k2, xmm0, xmm0
-        add       r9d, 8
+..compute_forces:
         vpcmpeqb  k1, xmm0, xmm0
+        vpcmpeqb  k2, xmm0, xmm0
         vpcmpeqb  k3, xmm0, xmm0
-        vmovdqu   ymm3, YMMWORD PTR [rcx+r14*4]
-        add       r14, 8
+        vmovdqu   ymm3, YMMWORD PTR [rcx+r11*4]
         vpxord    zmm5, zmm5, zmm5
         vpxord    zmm6, zmm6, zmm6
 
@@ -191,31 +184,86 @@ computeForce:
         #vgatherdpd zmm6{k3}, QWORD PTR [rsi+ymm3*8]
         ###
 
-        vsubpd    zmm29, zmm1, zmm5
-        vsubpd    zmm28, zmm0, zmm4
-        vsubpd    zmm31, zmm2, zmm6
-        vmulpd    zmm20, zmm29, zmm29
-        vfmadd231pd zmm20, zmm28, zmm28
-        vfmadd231pd zmm20, zmm31, zmm31
+        vsubpd    zmm29, zmm1, zmm5                                 # zmm29 <- atom_y(i) - atom_y(j) -- dely
+        vsubpd    zmm28, zmm0, zmm4                                 # zmm28 <- atom_x(i) - atom_x(j) -- delx
+        vsubpd    zmm31, zmm2, zmm6                                 # zmm31 <- atom_z(i) - atom_z(j) -- delz
+        vmulpd    zmm20, zmm29, zmm29                               # zmm20 <- dely * dely
+        vfmadd231pd zmm20, zmm28, zmm28                             # zmm20 <- dely * dely + delx * delx
+        vfmadd231pd zmm20, zmm31, zmm31                             # zmm20 <- zmm20 + delz * delz --  rsq
 
-# if condition cutoff radius
-        vrcp14pd  zmm27, zmm20 #-> sr2
-        vcmppd    k5, zmm20, zmm16, 1
-        vmulpd    zmm22, zmm27, zmm15                                   # zmm22 <-  sr2 * sigma6
-        vmulpd    zmm24, zmm27, zmm14                                   # zmm24 <- 48.0 * epsilon * sr2
-        vmulpd    zmm25, zmm27, zmm22                                   # zmm25 <- sr2 * sigma6 * sr2
-        vmulpd    zmm23, zmm27, zmm25                                   # zmm23 <- sr2 * sigma6 * sr2 * sr2
-        vfmsub213pd zmm27, zmm25, zmm7                                  # zmm27 <- sr2 * sigma * sr2 * sr2 - 0.5
-        vmulpd    zmm26, zmm23, zmm24                                   # zmm26 <- 48.0 * epsilon * sr2 * sr2 * sigma6 * sr2
-        vmulpd    zmm30, zmm26, zmm27                                   # zmm30 <- force
-        vfmadd231pd zmm13{k5}, zmm30, zmm28
-        vfmadd231pd zmm12{k5}, zmm30, zmm29
-        vfmadd231pd zmm11{k5}, zmm30, zmm31
-        cmp       r9d, ebx
-        jb        ..B1.22
-#end neighbor loop
+        # Cutoff radius condition
+        vrcp14pd  zmm27, zmm20                                      # zmm27 <- 1.0 / rsq (sr2)
+        vcmppd    k5, zmm20, zmm16, 1                               # k5 <- rsq < cutforcesq
+        vmulpd    zmm22, zmm27, zmm15                               # zmm22 <-  sr2 * sigma6
+        vmulpd    zmm24, zmm27, zmm14                               # zmm24 <- 48.0 * epsilon * sr2
+        vmulpd    zmm25, zmm27, zmm22                               # zmm25 <- sr2 * sigma6 * sr2
+        vmulpd    zmm23, zmm27, zmm25                               # zmm23 <- sr2 * sigma6 * sr2 * sr2
+        vfmsub213pd zmm27, zmm25, zmm7                              # zmm27 <- sr2 * sigma * sr2 * sr2 - 0.5
+        vmulpd    zmm26, zmm23, zmm24                               # zmm26 <- 48.0 * epsilon * sr2 * sr2 * sigma6 * sr2
+        vmulpd    zmm30, zmm26, zmm27                               # zmm30 <- force
+        vfmadd231pd zmm13{k5}, zmm30, zmm28                         # fix += force * delx
+        vfmadd231pd zmm12{k5}, zmm30, zmm29                         # fiy += force * dely
+        vfmadd231pd zmm11{k5}, zmm30, zmm31                         # fiz += force * delz
+        sub       r14, 8
+        add       r11, 8
+        cmp       r14, 8
+        jg        ..compute_forces
 
-..B1.26:
+# Check if there are remaining neighbors to be computed
+..compute_forces_remainder:
+        cmp r14, 1
+        jl ..sum_up_forces
+
+        vpbroadcastd ymm0, r14d
+        vpcmpgtd  k1, ymm0, ymm17
+        kmovw     r15d, k1
+        vmovdqu   ymm3{k3}{z}, YMMWORD PTR [rcx+r11*4]
+        kmov      k2, k1
+        kmov      k3, k1
+        vpxord    zmm5, zmm5, zmm5
+        vpxord    zmm6, zmm6, zmm6
+
+        ### AOS
+        vpaddd     ymm4, ymm3, ymm3
+        vpaddd     ymm3, ymm3, ymm4
+        vpxord     zmm4, zmm4, zmm4
+        vgatherdpd zmm4{k1}, QWORD PTR [rdx+ymm3*8]
+        vgatherdpd zmm5{k2}, QWORD PTR [8+rdx+ymm3*8]
+        vgatherdpd zmm6{k3}, QWORD PTR [16+rdx+ymm3*8]
+        ### SOA
+        #vpxord     zmm4, zmm4, zmm4
+        #vgatherdpd zmm5{k2}, QWORD PTR [rax+ymm3*8]
+        #vgatherdpd zmm4{k1}, QWORD PTR [rdx+ymm3*8]
+        #vgatherdpd zmm6{k3}, QWORD PTR [rsi+ymm3*8]
+        ###
+
+        vsubpd    zmm29, zmm1, zmm5                                 # zmm29 <- atom_y(i) - atom_y(j) -- dely
+        vsubpd    zmm28, zmm0, zmm4                                 # zmm28 <- atom_x(i) - atom_x(j) -- delx
+        vsubpd    zmm31, zmm2, zmm6                                 # zmm31 <- atom_z(i) - atom_z(j) -- delz
+        vmulpd    zmm20, zmm29, zmm29                               # zmm20 <- dely * dely
+        vfmadd231pd zmm20, zmm28, zmm28                             # zmm20 <- dely * dely + delx * delx
+        vfmadd231pd zmm20, zmm31, zmm31                             # zmm20 <- zmm20 + delz * delz --  rsq
+
+        # Cutoff radius condition
+        vrcp14pd  zmm27, zmm20                                      # zmm27 <- 1.0 / rsq (sr2)
+        vcmppd    k5, zmm20, zmm16, 1                               # k5 <- rsq < cutforcesq
+        kmovw     r9d, k5                                           # r9d <- rsq < cutforcesq
+        and       r15d, r9d                                         # r15d <- rsq < cutforcesq && k < numneighs
+        kmovw     k3, r15d                                          # k3 <- rsq < cutforcesq && k < numneighs
+        vmulpd    zmm22, zmm27, zmm15                               # zmm22 <-  sr2 * sigma6
+        vmulpd    zmm24, zmm27, zmm14                               # zmm24 <- 48.0 * epsilon * sr2
+        vmulpd    zmm25, zmm27, zmm22                               # zmm25 <- sr2 * sigma6 * sr2
+        vmulpd    zmm23, zmm27, zmm25                               # zmm23 <- sr2 * sigma6 * sr2 * sr2
+        vfmsub213pd zmm27, zmm25, zmm7                              # zmm27 <- sr2 * sigma * sr2 * sr2 - 0.5
+        vmulpd    zmm26, zmm23, zmm24                               # zmm26 <- 48.0 * epsilon * sr2 * sr2 * sigma6 * sr2
+        vmulpd    zmm30, zmm26, zmm27                               # zmm30 <- force
+        vfmadd231pd zmm13{k5}, zmm30, zmm28                         # fix += force * delx
+        vfmadd231pd zmm12{k5}, zmm30, zmm29                         # fiy += force * dely
+        vfmadd231pd zmm11{k5}, zmm30, zmm31                         # fiz += force * delz
+
+# Forces are currently separated in different lanes of zmm registers, hence it is necessary to permutate
+# and add them (reduction) to obtain the final contribution for the current atom
+..sum_up_forces:
         vmovups   zmm10, ZMMWORD PTR .L_2il0floatpacket.6[rip]
         vpermd    zmm0, zmm10, zmm11
         vpermd    zmm5, zmm10, zmm12
@@ -236,8 +284,7 @@ computeForce:
         vaddpd    zmm20, zmm8, zmm9
         vaddpd    zmm25, zmm23, zmm24
 
-#exit function
-..exit_func:
+..atom_loop_exit:
         mov       rcx, QWORD PTR [-8+rsp]                       #84.9[spill]
         mov       rbx, QWORD PTR [-16+rsp]                      #85.9[spill]
 
@@ -245,8 +292,6 @@ computeForce:
         add       rax, 24
         ###
 
-        movsxd    r8, r10d                                      #55.32
-        inc       r8                                            #55.32
         vaddsd    xmm0, xmm25, QWORD PTR [rcx+r10*8]            #84.9
         vmovsd    QWORD PTR [rcx+r10*8], xmm0                   #84.9
         vaddsd    xmm1, xmm20, QWORD PTR [rbx+r10*8]            #85.9
@@ -255,12 +300,15 @@ computeForce:
         vmovsd    QWORD PTR [rdi+r10*8], xmm2                   #86.9
         inc       r10                                           #55.5
         cmp       r10, QWORD PTR [-32+rsp]                      #55.5[spill]
-        jb        ..B1.9
+        jb        ..atom_loop_begin
         vzeroupper                                              #93.12
         vxorpd    xmm0, xmm0, xmm0                              #93.12
+        pop       rbx
+        pop       r15
         pop       r14                                           #93.12
         pop       r13                                           #93.12
         pop       r12                                           #93.12
+        pop       rbp                                           #93.12
         ret                                                     #93.12
 
 .type	computeForce,@function
