@@ -66,7 +66,7 @@ computeForce:
         vmovups   zmm7, ZMMWORD PTR .L_2il0floatpacket.4[rip]       # zmm7 <- [0.5, ...]
         vbroadcastsd zmm16, xmm15                                   # zmm16 <- [cutforcesq, ...]
         vbroadcastsd zmm15, xmm1                                    # zmm15 <- [param->sigma6, ...]
-        vbroadcastsd zmm14, xmm0                                    # zmm16 <- [48 * epsilon, ...]
+        vbroadcastsd zmm14, xmm0                                    # zmm14 <- [48 * epsilon, ...]
         movsxd    r9, r9d                                           # r9 <- atom->Nlocal
         xor       r10d, r10d                                        # r10d <- 0 (i)
         mov       rcx, QWORD PTR [24+rdx]                           # rcx <- neighbor->numneigh
@@ -74,7 +74,7 @@ computeForce:
         movsxd    r12, DWORD PTR [16+rdx]                           # r12 <- neighbor->maxneighs
         mov       rdx, QWORD PTR [16+rsi]                           # rdx <- atom->x
         ### AOS
-        xor        eax, eax
+        xor       eax, eax
         ### SOA
         #mov       rax, QWORD PTR [24+rsi]                          # rax <- atom->y
         #mov       rsi, QWORD PTR [32+rsi]                          # rsi <- atom->z
@@ -91,10 +91,10 @@ computeForce:
 
 ..atom_loop_begin:
         mov       rcx, QWORD PTR [-24+rsp]                          # rcx <- neighbor->numneigh
-        vxorpd    xmm25, xmm25, xmm25                               # xmm25 <- 0
-        vmovapd   xmm20, xmm25                                      # xmm20 <- 0
+        vxorpd    xmm25, xmm25, xmm25                               # xmm25 <- 0 (fix)
+        vmovapd   xmm20, xmm25                                      # xmm20 <- 0 (fiy)
         mov       r13d, DWORD PTR [rcx+r10*4]                       # r13d <- neighbor->numneigh[i] (numneighs)
-        vmovapd   xmm4, xmm20                                       # xmm4 <- 0
+        vmovapd   xmm4, xmm20                                       # xmm4 <- 0 (fiz)
 
         ### AOS
         vmovsd    xmm8, QWORD PTR[rdx+rax]                          # xmm8 <- atom->x[i * 3]
@@ -114,10 +114,10 @@ computeForce:
         vpxord    zmm13, zmm13, zmm13                               # zmm13 <- 0 (fix)
         vmovaps   zmm12, zmm13                                      # zmm12 <- 0 (fiy)
         vmovaps   zmm11, zmm12                                      # zmm11 <- 0 (fiz)
-        mov       rcx, r12
-        imul      rcx, r10
-        add       rcx, r11                                          # rcx <- &neighbor->neighbors[neighbor->maxneighs * i (r10)]
-        xor       r11d, r11d                                        # r11d <- 0
+        mov       rcx, r12                                          # rcx <- neighbor->maxneighs * 4
+        imul      rcx, r10                                          # rcx <- neighbor->maxneighs * 4 * i
+        add       rcx, r11                                          # rcx <- &neighbor->neighbors[neighbor->maxneighs * i]
+        xor       r9d, r9d                                          # r9d <- 0 (k)
         mov       r14d, r13d                                        # r14d <- numneighs
         cmp       r14d, 8
         jl        ..compute_forces_remainder
@@ -166,7 +166,7 @@ computeForce:
         vpcmpeqb  k1, xmm0, xmm0
         vpcmpeqb  k2, xmm0, xmm0
         vpcmpeqb  k3, xmm0, xmm0
-        vmovdqu   ymm3, YMMWORD PTR [rcx+r11*4]
+        vmovdqu   ymm3, YMMWORD PTR [rcx+r9*4]
         vpxord    zmm5, zmm5, zmm5
         vpxord    zmm6, zmm6, zmm6
 
@@ -205,9 +205,9 @@ computeForce:
         vfmadd231pd zmm12{k5}, zmm30, zmm29                         # fiy += force * dely
         vfmadd231pd zmm11{k5}, zmm30, zmm31                         # fiz += force * delz
         sub       r14, 8
-        add       r11, 8
+        add       r9, 8
         cmp       r14, 8
-        jg        ..compute_forces
+        jge       ..compute_forces
 
 # Check if there are remaining neighbors to be computed
 ..compute_forces_remainder:
@@ -217,7 +217,7 @@ computeForce:
         vpbroadcastd ymm0, r14d
         vpcmpgtd  k1, ymm0, ymm17
         kmovw     r15d, k1
-        vmovdqu   ymm3{k3}{z}, YMMWORD PTR [rcx+r11*4]
+        vmovdqu   ymm3{k3}{z}, YMMWORD PTR [rcx+r9*4]
         kmov      k2, k1
         kmov      k3, k1
         vpxord    zmm5, zmm5, zmm5
