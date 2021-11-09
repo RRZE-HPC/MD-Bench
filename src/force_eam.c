@@ -43,7 +43,7 @@ double computeForceEam(Eam* eam, Parameter* param, Atom *atom, Neighbor *neighbo
     int* neighs;
     MD_FLOAT* fx = atom->fx; MD_FLOAT* fy = atom->fy; MD_FLOAT* fz = atom->fz; int ntypes = atom->ntypes; MD_FLOAT* fp = eam->fp;
     MD_FLOAT* rhor_spline = eam->rhor_spline; MD_FLOAT* frho_spline = eam->frho_spline; MD_FLOAT* z2r_spline = eam->z2r_spline;
-    int rdr = eam->rdr; int nr = eam->nr; int nr_tot = eam->nr_tot; int rdrho = eam->rdrho;
+    MD_FLOAT rdr = eam->rdr; int nr = eam->nr; int nr_tot = eam->nr_tot; MD_FLOAT rdrho = eam->rdrho;
     int nrho = eam->nrho; int nrho_tot = eam->nrho_tot;
     double S = getTimeStamp();
 
