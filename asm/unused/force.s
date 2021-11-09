@@ -122,46 +122,6 @@ computeForce:
         cmp       r14d, 8
         jl        ..compute_forces_remainder
 
-#       and       r14d, -8                                          # r14d <- numneighs & (-8)
-#       lea       r9d, DWORD PTR [8+r11]                            # r9d <- 8 (why lea?)
-#       cmp       r14d, r9d                                         # r14d < r9d
-#       jl        ..B1.33
-
-#        cmp       r13d, 8                                           # numneighs < 8
-#        jl        ..B1.32
-#..B1.11:
-#        cmp       r13d, 1200                                        # numneighs < 1200
-#        jl        ..B1.31
-#..B1.12:
-#        mov       r9, rcx                                           # r9 <- neighs
-#        and       r9, 63                                            # r9 <- neighs & 63
-#        test      r9d, 3                                            # (r9d & 3) == 0 => r9d divisible by 8
-#        je        ..B1.14
-#..B1.13:
-#        xor       r9d, r9d                                          # r9d <- 0
-#        jmp       ..B1.16
-#..B1.14:
-#        test      r9d, r9d                                          # r9d == 0 
-#        je        ..B1.16
-#..B1.15:
-#        neg       r9d
-#        add       r9d, 64
-#        shr       r9d, 2                                            # r9d <- (64 - r9d) / 4
-#        cmp       r13d, r9d                                         # numneighs < r9d
-#        cmovl     r9d, r13d                                         # r9d <- MIN(numneighs, r9d)
-#..B1.16:
-#        mov       ebx, r13d
-#        sub       ebx, r9d
-#        and       ebx, 7
-#        neg       ebx
-#        add       ebx, r13d                                         # ebx <- -((numneighs - r9d) & 7) + numneighs
-#        cmp       r9d, 1                                            # r9d < 1
-#        jb        ..B1.20
-#..B1.20:
-#        lea       ecx, DWORD PTR [8+r9]                             # ecx <- r9d[1]
-#        cmp       ebx, ecx                                          # -((numneighs - r9d) & 7) + numneighs < neighs
-#        jl        ..B1.24
-
 ..compute_forces:
         vpcmpeqb  k1, xmm0, xmm0
         vpcmpeqb  k2, xmm0, xmm0
@@ -204,20 +164,20 @@ computeForce:
         vfmadd231pd zmm13{k5}, zmm30, zmm28                         # fix += force * delx
         vfmadd231pd zmm12{k5}, zmm30, zmm29                         # fiy += force * dely
         vfmadd231pd zmm11{k5}, zmm30, zmm31                         # fiz += force * delz
-        sub       r14, 8
+        sub       r14d, 8
         add       r9, 8
-        cmp       r14, 8
+        cmp       r14d, 8
         jge       ..compute_forces
 
 # Check if there are remaining neighbors to be computed
 ..compute_forces_remainder:
-        cmp r14, 1
-        jl ..sum_up_forces
+        test      r14d, r14d
+        jle       ..sum_up_forces
 
-        vpbroadcastd ymm0, r14d
-        vpcmpgtd  k1, ymm0, ymm17
+        vpbroadcastd ymm4, r14d
+        vpcmpgtd  k1, ymm4, ymm17
         kmovw     r15d, k1
-        vmovdqu32 ymm3{k3}{z}, YMMWORD PTR [rcx+r9*4]
+        vmovdqu32 ymm3{k1}{z}, YMMWORD PTR [rcx+r9*4]
         kmovw     k2, k1
         kmovw     k3, k1
         vpxord    zmm5, zmm5, zmm5
@@ -230,7 +190,7 @@ computeForce:
         vgatherdpd zmm4{k1}, [rdx+ymm3*8]
         vgatherdpd zmm5{k2}, [8+rdx+ymm3*8]
         vgatherdpd zmm6{k3}, [16+rdx+ymm3*8]
-        ### SOA
+        #### SOA
         #vpxord     zmm4, zmm4, zmm4
         #vgatherdpd zmm5{k2}, [rax+ymm3*8]
         #vgatherdpd zmm4{k1}, [rdx+ymm3*8]
@@ -257,9 +217,9 @@ computeForce:
         vfmsub213pd zmm27, zmm25, zmm7                              # zmm27 <- sr2 * sigma * sr2 * sr2 - 0.5
         vmulpd    zmm26, zmm23, zmm24                               # zmm26 <- 48.0 * epsilon * sr2 * sr2 * sigma6 * sr2
         vmulpd    zmm30, zmm26, zmm27                               # zmm30 <- force
-        vfmadd231pd zmm13{k5}, zmm30, zmm28                         # fix += force * delx
-        vfmadd231pd zmm12{k5}, zmm30, zmm29                         # fiy += force * dely
-        vfmadd231pd zmm11{k5}, zmm30, zmm31                         # fiz += force * delz
+        vfmadd231pd zmm13{k3}, zmm30, zmm28                         # fix += force * delx
+        vfmadd231pd zmm12{k3}, zmm30, zmm29                         # fiy += force * dely
+        vfmadd231pd zmm11{k3}, zmm30, zmm31                         # fiz += force * delz
 
 # Forces are currently separated in different lanes of zmm registers, hence it is necessary to permutate
 # and add them (reduction) to obtain the final contribution for the current atom
