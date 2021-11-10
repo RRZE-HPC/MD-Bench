@@ -22,13 +22,52 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
 #include <cuda_runtime.h>
+#include <device_launch_parameters.h>
+
 #include <likwid-marker.h>
 
 #include <timing.h>
 #include <neighbor.h>
 #include <parameter.h>
 #include <atom.h>
+
+// cuda kernel
+__global__ void calc_force(
+    Atom *atom,
+    MD_FLOAT xtmp, MD_FLOAT ytmp, MD_FLOAT ztmp,
+    MD_FLOAT *fix, MD_FLOAT *fiy, MD_FLOAT *fiz,
+    int i, int numneighs, int *neighs) {
+
+    // Calculate idx k from thread information
+    const long long k = blockIdx.x * blockDim.x + threadIdx.x;
+    if( k >= numneighs ) {
+        return;
+    }
+
+    int j = neighs[k];
+    MD_FLOAT delx = xtmp - atom_x(j);
+    MD_FLOAT dely = ytmp - atom_y(j);
+    MD_FLOAT delz = ztmp - atom_z(j);
+    MD_FLOAT rsq = delx * delx + dely * dely + delz * delz;
+
+    const int type_i = atom->type[i];
+    const int type_j = atom->type[j];
+    const int type_ij = type_i * atom->ntypes + type_j;
+    const MD_FLOAT cutforcesq = atom->cutforcesq[type_ij];
+    const MD_FLOAT sigma6 = atom->sigma6[type_ij];
+    const MD_FLOAT epsilon = atom->epsilon[type_ij];
+
+    if(rsq < cutforcesq) {
+        MD_FLOAT sr2 = 1.0 / rsq;
+        MD_FLOAT sr6 = sr2 * sr2 * sr2 * sigma6;
+        MD_FLOAT force = 48.0 * sr6 * (sr6 - 0.5) * sr2 * epsilon;
+        fix[j] = delx * force;
+        fiy[j] = dely * force;
+        fiz[j] = delz * force;
+    }
+}
 
 double computeForce(
         Parameter *param,
@@ -110,75 +149,40 @@ double computeForce(
         cudaMalloc((void**)&c_neighs, sizeof(int) * numneighs);
         cudaMemcpy(c_neighs, neighs, sizeof(int) * numneighs, cudaMemcpyHostToDevice);
 
-        const int num_elems = numneighs;
-
         MD_FLOAT *c_fix, *c_fiy, *c_fiz;
-        cudaMalloc((void**)&c_fix, sizeof(MD_FLOAT) * num_elems);
-        cudaMalloc((void**)&c_fiy, sizeof(MD_FLOAT) * num_elems);
-        cudaMalloc((void**)&c_fiz, sizeof(MD_FLOAT) * num_elems);
+        cudaMalloc((void**)&c_fix, sizeof(MD_FLOAT) * numneighs);
+        cudaMalloc((void**)&c_fiy, sizeof(MD_FLOAT) * numneighs);
+        cudaMalloc((void**)&c_fiz, sizeof(MD_FLOAT) * numneighs);
+
+        const int num_blocks = 64;
+        const int num_threads_per_block = numneighs / num_blocks;
+        printf("numneighs: %d => num-blocks: %d, num_threads => %d\r\n", numneighs, num_blocks, num_threads_per_block);
+
+        // launch cuda kernel
+        calc_force <<< num_blocks, num_threads_per_block >>> (c_atom, xtmp, ytmp, ztmp, c_fix, c_fiy, c_fiz, i, numneighs, c_neighs);
+        cudaDeviceSynchronize();
+
+        // sum result
+        MD_FLOAT *d_fix, *d_fiy, *d_fiz;
+        d_fix = (MD_FLOAT*)malloc(sizeof(MD_FLOAT) * numneighs);
+        d_fiy = (MD_FLOAT*)malloc(sizeof(MD_FLOAT) * numneighs);
+        d_fiz = (MD_FLOAT*)malloc(sizeof(MD_FLOAT) * numneighs);
+        cudaMemcpy((void**)d_fix, c_fix, sizeof(MD_FLOAT) * numneighs, cudaMemcpyDeviceToHost);
+        cudaMemcpy((void**)d_fiy, c_fiy, sizeof(MD_FLOAT) * numneighs, cudaMemcpyDeviceToHost);
+        cudaMemcpy((void**)d_fiz, c_fiz, sizeof(MD_FLOAT) * numneighs, cudaMemcpyDeviceToHost);
 
         for(int k = 0; k < numneighs; k++) {
-            int j = neighs[k];
-            MD_FLOAT delx = xtmp - atom_x(j);
-            MD_FLOAT dely = ytmp - atom_y(j);
-            MD_FLOAT delz = ztmp - atom_z(j);
-            MD_FLOAT rsq = delx * delx + dely * dely + delz * delz;
-
-#ifdef EXPLICIT_TYPES
-            const int type_j = atom->type[j];
-            const int type_ij = type_i * atom->ntypes + type_j;
-            const MD_FLOAT cutforcesq = atom->cutforcesq[type_ij];
-            const MD_FLOAT sigma6 = atom->sigma6[type_ij];
-            const MD_FLOAT epsilon = atom->epsilon[type_ij];
-#endif
-
-            if(rsq < cutforcesq) {
-                MD_FLOAT sr2 = 1.0 / rsq;
-                MD_FLOAT sr6 = sr2 * sr2 * sr2 * sigma6;
-                MD_FLOAT force = 48.0 * sr6 * (sr6 - 0.5) * sr2 * epsilon;
-                fix += delx * force;
-                fiy += dely * force;
-                fiz += delz * force;
-            }
+            fx[i] += d_fix[k];
+            fy[i] += d_fiy[k];
+            fz[i] += d_fiz[k];
         }
 
-        fx[i] += fix;
-        fy[i] += fiy;
-        fz[i] += fiz;
+        cudaFree(c_fix); cudaFree(c_fiy); cudaFree(c_fiz);
+        cudaFree(c_atom); cudaFree(c_neighs);
     }
 
     LIKWID_MARKER_STOP("force");
     double E = getTimeStamp();
 
     return E-S;
-}
-
-// cuda kernel
-__global__ void calc_force(
-    Atom *atom,
-    MD_FLOAT xtmp, MD_FLOAT ytmp, MD_FLOAT ztmp,
-    MD_FLOAT *fix, MD_FLOAT *fiy, MD_FLOAT *fiz,
-    int i, int k, int *neighs) {
-
-    int j = neighs[k];
-    MD_FLOAT delx = xtmp - atom_x(j);
-    MD_FLOAT dely = ytmp - atom_y(j);
-    MD_FLOAT delz = ztmp - atom_z(j);
-    MD_FLOAT rsq = delx * delx + dely * dely + delz * delz;
-
-    const int type_i = atom->type[i];
-    const int type_j = atom->type[j];
-    const int type_ij = type_i * atom->ntypes + type_j;
-    const MD_FLOAT cutforcesq = atom->cutforcesq[type_ij];
-    const MD_FLOAT sigma6 = atom->sigma6[type_ij];
-    const MD_FLOAT epsilon = atom->epsilon[type_ij];
-
-    if(rsq < cutforcesq) {
-        MD_FLOAT sr2 = 1.0 / rsq;
-        MD_FLOAT sr6 = sr2 * sr2 * sr2 * sigma6;
-        MD_FLOAT force = 48.0 * sr6 * (sr6 - 0.5) * sr2 * epsilon;
-        fix[j] += delx * force;
-        fiy[j] += dely * force;
-        fiz[j] += delz * force;
-    }
 }
