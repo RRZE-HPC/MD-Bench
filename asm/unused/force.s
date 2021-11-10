@@ -13,6 +13,8 @@ computeForce:
         push      r14
         push      r15
         push      rbx
+        #call      getTimeStamp                                      # xmm0 <- getTimeStamp()
+        #vmovsd    QWORD PTR [-56+rsp], xmm0                         # [-56+rsp] <- xmm0 [spill]
         mov       r9d, DWORD PTR [4+rsi]                            # r9d <- atom->Nlocal
         vmovsd    xmm2, QWORD PTR [96+rdi]                          # xmm2 <- param->cutforce
         vmovsd    xmm1, QWORD PTR [32+rdi]                          # xmm1 <- param->sigma6
@@ -263,6 +265,8 @@ computeForce:
         jb        ..atom_loop_begin
         vzeroupper                                              #93.12
         vxorpd    xmm0, xmm0, xmm0                              #93.12
+        #call      getTimeStamp                                  # xmm0 <- getTimeStamp()
+        #vsubsd    xmm0, xmm0, QWORD PTR [-56+rsp]               # xmm0 <- E-S
         pop       rbx
         pop       r15
         pop       r14                                           #93.12
