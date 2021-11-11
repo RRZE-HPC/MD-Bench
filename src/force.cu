@@ -82,8 +82,6 @@ double computeForce(
     MD_FLOAT* fz = atom->fz;
 #ifndef EXPLICIT_TYPES
     MD_FLOAT cutforcesq = param->cutforce * param->cutforce;
-    MD_FLOAT sigma6 = param->sigma6;
-    MD_FLOAT epsilon = param->epsilon;
 #endif
 
     for(int i = 0; i < Nlocal; i++) {
@@ -103,9 +101,6 @@ double computeForce(
         MD_FLOAT xtmp = atom_x(i);
         MD_FLOAT ytmp = atom_y(i);
         MD_FLOAT ztmp = atom_z(i);
-        MD_FLOAT fix = 0;
-        MD_FLOAT fiy = 0;
-        MD_FLOAT fiz = 0;
 
 #ifdef EXPLICIT_TYPES
         const int type_i = atom->type[i];
