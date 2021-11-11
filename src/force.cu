@@ -90,9 +90,8 @@ double computeForce(
         fz[i] = 0.0;
     }
 
-    double S = getTimeStamp();
+    // double S = getTimeStamp();
     LIKWID_MARKER_START("force");
-
 
 #pragma omp parallel for
     for(int i = 0; i < Nlocal; i++) {
@@ -105,15 +104,6 @@ double computeForce(
 #ifdef EXPLICIT_TYPES
         const int type_i = atom->type[i];
 #endif
-
-        /*
-            atom->x  = (MD_FLOAT*) reallocate(atom->x,  ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT) * 3, nold * sizeof(MD_FLOAT) * 3);
-            atom->epsilon = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
-            atom->sigma6 = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
-            atom->cutforcesq = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
-            atom->cutneighsq = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
-            atom->type = (int *) reallocate(atom->type, ALIGNMENT, atom->Nmax * sizeof(int), nold * sizeof(int));
-        */
 
         Atom *c_atom;
         cudaMalloc((void**)&c_atom, sizeof(Atom));
@@ -177,7 +167,8 @@ double computeForce(
     }
 
     LIKWID_MARKER_STOP("force");
-    double E = getTimeStamp();
+    // double E = getTimeStamp();
 
-    return E-S;
+    // return E-S;
+    return 0;
 }
