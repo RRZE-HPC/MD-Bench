@@ -12,4 +12,4 @@ ASFLAGS  =  -masm=intel
 LFLAGS   =
 DEFINES  = -D_GNU_SOURCE -DLIKWID_PERFMON
 INCLUDES = $(LIKWID_INC)
-LIBS     = -lm $(LIKWID_LIB) -llikwid
+LIBS     = -lm $(LIKWID_LIB) -llikwid -lcuda -lcudart

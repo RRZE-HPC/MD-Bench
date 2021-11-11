@@ -26,12 +26,14 @@
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 
-#include <likwid-marker.h>
+extern "C" {
+    #include <likwid-marker.h>
 
-#include <timing.h>
-#include <neighbor.h>
-#include <parameter.h>
-#include <atom.h>
+    #include <timing.h>
+    #include <neighbor.h>
+    #include <parameter.h>
+    #include <atom.h>
+}
 
 // cuda kernel
 __global__ void calc_force(
@@ -69,6 +71,8 @@ __global__ void calc_force(
     }
 }
 
+extern "C" {
+
 double computeForce(
         Parameter *param,
         Atom *atom,
@@ -90,7 +94,7 @@ double computeForce(
         fz[i] = 0.0;
     }
 
-    // double S = getTimeStamp();
+    double S = getTimeStamp();
     LIKWID_MARKER_START("force");
 
 #pragma omp parallel for
@@ -167,8 +171,9 @@ double computeForce(
     }
 
     LIKWID_MARKER_STOP("force");
-    // double E = getTimeStamp();
+    double E = getTimeStamp();
 
-    // return E-S;
+    return E-S;
     return 0;
+}
 }

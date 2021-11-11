@@ -22,7 +22,7 @@ INDEX_TRACER ?= false
 # Vector width (elements) for index and distance tracer
 VECTOR_WIDTH ?= 8
 # Compute statistics
-COMPUTE_STATS ?= true
+COMPUTE_STATS ?= false
 
 #Feature options
 OPTIONS =  -DALIGNMENT=64
