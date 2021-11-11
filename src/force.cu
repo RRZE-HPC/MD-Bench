@@ -158,13 +158,13 @@ double computeForce(
 #endif
 
         int *c_neighs;
-        cudaMalloc((void**)&c_neighs, sizeof(int) * numneighs);
-        cudaMemcpy(c_neighs, neighs, sizeof(int) * numneighs, cudaMemcpyHostToDevice);
+        checkError( "c_neighs malloc", cudaMalloc((void**)&c_neighs, sizeof(int) * numneighs) );
+        checkError( "c_neighs memcpy", cudaMemcpy(c_neighs, neighs, sizeof(int) * numneighs, cudaMemcpyHostToDevice) );
 
         MD_FLOAT *c_fix, *c_fiy, *c_fiz;
-        cudaMalloc((void**)&c_fix, sizeof(MD_FLOAT) * numneighs);
-        cudaMalloc((void**)&c_fiy, sizeof(MD_FLOAT) * numneighs);
-        cudaMalloc((void**)&c_fiz, sizeof(MD_FLOAT) * numneighs);
+        checkError( "c_fix malloc", cudaMalloc((void**)&c_fix, sizeof(MD_FLOAT) * numneighs) );
+        checkError( "c_fiy malloc", cudaMalloc((void**)&c_fiy, sizeof(MD_FLOAT) * numneighs) );
+        checkError( "c_fiz malloc", cudaMalloc((void**)&c_fiz, sizeof(MD_FLOAT) * numneighs) );
 
         const int num_blocks = 64;
         const int num_threads_per_block = ceil((float)numneighs / (float)num_blocks);
@@ -175,27 +175,34 @@ double computeForce(
         checkError( "PeekAtLastError", cudaPeekAtLastError() );
         checkError( "DeviceSync", cudaDeviceSynchronize() );
 
-        printf("CUDA done!\r\n");
-
         // sum result
         MD_FLOAT *d_fix = (MD_FLOAT*)malloc(sizeof(MD_FLOAT) * numneighs);
         MD_FLOAT *d_fiy = (MD_FLOAT*)malloc(sizeof(MD_FLOAT) * numneighs);
         MD_FLOAT *d_fiz = (MD_FLOAT*)malloc(sizeof(MD_FLOAT) * numneighs);
-        cudaMemcpy((void**)&d_fix, c_fix, sizeof(MD_FLOAT) * numneighs, cudaMemcpyDeviceToHost);
-        cudaMemcpy((void**)&d_fiy, c_fiy, sizeof(MD_FLOAT) * numneighs, cudaMemcpyDeviceToHost);
-        cudaMemcpy((void**)&d_fiz, c_fiz, sizeof(MD_FLOAT) * numneighs, cudaMemcpyDeviceToHost);
-
-        printf("COPY ALLOC done!\r\n");
+        checkError( "d_fix copy to host", cudaMemcpy(d_fix, c_fix, sizeof(MD_FLOAT) * numneighs, cudaMemcpyDeviceToHost) );
+        checkError( "d_fiy copy to host", cudaMemcpy(d_fiy, c_fiy, sizeof(MD_FLOAT) * numneighs, cudaMemcpyDeviceToHost) );
+        checkError( "d_fiz copy to host", cudaMemcpy(d_fiz, c_fiz, sizeof(MD_FLOAT) * numneighs, cudaMemcpyDeviceToHost) );
 
         for(int k = 0; k < numneighs; k++) {
-            printf("%d\r\n", k);
             fx[i] += d_fix[k];
             fy[i] += d_fiy[k];
             fz[i] += d_fiz[k];
         }
 
-        printf("COPY done!\r\n");
+        checkError( "cudaFree c_fix", cudaFree(c_fix) );
+        checkError( "cudaFree c_fiy", cudaFree(c_fiy) );
+        checkError( "cudaFree c_fiz", cudaFree(c_fiz) );
+        checkError( "cudaFree c_neighs", cudaFree(c_neighs) );
+        free(d_fix);
+        free(d_fiy);
+        free(d_fiz);
     }
+
+    cudaFree(c_atom.x);
+    cudaFree(c_atom.type);
+    cudaFree(c_atom.epsilon);
+    cudaFree(c_atom.sigma6);
+    cudaFree(c_atom.cutforcesq);
 
     LIKWID_MARKER_STOP("force");
     double E = getTimeStamp();
