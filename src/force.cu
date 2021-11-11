@@ -81,9 +81,9 @@ __global__ void calc_force(
         MD_FLOAT sr2 = 1.0 / rsq;
         MD_FLOAT sr6 = sr2 * sr2 * sr2 * sigma6;
         MD_FLOAT force = 48.0 * sr6 * (sr6 - 0.5) * sr2 * epsilon;
-        fix[k] = delx * force;
-        fiy[k] = dely * force;
-        fiz[k] = delz * force;
+        fix[k] += delx * force;
+        fiy[k] += dely * force;
+        fiz[k] += delz * force;
     }
 }
 
@@ -164,6 +164,10 @@ double computeForce(
         checkError( "c_fix malloc", cudaMalloc((void**)&c_fix, sizeof(MD_FLOAT) * numneighs) );
         checkError( "c_fiy malloc", cudaMalloc((void**)&c_fiy, sizeof(MD_FLOAT) * numneighs) );
         checkError( "c_fiz malloc", cudaMalloc((void**)&c_fiz, sizeof(MD_FLOAT) * numneighs) );
+
+        checkError( "c_fix memset", cudaMemset(c_fix, 0, sizeof(MD_FLOAT) * numneighs) );
+        checkError( "c_fiy memset", cudaMemset(c_fiy, 0, sizeof(MD_FLOAT) * numneighs) );
+        checkError( "c_fiz memset", cudaMemset(c_fiz, 0, sizeof(MD_FLOAT) * numneighs) );
 
         // launch cuda kernel
         calc_force <<< num_blocks, num_threads_per_block >>> (c_atom, xtmp, ytmp, ztmp, c_fix, c_fiy, c_fiz, cutforcesq, sigma6, epsilon, i, numneighs, c_neighs);
