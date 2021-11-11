@@ -20,6 +20,7 @@
  *   with MD-Bench.  If not, see <https://www.gnu.org/licenses/>.
  * =======================================================================================
  */
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -37,7 +38,7 @@ extern "C" {
 
 // cuda kernel
 __global__ void calc_force(
-    Atom *atom,
+    Atom a,
     MD_FLOAT xtmp, MD_FLOAT ytmp, MD_FLOAT ztmp,
     MD_FLOAT *fix, MD_FLOAT *fiy, MD_FLOAT *fiz,
     int i, int numneighs, int *neighs) {
@@ -47,6 +48,8 @@ __global__ void calc_force(
     if( k >= numneighs ) {
         return;
     }
+
+    Atom *atom = &a;
 
     int j = neighs[k];
     MD_FLOAT delx = xtmp - atom_x(j);
@@ -109,30 +112,29 @@ double computeForce(
         const int type_i = atom->type[i];
 #endif
 
-        Atom *c_atom;
-        cudaMalloc((void**)&c_atom, sizeof(Atom));
-        cudaMemcpy(c_atom, atom, sizeof(Atom), cudaMemcpyHostToDevice);
+        Atom c_atom;
+        memcpy(&c_atom, atom, sizeof(Atom));
 
-        cudaMalloc((void**)&c_atom->x, sizeof(MD_FLOAT) * atom->Nmax * 3);
-        cudaMemcpy(c_atom->x, atom->x, sizeof(MD_FLOAT) * atom->Nmax * 3, cudaMemcpyHostToDevice);
+        cudaMalloc((void**)&(&c_atom)->x, sizeof(MD_FLOAT) * atom->Nmax * 3);
+        cudaMemcpy(c_atom.x, atom->x, sizeof(MD_FLOAT) * atom->Nmax * 3, cudaMemcpyHostToDevice);
 
-        cudaMalloc((void**)&c_atom->y, sizeof(MD_FLOAT) * atom->Nmax * 3);
-        cudaMemcpy(c_atom->y, atom->y, sizeof(MD_FLOAT) * atom->Nmax * 3, cudaMemcpyHostToDevice);
+        cudaMalloc((void**)&(&c_atom)->y, sizeof(MD_FLOAT) * atom->Nmax * 3);
+        cudaMemcpy(c_atom.y, atom->y, sizeof(MD_FLOAT) * atom->Nmax * 3, cudaMemcpyHostToDevice);
 
-        cudaMalloc((void**)&c_atom->z, sizeof(MD_FLOAT) * atom->Nmax * 3);
-        cudaMemcpy(c_atom->z, atom->z, sizeof(MD_FLOAT) * atom->Nmax * 3, cudaMemcpyHostToDevice);
+        cudaMalloc((void**)&(&c_atom)->z, sizeof(MD_FLOAT) * atom->Nmax * 3);
+        cudaMemcpy(c_atom.z, atom->z, sizeof(MD_FLOAT) * atom->Nmax * 3, cudaMemcpyHostToDevice);
 
-        cudaMalloc((void**)&c_atom->type, sizeof(int) * atom->Nmax);
-        cudaMemcpy(c_atom->type, atom->type, sizeof(int) * atom->Nmax, cudaMemcpyHostToDevice);
+        cudaMalloc((void**)&(&c_atom)->type, sizeof(int) * atom->Nmax);
+        cudaMemcpy(c_atom.type, atom->type, sizeof(int) * atom->Nmax, cudaMemcpyHostToDevice);
 
-        cudaMalloc((void**)&c_atom->epsilon, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes);
-        cudaMemcpy(c_atom->epsilon, atom->epsilon, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice);
+        cudaMalloc((void**)&(&c_atom)->epsilon, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes);
+        cudaMemcpy(c_atom.epsilon, atom->epsilon, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice);
 
-        cudaMalloc((void**)&c_atom->sigma6, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes);
-        cudaMemcpy(c_atom->sigma6, atom->sigma6, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice);
+        cudaMalloc((void**)&(&c_atom)->sigma6, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes);
+        cudaMemcpy(c_atom.sigma6, atom->sigma6, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice);
 
-        cudaMalloc((void**)&c_atom->cutforcesq, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes);
-        cudaMemcpy(c_atom->cutforcesq, atom->cutforcesq, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice);
+        cudaMalloc((void**)&(&c_atom)->cutforcesq, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes);
+        cudaMemcpy(c_atom.cutforcesq, atom->cutforcesq, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice);
 
         int *c_neighs;
         cudaMalloc((void**)&c_neighs, sizeof(int) * numneighs);
@@ -144,8 +146,8 @@ double computeForce(
         cudaMalloc((void**)&c_fiz, sizeof(MD_FLOAT) * numneighs);
 
         const int num_blocks = 64;
-        const int num_threads_per_block = numneighs / num_blocks;
-        printf("numneighs: %d => num-blocks: %d, num_threads => %d\r\n", numneighs, num_blocks, num_threads_per_block);
+        const int num_threads_per_block = ceil((float)numneighs / (float)num_blocks);
+        // printf("numneighs: %d => num-blocks: %d, num_threads_per_block => %d\r\n", numneighs, num_blocks, num_threads_per_block);
 
         // launch cuda kernel
         calc_force <<< num_blocks, num_threads_per_block >>> (c_atom, xtmp, ytmp, ztmp, c_fix, c_fiy, c_fiz, i, numneighs, c_neighs);
@@ -156,9 +158,9 @@ double computeForce(
         d_fix = (MD_FLOAT*)malloc(sizeof(MD_FLOAT) * numneighs);
         d_fiy = (MD_FLOAT*)malloc(sizeof(MD_FLOAT) * numneighs);
         d_fiz = (MD_FLOAT*)malloc(sizeof(MD_FLOAT) * numneighs);
-        cudaMemcpy((void**)d_fix, c_fix, sizeof(MD_FLOAT) * numneighs, cudaMemcpyDeviceToHost);
-        cudaMemcpy((void**)d_fiy, c_fiy, sizeof(MD_FLOAT) * numneighs, cudaMemcpyDeviceToHost);
-        cudaMemcpy((void**)d_fiz, c_fiz, sizeof(MD_FLOAT) * numneighs, cudaMemcpyDeviceToHost);
+        cudaMemcpy((void**)&d_fix, c_fix, sizeof(MD_FLOAT) * numneighs, cudaMemcpyDeviceToHost);
+        cudaMemcpy((void**)&d_fiy, c_fiy, sizeof(MD_FLOAT) * numneighs, cudaMemcpyDeviceToHost);
+        cudaMemcpy((void**)&d_fiz, c_fiz, sizeof(MD_FLOAT) * numneighs, cudaMemcpyDeviceToHost);
 
         for(int k = 0; k < numneighs; k++) {
             fx[i] += d_fix[k];
@@ -166,14 +168,16 @@ double computeForce(
             fz[i] += d_fiz[k];
         }
 
-        cudaFree(c_fix); cudaFree(c_fiy); cudaFree(c_fiz);
-        cudaFree(c_atom); cudaFree(c_neighs);
+        cudaFree(c_fix); cudaFree(c_fiy); cudaFree(c_fiz); cudaFree(c_neighs);
+        cudaFree(c_atom.x); cudaFree(c_atom.y); cudaFree(c_atom.z); cudaFree(c_atom.type);
+        cudaFree(c_atom.epsilon); cudaFree(c_atom.sigma6); cudaFree(c_atom.cutforcesq);
+
+        free(d_fix); free(d_fiy); free(d_fiz);
     }
 
     LIKWID_MARKER_STOP("force");
     double E = getTimeStamp();
 
     return E-S;
-    return 0;
 }
 }
