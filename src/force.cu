@@ -170,8 +170,8 @@ double computeForce(
     checkError( "c_neigh_numneigh malloc", cudaMalloc((void**)&c_neigh_numneigh, sizeof(int) * Nlocal) );
     checkError( "c_neigh_numneigh memcpy", cudaMemcpy(c_neigh_numneigh, neighbor->numneigh, sizeof(int) * Nlocal, cudaMemcpyHostToDevice) );
 
-    const int num_blocks = 1024;
-    const int num_threads_per_block = ceil((float)Nlocal / (float)num_blocks);
+    const int num_threads_per_block = 32; // this should be multiple of 32 as operations are performed at the level of warps
+    const int num_blocks = ceil((float)Nlocal / (float)num_threads_per_block);
 
     double S = getTimeStamp();
     LIKWID_MARKER_START("force");
