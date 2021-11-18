@@ -11,32 +11,31 @@ Optional: Document how much time was spent. A simple python command line tool
 for time tracking is [Watson](http://tailordev.github.io/Watson/).
 ------------------------------------------------------------------------------>
 
-# MuCoSim: Analysis of <MyApplication>
+# MuCoSim: Analysis of MD-Bench CUDA port from C
 [TOC]
 ## Project Description
 
 ### Customer Info
 
-* Name: <MyName>
-* E-Mail: [<myemail>](mailto:<myemail>)
+* Name: Maximilian Gaul
+* E-Mail: [maximilian.gaul@fau.de](mailto:maximilian.gaul@fau.de)
 
 ### Application Info
 
-* Code: <MyApplication>
-* URL: <URL>
+* Code: MD-Bench
+* URL: https://github.com/RRZE-HPC/MD-Bench/tree/mucosim_cuda
 
-
-<!-----------------------------------------------------------------------------
-Describe the application. Where does it come from? What is calculated? Why is it so important for HPC?
------------------------------------------------------------------------------->
+Performance analysis of MD-Bench, a molecular dynamics application based on miniMD.
+The main goal is to provide a performance model for molecular dynamics and evaluate the performance for different strategies on different targets.
 
 ### Testsystem
 
-* Host/Clustername: icx36
-* Cluster Info URL: <https://hpc.fau.de/systems-services/systems-documentation-instructions/clusters/test-cluster/>
-* CPU type: 2x Intel Xeon Platinum 8360Y @ 2.4 GHz
-* Memory capacity: 256 GB
-* Number of cores per node: 72/144
+* Host/Clustername: tinyGPU.tg086
+* Cluster Info URL: <https://hpc.fau.de/systems-services/systems-documentation-instructions/clusters/tinygpu-cluster/>
+* CPU type: 2x Intel Xeon Gold 6226R @2.9 GHz = 32 cores with optional SMT
+* GPU type: 8x NVIDIA Geforce RTX3080
+* Memory capacity: 384 GB RAM
+* Number of GPUs per node: 7/56
 * Interconnect: None
   
 <!-----------------------------------------------------------------------------
