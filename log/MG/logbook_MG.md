@@ -12,7 +12,7 @@ for time tracking is [Watson](http://tailordev.github.io/Watson/).
 ------------------------------------------------------------------------------>
 
 # MuCoSim: Analysis of MD-Bench CUDA port from C
-[TOC]
+
 ## Project Description
 
 ### Customer Info
@@ -46,11 +46,8 @@ Describe the system you are using for your tests
 
 **Compiler**:
 
-* Compiler: Intel Fortran 19.0.5.281
-* MPI: Intel MPI Library 2019 Update 5
+* Compiler: Nvidia NVCC Build cuda_11.2.r11.2/compiler.29618528_0
 * Operating System: Ubuntu 20.04.3 LTS
-* Addition libraries:
-  * LIKWID 5.2.0
 
 <!-----------------------------------------------------------------------------
 Describe the build system
@@ -58,10 +55,13 @@ Describe the build system
 
 
 ### How to build software
+```console
+foo@bar:~$ git clone https://github.com/RRZE-HPC/MD-Bench/tree/mucosim_cuda
+foo@bar:~$ cd MD-Bench
+```
 
-<!-----------------------------------------------------------------------------
-Which flags are you using? Any specific changes to the Makefile? 
------------------------------------------------------------------------------->
+Change the `TAG` variable in `config.mk` to `TAG ?= NVCC`
+You can adjust compiler flags in `include_NVCC.mk`.
 
 ### Testcase description
 
@@ -70,10 +70,11 @@ Describe the test case like input sizes, runtime configurations, ...
 ------------------------------------------------------------------------------>
 ### How to run software
 
-<!-----------------------------------------------------------------------------
-What is required to run the application
------------------------------------------------------------------------------->
-
+```console
+foo@bar:~/MD-Bench$ module load cuda likwid
+foo@bar:~/MD-Bench$ make
+foo@bar:~/MD-Bench$ ./MDBench-NVCC
+```
 
 ## Task1: Scaling runs
 <!-----------------------------------------------------------------------------
