@@ -85,6 +85,13 @@ Record a metric like runtime, performance, ... for each run and plot it
   
 ## Task2: Whole application measurements
 
+<!--
+    TODO:
+        - Calculate atom updates / second for various thread / block configurations
+        - Calculate memory bandwith cpu <-> gpu by computing bytes / second in 'computeForce' call
+        - Calculate flops / second for GPU
+        - Calculate roofline model
+ >
 <!-----------------------------------------------------------------------------
 Redo the scaling runs but measure the application behavior with useful metrics
 ------------------------------------------------------------------------------>
