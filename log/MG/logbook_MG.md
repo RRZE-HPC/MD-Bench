@@ -25,8 +25,25 @@ for time tracking is [Watson](http://tailordev.github.io/Watson/).
 * Code: MD-Bench
 * URL: https://github.com/RRZE-HPC/MD-Bench/tree/mucosim_cuda
 
-Performance analysis of MD-Bench, a molecular dynamics application based on miniMD.
-The main goal is to provide a performance model for molecular dynamics and evaluate the performance for different strategies on different targets.
+Performance analysis of MD-Bench, a molecular dynamics application which calculates the interactions among particles and how these affect their motion.
+The simulation system's constituents are
+* Number of atoms with initial state (position & velocity)
+* Boundary conditions (periodic)
+
+The force of each atom is based on its interaction with neighboring atoms. In MD-Bench, the Lennard-Jones potential is used to model the potential among
+pairs of particles, here: electronically neutral atoms. This potential models repulsive as well as attractive interactions:
+
+[Image of formula]
+
+where r is the distance between the two interacting atoms, epsilon is the dispersion energy and sigma the distance at which the particle-potential V is zero:
+
+[Graph of formula]
+
+What can be observed from this graph is:
+* The Lennard-Jones potential is a simplified model but still describes the essential aspects of particle dynamics
+* Particles repel each other at close distances, attract each other at medium distances and have close to zero interaction at large distances
+
+
 
 ### Testsystem
 
