@@ -72,7 +72,6 @@ The original C-code will be refactored to Nvidia CUDA compatible code and its pe
 * GPU type: 8x NVIDIA Geforce RTX3080
 * Memory capacity: 384 GB RAM
 * Number of GPUs per node: 7/56
-* Interconnect: None
   
 <!-----------------------------------------------------------------------------
 Describe the system you are using for your tests
@@ -112,13 +111,50 @@ foo@bar:~/MD-Bench$ make
 foo@bar:~/MD-Bench$ ./MDBench-NVCC
 ```
 
+MD-Bench will output the temperature and pressure at fixed iterations intervalls
+as well as performance evaluations in million atom updates per second.
+An output may look like this (without modified parameters):
+```console
+foo@bar:~$ ./MDBench-NVCC
+step    temp            pressure
+0       1.440000e+00    1.215639e+00
+100     8.200895e-01    6.923143e-01
+200     7.961495e-01    6.721043e-01
+----------------------------------------------------------------------------
+Force field: lj
+Data layout for positions: AoS
+Using double precision floating point.
+----------------------------------------------------------------------------
+System: 131072 atoms 47265 ghost atoms, Steps: 200
+TOTAL 6.83s FORCE 0.73s NEIGH 3.07s REST 3.04s
+----------------------------------------------------------------------------
+Performance: 3.84 million atom updates per second
+```
+
+With
+
+```console
+foo@bar:~/MD-Bench$ ./MDBench-NVCC -h
+MD Bench: A minimalistic re-implementation of miniMD
+----------------------------------------------------------------------------
+-f <string>:          force field (lj or eam), default lj
+-i <string>:          input file for EAM
+-n / --nsteps <int>:  set number of timesteps for simulation
+-nx/-ny/-nz <int>:    set linear dimension of systembox in x/y/z direction
+--freq <real>:        processor frequency (GHz)
+--vtk <string>:       VTK file for visualization
+----------------------------------------------------------------------------
+```
+
+you can observe the available command line arguments.
+
 ## Task1: Scaling runs
 <!-----------------------------------------------------------------------------
 Run the application in a controlled environment from one to all hardware thread. 
 Take the system topology into account (NUMA domains, CPU sockets, ...).
 Record a metric like runtime, performance, ... for each run and plot it
 ------------------------------------------------------------------------------>
-  
+
 ## Task2: Whole application measurements
 
 <!--

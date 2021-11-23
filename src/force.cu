@@ -163,8 +163,14 @@ double computeForce(
     checkError( "c_atom.cutforcesq memcpy", cudaMemcpy(c_atom.cutforcesq, atom->cutforcesq, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice) );
 
     int *c_neighs;
+    double start_memory_bandwidth = getTimeStamp();
     checkError( "c_neighs malloc", cudaMalloc((void**)&c_neighs, sizeof(int) * Nlocal * neighbor->maxneighs) );
     checkError( "c_neighs memcpy", cudaMemcpy(c_neighs, neighbor->neighbors, sizeof(int) * Nlocal * neighbor->maxneighs, cudaMemcpyHostToDevice) );
+    double end_memory_bandwidth = getTimeStamp();
+    double memory_bandwith_time = (end_memory_bandwidth - start_memory_bandwidth);
+    const unsigned long bytes =  sizeof(int) * Nlocal * neighbor->maxneighs;
+    const double gb_per_second = ((double)bytes / memory_bandwith_time) / 1024.0 / 1024.0 / 1024.0;
+    printf("Data transfer of %lu bytes took %fs => %f GB/s\r\n", bytes, memory_bandwith_time, gb_per_second);
 
     int *c_neigh_numneigh;
     checkError( "c_neigh_numneigh malloc", cudaMalloc((void**)&c_neigh_numneigh, sizeof(int) * Nlocal) );
