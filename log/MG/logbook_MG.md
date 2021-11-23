@@ -33,11 +33,16 @@ The simulation system's constituents are
 The force of each atom is based on its interaction with neighboring atoms. In MD-Bench, the Lennard-Jones potential is used to model the potential among
 pairs of particles, here: electronically neutral atoms. This potential models repulsive as well as attractive interactions:
 
-[Image of formula]
+<p align="center">
+  <img src="https://github.com/RRZE-HPC/MD-Bench/blob/mucosim_cuda/log/MG/resources/d7cacc33b0cedf5b4aa171cd20e4af9931ed38e2.svg" />
+</p>
 
-where r is the distance between the two interacting atoms, epsilon is the dispersion energy and sigma the distance at which the particle-potential V is zero:
+where ***r*** is the distance between the two interacting atoms, ***ε*** is the dispersion energy and ***σ*** the distance at which the
+particle-potential ***V*** is zero:
 
-[Graph of formula]
+<p align="center">
+  <img src="https://github.com/RRZE-HPC/MD-Bench/blob/mucosim_cuda/log/MG/resources/320px-Graph_of_Lenanrd-Jones_potential.png" />
+</p>
 
 What can be observed from this graph is:
 * The Lennard-Jones potential is a simplified model but still describes the essential aspects of particle dynamics
