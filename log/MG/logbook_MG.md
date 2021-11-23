@@ -48,7 +48,21 @@ What can be observed from this graph is:
 * The Lennard-Jones potential is a simplified model but still describes the essential aspects of particle dynamics
 * Particles repel each other at close distances, attract each other at medium distances and have close to zero interaction at large distances
 
+The main focus of this logbook is to describe the performance behavior of *force.c* where the force between atoms is actually calculated.
+Calculating the force means iterating over every pair of particle, which is done in the main-loop (pseudo-code):
 
+```python
+for atom in atoms:
+    neighbors = neighbor.neighbors[atom]
+    force = 0.0
+    for neighbor in neighbors:
+        radius = calc_radius(...)
+        if radius < close_enough:
+            force += calc_force(...)
+    forces[atom] += force
+```
+
+The original C-code will be refactored to Nvidia CUDA compatible code and its performance will be evaluated via *Nvidia Nsight System*.
 
 ### Testsystem
 
