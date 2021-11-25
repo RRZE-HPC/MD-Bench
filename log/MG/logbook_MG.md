@@ -62,7 +62,7 @@ for atom in atoms:
     forces[atom] += force
 ```
 
-The original C-code will be refactored to Nvidia CUDA compatible code and its performance will be evaluated via *Nvidia Nsight System*.
+The original C-code will be refactored to an Nvidia CUDA compatible kernel function and its performance will be evaluated via *Nvidia Nsight System*.
 
 ### Testsystem
 
@@ -154,6 +154,85 @@ Run the application in a controlled environment from one to all hardware thread.
 Take the system topology into account (NUMA domains, CPU sockets, ...).
 Record a metric like runtime, performance, ... for each run and plot it
 ------------------------------------------------------------------------------>
+
+To better understand how to scale CUDA code appropriately, we first have to familiarize
+ourselfs with the CUDA programming model.
+
+The basic execution size is a `thread` which is executed by one CUDA core.
+Threads are group together in `blocks`. These are then executed by one streaming multiprocessor *SM*.
+Once a block gets distributed to an SM, resources are allocated on a `warp`-size level,
+which is 32 threads. These warps are then dispatched to execution units of the GPU.
+
+Therefore, it could make sense to use blocks with multiple of 32 threads.
+
+The CUDA library doesn't really allow to limit the number of CUDA cores which are used for execution,
+therefore we show how the performance of MD-Bench changes with increasing number of threads per block.
+
+Each MD-Bench run will execute 50 time steps, which is equal to 50 calls to *computeForce()* .
+Because the number of atom-updates is constant with `131072`, the number of blocks
+therefore results in:
+
+```python
+blocks = ceil( 131072 / num_threads )
+```
+
+```console
+foo@bar:~/MD-Bench$ srun.tinygpu -N 1 -n 1 --gres=gpu:1 -C hwperf --pty /bin/bash -l
+foo@@tg082:~MD-Bench$ NUM_THREADS=1 ./MD-Bench NVCC -n 50
+```
+
+Via the code
+
+```C
+int nDevices;
+cudaGetDeviceCount(&nDevices);
+
+for(int i = 0; i < nDevices; ++i) {
+    cudaDeviceProp prop;
+    cudaGetDeviceProperties(&prop, i);
+    printf("DEVICE NAME: %s\r\n", prop.name);
+}
+```
+
+we are able to observe, that the system has one `RTX 3080`:
+
+```console
+DEVICE NAME: NVIDIA GeForce RTX 3080
+```
+
+THREADS | ATOM UPDATES PER SECOND
+  1     | 2.20 * 10^6
+  2     | 2.59 * 10^6
+  3     | 2.79 * 10^6
+  4     | 3.11 * 10^6
+  5     | 3.22 * 10^6
+  6     | 3.32 * 10^6
+  7     | 3.35 * 10^6
+  8     | 3.33 * 10^6
+  9     | 3.44 * 10^6
+  10    | 3.45 * 10^6
+  11    | 3.39 * 10^6
+  12    | 3.50 * 10^6
+  13    | 3.51 * 10^6
+  14    | 3.59 * 10^6
+  15    | 3.53 * 10^6
+  16    | 3.48 * 10^6
+  17    | 3.58 * 10^6
+  18    | 3.60 * 10^6
+  19    | 3.38 * 10^6
+  20    | 3.63 * 10^6
+  21    | 3.62 * 10^6
+  22    | 3.63 * 10^6
+  23    | 3.65 * 10^6
+  24    | 3.60 * 10^6
+  25    | 3.57 * 10^6
+  26    | 3.66 * 10^6
+  27    | 3.71 * 10^6
+  28    | 3.58 * 10^6
+  29    | 3.58 * 10^6
+  30    | 3.72 * 10^6
+  31    | 3.57 * 10^6
+  32    | 3.71 * 10^6
 
 ## Task2: Whole application measurements
 

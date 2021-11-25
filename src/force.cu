@@ -128,12 +128,25 @@ double computeForce(
         fz[i] = 0.0;
     }
 
+    const char *num_threads_env = getenv("NUM_THREADS");
+    const int num_threads = atoi(num_threads_env);
+
     Atom c_atom;
     c_atom.Natoms = atom->Natoms;
     c_atom.Nlocal = atom->Nlocal;
     c_atom.Nghost = atom->Nghost;
     c_atom.Nmax = atom->Nmax;
     c_atom.ntypes = atom->ntypes;
+
+    /*
+    int nDevices;
+    cudaGetDeviceCount(&nDevices);
+    for(int i = 0; i < nDevices; ++i) {
+        cudaDeviceProp prop;
+        cudaGetDeviceProperties(&prop, i);
+        printf("DEVICE NAME: %s\r\n", prop.name);
+    }
+    */
 
     // HINT: Run with cuda-memcheck ./MDBench-NVCC in case of error
     // HINT: Only works for data layout = AOS!!!
@@ -162,22 +175,28 @@ double computeForce(
     checkError( "c_atom.cutforcesq malloc", cudaMalloc((void**)&(c_atom.cutforcesq), sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes) );
     checkError( "c_atom.cutforcesq memcpy", cudaMemcpy(c_atom.cutforcesq, atom->cutforcesq, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice) );
 
+
+    // double start_memory_bandwidth = getTimeStamp();
+
     int *c_neighs;
-    double start_memory_bandwidth = getTimeStamp();
     checkError( "c_neighs malloc", cudaMalloc((void**)&c_neighs, sizeof(int) * Nlocal * neighbor->maxneighs) );
     checkError( "c_neighs memcpy", cudaMemcpy(c_neighs, neighbor->neighbors, sizeof(int) * Nlocal * neighbor->maxneighs, cudaMemcpyHostToDevice) );
+
+    /*
     double end_memory_bandwidth = getTimeStamp();
     double memory_bandwith_time = (end_memory_bandwidth - start_memory_bandwidth);
     const unsigned long bytes =  sizeof(int) * Nlocal * neighbor->maxneighs;
     const double gb_per_second = ((double)bytes / memory_bandwith_time) / 1024.0 / 1024.0 / 1024.0;
     printf("Data transfer of %lu bytes took %fs => %f GB/s\r\n", bytes, memory_bandwith_time, gb_per_second);
+    */
 
     int *c_neigh_numneigh;
     checkError( "c_neigh_numneigh malloc", cudaMalloc((void**)&c_neigh_numneigh, sizeof(int) * Nlocal) );
     checkError( "c_neigh_numneigh memcpy", cudaMemcpy(c_neigh_numneigh, neighbor->numneigh, sizeof(int) * Nlocal, cudaMemcpyHostToDevice) );
 
-    const int num_threads_per_block = 32; // this should be multiple of 32 as operations are performed at the level of warps
+    const int num_threads_per_block = num_threads; // this should be multiple of 32 as operations are performed at the level of warps
     const int num_blocks = ceil((float)Nlocal / (float)num_threads_per_block);
+    // printf("Distribution size: %d\r\n%d Blocks with each %d threads\r\n", Nlocal, num_blocks, num_threads_per_block);
 
     double S = getTimeStamp();
     LIKWID_MARKER_START("force");
