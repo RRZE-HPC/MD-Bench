@@ -71,22 +71,46 @@ void initNeighbor(Neighbor *neighbor, Parameter *param)
     neighbor->neighbors = NULL;
 }
 
-void setupNeighbor()
+void setupNeighbor(Parameter* param)
 {
     MD_FLOAT coord;
     int mbinxhi, mbinyhi, mbinzhi;
     int nextx, nexty, nextz;
+
+    if(param->input_file != NULL) {
+        xprd = param->xprd;
+        yprd = param->yprd;
+        zprd = param->zprd;
+    }
+
+    // TODO: update lo and hi for standard case and use them here instead
     MD_FLOAT xlo = 0.0; MD_FLOAT xhi = xprd;
     MD_FLOAT ylo = 0.0; MD_FLOAT yhi = yprd;
     MD_FLOAT zlo = 0.0; MD_FLOAT zhi = zprd;
 
     cutneighsq = cutneigh * cutneigh;
-    binsizex = xprd / nbinx;
-    binsizey = yprd / nbiny;
-    binsizez = zprd / nbinz;
-    bininvx = 1.0 / binsizex;
-    bininvy = 1.0 / binsizey;
-    bininvz = 1.0 / binsizez;
+
+    if(param->input_file != NULL) {
+        binsizex = cutneigh * 0.5;
+        binsizey = cutneigh * 0.5;
+        binsizez = cutneigh * 0.5;
+        nbinx = (int)((param->xhi - param->xlo) / binsizex);
+        nbiny = (int)((param->yhi - param->ylo) / binsizey);
+        nbinz = (int)((param->zhi - param->zlo) / binsizez);
+        if(nbinx == 0) { nbinx = 1; }
+        if(nbiny == 0) { nbiny = 1; }
+        if(nbinz == 0) { nbinz = 1; }
+        bininvx = nbinx / (param->xhi - param->xlo);
+        bininvy = nbiny / (param->yhi - param->ylo);
+        bininvz = nbinz / (param->zhi - param->zlo);
+    } else {
+        binsizex = xprd / nbinx;
+        binsizey = yprd / nbiny;
+        binsizez = zprd / nbinz;
+        bininvx = 1.0 / binsizex;
+        bininvy = 1.0 / binsizey;
+        bininvz = 1.0 / binsizez;
+    }
 
     coord = xlo - cutneigh - SMALL * xprd;
     mbinxlo = (int) (coord * bininvx);

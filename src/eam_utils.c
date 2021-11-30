@@ -43,7 +43,7 @@ void initEam(Eam* eam, Parameter* param) {
 }
 
 void coeff(Eam* eam, Parameter* param) {
-    read_file(&eam->file, param->input_file);
+    read_eam_file(&eam->file, param->eam_file);
     param->mass = eam->file.mass;
     param->cutforce = eam->file.cut;
     param->cutneigh = param->cutforce + 1.0;
@@ -59,7 +59,7 @@ void init_style(Eam* eam, Parameter* param) {
     array2spline(eam, param);
 }
 
-void read_file(Funcfl* file, const char* filename) {
+void read_eam_file(Funcfl* file, const char* filename) {
     FILE* fptr;
     char line[MAXLINE];
 
