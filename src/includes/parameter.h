@@ -51,7 +51,9 @@ typedef struct {
     MD_FLOAT cutneigh;
     int nx, ny, nz;
     MD_FLOAT lattice;
+    MD_FLOAT xlo, xhi, ylo, yhi, zlo, zhi;
     MD_FLOAT xprd, yprd, zprd;
     double proc_freq;
+    char* eam_file;
 } Parameter;
 #endif

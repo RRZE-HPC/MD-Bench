@@ -88,13 +88,17 @@ double setup(
 
     S = getTimeStamp();
     initAtom(atom);
-    initNeighbor(neighbor, param);
     initPbc(atom);
     initStats(stats);
-    setupNeighbor();
-    createAtom(atom, param);
+    initNeighbor(neighbor, param);
+    if(param->input_file == NULL) {
+        createAtom(atom, param);
+    } else {
+        readAtom(atom, param);
+    }
+    setupNeighbor(param);
     setupThermo(param, atom->Natoms);
-    adjustThermo(param, atom);
+    if(param->input_file == NULL) { adjustThermo(param, atom); }
     setupPbc(atom, param);
     updatePbc(atom, param);
     buildNeighbor(atom, neighbor);
@@ -209,6 +213,11 @@ int main(int argc, char** argv)
             param.input_file = strdup(argv[++i]);
             continue;
         }
+        if((strcmp(argv[i], "-e") == 0))
+        {
+            param.eam_file = strdup(argv[++i]);
+            continue;
+        }
         if((strcmp(argv[i], "-n") == 0) || (strcmp(argv[i], "--nsteps") == 0))
         {
             param.ntimes = atoi(argv[++i]);
@@ -244,7 +253,8 @@ int main(int argc, char** argv)
             printf("MD Bench: A minimalistic re-implementation of miniMD\n");
             printf(HLINE);
             printf("-f <string>:          force field (lj or eam), default lj\n");
-            printf("-i <string>:          input file for EAM\n");
+            printf("-i <string>:          input file with atom positions (dump)\n");
+            printf("-e <string>:          input file for EAM\n");
             printf("-n / --nsteps <int>:  set number of timesteps for simulation\n");
             printf("-nx/-ny/-nz <int>:    set linear dimension of systembox in x/y/z direction\n");
             printf("--freq <real>:        processor frequency (GHz)\n");

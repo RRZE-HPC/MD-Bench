@@ -30,13 +30,50 @@
 #define IR 2836
 #define MASK 123459876
 
-double myrandom(int* idum)
+double myrandom(int* seed)
 {
-    int k= (*idum) / IQ;
+    int k= (*seed) / IQ;
     double ans;
 
-    *idum = IA * (*idum - k * IQ) - IR * k;
-    if(*idum < 0) *idum += IM;
-    ans = AM * (*idum);
+    *seed = IA * (*seed - k * IQ) - IR * k;
+    if(*seed < 0) *seed += IM;
+    ans = AM * (*seed);
     return ans;
+}
+
+void random_reset(int *seed, int ibase, double *coord)
+{
+  int i;
+  char *str = (char *) &ibase;
+  int n = sizeof(int);
+  unsigned int hash = 0;
+
+  for (i = 0; i < n; i++) {
+    hash += str[i];
+    hash += (hash << 10);
+    hash ^= (hash >> 6);
+  }
+
+  str = (char *) coord;
+  n = 3 * sizeof(double);
+  for (i = 0; i < n; i++) {
+    hash += str[i];
+    hash += (hash << 10);
+    hash ^= (hash >> 6);
+  }
+
+  hash += (hash << 3);
+  hash ^= (hash >> 11);
+  hash += (hash << 15);
+
+  // keep 31 bits of unsigned int as new seed
+  // do not allow seed = 0, since will cause hang in gaussian()
+
+  *seed = hash & 0x7ffffff;
+  if (!(*seed)) *seed = 1;
+
+  // warm up the RNG
+
+  for (i = 0; i < 5; i++) myrandom(seed);
+  //save = 0;
 }
