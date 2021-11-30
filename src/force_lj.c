@@ -26,13 +26,9 @@
 #include <neighbor.h>
 #include <parameter.h>
 #include <atom.h>
+#include <stats.h>
 
-double computeForce(
-        Parameter *param,
-        Atom *atom,
-        Neighbor *neighbor
-        )
-{
+double computeForceLJ(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *stats) {
     int Nlocal = atom->Nlocal;
     int* neighs;
     MD_FLOAT* fx = atom->fx;
@@ -97,10 +93,12 @@ double computeForce(
         fx[i] += fix;
         fy[i] += fiy;
         fz[i] += fiz;
+
+        addStat(stats->total_force_neighs, numneighs);
+        addStat(stats->total_force_iters, (numneighs + VECTOR_WIDTH - 1) / VECTOR_WIDTH);
     }
 
     LIKWID_MARKER_STOP("force");
     double E = getTimeStamp();
-
     return E-S;
 }

@@ -33,5 +33,11 @@
 #define ABS(a) ((a) >= 0 ? (a) : -(a))
 #endif
 
+#define FF_LJ   0
+#define FF_EAM  1
+
 extern double myrandom(int*);
+extern void random_reset(int *seed, int ibase, double *coord);
+extern int str2ff(const char *string);
+extern const char* ff2str(int ff);
 #endif

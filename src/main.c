@@ -41,12 +41,12 @@
 #include <timers.h>
 #include <eam.h>
 #include <vtk.h>
+#include <util.h>
 
 #define HLINE "----------------------------------------------------------------------------\n"
 
-extern double computeForce(Parameter*, Atom*, Neighbor*);
-extern double computeForceTracing(Parameter*, Atom*, Neighbor*, Stats*, int, int);
-extern double computeForceEam(Eam* eam, Parameter*, Atom *atom, Neighbor *neighbor, Stats *stats, int first_exec, int timestep);
+extern double computeForceLJ(Parameter*, Atom*, Neighbor*, Stats*);
+extern double computeForceEam(Eam*, Parameter*, Atom*, Neighbor*, Stats*);
 
 void init(Parameter *param)
 {
@@ -166,20 +166,6 @@ void printAtomState(Atom *atom)
     /*     } */
 }
 
-int str2ff(const char *string)
-{
-    if(strncmp(string, "lj", 2) == 0) return FF_LJ;
-    if(strncmp(string, "eam", 3) == 0) return FF_EAM;
-    return -1;
-}
-
-const char* ff2str(int ff)
-{
-    if(ff == FF_LJ) { return "lj"; }
-    if(ff == FF_EAM) { return "eam"; }
-    return "invalid";
-}
-
 int main(int argc, char** argv)
 {
     double timer[NUMTIMER];
@@ -266,17 +252,15 @@ int main(int argc, char** argv)
 
     setup(&param, &eam, &atom, &neighbor, &stats);
     computeThermo(0, &param, &atom);
-    if(param.force_field == FF_EAM) {
-        computeForceEam(&eam, &param, &atom, &neighbor, &stats, 1, 0);
-    } else {
-#if defined(MEM_TRACER) || defined(INDEX_TRACER) || defined(COMPUTE_STATS)
-        computeForceTracing(&param, &atom, &neighbor, &stats, 1, 0);
-#else
-        computeForce(&param, &atom, &neighbor);
+#if defined(MEM_TRACER) || defined(INDEX_TRACER)
+    traceAddresses(&param, &atom, &neighbor, n + 1);
 #endif
+    if(param.force_field == FF_EAM) {
+        timer[FORCE] = computeForceEam(&eam, &param, &atom, &neighbor, &stats);
+    } else {
+        timer[FORCE] = computeForceLJ(&param, &atom, &neighbor, &stats);
     }
 
-    timer[FORCE] = 0.0;
     timer[NEIGH] = 0.0;
     timer[TOTAL] = getTimeStamp();
 
@@ -293,15 +277,16 @@ int main(int argc, char** argv)
             timer[NEIGH] += reneighbour(&param, &atom, &neighbor);
         }
 
-        if(param.force_field == FF_EAM) {
-            timer[FORCE] += computeForceEam(&eam, &param, &atom, &neighbor, &stats, 0, n + 1);
-        } else {
-#if defined(MEM_TRACER) || defined(INDEX_TRACER) || defined(COMPUTE_STATS)
-            timer[FORCE] += computeForceTracing(&param, &atom, &neighbor, &stats, 0, n + 1);
-#else
-            timer[FORCE] += computeForce(&param, &atom, &neighbor);
+#if defined(MEM_TRACER) || defined(INDEX_TRACER)
+        traceAddresses(&param, &atom, &neighbor, n + 1);
 #endif
+
+        if(param.force_field == FF_EAM) {
+            timer[FORCE] += computeForceEam(&eam, &param, &atom, &neighbor, &stats);
+        } else {
+            timer[FORCE] += computeForceLJ(&param, &atom, &neighbor, &stats);
         }
+
         finalIntegrate(&param, &atom);
 
         if(!((n + 1) % param.nstat) && (n+1) < param.ntimes) {

@@ -32,7 +32,7 @@
 #include <eam.h>
 #include <util.h>
 
-double computeForceEam(Eam* eam, Parameter* param, Atom *atom, Neighbor *neighbor, Stats *stats, int first_exec, int timestep) {
+double computeForceEam(Eam* eam, Parameter* param, Atom *atom, Neighbor *neighbor, Stats *stats) {
     if(eam->nmax < atom->Nmax) {
         eam->nmax = atom->Nmax;
         if(eam->fp != NULL) { free(eam->fp); }
