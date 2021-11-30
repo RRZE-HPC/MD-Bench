@@ -77,3 +77,17 @@ void random_reset(int *seed, int ibase, double *coord)
   for (i = 0; i < 5; i++) myrandom(seed);
   //save = 0;
 }
+
+int str2ff(const char *string)
+{
+    if(strncmp(string, "lj", 2) == 0) return FF_LJ;
+    if(strncmp(string, "eam", 3) == 0) return FF_EAM;
+    return -1;
+}
+
+const char* ff2str(int ff)
+{
+    if(ff == FF_LJ) { return "lj"; }
+    if(ff == FF_EAM) { return "eam"; }
+    return "invalid";
+}

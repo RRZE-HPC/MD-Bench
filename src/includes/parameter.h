@@ -23,9 +23,6 @@
 #ifndef __PARAMETER_H_
 #define __PARAMETER_H_
 
-#define FF_LJ   0
-#define FF_EAM  1
-
 #if PRECISION == 1
 #define MD_FLOAT float
 #else

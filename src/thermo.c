@@ -25,6 +25,7 @@
 #include <math.h>
 
 #include <thermo.h>
+#include <util.h>
 
 static int *steparr;
 static MD_FLOAT *tmparr;

@@ -10,17 +10,21 @@
 #include <atom.h>
 #include <stats.h>
 #include <thermo.h>
+#include <eam.h>
 #include <pbc.h>
 #include <timers.h>
+#include <util.h>
 
 #define HLINE "----------------------------------------------------------------------------\n"
 
 #define LATTICE_DISTANCE    10.0
 #define NEIGH_DISTANCE      1.0
 
-extern double computeForce(Parameter*, Atom*, Neighbor*, Stats*, int, int);
+extern double computeForceLJ(Parameter*, Atom*, Neighbor*, Stats*);
+extern double computeForceEam(Eam*, Parameter*, Atom*, Neighbor*, Stats*);
 
 void init(Parameter *param) {
+    param->input_file = NULL;
     param->epsilon = 1.0;
     param->sigma6 = 1.0;
     param->rho = 0.8442;
@@ -39,13 +43,14 @@ void init(Parameter *param) {
     param->nstat = 100;
     param->temp = 1.44;
     param->every = 20;
-    param->proc_freq = 0.0;
+    param->proc_freq = 2.4;
+    param->eam_file = NULL;
 }
 
 // Show debug messages
-//#define DEBUG(msg)  printf(msg)
+#define DEBUG(msg)  printf(msg)
 // Do not show debug messages
-#define DEBUG(msg)
+//#define DEBUG(msg)
 
 #define ADD_ATOM(x, y, z, vx, vy, vz)   atom_x(atom->Nlocal) = base_x + x * NEIGH_DISTANCE; \
                                         atom_y(atom->Nlocal) = base_y + y * NEIGH_DISTANCE; \
@@ -56,6 +61,7 @@ void init(Parameter *param) {
                                         atom->Nlocal++
 
 int main(int argc, const char *argv[]) {
+    Eam eam;
     Atom atom_data;
     Atom *atom = (Atom *)(&atom_data);
     Neighbor neighbor;
@@ -71,6 +77,19 @@ int main(int argc, const char *argv[]) {
 
     for(int i = 0; i < argc; i++)
     {
+        if((strcmp(argv[i], "-f") == 0))
+        {
+            if((param.force_field = str2ff(argv[++i])) < 0) {
+                fprintf(stderr, "Invalid force field!\n");
+                exit(-1);
+            }
+            continue;
+        }
+        if((strcmp(argv[i], "-e") == 0))
+        {
+            param.eam_file = strdup(argv[++i]);
+            continue;
+        }
         if((strcmp(argv[i], "-n") == 0) || (strcmp(argv[i], "--nsteps") == 0))
         {
             param.ntimes = atoi(argv[++i]);
@@ -96,12 +115,12 @@ int main(int argc, const char *argv[]) {
             atoms_per_unit_cell = atoi(argv[++i]);
             continue;
         }
-        if((strcmp(argv[i], "-f") == 0))
+        if((strcmp(argv[i], "--freq") == 0))
         {
             param.proc_freq = atof(argv[++i]);
             continue;
         }
-        if((strcmp(argv[i], "-csv") == 0))
+        if((strcmp(argv[i], "--csv") == 0))
         {
             csv = 1;
             continue;
@@ -110,14 +129,21 @@ int main(int argc, const char *argv[]) {
         {
             printf("MD Bench: A minimalistic re-implementation of miniMD\n");
             printf(HLINE);
+            printf("-f <string>:          force field (lj or eam), default lj\n");
             printf("-n / --nsteps <int>:  set number of timesteps for simulation\n");
             printf("-nx/-ny/-nz <int>:    set linear dimension of systembox in x/y/z direction\n");
             printf("-na <int>:            set number of atoms per unit cell\n");
-            printf("-f <real>:            set CPU frequency (GHz) and display average cycles per atom and neighbors\n");
-            printf("-csv:                 set output as CSV style\n");
+            printf("--freq <real>:        set CPU frequency (GHz) and display average cycles per atom and neighbors\n");
+            printf("--csv:                set output as CSV style\n");
             printf(HLINE);
             exit(EXIT_SUCCESS);
         }
+    }
+
+
+    if(param.force_field == FF_EAM) {
+        DEBUG("Initializing EAM parameters...\n");
+        initEam(&eam, &param);
     }
 
     param.xprd = param.nx * LATTICE_DISTANCE;
@@ -204,16 +230,29 @@ int main(int argc, const char *argv[]) {
     DEBUG("Initializing neighbor lists...\n");
     initNeighbor(&neighbor, &param);
     DEBUG("Setting up neighbor lists...\n");
-    setupNeighbor();
+    setupNeighbor(&param);
     DEBUG("Building neighbor lists...\n");
     buildNeighbor(atom, &neighbor);
     DEBUG("Computing forces...\n");
-    computeForce(&param, atom, &neighbor, &stats, 1, 1);
+    if(param.force_field == FF_EAM) {
+        computeForceEam(&eam, &param, atom, &neighbor, &stats);
+    } else {
+        computeForceLJ(&param, atom, &neighbor, &stats);
+    }
 
     double S, E;
     S = getTimeStamp();
     for(int i = 0; i < param.ntimes; i++) {
-        computeForce(&param, atom, &neighbor, &stats, 0, i + 1);
+
+#if defined(MEM_TRACER) || defined(INDEX_TRACER)
+        traceAddresses(&param, atom, &neighbor, i + 1);
+#endif
+
+        if(param.force_field == FF_EAM) {
+            computeForceEam(&eam, &param, atom, &neighbor, &stats);
+        } else {
+            computeForceLJ(&param, atom, &neighbor, &stats);
+        }
     }
     E = getTimeStamp();
     double T_accum = E-S;
