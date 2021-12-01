@@ -144,9 +144,14 @@ double computeForce(
     for(int i = 0; i < nDevices; ++i) {
         cudaDeviceProp prop;
         cudaGetDeviceProperties(&prop, i);
-        printf("DEVICE NAME: %s\r\n", prop.name);
+        printf("DEVICE %d/%d NAME: %s\r\n", i + 1, nDevices, prop.name);
     }
+
+    // Choose GPU where you want to execute code on
+    // It is possible to execute the same kernel on multiple GPUs but you have to copy the data multiple times
+    // Executing `cudaSetDevice(N)` before cudaMalloc / cudaMemcpy / calc_force <<< >>> will set the GPU accordingly
     */
+
 
     // HINT: Run with cuda-memcheck ./MDBench-NVCC in case of error
     // HINT: Only works for data layout = AOS!!!

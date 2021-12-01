@@ -169,6 +169,7 @@ The CUDA library doesn't really allow to limit the number of CUDA cores which ar
 therefore we show how the performance of MD-Bench changes with increasing number of threads per block.
 
 Each MD-Bench run will execute 50 time steps, which is equal to 50 calls to *computeForce()* .
+
 Because the number of atom-updates is constant with `131072`, the number of blocks
 therefore results in:
 
@@ -233,6 +234,18 @@ THREADS | ATOM UPDATES PER SECOND
   30    | 3.72 * 10^6
   31    | 3.57 * 10^6
   32    | 3.71 * 10^6
+
+As one can see, the performance improvement with increasing thread count stagnates at around 10 threads per block
+and there is no clear benefit of choosing 32 over 10 threads.
+
+This is probably due to memory bandwidth limitations between CPU and GPU.
+As only the *computeForce()* was ported to the GPU, there has to happen a lot of copying of atom data to the GPU memory
+before computation and back to the CPU after computation is finished.
+
+To evaluate memory bandwith between CPU and GPU we measure the transfer duration of the whole neighbor list, which is
+52428800 bytes (or 50 Mbyte).
+
+One such transfer roughly takes 0.015s, which extrapolates to around 5 Gbyte/s.
 
 ## Task2: Whole application measurements
 
