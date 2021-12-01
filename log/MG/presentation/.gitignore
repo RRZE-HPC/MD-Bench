@@ -1,0 +1,13 @@
+*.aux
+*.log
+*.nav
+*.out
+*.snm
+*.synctex.gz
+*.toc
+beamer.vrb
+beamer.bbl
+beamer.blg
+beamer.fdb_latexmk
+beamer.fls
+.vscode/
