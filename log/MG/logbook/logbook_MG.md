@@ -247,6 +247,10 @@ To evaluate memory bandwith between CPU and GPU we measure the transfer duration
 
 One such transfer roughly takes 0.015s, which extrapolates to around 5 Gbyte/s.
 
+For CPU:
+
+tinyfat --ntasks=1 --cpus-per-task=32 --pty /bin/bash -l
+
 ## Task2: Whole application measurements
 
 <!--
