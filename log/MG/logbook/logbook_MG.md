@@ -260,6 +260,32 @@ we can observe how much time is actually spent in each specific cuda related cod
 1.03786s  80.736us                    -               -         -         -         -  1.0000MB  12.096GB/s      Device    Pageable  NVIDIA GeForce          1         7  [CUDA memcpy DtoH]
 1.03815s  80.480us                    -               -         -         -         -  1.0000MB  12.134GB/s      Device    Pageable  NVIDIA GeForce          1         7  [CUDA memcpy DtoH]
 
+Using yet another NVIDIA profiling tool, `nsys` we can get a more detailed overview with
+
+```console
+nsys profile --stats=true -o nsys_profile ./MDBench-NVCC -n 50
+```
+
+CUDA API Statistics:
+
+ Time(%)  Total Time (ns)  Num Calls    Average      Minimum     Maximum            Name         
+ -------  ---------------  ---------  ------------  ----------  ----------  ---------------------
+    45.6      788,616,166         51  15,463,062.1  14,117,057  19,881,561  cudaDeviceSynchronize
+    44.4      767,944,973        663   1,158,288.0       4,058  28,160,881  cudaMemcpy           
+     5.9      101,436,382        510     198,894.9       2,735   7,753,209  cudaFree             
+     4.0       69,728,615        510     136,722.8       3,450   3,335,759  cudaMalloc           
+     0.1        1,422,216         51      27,886.6      22,843      74,387  cudaLaunchKernel     
+
+
+CUDA Kernel Statistics:
+
+ Time(%)  Total Time (ns)  Instances    Average      Minimum     Maximum                                 Name                             
+ -------  ---------------  ---------  ------------  ----------  ----------  --------------------------------------------------------------
+   100.0      787,497,765         51  15,441,132.6  14,094,494  19,849,202  calc_force(Atom, double, double, double, int, int, int*, int*)
+
+Analyizing the output profile in `NVIDIA Nsight Systems`:
+
+TODO: Add image
 
 ## Task3: Runtime profile
 
