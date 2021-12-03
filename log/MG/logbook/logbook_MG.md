@@ -287,6 +287,12 @@ Analyizing the output profile in `NVIDIA Nsight Systems`:
 
 TODO: Add image
 
+We can dig even deeper using even more NVIDIA tools such as `NVIDIA Nsight Compute`.
+
+Via `ncu --set full -o profile ./MDBench-NVCC` we get very detaild and nicely presented analysis results, such as a Roofline model plot:
+
+TODO: Add image
+
 ## Task3: Runtime profile
 
 <!-----------------------------------------------------------------------------
