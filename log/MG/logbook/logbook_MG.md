@@ -178,7 +178,7 @@ blocks = ceil( 131072 / num_threads )
 ```
 
 ```console
-foo@bar:~/MD-Bench$ srun.tinygpu -N 1 -n 1 --gres=gpu:1 -C hwperf --pty /bin/bash -l
+foo@bar:~/MD-Bench$ srun.tinygpu -N 1 -n 1 --gres=gpu:1 --pty /bin/bash -l
 foo@@tg082:~MD-Bench$ NUM_THREADS=1 ./MD-Bench NVCC -n 50
 ```
 
@@ -201,39 +201,7 @@ we are able to observe, that the system has one `RTX 3080`:
 DEVICE NAME: NVIDIA GeForce RTX 3080
 ```
 
-THREADS | ATOM UPDATES PER SECOND
-  1     | 2.20 * 10^6
-  2     | 2.59 * 10^6
-  3     | 2.79 * 10^6
-  4     | 3.11 * 10^6
-  5     | 3.22 * 10^6
-  6     | 3.32 * 10^6
-  7     | 3.35 * 10^6
-  8     | 3.33 * 10^6
-  9     | 3.44 * 10^6
-  10    | 3.45 * 10^6
-  11    | 3.39 * 10^6
-  12    | 3.50 * 10^6
-  13    | 3.51 * 10^6
-  14    | 3.59 * 10^6
-  15    | 3.53 * 10^6
-  16    | 3.48 * 10^6
-  17    | 3.58 * 10^6
-  18    | 3.60 * 10^6
-  19    | 3.38 * 10^6
-  20    | 3.63 * 10^6
-  21    | 3.62 * 10^6
-  22    | 3.63 * 10^6
-  23    | 3.65 * 10^6
-  24    | 3.60 * 10^6
-  25    | 3.57 * 10^6
-  26    | 3.66 * 10^6
-  27    | 3.71 * 10^6
-  28    | 3.58 * 10^6
-  29    | 3.58 * 10^6
-  30    | 3.72 * 10^6
-  31    | 3.57 * 10^6
-  32    | 3.71 * 10^6
+TODO: Add GPU measurements
 
 As one can see, the performance improvement with increasing thread count stagnates at around 10 threads per block
 and there is no clear benefit of choosing 32 over 10 threads.
@@ -242,14 +210,11 @@ This is probably due to memory bandwidth limitations between CPU and GPU.
 As only the *computeForce()* was ported to the GPU, there has to happen a lot of copying of atom data to the GPU memory
 before computation and back to the CPU after computation is finished.
 
-To evaluate memory bandwith between CPU and GPU we measure the transfer duration of the whole neighbor list, which is
-52428800 bytes (or 50 Mbyte).
-
-One such transfer roughly takes 0.015s, which extrapolates to around 5 Gbyte/s.
-
 For CPU:
 
-tinyfat --ntasks=1 --cpus-per-task=32 --pty /bin/bash -l
+srun.tinyfat --ntasks=1 --cpus-per-task=32 --pty /bin/bash -l
+
+TODO: Add CPU measurements with OMP
 
 ## Task2: Whole application measurements
 
@@ -263,7 +228,39 @@ tinyfat --ntasks=1 --cpus-per-task=32 --pty /bin/bash -l
 <!-----------------------------------------------------------------------------
 Redo the scaling runs but measure the application behavior with useful metrics
 ------------------------------------------------------------------------------>
-  
+
+To evaluate memory bandwith between CPU and GPU we measure the transfer duration of the whole neighbor list, which is
+52428800 bytes (or 50 Mbyte).
+
+One such transfer roughly takes 0.015s, which extrapolates to around 5 Gbyte/s.
+
+After calculation is done, copying the results back to the CPU is performed at 4 Gbyte/s.
+
+Using `nvprof` via the command
+
+```console
+nvprof --print-gpu-trace ./MDBench-NVCC -n 50
+```
+
+we can observe how much time is actually spent in each specific cuda related code:
+
+   Start  Duration            Grid Size      Block Size     Regs*    SSMem*    DSMem*      Size  Throughput  SrcMemType  DstMemType           Device   Context    Stream  Name
+1.00263s  899.68us                    -               -         -         -         -  4.1199MB  4.4719GB/s    Pageable      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+1.00404s  87.904us                    -               -         -         -         -  1.0000MB  11.109GB/s    Pageable      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+1.00439s  87.616us                    -               -         -         -         -  1.0000MB  11.146GB/s    Pageable      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+1.00490s  87.808us                    -               -         -         -         -  1.0000MB  11.122GB/s    Pageable      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+1.00515s  60.640us                    -               -         -         -         -  703.13KB  11.058GB/s    Pageable      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+1.00522s     896ns                    -               -         -         -         -      128B  136.24MB/s    Pageable      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+1.00523s     864ns                    -               -         -         -         -      128B  141.29MB/s    Pageable      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+1.00524s     864ns                    -               -         -         -         -      128B  141.29MB/s    Pageable      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+1.00576s  11.534ms                    -               -         -         -         -  50.000MB  4.2335GB/s    Pageable      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+1.01758s  45.248us                    -               -         -         -         -  512.00KB  10.791GB/s    Pageable      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+1.01763s  19.917ms          (65536 1 1)         (2 1 1)        38        0B        0B         -           -           -           -  NVIDIA GeForce          1         7  calc_force() [132]
+1.03757s  80.896us                    -               -         -         -         -  1.0000MB  12.072GB/s      Device    Pageable  NVIDIA GeForce          1         7  [CUDA memcpy DtoH]
+1.03786s  80.736us                    -               -         -         -         -  1.0000MB  12.096GB/s      Device    Pageable  NVIDIA GeForce          1         7  [CUDA memcpy DtoH]
+1.03815s  80.480us                    -               -         -         -         -  1.0000MB  12.134GB/s      Device    Pageable  NVIDIA GeForce          1         7  [CUDA memcpy DtoH]
+
+
 ## Task3: Runtime profile
 
 <!-----------------------------------------------------------------------------

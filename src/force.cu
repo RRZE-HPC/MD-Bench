@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <cuda_profiler_api.h>
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 
@@ -122,6 +123,8 @@ double computeForce(
     MD_FLOAT epsilon = param->epsilon;
 #endif
 
+    cudaProfilerStart();
+
     for(int i = 0; i < Nlocal; i++) {
         fx[i] = 0.0;
         fy[i] = 0.0;
@@ -129,7 +132,12 @@ double computeForce(
     }
 
     const char *num_threads_env = getenv("NUM_THREADS");
-    const int num_threads = atoi(num_threads_env);
+    int num_threads = 0;
+    if(num_threads_env == nullptr)
+        num_threads = 2;
+    else {
+        num_threads = atoi(num_threads_env);
+    }
 
     Atom c_atom;
     c_atom.Natoms = atom->Natoms;
@@ -224,6 +232,8 @@ double computeForce(
     cudaFree(c_atom.cutforcesq);
 
     cudaFree(c_neighs); cudaFree(c_neigh_numneigh);
+
+    cudaProfilerStop();
 
     LIKWID_MARKER_STOP("force");
     double E = getTimeStamp();
