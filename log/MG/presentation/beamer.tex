@@ -377,14 +377,15 @@ foo@bar:~/MD-Bench$ srun.tinyfat --ntasks=1 --cpus-per-task=32 --pty /bin/bash -
 foo@bar:~/MD-Bench$ nvprof --print-gpu-trace ./MDBench-NVCC -n 50
 \end{lstlisting}
         enables detailed metrics on memory throughput
+        \vspace{1em}
         \begin{figure}[!H]
             \centering
-            \scalebox{.26}{
+            \scalebox{.45}{
                 \pgfplotstabletypeset[
                     col sep=comma,
                     string type,
-                    columns={Start,Duration,Grid Size,Block Size,Regs,SSMem,DSMem,Size,Throughput,SrcMemType,DstMemType,Device,Context,Stream,Name},
-                    assign column name/.style={/pgfplots/table/column name={\textbf{#1}}}
+                    columns={Duration,Size,Throughput,SrcMemType,DstMemType,Name},
+                    assign column name/.style={/pgfplots/table/column name={\large{\textbf{#1}}}}
                 ] {Resources/nvprof.csv}
             }
         \end{figure}
