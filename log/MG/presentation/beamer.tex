@@ -18,6 +18,7 @@
 \usetikzlibrary{positioning}
 \usetikzlibrary{graphs,graphs.standard,quotes}
 \usetikzlibrary{patterns}
+\usepackage{pgfplotstable}
 \usepackage{filecontents}
 
 \usepackage{amsmath,amsfonts,amssymb}
@@ -377,7 +378,22 @@ foo@bar:~/MD-Bench$ srun.tinyfat --ntasks=1 --cpus-per-task=32 --pty /bin/bash -
     \lstset{breaklines=true, breakatwhitespace=true}
 
     \begin{itemize}
-        \item
+        \item Using the Nvidia \textit{nvprof} profiling tool via
+\begin{lstlisting}[basicstyle=\footnotesize, language=Bash, linewidth=10cm]
+foo@bar:~/MD-Bench$ nvprof --print-gpu-trace ./MDBench-NVCC -n 50
+\end{lstlisting}
+        enables detailed metrics on memory throughput
+        \begin{figure}[!H]
+            \centering
+            \scalebox{.26}{
+                \pgfplotstabletypeset[
+                    col sep=comma,
+                    string type,
+                    columns={Start,Duration,Grid Size,Block Size,Regs,SSMem,DSMem,Size,Throughput,SrcMemType,DstMemType,Device,Context,Stream,Name},
+                    assign column name/.style={/pgfplots/table/column name={\textbf{#1}}}
+                ] {Resources/nvprof.csv}
+            }
+        \end{figure}
     \end{itemize}
 
 \end{frame}
