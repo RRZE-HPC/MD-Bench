@@ -33,7 +33,7 @@
 \titlepage
 \end{frame}
 
-\section{Prerequisites}
+\section{Preliminary}
 
 \definecolor{brightcerulean}{rgb}{0.11, 0.67, 0.84}
 
@@ -117,17 +117,11 @@
         \item CPU type: 2x Intel Xeon Gold 6226R @2.9 GHz = 32 cores with optional SMT
         \item GPU type: 8x NVIDIA Geforce RTX3080
         \item Memory capacity: 384 GB RAM
-    \end{itemize}
-
-\end{frame}
-
-\section{Software Environment}
-
-\begin{frame}[fragile]{Software Environment}
-
-    \begin{itemize}
-        \item Compiler: Nvidia NVCC Build cuda\_11.2.r11.2
-        \item Operating System: Ubuntu 20.04.3 LTS
+        \item Software Environment:
+        \begin{itemize}
+            \item Compiler: Nvidia NVCC Build cuda\_11.2.r11.2
+            \item Operating System: Ubuntu 20.04.3 LTS
+        \end{itemize}
     \end{itemize}
 
 \end{frame}
@@ -279,7 +273,7 @@ Performance: 3.84 million atom updates per second
 
 \end{frame}
 
-\begin{frame}[fragile]{Scaling threads and blocks I}
+\begin{frame}[fragile]{Scaling threads I}
     
     \lstset{language=Python,
         basicstyle=\ttfamily,
@@ -309,7 +303,7 @@ foo@bar:~/MD-Bench$ NUM_THREADS=X ./MD-Bench-NVCC -n 50
 
 \end{frame}
 
-\begin{frame}[fragile]{Scaling threads and blocks II}
+\begin{frame}[fragile]{Scaling threads II}
 
     \begin{itemize}
         \item As resources are allocated on a warp-size level, we expect to have highest performance for 32 threads per block
@@ -333,7 +327,7 @@ foo@bar:~/MD-Bench$ NUM_THREADS=X ./MD-Bench-NVCC -n 50
     
 \end{frame}
 
-\begin{frame}[fragile]{Scaling threads and blocks III}
+\begin{frame}[fragile]{Scaling threads III}
 
     \lstset{prebreak=\raisebox{0ex}[0ex][0ex]
         {\ensuremath{\rhookswarrow}}}
@@ -367,7 +361,7 @@ foo@bar:~/MD-Bench$ srun.tinyfat --ntasks=1 --cpus-per-task=32 --pty /bin/bash -
     
 \end{frame}
 
-\section{Application measurements}
+\section{Measurements}
 
 \begin{frame}[fragile]{Memory Bandwidth}
 
