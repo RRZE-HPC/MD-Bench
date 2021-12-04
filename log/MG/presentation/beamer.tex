@@ -292,15 +292,16 @@ Performance: 3.84 million atom updates per second
     \lstset{postbreak=\raisebox{0ex}[0ex][0ex]
         {\ensuremath{\rcurvearrowse\space}}}
     \lstset{breaklines=true, breakatwhitespace=true}
+
     \begin{itemize}
         \item Default number of atoms: \textit{131072}
         \item Number of blocks is calculated by (\lstinline{num_threads} is fixed):
 \begin{lstlisting}[basicstyle=\footnotesize, language=Python]
 blocks = ceil( 131072 / num_threads )
 \end{lstlisting}
-        \item Run on cluster with 1x RTX 3080:
+        \item Run on cluster with one GPU:
 \begin{lstlisting}[basicstyle=\footnotesize, language=Bash, linewidth=10cm]
-foo@bar:~/MD-Bench$ srun.tinygpu -N 1 -n 1 --gres=gpu:1 -C hwperf --pty /bin/bash -l
+foo@bar:~/MD-Bench$ srun.tinygpu -N 1 -n 1 --gres=gpu:1 --pty /bin/bash -l
 foo@bar:~/MD-Bench$ NUM_THREADS=X ./MD-Bench-NVCC -n 50
 \end{lstlisting}
     \end{itemize}
@@ -318,17 +319,67 @@ foo@bar:~/MD-Bench$ NUM_THREADS=X ./MD-Bench-NVCC -n 50
                     xlabel=$\text{Threads per Block}$,
                     ylabel=$\text{Atom updates per s}$,
                     xmin=1, xmax=32,
-                    ymin=0, ymax=5e6,
+                    ymin=0, ymax=8e6,
                     legend style={fill=none,draw=white}
                 ]
             
-                \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {Resources/data.csv};
+                \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {Resources/gpu.csv};
                 \addlegendentry{Data}
                 \end{axis}
             \end{tikzpicture}
         \end{figure}
     \end{itemize}
     
+\end{frame}
+
+\begin{frame}[fragile]{Scaling threads and blocks III}
+
+    \lstset{prebreak=\raisebox{0ex}[0ex][0ex]
+        {\ensuremath{\rhookswarrow}}}
+    \lstset{postbreak=\raisebox{0ex}[0ex][0ex]
+        {\ensuremath{\rcurvearrowse\space}}}
+    \lstset{breaklines=true, breakatwhitespace=true}
+
+    \begin{itemize}
+        \item Performance improvement stagnates
+        \item But how does the CPU perform?
+\begin{lstlisting}[basicstyle=\footnotesize, language=Bash, linewidth=10cm]
+foo@bar:~/MD-Bench$ srun.tinyfat --ntasks=1 --cpus-per-task=32 --pty /bin/bash -l
+\end{lstlisting}
+        \begin{figure}[!H]
+            \centering
+            \begin{tikzpicture}[scale=0.625]
+                \begin{axis}[
+                    xlabel=$\text{OMP Num Threads}$,
+                    ylabel=$\text{Atom updates per s}$,
+                    xmin=1, xmax=32,
+                    ymin=0, ymax=8e6,
+                    legend style={fill=none,draw=white}
+                ]
+            
+                \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {Resources/cpu.csv};
+                \addlegendentry{Data}
+                \end{axis}
+            \end{tikzpicture}
+        \end{figure}
+    \end{itemize}
+    
+\end{frame}
+
+\section{Application measurements}
+
+\begin{frame}[fragile]{Memory Bandwidth}
+
+    \lstset{prebreak=\raisebox{0ex}[0ex][0ex]
+        {\ensuremath{\rhookswarrow}}}
+    \lstset{postbreak=\raisebox{0ex}[0ex][0ex]
+        {\ensuremath{\rcurvearrowse\space}}}
+    \lstset{breaklines=true, breakatwhitespace=true}
+
+    \begin{itemize}
+        \item
+    \end{itemize}
+
 \end{frame}
 
 \begin{frame}[allowframebreaks]
