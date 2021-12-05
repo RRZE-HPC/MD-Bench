@@ -119,7 +119,7 @@
         \item Memory capacity: 384 GB RAM
         \item Software Environment:
         \begin{itemize}
-            \item Compiler: Nvidia NVCC Build cuda\_11.2.r11.2
+            \item Compiler: NVIDIA NVCC Build cuda\_11.2.r11.2
             \item Operating System: Ubuntu 20.04.3 LTS
         \end{itemize}
     \end{itemize}
@@ -363,7 +363,7 @@ foo@bar:~/MD-Bench$ srun.tinyfat --ntasks=1 --cpus-per-task=32 --pty /bin/bash -
 
 \section{Measurements}
 
-\begin{frame}[fragile]{Memory Bandwidth}
+\begin{frame}[fragile]{Memory Bandwidth I}
 
     \lstset{prebreak=\raisebox{0ex}[0ex][0ex]
         {\ensuremath{\rhookswarrow}}}
@@ -372,7 +372,7 @@ foo@bar:~/MD-Bench$ srun.tinyfat --ntasks=1 --cpus-per-task=32 --pty /bin/bash -
     \lstset{breaklines=true, breakatwhitespace=true}
 
     \begin{itemize}
-        \item Using the Nvidia \textit{nvprof} profiling tool via
+        \item Using the NVIDIA \textit{nvprof} profiling tool via
 \begin{lstlisting}[basicstyle=\footnotesize, language=Bash, linewidth=10cm]
 foo@bar:~/MD-Bench$ nvprof --print-gpu-trace ./MDBench-NVCC -n 50
 \end{lstlisting}
@@ -388,6 +388,40 @@ foo@bar:~/MD-Bench$ nvprof --print-gpu-trace ./MDBench-NVCC -n 50
                     assign column name/.style={/pgfplots/table/column name={\large{\textbf{#1}}}}
                 ] {Resources/nvprof.csv}
             }
+        \end{figure}
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]{Memory Bandwith II}
+
+    \begin{itemize}
+        \item Together with analysis of the output profile in NVIDIA Nsight Systems:
+        \vspace{1em}
+        \begin{figure}[H]
+            \includegraphics[width=8cm]{Images/nvidia_nsight_systems_perf_analysis.png}
+            \caption{ NVIDIA Nsight Systems }
+        \end{figure}
+    \end{itemize}
+    
+\end{frame}
+
+\begin{frame}[fragile]{Memory Bandwith III}
+
+    \lstset{prebreak=\raisebox{0ex}[0ex][0ex]
+        {\ensuremath{\rhookswarrow}}}
+    \lstset{postbreak=\raisebox{0ex}[0ex][0ex]
+        {\ensuremath{\rcurvearrowse\space}}}
+    \lstset{breaklines=true, breakatwhitespace=true}
+
+    \begin{itemize}
+        \item and the roofline model from
+\begin{lstlisting}[basicstyle=\footnotesize, linewidth=10cm]
+foo@bar:~/MD-Bench$ ncu --set full -o profile ./MDBench-NVCC
+\end{lstlisting}
+        \begin{figure}[H]
+            \includegraphics[width=8cm]{Images/nvidia_nsight_compute_roofline_model.png}
+            \caption{ NVIDIA Nsight Compute Roofline Model }
         \end{figure}
     \end{itemize}
 
