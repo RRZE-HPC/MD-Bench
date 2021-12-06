@@ -23,6 +23,11 @@
 
 \usepackage{amsmath,amsfonts,amssymb}
 
+\usepackage{xcolor}
+\usepackage{hyperref}
+
+\hypersetup{colorlinks=false,urlcolor=cyan}
+
 \begin{document}
 
 \title{MD-Bench}
@@ -429,9 +434,32 @@ foo@bar:~/MD-Bench$ ncu --set full -o profile ./MDBench-NVCC
     
     \begin{itemize}
         \item we observe that memory transfers from CPU to GPU and vice versa are slow
-        \begin{itemize}
-            \item 
-        \end{itemize}
+        \item Using NVIDIA's \href{https://github.com/NVIDIA/cuda-samples/tree/master/Samples/bandwidthTest}{CUDA samples}
+        we are able to evaluate maximum transfer speeds in practice
+        \vspace{1em}
+        \begin{figure}[!H]
+            \centering
+            \begin{tikzpicture}[scale=0.625]
+                \begin{axis}[
+                    ymode=log,
+                    xlabel=$\text{Size in bytes}$,
+                    ylabel=$\text{Bandwidth in Gbyte/s}$,
+                    xmin=1, xmax=50e6,
+                    ymin=0, ymax=1100,
+                    legend style={fill=none,draw=white}
+                ]
+            
+                \addplot [magenta,mark=*,mark size=0.6pt,smooth] table [x=size,y=bandwidth,col sep=comma] {Resources/bandwidth_h_to_d.csv};
+                \addlegendentry{HtoD}
+
+                \addplot [cyan,mark=*,mark size=0.6pt,smooth] table [x=size,y=bandwidth,col sep=comma] {Resources/bandwidth_d_to_h.csv};
+                \addlegendentry{DtoH}
+
+                \addplot [orange,mark=*,mark size=0.6pt,smooth] table [x=size,y=bandwidth,col sep=comma] {Resources/bandwidth_d_to_d.csv};
+                \addlegendentry{DtoD}
+                \end{axis}
+            \end{tikzpicture}
+        \end{figure}
     \end{itemize}
 
 \end{frame}
