@@ -41,7 +41,7 @@
 
     \begin{itemize}
         \item MD-Bench is a molecular dynamics application which calculates the intersections among particles and how these affect motion
-        \item Simulation system constituents:
+        \item Simulation system consists of:
         \begin{itemize}
             \item Number of atoms, each having an initial state and velocity
             \item Boundary conditions
@@ -54,7 +54,7 @@
 \begin{frame}[fragile]{Force modeling}
 
     \begin{itemize}
-        \item In MD-Bench, the Lennard-Jones potential is used for calculating the forces between pairs of particles
+        \item In MD-Bench, the Lennard-Jones potential is used for calculating the forces between pairs of particles \cite{MACHADO2021101425}
         \begin{itemize}
             \item In our case, particles are electronically neutral atoms
         \end{itemize}
@@ -82,6 +82,7 @@
 
     \begin{itemize}
         \item Behavior of the Lennard-Jones potential with increasing distance \textbf{r} in \textbf{Å} (Ångström)
+        \vspace{1em}
         \begin{figure}[H]
             \includegraphics[width=6cm]{Images/Lennard_Jones_potential_function.png}
             \caption{ Lennard Jones Potential }
@@ -138,8 +139,7 @@
         morecomment=[l][\color{magenta}]{\#}
     }
     \begin{itemize}
-        \item MD-Bench uses the Lennard-Jones potential in order to calculate the forces of atoms \cite{MACHADO2021101425}
-        \item This calculation is done for pairs of atoms in \lstinline{src/force.c}
+        \item Calculation of the Lennard-Jones potential is done for pairs of atoms (pseudocode):
 \begin{lstlisting}[basicstyle=\footnotesize, language=Python]
 for atom in atoms:
     neighbors = neighbor.neighbors[atom]
@@ -162,19 +162,6 @@ for atom in atoms:
             \includegraphics[width=4cm]{Images/Neighbor_list_MD_Bench.png}
             \caption{ Neighbor list \cite{MACHADO2021101425} }
         \end{figure}
-    \end{itemize}
-
-\end{frame}
-
-\begin{frame}[fragile]{Force calculation III}
-
-    \begin{itemize}
-        \item \lstinline{src/force.c} was refactored to support CUDA kernel functions and distribution among GPUs
-        \item Force-calculation is parallelized on an atom-level
-        \item Each atom (around 100.000) computes the force for every other atom in its neighbor list (around 100)
-        \begin{itemize}
-            \item Around $10^7$ force computations per run
-        \end{itemize}
     \end{itemize}
 
 \end{frame}
@@ -258,7 +245,7 @@ Performance: 3.84 million atom updates per second
 
 \section{Scaling runs}
 
-\begin{frame}[fragile]{CUDA}
+\begin{frame}[fragile]{CUDA I}
     
     \begin{itemize}
         \item CUDA programming model
@@ -269,6 +256,16 @@ Performance: 3.84 million atom updates per second
             \item Resources on an SM are allocated on a \textit{warp}-size level (32 threads)
             \item Warps are dispatched to execution units of GPU
         \end{itemize}
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]{CUDA II}
+    
+    \begin{itemize}
+        \item \lstinline{src/force.c} was refactored to support CUDA kernel functions and distribution on multiple Threads of a GPU
+        \item Force-calculation is parallelized on an atom-level
+        \item Each atom computes the force for every other atom in its neighbor list (around 100)
     \end{itemize}
 
 \end{frame}
@@ -290,6 +287,7 @@ Performance: 3.84 million atom updates per second
 
     \begin{itemize}
         \item Default number of atoms: \textit{131072}
+        \item Around $10^7$ force computations per run
         \item Number of blocks is calculated by (\lstinline{num_threads} is fixed):
 \begin{lstlisting}[basicstyle=\footnotesize, language=Python]
 blocks = ceil( 131072 / num_threads )
@@ -399,7 +397,7 @@ foo@bar:~/MD-Bench$ nvprof --print-gpu-trace ./MDBench-NVCC -n 50
         \item Together with analysis of the output profile in NVIDIA Nsight Systems:
         \vspace{1em}
         \begin{figure}[H]
-            \includegraphics[width=8cm]{Images/nvidia_nsight_systems_perf_analysis.png}
+            \includegraphics[width=9cm]{Images/nvidia_nsight_systems_perf_analysis.png}
             \caption{ NVIDIA Nsight Systems }
         \end{figure}
     \end{itemize}
@@ -420,9 +418,20 @@ foo@bar:~/MD-Bench$ nvprof --print-gpu-trace ./MDBench-NVCC -n 50
 foo@bar:~/MD-Bench$ ncu --set full -o profile ./MDBench-NVCC
 \end{lstlisting}
         \begin{figure}[H]
-            \includegraphics[width=8cm]{Images/nvidia_nsight_compute_roofline_model.png}
+            \includegraphics[width=9cm]{Images/nvidia_nsight_compute_roofline_model.png}
             \caption{ NVIDIA Nsight Compute Roofline Model }
         \end{figure}
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]{Memory Bandwidth IV}
+    
+    \begin{itemize}
+        \item we observe that memory transfers from CPU to GPU and vice versa are slow
+        \begin{itemize}
+            \item 
+        \end{itemize}
     \end{itemize}
 
 \end{frame}
