@@ -436,7 +436,7 @@ foo@bar:~/MD-Bench$ ncu --set full -o profile ./MDBench-NVCC
         \item we observe that memory transfers from CPU to GPU and vice versa are slow
         \item Using NVIDIA's \href{https://github.com/NVIDIA/cuda-samples/tree/master/Samples/bandwidthTest}{CUDA samples}
         we are able to evaluate maximum transfer speeds in practice
-        \vspace{1em}
+        \vspace{0.65em}
         \begin{figure}[!H]
             \centering
             \begin{tikzpicture}[scale=0.625]
@@ -462,6 +462,20 @@ foo@bar:~/MD-Bench$ ncu --set full -o profile ./MDBench-NVCC
         \end{figure}
     \end{itemize}
 
+\end{frame}
+
+\begin{frame}[fragile]{Future Topics}
+
+    \begin{itemize}
+        \item Low performance is not caused by MD-Bench memory layout but by hardware limitations
+        \item To increase performance we have to avoid DtoH and HtoD memory accesses as much as possible
+        \begin{itemize}
+            \item Change memory layout from Structure of Arrays to Array of Structures
+            \item Avoid unnecessary copies
+            \item Port other parts of MD-Bench to CUDA such that pretty much everything can run inside the GPU
+        \end{itemize}
+    \end{itemize}
+    
 \end{frame}
 
 \begin{frame}[allowframebreaks]
