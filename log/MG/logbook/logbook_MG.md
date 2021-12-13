@@ -293,6 +293,16 @@ Via `ncu --set full -o profile ./MDBench-NVCC` we get very detaild and nicely pr
 
 TODO: Add image
 
+OVERALL TODO AFTER FIRST TALK:
+
+- Consider Pinned memory instead of pageable
+- Reduce memory overhead
+-- Only copy neighborlist after it has been updated (every n-th iteration or so - can be parametrized)
+- Implement SoA
+- Port other parts of the code to CUDA
+- Detailed measurements of kernel function (force calculation) (e.g. Cache utilization)
+-- Do the same thing for CPU
+
 ## Task3: Runtime profile
 
 <!-----------------------------------------------------------------------------
