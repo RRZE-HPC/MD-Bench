@@ -22,8 +22,12 @@
  */
 #include <stdlib.h>
 
+#include <cuda_runtime.h>
+
 #ifndef __ALLOCATE_H_
 #define __ALLOCATE_H_
 extern void* allocate (int alignment, size_t bytesize);
 extern void* reallocate (void* ptr, int alignment, size_t newBytesize, size_t oldBytesize);
+
+extern void checkCUDAError(const char *msg, cudaError_t err);
 #endif

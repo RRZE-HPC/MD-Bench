@@ -25,11 +25,29 @@
 #include <string.h>
 #include <errno.h>
 
+#include <cuda_runtime.h>
+
+void checkCUDAError(const char *msg, cudaError_t err)
+{
+    if (err != cudaSuccess)
+    {
+        //print a human readable error message
+        printf("[CUDA ERROR %s]: %s\r\n", msg, cudaGetErrorString(err));
+        exit(-1);
+    }
+}
+
+
 void* allocate (int alignment, size_t bytesize)
 {
     int errorCode;
     void* ptr;
 
+    checkCUDAError( "allocate", cudaMallocHost((void**)&ptr, bytesize) );
+
+    return ptr;
+
+    /*
     errorCode =  posix_memalign(&ptr, alignment, bytesize);
 
     if (errorCode) {
@@ -51,6 +69,7 @@ void* allocate (int alignment, size_t bytesize)
     }
 
     return ptr;
+    */
 }
 
 void* reallocate (
@@ -63,7 +82,7 @@ void* reallocate (
 
     if(ptr != NULL) {
         memcpy(newarray, ptr, oldBytesize);
-        free(ptr);
+        cudaFreeHost(ptr);
     }
 
     return newarray;

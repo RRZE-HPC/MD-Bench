@@ -30,6 +30,9 @@
 #include <allocate.h>
 #include <util.h>
 
+#include <cuda_runtime.h>
+#include <device_launch_parameters.h>
+
 #define DELTA 20000
 
 void initAtom(Atom *atom)
@@ -57,10 +60,10 @@ void createAtom(Atom *atom, Parameter *param)
     atom->Natoms = 4 * param->nx * param->ny * param->nz;
     atom->Nlocal = 0;
     atom->ntypes = param->ntypes;
-    atom->epsilon = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
-    atom->sigma6 = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
-    atom->cutforcesq = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
-    atom->cutneighsq = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
+    checkCUDAError( "atom->epsilon cudaMallocHost", cudaMallocHost((void**)&(atom->epsilon), atom->ntypes * atom->ntypes * sizeof(MD_FLOAT)) ); // atom->epsilon = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
+    checkCUDAError( "atom->sigma6 cudaMallocHost", cudaMallocHost((void**)&(atom->sigma6), atom->ntypes * atom->ntypes * sizeof(MD_FLOAT)) ); // atom->sigma6 = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
+    checkCUDAError( "atom->cutforcesq cudaMallocHost", cudaMallocHost((void**)&(atom->cutforcesq), atom->ntypes * atom->ntypes * sizeof(MD_FLOAT)) ); // atom->cutforcesq = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
+    checkCUDAError( "atom->cutneighsq cudaMallocHost", cudaMallocHost((void**)&(atom->cutneighsq), atom->ntypes * atom->ntypes * sizeof(MD_FLOAT)) ); // atom->cutneighsq = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
     for(int i = 0; i < atom->ntypes * atom->ntypes; i++) {
         atom->epsilon[i] = param->epsilon;
         atom->sigma6[i] = param->sigma6;

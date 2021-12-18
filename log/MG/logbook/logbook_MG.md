@@ -310,6 +310,28 @@ Determine the functions/kernels which contribute the most to the runtime. Those
 are candidates for optimizations.
 ------------------------------------------------------------------------------>
 
+Make atom-data to pinned memory by allocating with `cudaMallocHost` and free with `cudaFreeHost` yields the following `nvprof` output (neighbor-struct not yet pinned):
+
+   Start  Duration            Grid Size      Block Size     Regs*    SSMem*    DSMem*      Size  Throughput  SrcMemType  DstMemType           Device   Context    Stream  Name
+865.63ms  356.25us                    -               -         -         -         -  4.1199MB  11.293GB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+866.11ms  88.384us                    -               -         -         -         -  1.0000MB  11.049GB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+866.21ms  87.967us                    -               -         -         -         -  1.0000MB  11.101GB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+866.41ms  88.128us                    -               -         -         -         -  1.0000MB  11.081GB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+866.51ms  61.183us                    -               -         -         -         -  703.13KB  10.960GB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+866.58ms     832ns                    -               -         -         -         -      128B  146.72MB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+866.59ms     832ns                    -               -         -         -         -      128B  146.72MB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+866.60ms     832ns                    -               -         -         -         -      128B  146.72MB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+866.99ms  10.001ms                    -               -         -         -         -  50.000MB  4.8821GB/s    Pageable      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+877.19ms  45.056us                    -               -         -         -         -  512.00KB  10.837GB/s    Pageable      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+877.24ms  19.900ms          (65536 1 1)         (2 1 1)        38        0B        0B         -           -           -           -  NVIDIA GeForce          1         7  calc_force() [292]
+897.15ms  80.768us                    -               -         -         -         -  1.0000MB  12.091GB/s      Device      Pinned  NVIDIA GeForce          1         7  [CUDA memcpy DtoH]
+897.24ms  80.959us                    -               -         -         -         -  1.0000MB  12.062GB/s      Device      Pinned  NVIDIA GeForce          1         7  [CUDA memcpy DtoH]
+897.33ms  80.832us                    -               -         -         -         -  1.0000MB  12.081GB/s      Device      Pinned  NVIDIA GeForce          1         7  [CUDA memcpy DtoH]
+
+and the following performance in atom updates per second:
+
+< CPU Pinnend Memory >
+
 ## Task4: Instrument kernels with MarkerAPI
 
 <!-----------------------------------------------------------------------------
