@@ -310,23 +310,40 @@ Determine the functions/kernels which contribute the most to the runtime. Those
 are candidates for optimizations.
 ------------------------------------------------------------------------------>
 
-Make atom-data to pinned memory by allocating with `cudaMallocHost` and free with `cudaFreeHost` yields the following `nvprof` output (neighbor-struct not yet pinned):
+Make atom-data to pinned memory by allocating with `cudaMallocHost` and free with `cudaFreeHost` yields the following `nvprof` output (neighbor-data still pageable):
 
-   Start  Duration            Grid Size      Block Size     Regs*    SSMem*    DSMem*      Size  Throughput  SrcMemType  DstMemType           Device   Context    Stream  Name
-865.63ms  356.25us                    -               -         -         -         -  4.1199MB  11.293GB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
-866.11ms  88.384us                    -               -         -         -         -  1.0000MB  11.049GB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
-866.21ms  87.967us                    -               -         -         -         -  1.0000MB  11.101GB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
-866.41ms  88.128us                    -               -         -         -         -  1.0000MB  11.081GB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
-866.51ms  61.183us                    -               -         -         -         -  703.13KB  10.960GB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
-866.58ms     832ns                    -               -         -         -         -      128B  146.72MB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
-866.59ms     832ns                    -               -         -         -         -      128B  146.72MB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
-866.60ms     832ns                    -               -         -         -         -      128B  146.72MB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
-866.99ms  10.001ms                    -               -         -         -         -  50.000MB  4.8821GB/s    Pageable      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
-877.19ms  45.056us                    -               -         -         -         -  512.00KB  10.837GB/s    Pageable      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
-877.24ms  19.900ms          (65536 1 1)         (2 1 1)        38        0B        0B         -           -           -           -  NVIDIA GeForce          1         7  calc_force() [292]
-897.15ms  80.768us                    -               -         -         -         -  1.0000MB  12.091GB/s      Device      Pinned  NVIDIA GeForce          1         7  [CUDA memcpy DtoH]
-897.24ms  80.959us                    -               -         -         -         -  1.0000MB  12.062GB/s      Device      Pinned  NVIDIA GeForce          1         7  [CUDA memcpy DtoH]
-897.33ms  80.832us                    -               -         -         -         -  1.0000MB  12.081GB/s      Device      Pinned  NVIDIA GeForce          1         7  [CUDA memcpy DtoH]
+-   Start  Duration            Grid Size      Block Size     Regs*    SSMem*    DSMem*      Size  Throughput  SrcMemType  DstMemType           Device   Context    Stream  Name
+-865.63ms  356.25us                    -               -         -         -         -  4.1199MB  11.293GB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+-866.11ms  88.384us                    -               -         -         -         -  1.0000MB  11.049GB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+-866.21ms  87.967us                    -               -         -         -         -  1.0000MB  11.101GB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+-866.41ms  88.128us                    -               -         -         -         -  1.0000MB  11.081GB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+-866.51ms  61.183us                    -               -         -         -         -  703.13KB  10.960GB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+-866.58ms     832ns                    -               -         -         -         -      128B  146.72MB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+-866.59ms     832ns                    -               -         -         -         -      128B  146.72MB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+-866.60ms     832ns                    -               -         -         -         -      128B  146.72MB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+-866.99ms  10.001ms                    -               -         -         -         -  50.000MB  4.8821GB/s    Pageable      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+-877.19ms  45.056us                    -               -         -         -         -  512.00KB  10.837GB/s    Pageable      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+-877.24ms  19.900ms          (65536 1 1)         (2 1 1)        38        0B        0B         -           -           -           -  NVIDIA GeForce          1         7  calc_force() [292]
+-897.15ms  80.768us                    -               -         -         -         -  1.0000MB  12.091GB/s      Device      Pinned  NVIDIA GeForce          1         7  [CUDA memcpy DtoH]
+-897.24ms  80.959us                    -               -         -         -         -  1.0000MB  12.062GB/s      Device      Pinned  NVIDIA GeForce          1         7  [CUDA memcpy DtoH]
+-897.33ms  80.832us                    -               -         -         -         -  1.0000MB  12.081GB/s      Device      Pinned  NVIDIA GeForce          1         7  [CUDA memcpy DtoH]
+
+and with every memory being pinned we can observe that drastic improvements in memory throughput are possible:
+
+953.96ms  355.54us                    -               -         -         -         -  4.1199MB  11.316GB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+954.44ms  88.069us                    -               -         -         -         -  1.0000MB  11.089GB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+954.54ms  87.972us                    -               -         -         -         -  1.0000MB  11.101GB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+954.73ms  87.844us                    -               -         -         -         -  1.0000MB  11.117GB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+954.83ms  61.187us                    -               -         -         -         -  703.13KB  10.959GB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+954.91ms     832ns                    -               -         -         -         -      128B  146.72MB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+954.92ms     833ns                    -               -         -         -         -      128B  146.54MB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+954.94ms     832ns                    -               -         -         -         -      128B  146.72MB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+955.12ms  4.2854ms                    -               -         -         -         -  50.000MB  11.394GB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+959.51ms  45.443us                    -               -         -         -         -  512.00KB  10.745GB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+959.59ms  19.880ms          (65536 1 1)         (2 1 1)        38        0B        0B         -           -           -           -  NVIDIA GeForce          1         7  calc_force() [294]
+979.48ms  81.285us                    -               -         -         -         -  1.0000MB  12.014GB/s      Device      Pinned  NVIDIA GeForce          1         7  [CUDA memcpy DtoH]
+979.57ms  80.932us                    -               -         -         -         -  1.0000MB  12.066GB/s      Device      Pinned  NVIDIA GeForce          1         7  [CUDA memcpy DtoH]
+979.66ms  80.868us                    -               -         -         -         -  1.0000MB  12.076GB/s      Device      Pinned  NVIDIA GeForce          1         7  [CUDA memcpy DtoH]
 
 and the following performance in atom updates per second:
 

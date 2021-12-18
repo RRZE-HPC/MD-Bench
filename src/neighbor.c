@@ -26,6 +26,7 @@
 
 #include <neighbor.h>
 #include <parameter.h>
+#include <allocate.h>
 #include <atom.h>
 
 #define SMALL 1.0e-6
@@ -174,10 +175,12 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor)
     /* extend atom arrays if necessary */
     if(nall > nmax) {
         nmax = nall;
-        if(neighbor->numneigh) free(neighbor->numneigh);
-        if(neighbor->neighbors) free(neighbor->neighbors);
-        neighbor->numneigh = (int*) malloc(nmax * sizeof(int));
-        neighbor->neighbors = (int*) malloc(nmax * neighbor->maxneighs * sizeof(int*));
+        if(neighbor->numneigh) cudaFreeHost(neighbor->numneigh);
+        if(neighbor->neighbors) cudaFreeHost(neighbor->neighbors);
+        checkCUDAError( "buildNeighbor numneigh", cudaMallocHost((void**)&(neighbor->numneigh), nmax * sizeof(int)) );
+        checkCUDAError( "buildNeighbor neighbors", cudaMallocHost((void**)&(neighbor->neighbors), nmax * neighbor->maxneighs * sizeof(int*)) );
+        // neighbor->numneigh = (int*) malloc(nmax * sizeof(int));
+        // neighbor->neighbors = (int*) malloc(nmax * neighbor->maxneighs * sizeof(int*));
     }
 
     /* bin local & ghost atoms */
