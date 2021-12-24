@@ -1,0 +1,117 @@
+% !TEX program = lualatex
+% !TEX encoding = UTF-8 Unicode
+\documentclass[12pt,xcolor={rgb},t]{beamer}
+
+\usetheme{dirichlet}
+
+\usepackage{color}
+\usepackage{arev}
+\usepackage{graphicx}
+\usepackage{pdfpages}
+\usepackage{listings}
+\usepackage[english]{babel}
+\usepackage{hyperref}
+\usepackage{pgfplots}
+\usepackage{tikz}
+\usepackage{ifthen}
+\usepackage{MnSymbol}
+\usetikzlibrary{positioning}
+\usetikzlibrary{graphs,graphs.standard,quotes}
+\usetikzlibrary{patterns}
+\usepackage{pgfplotstable}
+\usepackage{filecontents}
+
+\usepackage{amsmath,amsfonts,amssymb}
+
+\usepackage{xcolor}
+\usepackage{hyperref}
+
+\hypersetup{colorlinks=false,urlcolor=cyan}
+
+\begin{document}
+
+\title{MD-Bench}
+\author{Maximilian Gaul}
+\institute{MuCoSim Seminar}
+
+\begin{frame}[plain]
+\titlepage
+\end{frame}
+
+\section{Review}
+
+\definecolor{brightcerulean}{rgb}{0.11, 0.67, 0.84}
+
+\begin{frame}{Where we left off I}
+
+    \begin{itemize}
+        \item Performance
+        \vspace*{1.5em}
+        \begin{figure}[!H]
+            \centering
+            \begin{tikzpicture}[scale=0.675]
+                \begin{axis}[
+                    xlabel=$\text{Threads per Block}$,
+                    ylabel=$\text{Atom updates per s}$,
+                    xmin=1, xmax=32,
+                    ymin=0, ymax=8e6,
+                    legend style={fill=none,draw=white}
+                ]
+            
+                \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {Resources/gpu.csv};
+                \addlegendentry{Data}
+                \end{axis}
+            \end{tikzpicture}
+        \end{figure}
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]{Where we left off II}
+    
+    \lstset{prebreak=\raisebox{0ex}[0ex][0ex]
+        {\ensuremath{\rhookswarrow}}}
+    \lstset{postbreak=\raisebox{0ex}[0ex][0ex]
+        {\ensuremath{\rcurvearrowse\space}}}
+    \lstset{breaklines=true, breakatwhitespace=true}
+
+    \begin{itemize}
+        \item Throughput for unpinnend memory
+        \vspace*{1em}
+        \vspace{1em}
+        \begin{figure}[!H]
+            \centering
+            \scalebox{.45}{
+                \pgfplotstabletypeset[
+                    col sep=comma,
+                    string type,
+                    columns={Duration,Size,Throughput,SrcMemType,DstMemType,Name},
+                    assign column name/.style={/pgfplots/table/column name={\large{\textbf{#1}}}}
+                ] {Resources/nvprof.csv}
+            }
+        \end{figure}
+    \end{itemize}
+
+\end{frame}
+
+\section{Improvements}
+
+
+\begin{frame}[fragile]{Pinnend memory I}
+    
+    \begin{itemize}
+        \item 
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}[allowframebreaks]
+
+    \frametitle{Bibliography}
+    \bibliographystyle{acm}
+    \bibliography{Bibliography/bibliography.bib}
+
+\end{frame}
+
+
+\end{document}
