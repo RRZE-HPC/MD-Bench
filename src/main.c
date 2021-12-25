@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 #include <unistd.h>
 #include <limits.h>
 #include <math.h>
@@ -44,7 +45,7 @@
 
 #define HLINE "----------------------------------------------------------------------------\n"
 
-extern double computeForce(Parameter*, Atom*, Neighbor*);
+extern double computeForce(bool, Parameter*, Atom*, Neighbor*);
 extern double computeForceTracing(Parameter*, Atom*, Neighbor*, Stats*, int, int);
 extern double computeForceEam(Eam* eam, Parameter*, Atom *atom, Neighbor *neighbor, Stats *stats, int first_exec, int timestep);
 
@@ -262,7 +263,7 @@ int main(int argc, char** argv)
 #if defined(MEM_TRACER) || defined(INDEX_TRACER) || defined(COMPUTE_STATS)
         computeForceTracing(&param, &atom, &neighbor, &stats, 1, 0);
 #else
-        computeForce(&param, &atom, &neighbor);
+        computeForce(true, &param, &atom, &neighbor);
 #endif
     }
 
@@ -277,10 +278,12 @@ int main(int argc, char** argv)
     for(int n = 0; n < param.ntimes; n++) {
         initialIntegrate(&param, &atom);
 
-        if((n + 1) % param.every) {
-            updatePbc(&atom, &param);
-        } else {
+        const bool doReneighbour = (n + 1) % param.every == 0;
+
+        if(doReneighbour) {
             timer[NEIGH] += reneighbour(&param, &atom, &neighbor);
+        } else {
+            updatePbc(&atom, &param);
         }
 
         if(param.force_field == FF_EAM) {
@@ -289,7 +292,7 @@ int main(int argc, char** argv)
 #if defined(MEM_TRACER) || defined(INDEX_TRACER) || defined(COMPUTE_STATS)
             timer[FORCE] += computeForceTracing(&param, &atom, &neighbor, &stats, 0, n + 1);
 #else
-            timer[FORCE] += computeForce(&param, &atom, &neighbor);
+            timer[FORCE] += computeForce(doReneighbour, &param, &atom, &neighbor);
 #endif
         }
         finalIntegrate(&param, &atom);
