@@ -111,20 +111,13 @@ double reneighbour(
 {
     double S, E;
 
-    printf("10.1\r\n");
-
     S = getTimeStamp();
     LIKWID_MARKER_START("reneighbour");
-    printf("10.2\r\n");
     updateAtomsPbc(atom, param);
-    printf("10.3\r\n");
     setupPbc(atom, param);
-    printf("10.4\r\n");
     updatePbc(atom, param);
-    printf("10.5\r\n");
     //sortAtom(atom);
     buildNeighbor(atom, neighbor);
-    printf("10.6\r\n");
     LIKWID_MARKER_STOP("reneighbour");
     E = getTimeStamp();
 
@@ -288,17 +281,11 @@ int main(int argc, char** argv)
         const bool doReneighbour = (n + 1) % param.every == 0;
         const bool doesReneighbourNextRound = (n + 2) % param.every == 0;
 
-        printf("Run %d does reneighbour: %d\r\n", n, doReneighbour);
-
-        printf("10\r\n");
-
         if(doReneighbour) {
             timer[NEIGH] += reneighbour(&param, &atom, &neighbor);
         } else {
             updatePbc(&atom, &param);
         }
-
-        printf("11\r\n");
 
         if(param.force_field == FF_EAM) {
             timer[FORCE] += computeForceEam(&eam, &param, &atom, &neighbor, &stats, 0, n + 1);

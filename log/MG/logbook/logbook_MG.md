@@ -349,6 +349,14 @@ and the following performance in atom updates per second:
 
 < CPU Pinnend Memory >
 
+We can improve performance even further by allocating memory on the GPU only once during the first run:
+
+< CPU Pinnend Memory + Malloc only once >
+
+and by zeroing the forces-arrays instead of copying already zeroed memory:
+
+< CPU Pinnend Memory + Malloc only once + Only zero forces >
+
 ## Task4: Instrument kernels with MarkerAPI
 
 <!-----------------------------------------------------------------------------

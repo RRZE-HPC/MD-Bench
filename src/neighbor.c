@@ -172,8 +172,6 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor)
 {
     int nall = atom->Nlocal + atom->Nghost;
 
-    printf("nall: %d, nmax: %d\r\n", nall, nmax);
-
     /* extend atom arrays if necessary */
     if(nall > nmax) {
         nmax = nall;
@@ -185,13 +183,9 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor)
         // neighbor->neighbors = (int*) malloc(nmax * neighbor->maxneighs * sizeof(int*));
     }
 
-    printf("10.5.1\r\n");
-
     /* bin local & ghost atoms */
     binatoms(atom);
     int resize = 1;
-
-    printf("10.5.2\r\n");
 
     /* loop over each atom, storing neighbors */
     while(resize) {
@@ -322,13 +316,8 @@ int coord2bin(MD_FLOAT xin, MD_FLOAT yin, MD_FLOAT zin)
 
 void binatoms(Atom *atom)
 {
-    printf("10.5.1.1\r\n");
     int nall = atom->Nlocal + atom->Nghost;
     int resize = 1;
-
-    printf("10.5.1.2\r\n");
-
-    printf("nall: %d, atom->Nmax: %d\r\n", nall, atom->Nmax);
 
     while(resize > 0) {
         resize = 0;
@@ -336,8 +325,6 @@ void binatoms(Atom *atom)
         for(int i = 0; i < mbins; i++) {
             bincount[i] = 0;
         }
-
-        printf("10.5.1.3\r\n");
 
         for(int i = 0; i < nall; i++) {
             MD_FLOAT x = atom_x(i);
@@ -353,15 +340,11 @@ void binatoms(Atom *atom)
             }
         }
 
-        printf("10.5.1.4\r\n");
-
         if(resize) {
             free(bins);
             atoms_per_bin *= 2;
             bins = (int*) malloc(mbins * atoms_per_bin * sizeof(int));
         }
-
-        printf("10.5.1.5\r\n");
     }
 }
 

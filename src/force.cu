@@ -111,25 +111,13 @@ double computeForce(
         )
 {
     int Nlocal = atom->Nlocal;
-    MD_FLOAT* fx = atom->fx;
-    MD_FLOAT* fy = atom->fy;
-    MD_FLOAT* fz = atom->fz;
 #ifndef EXPLICIT_TYPES
     MD_FLOAT cutforcesq = param->cutforce * param->cutforce;
     MD_FLOAT sigma6 = param->sigma6;
     MD_FLOAT epsilon = param->epsilon;
 #endif
-    printf("-1\r\n");
 
     cudaProfilerStart();
-
-    printf("0\r\n");
-
-    for(int i = 0; i < Nlocal; i++) {
-        fx[i] = 0.0;
-        fy[i] = 0.0;
-        fz[i] = 0.0;
-    }
 
     const char *num_threads_env = getenv("NUM_THREADS");
     int num_threads = 0;
@@ -144,8 +132,6 @@ double computeForce(
     c_atom.Nghost = atom->Nghost;
     c_atom.Nmax = atom->Nmax;
     c_atom.ntypes = atom->ntypes;
-
-    printf("0.1\r\n");
 
     /*
     int nDevices;
@@ -167,8 +153,6 @@ double computeForce(
     // HINT: Run with cuda-memcheck ./MDBench-NVCC in case of error
     // HINT: Only works for data layout = AOS!!!
 
-    printf("1\r\n");
-
     if(!initialized) {
         checkCUDAError( "c_atom.x malloc", cudaMalloc((void**)&(c_atom.x), sizeof(MD_FLOAT) * atom->Nmax * 3) );
         checkCUDAError( "c_atom.fx malloc", cudaMalloc((void**)&(c_atom.fx), sizeof(MD_FLOAT) * Nlocal) );
@@ -183,27 +167,18 @@ double computeForce(
         checkCUDAError( "c_neigh_numneigh malloc", cudaMalloc((void**)&c_neigh_numneigh, sizeof(int) * Nlocal) );
     }
 
-    printf("2\r\n");
+    checkCUDAError( "c_atom.fx memset", cudaMemset(c_atom.fx, 0, sizeof(MD_FLOAT) * Nlocal) );
+    checkCUDAError( "c_atom.fy memset", cudaMemset(c_atom.fy, 0, sizeof(MD_FLOAT) * Nlocal) );
+    checkCUDAError( "c_atom.fz memset", cudaMemset(c_atom.fz, 0, sizeof(MD_FLOAT) * Nlocal) );
 
-    if(reneighbourHappenend || !initialized) {
-        checkCUDAError( "c_atom.x memcpy", cudaMemcpy(c_atom.x, atom->x, sizeof(MD_FLOAT) * atom->Nmax * 3, cudaMemcpyHostToDevice) );
-        checkCUDAError( "c_atom.fx memcpy", cudaMemcpy(c_atom.fx, fx, sizeof(MD_FLOAT) * Nlocal, cudaMemcpyHostToDevice) );
-        checkCUDAError( "c_atom.fy memcpy", cudaMemcpy(c_atom.fy, fy, sizeof(MD_FLOAT) * Nlocal, cudaMemcpyHostToDevice) );
-        checkCUDAError( "c_atom.fz memcpy", cudaMemcpy(c_atom.fz, fz, sizeof(MD_FLOAT) * Nlocal, cudaMemcpyHostToDevice) );
-        checkCUDAError( "c_atom.type memcpy", cudaMemcpy(c_atom.type, atom->type, sizeof(int) * atom->Nmax, cudaMemcpyHostToDevice) );
-        checkCUDAError( "c_atom.epsilon memcpy", cudaMemcpy(c_atom.epsilon, atom->epsilon, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice) );
-        checkCUDAError( "c_atom.sigma6 memcpy", cudaMemcpy(c_atom.sigma6, atom->sigma6, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice) );
-        checkCUDAError( "c_atom.cutforcesq memcpy", cudaMemcpy(c_atom.cutforcesq, atom->cutforcesq, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice) );
+    checkCUDAError( "c_atom.x memcpy", cudaMemcpy(c_atom.x, atom->x, sizeof(MD_FLOAT) * atom->Nmax * 3, cudaMemcpyHostToDevice) );
+    checkCUDAError( "c_atom.type memcpy", cudaMemcpy(c_atom.type, atom->type, sizeof(int) * atom->Nmax, cudaMemcpyHostToDevice) );
+    checkCUDAError( "c_atom.epsilon memcpy", cudaMemcpy(c_atom.epsilon, atom->epsilon, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice) );
+    checkCUDAError( "c_atom.sigma6 memcpy", cudaMemcpy(c_atom.sigma6, atom->sigma6, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice) );
+    checkCUDAError( "c_atom.cutforcesq memcpy", cudaMemcpy(c_atom.cutforcesq, atom->cutforcesq, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice) );
 
-        checkCUDAError( "c_neigh_numneigh memcpy", cudaMemcpy(c_neigh_numneigh, neighbor->numneigh, sizeof(int) * Nlocal, cudaMemcpyHostToDevice) );
-        checkCUDAError( "c_neighs memcpy", cudaMemcpy(c_neighs, neighbor->neighbors, sizeof(int) * Nlocal * neighbor->maxneighs, cudaMemcpyHostToDevice) );
-    }
-
-    printf("3\r\n");
-
-    printf("4\r\n");
-
-    printf("5\r\n");
+    checkCUDAError( "c_neigh_numneigh memcpy", cudaMemcpy(c_neigh_numneigh, neighbor->numneigh, sizeof(int) * Nlocal, cudaMemcpyHostToDevice) );
+    checkCUDAError( "c_neighs memcpy", cudaMemcpy(c_neighs, neighbor->neighbors, sizeof(int) * Nlocal * neighbor->maxneighs, cudaMemcpyHostToDevice) );
 
     const int num_threads_per_block = num_threads; // this should be multiple of 32 as operations are performed at the level of warps
     const int num_blocks = ceil((float)Nlocal / (float)num_threads_per_block);
@@ -216,16 +191,11 @@ double computeForce(
     checkCUDAError( "PeekAtLastError", cudaPeekAtLastError() );
     checkCUDAError( "DeviceSync", cudaDeviceSynchronize() );
 
-    printf("6\r\n");
-
     // copy results in c_atom.fx/fy/fz to atom->fx/fy/fz
-    if(reneighbourHappenend) {
-        cudaMemcpy(atom->fx, c_atom.fx, sizeof(MD_FLOAT) * Nlocal, cudaMemcpyDeviceToHost);
-        cudaMemcpy(atom->fy, c_atom.fy, sizeof(MD_FLOAT) * Nlocal, cudaMemcpyDeviceToHost);
-        cudaMemcpy(atom->fz, c_atom.fz, sizeof(MD_FLOAT) * Nlocal, cudaMemcpyDeviceToHost);
-    }
 
-    printf("7\r\n");
+    cudaMemcpy(atom->fx, c_atom.fx, sizeof(MD_FLOAT) * Nlocal, cudaMemcpyDeviceToHost);
+    cudaMemcpy(atom->fy, c_atom.fy, sizeof(MD_FLOAT) * Nlocal, cudaMemcpyDeviceToHost);
+    cudaMemcpy(atom->fz, c_atom.fz, sizeof(MD_FLOAT) * Nlocal, cudaMemcpyDeviceToHost);
 
     /*
     cudaFree(c_atom.x);
