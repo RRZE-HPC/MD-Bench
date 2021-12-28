@@ -165,6 +165,12 @@ double computeForce(
 
         checkCUDAError( "c_neighs malloc", cudaMalloc((void**)&c_neighs, sizeof(int) * Nlocal * neighbor->maxneighs) );
         checkCUDAError( "c_neigh_numneigh malloc", cudaMalloc((void**)&c_neigh_numneigh, sizeof(int) * Nlocal) );
+
+        checkCUDAError( "c_atom.type memcpy", cudaMemcpy(c_atom.type, atom->type, sizeof(int) * atom->Nmax, cudaMemcpyHostToDevice) );
+        checkCUDAError( "c_atom.sigma6 memcpy", cudaMemcpy(c_atom.sigma6, atom->sigma6, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice) );
+        checkCUDAError( "c_atom.epsilon memcpy", cudaMemcpy(c_atom.epsilon, atom->epsilon, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice) );
+
+        checkCUDAError( "c_atom.cutforcesq memcpy", cudaMemcpy(c_atom.cutforcesq, atom->cutforcesq, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice) );
     }
 
     checkCUDAError( "c_atom.fx memset", cudaMemset(c_atom.fx, 0, sizeof(MD_FLOAT) * Nlocal) );
@@ -172,10 +178,6 @@ double computeForce(
     checkCUDAError( "c_atom.fz memset", cudaMemset(c_atom.fz, 0, sizeof(MD_FLOAT) * Nlocal) );
 
     checkCUDAError( "c_atom.x memcpy", cudaMemcpy(c_atom.x, atom->x, sizeof(MD_FLOAT) * atom->Nmax * 3, cudaMemcpyHostToDevice) );
-    checkCUDAError( "c_atom.type memcpy", cudaMemcpy(c_atom.type, atom->type, sizeof(int) * atom->Nmax, cudaMemcpyHostToDevice) );
-    checkCUDAError( "c_atom.epsilon memcpy", cudaMemcpy(c_atom.epsilon, atom->epsilon, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice) );
-    checkCUDAError( "c_atom.sigma6 memcpy", cudaMemcpy(c_atom.sigma6, atom->sigma6, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice) );
-    checkCUDAError( "c_atom.cutforcesq memcpy", cudaMemcpy(c_atom.cutforcesq, atom->cutforcesq, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice) );
 
     checkCUDAError( "c_neigh_numneigh memcpy", cudaMemcpy(c_neigh_numneigh, neighbor->numneigh, sizeof(int) * Nlocal, cudaMemcpyHostToDevice) );
     checkCUDAError( "c_neighs memcpy", cudaMemcpy(c_neighs, neighbor->neighbors, sizeof(int) * Nlocal * neighbor->maxneighs, cudaMemcpyHostToDevice) );

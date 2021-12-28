@@ -357,6 +357,24 @@ and by zeroing the forces-arrays instead of copying already zeroed memory:
 
 < CPU Pinnend Memory + Malloc only once + Only zero forces >
 
+By only copying the parameters `epsilon`, `sigma` and force threshold once at the start, we can reduce memory transfers even further.
+
+A typical run would look now like this (not the first one though):
+
+   Start  Duration            Grid Size      Block Size     Regs*    SSMem*    DSMem*      Size  Throughput  SrcMemType  DstMemType           Device   Context    Stream  Name
+2.93147s  3.2640us                    -               -         -         -         -  1.0000MB  299.19GB/s      Device           -  NVIDIA GeForce          1         7  [CUDA memset]
+2.93242s  3.2650us                    -               -         -         -         -  1.0000MB  299.10GB/s      Device           -  NVIDIA GeForce          1         7  [CUDA memset]
+2.93243s  2.8800us                    -               -         -         -         -  1.0000MB  339.08GB/s      Device           -  NVIDIA GeForce          1         7  [CUDA memset]
+2.93245s  354.67us                    -               -         -         -         -  4.1199MB  11.344GB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+2.93282s  45.058us                    -               -         -         -         -  512.00KB  10.837GB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+2.93287s  4.2804ms                    -               -         -         -         -  50.000MB  11.407GB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+2.93718s  1.5061ms           (4096 1 1)        (32 1 1)        38        0B        0B         -           -           -           -  NVIDIA GeForce          1         7  calc_force() [308]
+2.93870s  80.771us                    -               -         -         -         -  1.0000MB  12.091GB/s      Device      Pinned  NVIDIA GeForce          1         7  [CUDA memcpy DtoH]
+2.93879s  80.899us                    -               -         -         -         -  1.0000MB  12.071GB/s      Device      Pinned  NVIDIA GeForce          1         7  [CUDA memcpy DtoH]
+2.93888s  80.803us                    -               -         -         -         -  1.0000MB  12.086GB/s      Device      Pinned  NVIDIA GeForce          1         7  [CUDA memcpy DtoH]
+
+< CPU Pinnend Memory + Malloc only once + Only zero forces + No Param Copy >
+
 ## Task4: Instrument kernels with MarkerAPI
 
 <!-----------------------------------------------------------------------------
