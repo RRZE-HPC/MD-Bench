@@ -52,6 +52,7 @@ Mkfile.old
 dkms.conf
 
 # Build directories and executables
+.vscode/
 GCC/
 ICC/
 MDBench-GCC*

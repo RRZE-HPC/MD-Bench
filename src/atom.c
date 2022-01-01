@@ -137,9 +137,9 @@ void createAtom(Atom *atom, Parameter *param)
                 atom_x(atom->Nlocal) = xtmp;
                 atom_y(atom->Nlocal) = ytmp;
                 atom_z(atom->Nlocal) = ztmp;
-                atom->vx[atom->Nlocal] = vxtmp;
-                atom->vy[atom->Nlocal] = vytmp;
-                atom->vz[atom->Nlocal] = vztmp;
+                atom_vx(atom->Nlocal) = vxtmp;
+                atom_vy(atom->Nlocal) = vytmp;
+                atom_vz(atom->Nlocal) = vztmp;
                 atom->type[atom->Nlocal] = rand() % atom->ntypes;
                 atom->Nlocal++;
             }
@@ -164,6 +164,8 @@ void growAtom(Atom *atom)
     atom->x  = (MD_FLOAT*) reallocate(atom->x,  ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT) * 3, nold * sizeof(MD_FLOAT) * 3);
 
     atom->fx = (MD_FLOAT*) reallocate(atom->fx, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT) * 3, nold * sizeof(MD_FLOAT) * 3);
+
+    atom->vx = (MD_FLOAT*) reallocate(atom->vx, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT) * 3, nold * sizeof(MD_FLOAT) * 3);
     #else
     atom->x  = (MD_FLOAT*) reallocate(atom->x,  ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
     atom->y  = (MD_FLOAT*) reallocate(atom->y,  ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
@@ -172,10 +174,12 @@ void growAtom(Atom *atom)
     atom->fx = (MD_FLOAT*) reallocate(atom->fx, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
     atom->fy = (MD_FLOAT*) reallocate(atom->fy, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
     atom->fz = (MD_FLOAT*) reallocate(atom->fz, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
-    #endif
 
     atom->vx = (MD_FLOAT*) reallocate(atom->vx, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
     atom->vy = (MD_FLOAT*) reallocate(atom->vy, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
     atom->vz = (MD_FLOAT*) reallocate(atom->vz, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
+
+    #endif
+
     atom->type = (int *) reallocate(atom->type, ALIGNMENT, atom->Nmax * sizeof(int), nold * sizeof(int));
 }

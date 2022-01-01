@@ -92,12 +92,114 @@ __global__ void calc_force(
     atom_fz(i) = fiz;
 }
 
+__global__ void kernel_initial_integrate(MD_FLOAT dtforce, MD_FLOAT dt, int Nlocal, Atom a) {
+
+    const int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if( i >= Nlocal ) {
+        return;
+    }
+
+    Atom *atom = &a;
+
+    atom_vx(i) += dtforce * atom_fx(i);
+    atom_vy(i) += dtforce * atom_fy(i);
+    atom_vz(i) += dtforce * atom_fz(i);
+    atom_x(i) = atom_x(i) + dt * atom_vx(i);
+    atom_y(i) = atom_y(i) + dt * atom_vy(i);
+    atom_z(i) = atom_z(i) + dt * atom_vz(i);
+}
+
+__global__ void kernel_final_integrate(MD_FLOAT dtforce, int Nlocal, Atom a) {
+
+    const int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if( i >= Nlocal ) {
+        return;
+    }
+
+    Atom *atom = &a;
+
+    atom_vx(i) += dtforce * atom_fx(i);
+    atom_vy(i) += dtforce * atom_fy(i);
+    atom_vz(i) += dtforce * atom_fz(i);
+}
+
 extern "C" {
 
-bool initialized = false;
 static Atom c_atom;
 int *c_neighs;
 int *c_neigh_numneigh;
+
+int get_num_threads() {
+
+    const char *num_threads_env = getenv("NUM_THREADS");
+    int num_threads = 0;
+    if(num_threads_env == nullptr)
+        num_threads = 32;
+    else {
+        num_threads = atoi(num_threads_env);
+    }
+
+    return num_threads;
+}
+
+void cuda_final_integrate(bool doReneighbour, Parameter *param, Atom *atom) {
+
+    const int Nlocal = atom->Nlocal;
+    const int num_threads = get_num_threads();
+
+    const int num_threads_per_block = num_threads; // this should be multiple of 32 as operations are performed at the level of warps
+    const int num_blocks = ceil((float)Nlocal / (float)num_threads_per_block);
+
+    kernel_final_integrate <<< num_blocks, num_threads_per_block >>> (param->dtforce, Nlocal, c_atom);
+
+    checkCUDAError( "PeekAtLastError FinalIntegrate", cudaPeekAtLastError() );
+    checkCUDAError( "DeviceSync FinalIntegrate", cudaDeviceSynchronize() );
+
+    if(doReneighbour) {
+        checkCUDAError( "FinalIntegrate: velocity memcpy", cudaMemcpy(atom->vx, c_atom.vx, sizeof(MD_FLOAT) * atom->Nlocal * 3, cudaMemcpyDeviceToHost) );
+        checkCUDAError( "FinalIntegrate: position memcpy", cudaMemcpy(atom->x, c_atom.x, sizeof(MD_FLOAT) * atom->Nlocal * 3, cudaMemcpyDeviceToHost) );
+    }
+}
+
+void cuda_initial_integrate(bool doReneighbour, Parameter *param, Atom *atom) {
+
+    const int Nlocal = atom->Nlocal;
+    const int num_threads = get_num_threads();
+
+    const int num_threads_per_block = num_threads; // this should be multiple of 32 as operations are performed at the level of warps
+    const int num_blocks = ceil((float)Nlocal / (float)num_threads_per_block);
+
+    kernel_initial_integrate <<< num_blocks, num_threads_per_block >>> (param->dtforce, param->dt, Nlocal, c_atom);
+
+    checkCUDAError( "PeekAtLastError InitialIntegrate", cudaPeekAtLastError() );
+    checkCUDAError( "DeviceSync InitialIntegrate", cudaDeviceSynchronize() );
+
+    checkCUDAError( "InitialIntegrate: velocity memcpy", cudaMemcpy(atom->vx, c_atom.vx, sizeof(MD_FLOAT) * atom->Nlocal * 3, cudaMemcpyDeviceToHost) );
+    checkCUDAError( "InitialIntegrate: position memcpy", cudaMemcpy(atom->x, c_atom.x, sizeof(MD_FLOAT) * atom->Nlocal * 3, cudaMemcpyDeviceToHost) );
+}
+
+void initCudaAtom(Atom *atom, Neighbor *neighbor) {
+
+    const int Nlocal = atom->Nlocal;
+
+    checkCUDAError( "c_atom.x malloc", cudaMalloc((void**)&(c_atom.x), sizeof(MD_FLOAT) * atom->Nmax * 3) );
+    checkCUDAError( "c_atom.fx malloc", cudaMalloc((void**)&(c_atom.fx), sizeof(MD_FLOAT) * Nlocal * 3) );
+    checkCUDAError( "c_atom.vx malloc", cudaMalloc((void**)&(c_atom.vx), sizeof(MD_FLOAT) * Nlocal * 3) );
+    checkCUDAError( "c_atom.vx memcpy", cudaMemcpy(c_atom.vx, atom->vx, sizeof(MD_FLOAT) * Nlocal * 3, cudaMemcpyHostToDevice) );
+    checkCUDAError( "c_atom.type malloc", cudaMalloc((void**)&(c_atom.type), sizeof(int) * atom->Nmax) );
+    checkCUDAError( "c_atom.epsilon malloc", cudaMalloc((void**)&(c_atom.epsilon), sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes) );
+    checkCUDAError( "c_atom.sigma6 malloc", cudaMalloc((void**)&(c_atom.sigma6), sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes) );
+    checkCUDAError( "c_atom.cutforcesq malloc", cudaMalloc((void**)&(c_atom.cutforcesq), sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes) );
+
+    checkCUDAError( "c_neighs malloc", cudaMalloc((void**)&c_neighs, sizeof(int) * Nlocal * neighbor->maxneighs) );
+    checkCUDAError( "c_neigh_numneigh malloc", cudaMalloc((void**)&c_neigh_numneigh, sizeof(int) * Nlocal) );
+
+    checkCUDAError( "c_atom.type memcpy", cudaMemcpy(c_atom.type, atom->type, sizeof(int) * atom->Nmax, cudaMemcpyHostToDevice) );
+    checkCUDAError( "c_atom.sigma6 memcpy", cudaMemcpy(c_atom.sigma6, atom->sigma6, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice) );
+    checkCUDAError( "c_atom.epsilon memcpy", cudaMemcpy(c_atom.epsilon, atom->epsilon, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice) );
+
+    checkCUDAError( "c_atom.cutforcesq memcpy", cudaMemcpy(c_atom.cutforcesq, atom->cutforcesq, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice) );
+}
 
 double computeForce(
         bool reneighbourHappenend,
@@ -113,15 +215,7 @@ double computeForce(
     MD_FLOAT epsilon = param->epsilon;
 #endif
 
-    cudaProfilerStart();
-
-    const char *num_threads_env = getenv("NUM_THREADS");
-    int num_threads = 0;
-    if(num_threads_env == nullptr)
-        num_threads = 32;
-    else {
-        num_threads = atoi(num_threads_env);
-    }
+    const int num_threads = get_num_threads();
 
     c_atom.Natoms = atom->Natoms;
     c_atom.Nlocal = atom->Nlocal;
@@ -149,25 +243,9 @@ double computeForce(
     // HINT: Run with cuda-memcheck ./MDBench-NVCC in case of error
     // HINT: Only works for data layout = AOS!!!
 
-    if(!initialized) {
-        checkCUDAError( "c_atom.x malloc", cudaMalloc((void**)&(c_atom.x), sizeof(MD_FLOAT) * atom->Nmax * 3) );
-        checkCUDAError( "c_atom.fx malloc", cudaMalloc((void**)&(c_atom.fx), sizeof(MD_FLOAT) * Nlocal * 3) );
-        checkCUDAError( "c_atom.type malloc", cudaMalloc((void**)&(c_atom.type), sizeof(int) * atom->Nmax) );
-        checkCUDAError( "c_atom.epsilon malloc", cudaMalloc((void**)&(c_atom.epsilon), sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes) );
-        checkCUDAError( "c_atom.sigma6 malloc", cudaMalloc((void**)&(c_atom.sigma6), sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes) );
-        checkCUDAError( "c_atom.cutforcesq malloc", cudaMalloc((void**)&(c_atom.cutforcesq), sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes) );
+    // checkCUDAError( "c_atom.fx memset", cudaMemset(c_atom.fx, 0, sizeof(MD_FLOAT) * Nlocal * 3) );
 
-        checkCUDAError( "c_neighs malloc", cudaMalloc((void**)&c_neighs, sizeof(int) * Nlocal * neighbor->maxneighs) );
-        checkCUDAError( "c_neigh_numneigh malloc", cudaMalloc((void**)&c_neigh_numneigh, sizeof(int) * Nlocal) );
-
-        checkCUDAError( "c_atom.type memcpy", cudaMemcpy(c_atom.type, atom->type, sizeof(int) * atom->Nmax, cudaMemcpyHostToDevice) );
-        checkCUDAError( "c_atom.sigma6 memcpy", cudaMemcpy(c_atom.sigma6, atom->sigma6, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice) );
-        checkCUDAError( "c_atom.epsilon memcpy", cudaMemcpy(c_atom.epsilon, atom->epsilon, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice) );
-
-        checkCUDAError( "c_atom.cutforcesq memcpy", cudaMemcpy(c_atom.cutforcesq, atom->cutforcesq, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice) );
-    }
-
-    checkCUDAError( "c_atom.fx memset", cudaMemset(c_atom.fx, 0, sizeof(MD_FLOAT) * Nlocal * 3) );
+    cudaProfilerStart();
 
     checkCUDAError( "c_atom.x memcpy", cudaMemcpy(c_atom.x, atom->x, sizeof(MD_FLOAT) * atom->Nmax * 3, cudaMemcpyHostToDevice) );
 
@@ -184,12 +262,12 @@ double computeForce(
 
     calc_force <<< num_blocks, num_threads_per_block >>> (c_atom, cutforcesq, sigma6, epsilon, Nlocal, neighbor->maxneighs, c_neighs, c_neigh_numneigh);
 
-    checkCUDAError( "PeekAtLastError", cudaPeekAtLastError() );
-    checkCUDAError( "DeviceSync", cudaDeviceSynchronize() );
+    checkCUDAError( "PeekAtLastError ComputeForce", cudaPeekAtLastError() );
+    checkCUDAError( "DeviceSync ComputeForce", cudaDeviceSynchronize() );
 
     // copy results in c_atom.fx/fy/fz to atom->fx/fy/fz
 
-    cudaMemcpy(atom->fx, c_atom.fx, sizeof(MD_FLOAT) * Nlocal * 3, cudaMemcpyDeviceToHost);
+    checkCUDAError( "memcpy force back", cudaMemcpy(atom->fx, c_atom.fx, sizeof(MD_FLOAT) * Nlocal * 3, cudaMemcpyDeviceToHost) );
 
     /*
     cudaFree(c_atom.x);
@@ -206,8 +284,6 @@ double computeForce(
 
     LIKWID_MARKER_STOP("force");
     double E = getTimeStamp();
-
-    initialized = true;
 
     return E-S;
 }

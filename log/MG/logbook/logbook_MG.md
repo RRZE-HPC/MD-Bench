@@ -405,6 +405,11 @@ and improved performance:
 
 < CPU Pinnend Memory + Malloc only once + Only zero forces + No Param Copy + Neighbour aware + force AoS >.
 
+Porting the integrate code first to AoS and then to CUDA yields yet another performance improvement, even though
+velocity data and position data have to copied from device to host due to neighbour list updates:
+
+< CPU Pinnend Memory + Malloc only once + Only zero forces + No Param Copy + Neighbour aware + force AoS + integrate cuda >.
+
 ## Task4: Instrument kernels with MarkerAPI
 
 <!-----------------------------------------------------------------------------

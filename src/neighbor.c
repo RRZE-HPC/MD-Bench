@@ -359,14 +359,18 @@ void sortAtom(Atom* atom) {
 
 #ifdef AOS
     double* new_x = (double*) malloc(Nmax * sizeof(MD_FLOAT) * 3);
+
+    double* new_vx = (double*) malloc(Nmax * sizeof(MD_FLOAT) * 3);
 #else
     double* new_x = (double*) malloc(Nmax * sizeof(MD_FLOAT));
     double* new_y = (double*) malloc(Nmax * sizeof(MD_FLOAT));
     double* new_z = (double*) malloc(Nmax * sizeof(MD_FLOAT));
-#endif
+
     double* new_vx = (double*) malloc(Nmax * sizeof(MD_FLOAT));
     double* new_vy = (double*) malloc(Nmax * sizeof(MD_FLOAT));
     double* new_vz = (double*) malloc(Nmax * sizeof(MD_FLOAT));
+#endif
+
     double* old_x = atom->x; double* old_y = atom->y; double* old_z = atom->z;
     double* old_vx = atom->vx; double* old_vy = atom->vy; double* old_vz = atom->vz;
 
@@ -380,24 +384,34 @@ void sortAtom(Atom* atom) {
             new_x[new_i * 3 + 0] = old_x[old_i * 3 + 0];
             new_x[new_i * 3 + 1] = old_x[old_i * 3 + 1];
             new_x[new_i * 3 + 2] = old_x[old_i * 3 + 2];
+
+            new_vx[new_i * 3 + 0] = old_vx[old_i * 3 + 0];
+            new_vx[new_i * 3 + 1] = old_vy[old_i * 3 + 1];
+            new_vx[new_i * 3 + 2] = old_vz[old_i * 3 + 2];
 #else
             new_x[new_i] = old_x[old_i];
             new_y[new_i] = old_y[old_i];
             new_z[new_i] = old_z[old_i];
-#endif
+
             new_vx[new_i] = old_vx[old_i];
             new_vy[new_i] = old_vy[old_i];
             new_vz[new_i] = old_vz[old_i];
+#endif
+
         }
     }
 
     free(atom->x);
     atom->x = new_x;
+
+    free(atom->vx);
+    atom->vx = new_vx;
 #ifndef AOS
     free(atom->y);
     free(atom->z);
     atom->y = new_y; atom->z = new_z;
+
+    free(atom->vy); free(atom->vz);
+    atom->vy = new_vy; atom->vz = new_vz;
 #endif
-    free(atom->vx); free(atom->vy); free(atom->vz);
-    atom->vx = new_vx; atom->vy = new_vy; atom->vz = new_vz;
 }

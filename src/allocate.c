@@ -78,7 +78,7 @@ void* reallocate (
         size_t newBytesize,
         size_t oldBytesize)
 {
-    void* newarray =  allocate(alignment, newBytesize);
+    void* newarray = allocate(alignment, newBytesize);
 
     if(ptr != NULL) {
         memcpy(newarray, ptr, oldBytesize);
