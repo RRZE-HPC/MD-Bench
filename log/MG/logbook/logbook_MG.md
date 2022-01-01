@@ -391,6 +391,20 @@ which yields a significant performance improvement:
 
 < CPU Pinnend Memory + Malloc only once + Only zero forces + No Param Copy + Neighbour aware >.
 
+Furthermore, we can exploit the advantages of ArrayOfStructures (AoS) memory layout with atom force calculation as we already did with storing 3D coordinates.
+This means, instead of transfering three medium size arrays we can only transfer one larger array. After adapting the integration calculation to handle the
+new memory layout, we observe yet another reduction in memory transfers:
+
+   Start  Duration            Grid Size      Block Size     Regs*    SSMem*    DSMem*      Size  Throughput  SrcMemType  DstMemType           Device   Context    Stream  Name
+8.92545s  5.0240us                    -               -         -         -         -  3.0000MB  583.14GB/s      Device           -  NVIDIA GeForce          1         7  [CUDA memset]
+8.92631s  355.01us                    -               -         -         -         -  4.1199MB  11.333GB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+8.92669s  1.5084ms           (4096 1 1)        (32 1 1)        38        0B        0B         -           -           -           -  NVIDIA GeForce          1         7  calc_force() [288]
+8.92821s  242.34us                    -               -         -         -         -  3.0000MB  12.089GB/s      Device      Pinned  NVIDIA GeForce          1         7  [CUDA memcpy DtoH]
+
+and improved performance:
+
+< CPU Pinnend Memory + Malloc only once + Only zero forces + No Param Copy + Neighbour aware + force AoS >.
+
 ## Task4: Instrument kernels with MarkerAPI
 
 <!-----------------------------------------------------------------------------

@@ -45,14 +45,26 @@ extern void growAtom(Atom*);
 
 #ifdef AOS
 #define POS_DATA_LAYOUT     "AoS"
+
 #define atom_x(i)           atom->x[(i) * 3 + 0]
 #define atom_y(i)           atom->x[(i) * 3 + 1]
 #define atom_z(i)           atom->x[(i) * 3 + 2]
+
+#define atom_fx(i)          atom->fx[(i) * 3 + 0]
+#define atom_fy(i)          atom->fx[(i) * 3 + 1]
+#define atom_fz(i)          atom->fx[(i) * 3 + 2]
+
 #else
 #define POS_DATA_LAYOUT     "SoA"
+
 #define atom_x(i)           atom->x[i]
 #define atom_y(i)           atom->y[i]
 #define atom_z(i)           atom->z[i]
+
+#define atom_fx(i)           atom->fx[i]
+#define atom_fy(i)           atom->fy[i]
+#define atom_fz(i)           atom->fz[i]
+
 #endif
 
 #endif

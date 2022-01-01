@@ -58,10 +58,6 @@ __global__ void calc_force(
     MD_FLOAT ytmp = atom_y(i);
     MD_FLOAT ztmp = atom_z(i);
 
-    MD_FLOAT *fx = atom->fx;
-    MD_FLOAT *fy = atom->fy;
-    MD_FLOAT *fz = atom->fz;
-
     MD_FLOAT fix = 0;
     MD_FLOAT fiy = 0;
     MD_FLOAT fiz = 0;
@@ -91,9 +87,9 @@ __global__ void calc_force(
         }
     }
 
-    fx[i] += fix;
-    fy[i] += fiy;
-    fz[i] += fiz;
+    atom_fx(i) = fix;
+    atom_fy(i) = fiy;
+    atom_fz(i) = fiz;
 }
 
 extern "C" {
@@ -155,9 +151,7 @@ double computeForce(
 
     if(!initialized) {
         checkCUDAError( "c_atom.x malloc", cudaMalloc((void**)&(c_atom.x), sizeof(MD_FLOAT) * atom->Nmax * 3) );
-        checkCUDAError( "c_atom.fx malloc", cudaMalloc((void**)&(c_atom.fx), sizeof(MD_FLOAT) * Nlocal) );
-        checkCUDAError( "c_atom.fy malloc", cudaMalloc((void**)&(c_atom.fy), sizeof(MD_FLOAT) * Nlocal) );
-        checkCUDAError( "c_atom.fz malloc", cudaMalloc((void**)&(c_atom.fz), sizeof(MD_FLOAT) * Nlocal) );
+        checkCUDAError( "c_atom.fx malloc", cudaMalloc((void**)&(c_atom.fx), sizeof(MD_FLOAT) * Nlocal * 3) );
         checkCUDAError( "c_atom.type malloc", cudaMalloc((void**)&(c_atom.type), sizeof(int) * atom->Nmax) );
         checkCUDAError( "c_atom.epsilon malloc", cudaMalloc((void**)&(c_atom.epsilon), sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes) );
         checkCUDAError( "c_atom.sigma6 malloc", cudaMalloc((void**)&(c_atom.sigma6), sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes) );
@@ -173,9 +167,7 @@ double computeForce(
         checkCUDAError( "c_atom.cutforcesq memcpy", cudaMemcpy(c_atom.cutforcesq, atom->cutforcesq, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice) );
     }
 
-    checkCUDAError( "c_atom.fx memset", cudaMemset(c_atom.fx, 0, sizeof(MD_FLOAT) * Nlocal) );
-    checkCUDAError( "c_atom.fy memset", cudaMemset(c_atom.fy, 0, sizeof(MD_FLOAT) * Nlocal) );
-    checkCUDAError( "c_atom.fz memset", cudaMemset(c_atom.fz, 0, sizeof(MD_FLOAT) * Nlocal) );
+    checkCUDAError( "c_atom.fx memset", cudaMemset(c_atom.fx, 0, sizeof(MD_FLOAT) * Nlocal * 3) );
 
     checkCUDAError( "c_atom.x memcpy", cudaMemcpy(c_atom.x, atom->x, sizeof(MD_FLOAT) * atom->Nmax * 3, cudaMemcpyHostToDevice) );
 
@@ -197,9 +189,7 @@ double computeForce(
 
     // copy results in c_atom.fx/fy/fz to atom->fx/fy/fz
 
-    cudaMemcpy(atom->fx, c_atom.fx, sizeof(MD_FLOAT) * Nlocal, cudaMemcpyDeviceToHost);
-    cudaMemcpy(atom->fy, c_atom.fy, sizeof(MD_FLOAT) * Nlocal, cudaMemcpyDeviceToHost);
-    cudaMemcpy(atom->fz, c_atom.fz, sizeof(MD_FLOAT) * Nlocal, cudaMemcpyDeviceToHost);
+    cudaMemcpy(atom->fx, c_atom.fx, sizeof(MD_FLOAT) * Nlocal * 3, cudaMemcpyDeviceToHost);
 
     /*
     cudaFree(c_atom.x);
