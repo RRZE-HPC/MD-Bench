@@ -373,7 +373,23 @@ A typical run would look now like this (not the first one though):
 2.93879s  80.899us                    -               -         -         -         -  1.0000MB  12.071GB/s      Device      Pinned  NVIDIA GeForce          1         7  [CUDA memcpy DtoH]
 2.93888s  80.803us                    -               -         -         -         -  1.0000MB  12.086GB/s      Device      Pinned  NVIDIA GeForce          1         7  [CUDA memcpy DtoH]
 
-< CPU Pinnend Memory + Malloc only once + Only zero forces + No Param Copy >
+< CPU Pinnend Memory + Malloc only once + Only zero forces + No Param Copy >.
+
+By re-copying the neighbor lists only when they are updated (every 20 iterations) we can get rid of two more memory transfers most of the time:
+
+   Start  Duration            Grid Size      Block Size     Regs*    SSMem*    DSMem*      Size  Throughput  SrcMemType  DstMemType           Device   Context    Stream  Name
+2.98366s  3.3600us                    -               -         -         -         -  1.0000MB  290.64GB/s      Device           -  NVIDIA GeForce          1         7  [CUDA memset]
+2.98477s  3.2960us                    -               -         -         -         -  1.0000MB  296.29GB/s      Device           -  NVIDIA GeForce          1         7  [CUDA memset]
+2.98479s  2.9760us                    -               -         -         -         -  1.0000MB  328.15GB/s      Device           -  NVIDIA GeForce          1         7  [CUDA memset]
+2.98482s  354.67us                    -               -         -         -         -  4.1199MB  11.344GB/s      Pinned      Device  NVIDIA GeForce          1         7  [CUDA memcpy HtoD]
+2.98520s  1.4924ms           (4096 1 1)        (32 1 1)        38        0B        0B         -           -           -           -  NVIDIA GeForce          1         7  calc_force() [306]
+2.98671s  80.740us                    -               -         -         -         -  1.0000MB  12.095GB/s      Device      Pinned  NVIDIA GeForce          1         7  [CUDA memcpy DtoH]
+2.98681s  80.996us                    -               -         -         -         -  1.0000MB  12.057GB/s      Device      Pinned  NVIDIA GeForce          1         7  [CUDA memcpy DtoH]
+2.98690s  80.836us                    -               -         -         -         -  1.0000MB  12.081GB/s      Device      Pinned  NVIDIA GeForce          1         7  [CUDA memcpy DtoH]
+
+which yields a significant performance improvement:
+
+< CPU Pinnend Memory + Malloc only once + Only zero forces + No Param Copy + Neighbour aware >.
 
 ## Task4: Instrument kernels with MarkerAPI
 

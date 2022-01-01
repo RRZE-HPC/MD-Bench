@@ -279,7 +279,6 @@ int main(int argc, char** argv)
         initialIntegrate(&param, &atom);
 
         const bool doReneighbour = (n + 1) % param.every == 0;
-        const bool doesReneighbourNextRound = (n + 2) % param.every == 0;
 
         if(doReneighbour) {
             timer[NEIGH] += reneighbour(&param, &atom, &neighbor);

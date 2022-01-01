@@ -179,8 +179,10 @@ double computeForce(
 
     checkCUDAError( "c_atom.x memcpy", cudaMemcpy(c_atom.x, atom->x, sizeof(MD_FLOAT) * atom->Nmax * 3, cudaMemcpyHostToDevice) );
 
-    checkCUDAError( "c_neigh_numneigh memcpy", cudaMemcpy(c_neigh_numneigh, neighbor->numneigh, sizeof(int) * Nlocal, cudaMemcpyHostToDevice) );
-    checkCUDAError( "c_neighs memcpy", cudaMemcpy(c_neighs, neighbor->neighbors, sizeof(int) * Nlocal * neighbor->maxneighs, cudaMemcpyHostToDevice) );
+    if(reneighbourHappenend) {
+        checkCUDAError( "c_neigh_numneigh memcpy", cudaMemcpy(c_neigh_numneigh, neighbor->numneigh, sizeof(int) * Nlocal, cudaMemcpyHostToDevice) );
+        checkCUDAError( "c_neighs memcpy", cudaMemcpy(c_neighs, neighbor->neighbors, sizeof(int) * Nlocal * neighbor->maxneighs, cudaMemcpyHostToDevice) );
+    }
 
     const int num_threads_per_block = num_threads; // this should be multiple of 32 as operations are performed at the level of warps
     const int num_blocks = ceil((float)Nlocal / (float)num_threads_per_block);
