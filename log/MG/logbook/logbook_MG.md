@@ -410,6 +410,10 @@ velocity data and position data have to copied from device to host due to neighb
 
 < CPU Pinnend Memory + Malloc only once + Only zero forces + No Param Copy + Neighbour aware + force AoS + integrate cuda >.
 
+L1- & L2-Cache Hitrate via Nvidia Nsigh Compute:
+
+< memory workload analysis >
+
 ## Task4: Instrument kernels with MarkerAPI
 
 <!-----------------------------------------------------------------------------
