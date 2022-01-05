@@ -27,6 +27,7 @@
 *.so
 *.so.*
 *.dylib
+.DS_Store
 
 # Executables
 *.exe

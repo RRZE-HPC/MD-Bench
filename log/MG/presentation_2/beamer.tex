@@ -58,8 +58,8 @@
                     legend style={fill=none,draw=white}
                 ]
             
-                \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {Resources/gpu.csv};
-                \addlegendentry{Data}
+                \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {Resources/gpu_basic.csv};
+                \addlegendentry{CUDA}
                 \end{axis}
             \end{tikzpicture}
         \end{figure}
@@ -87,7 +87,7 @@
                     string type,
                     columns={Duration,Size,Throughput,SrcMemType,DstMemType,Name},
                     assign column name/.style={/pgfplots/table/column name={\large{\textbf{#1}}}}
-                ] {Resources/nvprof.csv}
+                ] {Resources/nvprof_basic.csv}
             }
         \end{figure}
     \end{itemize}
