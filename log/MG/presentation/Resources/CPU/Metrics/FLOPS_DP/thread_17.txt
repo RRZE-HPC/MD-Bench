@@ -1,0 +1,36 @@
+step	temp		pressure
+0	1.440000e+00	1.215639e+00
+50	7.178282e-01	6.059859e-01
+----------------------------------------------------------------------------
+Force field: lj
+Data layout for positions: AoS
+Using double precision floating point.
+----------------------------------------------------------------------------
+System: 131072 atoms 47849 ghost atoms, Steps: 50
+TOTAL 2.06s FORCE 0.39s NEIGH 1.08s REST 0.58s
+----------------------------------------------------------------------------
+Performance: 3.18 million atom updates per second
+Region: force
+Group: 1
++---------------------------+---------+------------+
+|           Event           | Counter |  rome1:0:0 |
++---------------------------+---------+------------+
+|    Runtime (RDTSC) [s]    |   TSC   |    0.59787 |
+|        Region calls       |   CTR   |         51 |
+|      ACTUAL_CPU_CLOCK     |  FIXC1  | 1117341000 |
+|       MAX_CPU_CLOCK       |  FIXC2  | 1313795000 |
+|    RETIRED_INSTRUCTIONS   |   PMC0  |  728442500 |
+|    CPU_CLOCKS_UNHALTED    |   PMC1  |  882304100 |
+| RETIRED_SSE_AVX_FLOPS_ALL |   PMC2  |  664283100 |
+|           MERGE           |   PMC3  |          0 |
++---------------------------+---------+------------+
+
++----------------------+-----------+
+|        Metric        | rome1:0:0 |
++----------------------+-----------+
+|  Runtime (RDTSC) [s] |    0.5979 |
+| Runtime unhalted [s] |    0.4755 |
+|      Clock [MHz]     | 1998.6358 |
+|          CPI         |    1.2112 |
+|     DP [MFLOP/s]     | 1111.0828 |
++----------------------+-----------+

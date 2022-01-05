@@ -340,7 +340,7 @@ foo@bar:~/MD-Bench$ NUM_THREADS=X ./MD-Bench-NVCC -n 50
                     legend style={fill=none,draw=white}
                 ]
             
-                \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {Resources/gpu.csv};
+                \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {Resources/gpu_basic.csv};
                 \addlegendentry{Data}
                 \end{axis}
             \end{tikzpicture}
@@ -408,7 +408,7 @@ foo@bar:~/MD-Bench$ nvprof --print-gpu-trace ./MDBench-NVCC -n 50
                     string type,
                     columns={Duration,Size,Throughput,SrcMemType,DstMemType,Name},
                     assign column name/.style={/pgfplots/table/column name={\large{\textbf{#1}}}}
-                ] {Resources/nvprof.csv}
+                ] {Resources/nvprof_basic.csv}
             }
         \end{figure}
     \end{itemize}

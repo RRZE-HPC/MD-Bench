@@ -1,0 +1,38 @@
+step	temp		pressure
+0	1.440000e+00	1.215639e+00
+50	7.178282e-01	6.059859e-01
+----------------------------------------------------------------------------
+Force field: lj
+Data layout for positions: AoS
+Using double precision floating point.
+----------------------------------------------------------------------------
+System: 131072 atoms 47849 ghost atoms, Steps: 50
+TOTAL 3.58s FORCE 2.07s NEIGH 1.08s REST 0.43s
+----------------------------------------------------------------------------
+Performance: 1.83 million atom updates per second
+Region: force
+Group: 1
++-------------------------------+---------+------------+
+|             Event             | Counter |  rome1:0:0 |
++-------------------------------+---------+------------+
+|      Runtime (RDTSC) [s]      |   TSC   |   2.113472 |
+|          Region calls         |   CTR   |         51 |
+|        ACTUAL_CPU_CLOCK       |  FIXC1  | 4230919000 |
+|         MAX_CPU_CLOCK         |  FIXC2  | 4975580000 |
+|      RETIRED_INSTRUCTIONS     |   PMC0  | 4904681000 |
+|      CPU_CLOCKS_UNHALTED      |   PMC1  | 4192253000 |
+| REQUESTS_TO_L2_GRP1_ALL_NO_PF |   PMC3  |   42233030 |
++-------------------------------+---------+------------+
+
++-------------------------------+-----------+
+|             Metric            | rome1:0:0 |
++-------------------------------+-----------+
+|      Runtime (RDTSC) [s]      |    2.1135 |
+|      Runtime unhalted [s]     |    1.8004 |
+|          Clock [MHz]          | 1998.3309 |
+|              CPI              |    0.8547 |
+| L2D load bandwidth [MBytes/s] | 1278.8974 |
+| L2D load data volume [GBytes] |    2.7029 |
+|    L2 bandwidth [MBytes/s]    | 1278.8974 |
+|    L2 data volume [GBytes]    |    2.7029 |
++-------------------------------+-----------+

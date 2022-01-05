@@ -1,8 +1,8 @@
-#!/bin/bash
-for i in $(seq 1 32); do
-	echo "$i"
-	export "OMP_NUM_THREADS=$i"
-	./MDBench-GCC -n 50 | grep "Performance"
+END=32
+for ((i=1;i<=END;i++)); do
+	output=$(eval "likwid-mpirun -np 1 -t $i -m -g FLOPS_DP -omp gnu ./MDBench-GCC -n 50")
+	echo -n "$i,"
+	echo "$output" > "FLOPS_DP/thread_$i.txt"
 done
 
 ## likwid perf measurements on testfront1:

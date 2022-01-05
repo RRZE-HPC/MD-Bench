@@ -1,0 +1,40 @@
+step	temp		pressure
+0	1.440000e+00	1.215639e+00
+50	7.178282e-01	6.059859e-01
+----------------------------------------------------------------------------
+Force field: lj
+Data layout for positions: AoS
+Using double precision floating point.
+----------------------------------------------------------------------------
+System: 131072 atoms 47849 ghost atoms, Steps: 50
+TOTAL 2.58s FORCE 1.09s NEIGH 1.08s REST 0.41s
+----------------------------------------------------------------------------
+Performance: 2.54 million atom updates per second
+Region: force
+Group: 1
++------------------------+---------+------------+
+|          Event         | Counter |  rome1:0:0 |
++------------------------+---------+------------+
+|   Runtime (RDTSC) [s]  |   TSC   |   1.172722 |
+|      Region calls      |   CTR   |         51 |
+|    ACTUAL_CPU_CLOCK    |  FIXC1  | 2325924000 |
+|      MAX_CPU_CLOCK     |  FIXC2  | 2741173000 |
+|  RETIRED_INSTRUCTIONS  |   PMC0  | 1753688000 |
+|   CPU_CLOCKS_UNHALTED  |   PMC1  | 2242306000 |
+|   DATA_CACHE_ACCESSES  |   PMC2  |  591101500 |
+| DATA_CACHE_REFILLS_ALL |   PMC3  |    6776169 |
++------------------------+---------+------------+
+
++-------------------------+-----------+
+|          Metric         | rome1:0:0 |
++-------------------------+-----------+
+|   Runtime (RDTSC) [s]   |    1.1727 |
+|   Runtime unhalted [s]  |    0.9897 |
+|       Clock [MHz]       | 1994.0493 |
+|           CPI           |    1.2786 |
+|   data cache requests   | 591101500 |
+| data cache request rate |    0.3371 |
+|    data cache misses    |   6776169 |
+|   data cache miss rate  |    0.0039 |
+|  data cache miss ratio  |    0.0115 |
++-------------------------+-----------+

@@ -1,0 +1,40 @@
+step	temp		pressure
+0	1.440000e+00	1.215639e+00
+50	7.178282e-01	6.059859e-01
+----------------------------------------------------------------------------
+Force field: lj
+Data layout for positions: AoS
+Using double precision floating point.
+----------------------------------------------------------------------------
+System: 131072 atoms 47849 ghost atoms, Steps: 50
+TOTAL 1.79s FORCE 0.22s NEIGH 1.09s REST 0.48s
+----------------------------------------------------------------------------
+Performance: 3.66 million atom updates per second
+Region: force
+Group: 1
++----------------------+---------+------------+
+|         Event        | Counter |  rome1:0:0 |
++----------------------+---------+------------+
+|  Runtime (RDTSC) [s] |   TSC   |   0.599874 |
+|     Region calls     |   CTR   |         51 |
+|   ACTUAL_CPU_CLOCK   |  FIXC1  | 1041183000 |
+|     MAX_CPU_CLOCK    |  FIXC2  | 1224668000 |
+| RETIRED_INSTRUCTIONS |   PMC0  |  541952100 |
+|  CPU_CLOCKS_UNHALTED |   PMC1  |  611385500 |
+|       L3_ACCESS      |  CPMC0  |   33650450 |
+|        L3_MISS       |  CPMC1  |    4452020 |
++----------------------+---------+------------+
+
++--------------------------------+-----------+
+|             Metric             | rome1:0:0 |
++--------------------------------+-----------+
+|       Runtime (RDTSC) [s]      |    0.5999 |
+|      Runtime unhalted [s]      |    0.4430 |
+|           Clock [MHz]          | 1997.9510 |
+|               CPI              |    1.1281 |
+| L3 access bandwidth [MBytes/s] | 3590.1353 |
+| L3 access data volume [GBytes] |    2.1536 |
+|       L3 access rate [%]       |    6.2091 |
+|        L3 miss rate [%]        |    0.8215 |
+|        L3 miss ratio [%]       |   13.2302 |
++--------------------------------+-----------+
