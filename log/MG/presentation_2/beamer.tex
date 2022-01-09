@@ -199,6 +199,66 @@
 
 \end{frame}
 
+\begin{frame}[fragile]{Allocate memory only once}
+
+    \begin{itemize}
+        \item By allocating memory only once during initialization we can improve performance
+        \vspace*{1.0em}
+        \begin{figure}[!H]
+            \centering
+            \begin{tikzpicture}[scale=0.675]
+                \begin{axis}[
+                    ylabel near ticks,
+                    xlabel=$\text{Threads per Block}$,
+                    ylabel=$\text{Atom updates per s}$,
+                    xmin=1, xmax=32,
+                    ymin=0, ymax=8e6,
+                    legend style={legend pos=north west,fill=none,draw=none}
+                ]
+
+                \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {Resources/gpu_basic.csv};
+                \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {Resources/GPU/Runtime/cpu_pinnend_mem_except_neighbor.csv};
+                \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {Resources/GPU/Runtime/cpu_pinnend_mem_everything.csv};
+                \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once.csv};
+                \addlegendentry{Data}
+                \end{axis}
+            \end{tikzpicture}
+        \end{figure}
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]{Clear forces in GPU}
+
+    \begin{itemize}
+        \item Before each calculation, atom forces have to be set to 0.
+        This can also be done with \lstinline{'cudaMemset'}
+        \vspace*{1.0em}
+        \begin{figure}[!H]
+            \centering
+            \begin{tikzpicture}[scale=0.675]
+                \begin{axis}[
+                    ylabel near ticks,
+                    xlabel=$\text{Threads per Block}$,
+                    ylabel=$\text{Atom updates per s}$,
+                    xmin=1, xmax=32,
+                    ymin=0, ymax=8e6,
+                    legend style={legend pos=north west,fill=none,draw=none}
+                ]
+
+                \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {Resources/gpu_basic.csv};
+                \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {Resources/GPU/Runtime/cpu_pinnend_mem_except_neighbor.csv};
+                \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {Resources/GPU/Runtime/cpu_pinnend_mem_everything.csv};
+                \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once.csv};
+                \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces.csv};
+                \addlegendentry{Data}
+                \end{axis}
+            \end{tikzpicture}
+        \end{figure}
+    \end{itemize}
+
+\end{frame}
+
 \begin{frame}[allowframebreaks]
 
     \frametitle{Bibliography}
