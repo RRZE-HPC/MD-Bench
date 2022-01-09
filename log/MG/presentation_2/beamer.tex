@@ -51,11 +51,12 @@
             \centering
             \begin{tikzpicture}[scale=0.675]
                 \begin{axis}[
+                    ylabel near ticks,
                     xlabel=$\text{Threads per Block}$,
                     ylabel=$\text{Atom updates per s}$,
                     xmin=1, xmax=32,
                     ymin=0, ymax=8e6,
-                    legend style={fill=none,draw=white}
+                    legend style={legend pos=north west,fill=none,draw=none}
                 ]
             
                 \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {Resources/gpu_basic.csv};
@@ -99,12 +100,6 @@
 
 
 \begin{frame}[fragile]{Pinnend memory I}
-    
-    \lstset{prebreak=\raisebox{0ex}[0ex][0ex]
-        {\ensuremath{\rhookswarrow}}}
-    \lstset{postbreak=\raisebox{0ex}[0ex][0ex]
-        {\ensuremath{\rcurvearrowse\space}}}
-    \lstset{breaklines=true, breakatwhitespace=true}
 
     \begin{itemize}
         \item Memory on the host-side can be pinned via \lstinline{'cudaMallocHost'} and \lstinline{'cudaFreeHost'}
@@ -138,15 +133,64 @@
             \centering
             \begin{tikzpicture}[scale=0.675]
                 \begin{axis}[
+                    ylabel near ticks,
                     xlabel=$\text{Threads per Block}$,
                     ylabel=$\text{Atom updates per s}$,
                     xmin=1, xmax=32,
                     ymin=0, ymax=8e6,
-                    legend style={fill=none,draw=white}
+                    legend style={legend pos=north west,fill=none,draw=none}
                 ]
             
-                \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {Resources/gpu_basic.csv};
+                \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {Resources/gpu_basic.csv};
                 \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {Resources/GPU/Runtime/cpu_pinnend_mem_except_neighbor.csv};
+                \addlegendentry{Data}
+                \end{axis}
+            \end{tikzpicture}
+        \end{figure}
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]{Pinnend memory III}
+
+    \begin{itemize}
+        \item Pinning all host-side allocated memory (incl. neighbour data)
+        \vspace*{1em}
+        \begin{figure}[!H]
+            \centering
+            \scalebox{.45}{
+                \pgfplotstabletypeset[
+                    col sep=comma,
+                    string type,
+                    columns={Duration,Size,Throughput,SrcMemType,DstMemType,Name},
+                    assign column name/.style={/pgfplots/table/column name={\large{\textbf{#1}}}}
+                ] {Resources/GPU/nvprof_pinnend_all_mem.csv}
+            }
+        \end{figure}
+    \end{itemize}
+    
+\end{frame}
+
+\begin{frame}[fragile]{Pinnend memory IV}
+
+    \begin{itemize}
+        \item Performance
+        \vspace*{1.5em}
+        \begin{figure}[!H]
+            \centering
+            \begin{tikzpicture}[scale=0.675]
+                \begin{axis}[
+                    ylabel near ticks,
+                    xlabel=$\text{Threads per Block}$,
+                    ylabel=$\text{Atom updates per s}$,
+                    xmin=1, xmax=32,
+                    ymin=0, ymax=8e6,
+                    legend style={legend pos=north west,fill=none,draw=none}
+                ]
+
+                \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {Resources/gpu_basic.csv};
+                \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {Resources/GPU/Runtime/cpu_pinnend_mem_except_neighbor.csv};
+                \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {Resources/GPU/Runtime/cpu_pinnend_mem_everything.csv};
                 \addlegendentry{Data}
                 \end{axis}
             \end{tikzpicture}
