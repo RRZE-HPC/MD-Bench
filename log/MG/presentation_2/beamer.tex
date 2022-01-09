@@ -60,6 +60,8 @@
             
                 \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {Resources/gpu_basic.csv};
                 \addlegendentry{CUDA}
+                \addplot [cyan,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {Resources/cpu.csv};
+                \addlegendentry{CPU}
                 \end{axis}
             \end{tikzpicture}
         \end{figure}
@@ -76,9 +78,8 @@
     \lstset{breaklines=true, breakatwhitespace=true}
 
     \begin{itemize}
-        \item Throughput for unpinnend memory
-        \vspace*{1em}
-        \vspace{1em}
+        \item Memory throughput
+        \vspace*{2em}
         \begin{figure}[!H]
             \centering
             \scalebox{.45}{
@@ -99,8 +100,57 @@
 
 \begin{frame}[fragile]{Pinnend memory I}
     
+    \lstset{prebreak=\raisebox{0ex}[0ex][0ex]
+        {\ensuremath{\rhookswarrow}}}
+    \lstset{postbreak=\raisebox{0ex}[0ex][0ex]
+        {\ensuremath{\rcurvearrowse\space}}}
+    \lstset{breaklines=true, breakatwhitespace=true}
+
     \begin{itemize}
-        \item 
+        \item Memory on the host-side can be pinned via \lstinline{'cudaMallocHost'} and \lstinline{'cudaFreeHost'}
+        \begin{itemize}
+            \item Allocates page-locked memory which can be directly accessed by the GPU and thus
+            results in higher bandwidth
+        \end{itemize}
+        \item Pinning the atom-related memory:
+        \vspace*{0.65em}
+        \begin{figure}[!H]
+            \centering
+            \scalebox{.45}{
+                \pgfplotstabletypeset[
+                    col sep=comma,
+                    string type,
+                    columns={Duration,Size,Throughput,SrcMemType,DstMemType,Name},
+                    assign column name/.style={/pgfplots/table/column name={\large{\textbf{#1}}}}
+                ] {Resources/GPU/nvprof_pinnend_atom_mem.csv}
+            }
+        \end{figure}
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]{Pinnend memory II}
+    
+    \begin{itemize}
+        \item Performance
+        \vspace*{1.5em}
+        \begin{figure}[!H]
+            \centering
+            \begin{tikzpicture}[scale=0.675]
+                \begin{axis}[
+                    xlabel=$\text{Threads per Block}$,
+                    ylabel=$\text{Atom updates per s}$,
+                    xmin=1, xmax=32,
+                    ymin=0, ymax=8e6,
+                    legend style={fill=none,draw=white}
+                ]
+            
+                \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {Resources/gpu_basic.csv};
+                \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {Resources/GPU/Runtime/cpu_pinnend_mem_except_neighbor.csv};
+                \addlegendentry{Data}
+                \end{axis}
+            \end{tikzpicture}
+        \end{figure}
     \end{itemize}
 
 \end{frame}
