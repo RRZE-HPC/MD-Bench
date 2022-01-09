@@ -366,6 +366,63 @@
 
 \end{frame}
 
+\begin{frame}[fragile]{Memory structure of forces to AoS I}
+
+    \begin{itemize}
+        \item Atom coordinates are already implemented as AoS, do the same for atom forces
+        \begin{itemize}
+            \item By doing so, we replace three small by one large memory transfer
+        \end{itemize}
+        \item This also effects other parts of the code (e.g. force integration)
+        \vspace*{1em}
+        \begin{figure}[!H]
+            \centering
+            \scalebox{.45}{
+                \pgfplotstabletypeset[
+                    col sep=comma,
+                    string type,
+                    columns={Duration,Size,Throughput,SrcMemType,DstMemType,Name},
+                    assign column name/.style={/pgfplots/table/column name={\large{\textbf{#1}}}}
+                ] {Resources/GPU/nvprof_atom_forces_AoS.csv}
+            }
+        \end{figure}
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]{Memory structure of forces to AoS II}
+
+    \begin{itemize}
+        \item Performance
+        \vspace*{1.0em}
+        \begin{figure}[!H]
+            \centering
+            \begin{tikzpicture}[scale=0.675]
+                \begin{axis}[
+                    ylabel near ticks,
+                    xlabel=$\text{Threads per Block}$,
+                    ylabel=$\text{Atom updates per s}$,
+                    xmin=1, xmax=32,
+                    ymin=0, ymax=8e6,
+                    legend style={legend pos=north west,fill=none,draw=none}
+                ]
+
+                \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {Resources/gpu_basic.csv};
+                \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {Resources/GPU/Runtime/cpu_pinnend_mem_except_neighbor.csv};
+                \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {Resources/GPU/Runtime/cpu_pinnend_mem_everything.csv};
+                \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once.csv};
+                \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces.csv};
+                \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy.csv};
+                \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy_neighbour_aware.csv};
+                \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy_neighbour_aware_force_AOS.csv};
+                \addlegendentry{Data}
+                \end{axis}
+            \end{tikzpicture}
+        \end{figure}
+    \end{itemize}
+
+\end{frame}
+
 \begin{frame}[allowframebreaks]
 
     \frametitle{Bibliography}

@@ -1,0 +1,5 @@
+Duration,Size,Throughput,SrcMemType,DstMemType,Name
+355.01us,4.1199MB,11.333GB/s,Pinned,Device,[CUDA memcpy HtoD]
+5.0240us,3.0000MB,583.14GB/s,Device,-,[CUDA memset]
+1.5084ms,-,-,-,-,calcforce() [288]
+242.34us,3.0000MB,12.089GB/s,Device,Pinned,[CUDA memcpy DtoH]
