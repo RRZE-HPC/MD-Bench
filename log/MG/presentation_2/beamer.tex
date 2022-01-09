@@ -228,7 +228,7 @@
 
 \end{frame}
 
-\begin{frame}[fragile]{Clear forces in GPU}
+\begin{frame}[fragile]{Clear force arrays}
 
     \begin{itemize}
         \item Before each calculation, atom forces have to be set to 0.
@@ -251,6 +251,60 @@
                 \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {Resources/GPU/Runtime/cpu_pinnend_mem_everything.csv};
                 \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once.csv};
                 \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces.csv};
+                \addlegendentry{Data}
+                \end{axis}
+            \end{tikzpicture}
+        \end{figure}
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]{Avoid repeated copying of parameters I}
+    
+    \begin{itemize}
+        \item Lennard-Jones parameters $\epsilon$, $\sigma$ as well as atom-type and force-threshold
+        need to be copied only once because the are static
+        \vspace*{1em}
+        \begin{figure}[!H]
+            \centering
+            \scalebox{.45}{
+                \pgfplotstabletypeset[
+                    col sep=comma,
+                    string type,
+                    columns={Duration,Size,Throughput,SrcMemType,DstMemType,Name},
+                    assign column name/.style={/pgfplots/table/column name={\large{\textbf{#1}}}}
+                ] {Resources/GPU/nvprof_avoid_parameter_copy.csv}
+            }
+        \end{figure}
+        \vspace*{1em}
+        \item We are left with atom position, atom forces and neighbour-data
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]{Avoid repeated copying of parameters II}
+
+    \begin{itemize}
+        \item Performance
+        \vspace*{1.0em}
+        \begin{figure}[!H]
+            \centering
+            \begin{tikzpicture}[scale=0.675]
+                \begin{axis}[
+                    ylabel near ticks,
+                    xlabel=$\text{Threads per Block}$,
+                    ylabel=$\text{Atom updates per s}$,
+                    xmin=1, xmax=32,
+                    ymin=0, ymax=8e6,
+                    legend style={legend pos=north west,fill=none,draw=none}
+                ]
+
+                \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {Resources/gpu_basic.csv};
+                \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {Resources/GPU/Runtime/cpu_pinnend_mem_except_neighbor.csv};
+                \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {Resources/GPU/Runtime/cpu_pinnend_mem_everything.csv};
+                \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once.csv};
+                \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces.csv};
+                \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy.csv};
                 \addlegendentry{Data}
                 \end{axis}
             \end{tikzpicture}
