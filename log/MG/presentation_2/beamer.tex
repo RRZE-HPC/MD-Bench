@@ -56,13 +56,13 @@
                     ylabel=$\text{Atom updates per s}$,
                     xmin=1, xmax=32,
                     ymin=0, ymax=8e6,
-                    legend style={legend pos=north west,fill=none,draw=none}
+                    legend style={legend pos=south east,fill=none,draw=none}
                 ]
             
-                \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {Resources/gpu_basic.csv};
-                \addlegendentry{CUDA}
                 \addplot [cyan,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {Resources/cpu.csv};
                 \addlegendentry{CPU}
+                \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {Resources/gpu_basic.csv};
+                \addlegendentry{CUDA}
                 \end{axis}
             \end{tikzpicture}
         \end{figure}
@@ -138,7 +138,7 @@
                     ylabel=$\text{Atom updates per s}$,
                     xmin=1, xmax=32,
                     ymin=0, ymax=8e6,
-                    legend style={legend pos=north west,fill=none,draw=none}
+                    legend style={legend pos=south east,fill=none,draw=none}
                 ]
             
                 \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {Resources/gpu_basic.csv};
@@ -185,7 +185,7 @@
                     ylabel=$\text{Atom updates per s}$,
                     xmin=1, xmax=32,
                     ymin=0, ymax=8e6,
-                    legend style={legend pos=north west,fill=none,draw=none}
+                    legend style={legend pos=south east,fill=none,draw=none}
                 ]
 
                 \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {Resources/gpu_basic.csv};
@@ -213,7 +213,7 @@
                     ylabel=$\text{Atom updates per s}$,
                     xmin=1, xmax=32,
                     ymin=0, ymax=8e6,
-                    legend style={legend pos=north west,fill=none,draw=none}
+                    legend style={legend pos=south east,fill=none,draw=none}
                 ]
 
                 \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {Resources/gpu_basic.csv};
@@ -243,7 +243,7 @@
                     ylabel=$\text{Atom updates per s}$,
                     xmin=1, xmax=32,
                     ymin=0, ymax=8e6,
-                    legend style={legend pos=north west,fill=none,draw=none}
+                    legend style={legend pos=south east,fill=none,draw=none}
                 ]
 
                 \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {Resources/gpu_basic.csv};
@@ -296,7 +296,7 @@
                     ylabel=$\text{Atom updates per s}$,
                     xmin=1, xmax=32,
                     ymin=0, ymax=8e6,
-                    legend style={legend pos=north west,fill=none,draw=none}
+                    legend style={legend pos=south east,fill=none,draw=none}
                 ]
 
                 \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {Resources/gpu_basic.csv};
@@ -348,7 +348,7 @@
                     ylabel=$\text{Atom updates per s}$,
                     xmin=1, xmax=32,
                     ymin=0, ymax=8e6,
-                    legend style={legend pos=north west,fill=none,draw=none}
+                    legend style={legend pos=south east,fill=none,draw=none}
                 ]
 
                 \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {Resources/gpu_basic.csv};
@@ -404,7 +404,7 @@
                     ylabel=$\text{Atom updates per s}$,
                     xmin=1, xmax=32,
                     ymin=0, ymax=8e6,
-                    legend style={legend pos=north west,fill=none,draw=none}
+                    legend style={legend pos=south east,fill=none,draw=none}
                 ]
 
                 \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {Resources/gpu_basic.csv};
@@ -439,6 +439,7 @@
 
     \begin{itemize}
         \item Performance
+        \vspace*{1.0em}
         \begin{figure}[!H]
             \centering
             \begin{tikzpicture}[scale=0.675]
@@ -448,7 +449,7 @@
                     ylabel=$\text{Atom updates per s}$,
                     xmin=1, xmax=32,
                     ymin=0, ymax=8e6,
-                    legend style={legend pos=north west,fill=none,draw=none}
+                    legend style={legend pos=south east,fill=none,draw=none}
                 ]
 
                 \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {Resources/gpu_basic.csv};
@@ -461,6 +462,36 @@
                 \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy_neighbour_aware_force_AOS.csv};
                 \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy_neighbour_aware_force_AOS_integrate_cuda.csv};
                 \addlegendentry{Data}
+                \end{axis}
+            \end{tikzpicture}
+        \end{figure}
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]{Current status: CPU vs GPU}
+
+    \begin{itemize}
+        \item Performance
+        \vspace*{1.0em}
+        \begin{figure}[!H]
+            \centering
+            \begin{tikzpicture}[scale=0.675]
+                \begin{axis}[
+                    ylabel near ticks,
+                    xlabel=$\text{Threads per Block}$,
+                    ylabel=$\text{Atom updates per s}$,
+                    xmin=1, xmax=32,
+                    ymin=0, ymax=8e6,
+                    legend style={legend pos=south east,fill=none,draw=none}
+                ]
+
+                \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy_neighbour_aware_force_AOS_integrate_cuda.csv};
+                \addlegendentry{Current GPU}
+                \addplot [cyan,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {Resources/cpu.csv};
+                \addlegendentry{CPU}
+                \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {Resources/gpu_basic.csv};
+                \addlegendentry{Base GPU}
                 \end{axis}
             \end{tikzpicture}
         \end{figure}
