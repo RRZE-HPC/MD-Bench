@@ -499,6 +499,49 @@
 
 \end{frame}
 
+\section{Kernel Analysis}
+
+\begin{frame}[fragile]{GPU Kernel Metrics}
+
+    \begin{itemize}
+        \item \textit{NVIDIA Nsight Compute} with full-profile
+        is able to measure an extensive range of performance
+        parameters, including
+        \begin{itemize}
+            \item Cache hit ratio
+            \item Cache and memory bandwidth
+            \item FLOPS
+        \end{itemize}
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]{GPU Kernel Metrics - L1 Cache}
+
+    \begin{itemize}
+        \item L1 Cache miss ratio on threads per block
+        \vspace*{1.0em}
+        \begin{figure}[!H]
+            \centering
+            \begin{tikzpicture}[scale=0.675]
+                \begin{axis}[
+                    ylabel near ticks,
+                    xlabel=$\text{Threads per Block}$,
+                    ylabel=$\text{L1 Cache miss in \%}$,
+                    xmin=1, xmax=32,
+                    ymin=0, ymax=100,
+                    legend style={legend pos=north east,fill=none,draw=none}
+                ]
+
+                \addplot [magenta,mark=*,smooth] table [x=threads,y=l1_miss_ratio_prcnt,col sep=comma] {Resources/GPU/Metrics/Cache/cache_data.csv};
+                \addlegendentry{L1 Cache Miss}
+                \end{axis}
+            \end{tikzpicture}
+        \end{figure}
+    \end{itemize}
+
+\end{frame}
+
 \begin{frame}[allowframebreaks]
 
     \frametitle{Bibliography}
