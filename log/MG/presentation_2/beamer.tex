@@ -529,7 +529,7 @@
                 \begin{axis}[
                     ylabel near ticks,
                     xlabel=$\text{Threads per Block}$,
-                    ylabel=$\text{L1 Cache miss in \%}$,
+                    ylabel=$\text{L1 Cache miss ratio cin \%}$,
                     xmin=1, xmax=32,
                     ymin=0, ymax=50,
                     legend style={legend pos=north west,fill=none,draw=none}
@@ -573,34 +573,6 @@
 \end{frame}
 
 \begin{frame}[fragile]{Kernel Metrics - L2 Cache II}
-    
-\begin{itemize}
-    \item L2 Bandwidth
-    \vspace*{1.0em}
-    \begin{figure}[!H]
-        \centering
-        \begin{tikzpicture}[scale=0.675]
-            \begin{axis}[
-                ylabel near ticks,
-                xlabel=$\text{Threads per Block}$,
-                ylabel=$\text{L2 Bandwidth MByte/s}$,
-                xmin=1, xmax=32,
-                ymin=0, ymax=350000,
-                legend style={legend pos=north west,fill=none,draw=none}
-            ]
-
-            \addplot [magenta,mark=*,smooth] table [x=threads,y=l2_bandwidth_mbyte_s,col sep=comma] {Resources/GPU/Metrics/L2/L2_data.csv};
-            \addlegendentry{GPU}
-            \addplot [cyan,mark=*,smooth] table [x=threads,y=l2_bandwidth_mbyte_s,col sep=comma] {Resources/CPU/Metrics/L2/L2_data.csv};
-            \addlegendentry{CPU}
-            \end{axis}
-        \end{tikzpicture}
-    \end{figure}
-\end{itemize}
-
-\end{frame}
-
-\begin{frame}[fragile]{Kernel Metrics - L2 Cache III}
 
 \begin{itemize}
     \item L2 Datavolume
@@ -621,6 +593,88 @@
             \addlegendentry{GPU}
             \addplot [cyan,mark=*,smooth] table [x=threads,y=l2_data_volume_gbytes,col sep=comma] {Resources/CPU/Metrics/L2/L2_data.csv};
             \addlegendentry{CPU}
+            \end{axis}
+        \end{tikzpicture}
+    \end{figure}
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]{Kernel Metrics - L3 Cache}
+
+\begin{itemize}
+    \item L3 Cache miss ratio
+    \vspace*{1.0em}
+    \begin{figure}[!H]
+        \centering
+        \begin{tikzpicture}[scale=0.675]
+            \begin{axis}[
+                ylabel near ticks,
+                xlabel=$\text{Threads}$,
+                ylabel=$\text{L3 Cache miss ratio in \%}$,
+                xmin=1, xmax=32,
+                ymin=0, ymax=100,
+                legend style={legend pos=north west,fill=none,draw=none}
+            ]
+
+            \addplot [cyan,mark=*,smooth] table [x=threads,y=l3_miss_ratio_prcnt,col sep=comma] {Resources/CPU/Metrics/L3/L3_data.csv};
+            \addlegendentry{CPU}
+            \end{axis}
+        \end{tikzpicture}
+    \end{figure}
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]{Kernel Metrics - GPU Bandwidth}
+
+\begin{itemize}
+    \item GPU L2 Cache and Memory Bandwidth
+    \vspace*{1.0em}
+    \begin{figure}[!H]
+        \centering
+        \begin{tikzpicture}[scale=0.675]
+            \begin{axis}[
+                ylabel near ticks,
+                xlabel=$\text{Threads}$,
+                ylabel=$\text{Bandwidth MByte/s}$,
+                xmin=1, xmax=32,
+                ymin=0, ymax=500000,
+                legend style={legend pos=north west,fill=none,draw=none}
+            ]
+
+            \addplot [magenta,mark=*,smooth] table [x=threads,y=l2_bandwidth_mbyte_s,col sep=comma] {Resources/GPU/Metrics/L2/L2_data.csv};
+            \addlegendentry{L2 GPU}
+            \addplot [violet,mark=*,smooth] table [x=threads,y=mem_bandwidth_mbyte_s,col sep=comma] {Resources/GPU/Metrics/DeviceMemory/DeviceMemory.csv};
+            \addlegendentry{Memory GPU}
+            \end{axis}
+        \end{tikzpicture}
+    \end{figure}
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]{Kernel Metrics - CPU Bandwidth}
+
+\begin{itemize}
+    \item CPU L2/L3 Cache Bandwidth
+    \vspace*{1.0em}
+    \begin{figure}[!H]
+        \centering
+        \begin{tikzpicture}[scale=0.675]
+            \begin{axis}[
+                ylabel near ticks,
+                xlabel=$\text{Threads}$,
+                ylabel=$\text{Bandwidth MByte/s}$,
+                xmin=1, xmax=32,
+                ymin=0, ymax=5000,
+                legend style={legend pos=south east,fill=none,draw=none}
+            ]
+
+            \addplot [teal,mark=*,smooth] table [x=threads,y=l3_bandwidth_mbyte_s,col sep=comma] {Resources/CPU/Metrics/L3/L3_data.csv};
+            \addlegendentry{L3 CPU}
+            \addplot [cyan,mark=*,smooth] table [x=threads,y=l2_bandwidth_mbyte_s,col sep=comma] {Resources/CPU/Metrics/L2/L2_data.csv};
+            \addlegendentry{L2 CPU}
             \end{axis}
         \end{tikzpicture}
     \end{figure}
