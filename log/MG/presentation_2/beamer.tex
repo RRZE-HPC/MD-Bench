@@ -529,7 +529,7 @@
                 \begin{axis}[
                     ylabel near ticks,
                     xlabel=$\text{Threads per Block}$,
-                    ylabel=$\text{L1 Cache miss ratio cin \%}$,
+                    ylabel=$\text{L1 Cache miss ratio in \%}$,
                     xmin=1, xmax=32,
                     ymin=0, ymax=50,
                     legend style={legend pos=north west,fill=none,draw=none}
@@ -549,7 +549,7 @@
 \begin{frame}[fragile]{Kernel Metrics - L2 Cache I}
 
     \begin{itemize}
-        \item L2 Cache miss ratio
+        \item GPU L2 Cache miss ratio
         \vspace*{1.0em}
         \begin{figure}[!H]
             \centering
@@ -557,7 +557,7 @@
                 \begin{axis}[
                     ylabel near ticks,
                     xlabel=$\text{Threads per Block}$,
-                    ylabel=$\text{L2 Cache miss in \%}$,
+                    ylabel=$\text{L2 Cache miss ratio in \%}$,
                     xmin=1, xmax=32,
                     ymin=0, ymax=50,
                     legend style={legend pos=north west,fill=none,draw=none}
@@ -583,7 +583,7 @@
             \begin{axis}[
                 ylabel near ticks,
                 xlabel=$\text{Threads per Block}$,
-                ylabel=$\text{L2 Datavolume Gbyte}$,
+                ylabel=$\text{L2 Datavolume in Gbyte}$,
                 xmin=1, xmax=32,
                 ymin=0, ymax=5,
                 legend style={legend pos=north west,fill=none,draw=none}
@@ -603,7 +603,7 @@
 \begin{frame}[fragile]{Kernel Metrics - L3 Cache}
 
 \begin{itemize}
-    \item L3 Cache miss ratio
+    \item CPU L3 Cache miss ratio
     \vspace*{1.0em}
     \begin{figure}[!H]
         \centering
@@ -629,7 +629,7 @@
 \begin{frame}[fragile]{Kernel Metrics - GPU Bandwidth}
 
 \begin{itemize}
-    \item GPU L2 Cache and Memory Bandwidth
+    \item GPU L2 Cache / Memory Bandwidth
     \vspace*{1.0em}
     \begin{figure}[!H]
         \centering
@@ -637,7 +637,7 @@
             \begin{axis}[
                 ylabel near ticks,
                 xlabel=$\text{Threads}$,
-                ylabel=$\text{Bandwidth MByte/s}$,
+                ylabel=$\text{Bandwidth in MByte/s}$,
                 xmin=1, xmax=32,
                 ymin=0, ymax=500000,
                 legend style={legend pos=north west,fill=none,draw=none}
@@ -665,7 +665,7 @@
             \begin{axis}[
                 ylabel near ticks,
                 xlabel=$\text{Threads}$,
-                ylabel=$\text{Bandwidth MByte/s}$,
+                ylabel=$\text{Bandwidth in MByte/s}$,
                 xmin=1, xmax=32,
                 ymin=0, ymax=5000,
                 legend style={legend pos=south east,fill=none,draw=none}
@@ -675,6 +675,34 @@
             \addlegendentry{L3 CPU}
             \addplot [cyan,mark=*,smooth] table [x=threads,y=l2_bandwidth_mbyte_s,col sep=comma] {Resources/CPU/Metrics/L2/L2_data.csv};
             \addlegendentry{L2 CPU}
+            \end{axis}
+        \end{tikzpicture}
+    \end{figure}
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]{Kernel Metrics - FLOPS}
+
+\begin{itemize}
+    \item Double precision FLOPS
+    \vspace*{1.0em}
+    \begin{figure}[!H]
+        \centering
+        \begin{tikzpicture}[scale=0.675]
+            \begin{axis}[
+                ylabel near ticks,
+                xlabel=$\text{Threads}$,
+                ylabel=$\text{FLOPS}$,
+                xmin=1, xmax=32,
+                ymin=0, ymax=175000,
+                legend style={legend pos=north west,fill=none,draw=none}
+            ]
+
+            \addplot [magenta,mark=*,smooth] table [x=threads,y=mflop_s,col sep=comma] {Resources/GPU/Metrics/FLOPS_DP/flops_dp_data.csv};
+            \addlegendentry{GPU}
+            \addplot [cyan,mark=*,smooth] table [x=threads,y=total_mflop_s,col sep=comma] {Resources/CPU/Metrics/FLOPS_DP/flops_dp_data.csv};
+            \addlegendentry{CPU}
             \end{axis}
         \end{tikzpicture}
     \end{figure}
