@@ -3,7 +3,7 @@ LINKER = $(CC)
 
 OPENMP  = #-qopenmp
 PROFILE  = #-profile-functions -g  -pg
- OPTS     = -Ofast -xCORE-AVX512 -qopt-zmm-usage=high $(PROFILE)
+OPTS      = -Ofast -xCORE-AVX512 -qopt-zmm-usage=high $(PROFILE)
 #OPTS     = -fast -xCORE-AVX2  $(PROFILE)
 #OPTS     = -fast -xAVX  $(PROFILE)
 #OPTS     = -fast -xSSE4.2 $(PROFILE)
