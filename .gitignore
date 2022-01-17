@@ -54,5 +54,7 @@ dkms.conf
 # Build directories and executables
 GCC/
 ICC/
+CLANG/
 MDBench-GCC*
 MDBench-ICC*
+MDBench-CLANG*
