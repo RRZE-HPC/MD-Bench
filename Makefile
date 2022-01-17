@@ -1,7 +1,7 @@
 #CONFIGURE BUILD SYSTEM
-TARGET	   = MDBench-$(TAG)
+TARGET	   = MDBench-$(TAG)-$(OPT_SCHEME)
 BUILD_DIR  = ./$(TAG)
-SRC_DIR    = ./src
+SRC_DIR    = ./$(OPT_SCHEME)
 ASM_DIR    = ./asm
 MAKE_DIR   = ./
 Q         ?= @
@@ -10,7 +10,7 @@ Q         ?= @
 include $(MAKE_DIR)/config.mk
 include $(MAKE_DIR)/include_$(TAG).mk
 include $(MAKE_DIR)/include_LIKWID.mk
-INCLUDES  += -I./src/includes
+INCLUDES  += -I./$(SRC_DIR)/includes
 
 ifeq ($(strip $(DATA_LAYOUT)),AOS)
 DEFINES +=  -DAOS
