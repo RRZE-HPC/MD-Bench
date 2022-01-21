@@ -713,7 +713,7 @@
 
 \section{Conclusions}
 
-\begin{frame}[fragile]{Memory layout}
+\begin{frame}[fragile]{Memory layout I}
 
     \begin{itemize}
         \item Memory accesses to neighbouring atoms are not optimal:
@@ -721,7 +721,10 @@
         \begin{figure}[!H]
             \centering
             \begin{tikzpicture}[scale=0.675]
-                \node[rectangle,draw,line width=0.6pt,minimum size=0.75cm,fill=cyan!50!black] (elem_0) at (0,0) {$x$};
+                \def\size{0.625cm}
+                \node[line width=2.4pt] (start_left) at (-1.5,0) {};
+                \node[rectangle,draw,line width=0.6pt,minimum size=\size,fill=cyan!50!black] (elem_0) at (0,0) {$x$};
+                \draw [->] (start_left) -- node[midway,above] {$i$} (elem_0);
                 \foreach \x in {1,...,5} {
                     \pgfmathtruncatemacro{\jn}{\x - 1}%
                     \pgfmathtruncatemacro{\idx}{Mod(\x,3)}%
@@ -733,19 +736,19 @@
                     \fi
 
                     \ifnum\idx=0
-                        \node[rectangle,draw,anchor=west,line width=0.6pt,minimum size=0.75cm,fill=\colr] (elem_\x) at (elem_\jn.east) {$x$};
+                        \node[rectangle,draw,anchor=west,line width=0.6pt,minimum size=\size,fill=\colr] (elem_\x) at (elem_\jn.east) {$x$};
                     \fi
 
                     \ifnum\idx=1
-                        \node[rectangle,draw,anchor=west,line width=0.6pt,minimum size=0.75cm,fill=\colr] (elem_\x) at (elem_\jn.east) {$y$};
+                        \node[rectangle,draw,anchor=west,line width=0.6pt,minimum size=\size,fill=\colr] (elem_\x) at (elem_\jn.east) {$y$};
                     \fi
 
                     \ifnum\idx=2
-                        \node[rectangle,draw,anchor=west,line width=0.6pt,minimum size=0.75cm,fill=\colr] (elem_\x) at (elem_\jn.east) {$z$};
+                        \node[rectangle,draw,anchor=west,line width=0.6pt,minimum size=\size,fill=\colr] (elem_\x) at (elem_\jn.east) {$z$};
                     \fi
                 }
                 \node[anchor=west] (separator) at (elem_5.east) {$...$};
-                \node[rectangle,draw,anchor=west,line width=0.6pt,minimum size=0.75cm,fill=cyan!50!black] (elem_6) at (separator.east) {$x$};
+                \node[rectangle,draw,anchor=west,line width=0.6pt,minimum size=\size,fill=cyan!50!black] (elem_6) at (separator.east) {$x$};
                 \foreach \x in {7,...,11} {
                     \pgfmathtruncatemacro{\jn}{\x - 1}%
                     \pgfmathtruncatemacro{\idx}{Mod(\x,3)}%
@@ -757,19 +760,48 @@
                     \fi
 
                     \ifnum\idx=0
-                        \node[rectangle,draw,anchor=west,line width=0.6pt,minimum size=0.75cm,fill=\colr] (elem_\x) at (elem_\jn.east) {$x$};
+                        \node[rectangle,draw,anchor=west,line width=0.6pt,minimum size=\size,fill=\colr] (elem_\x) at (elem_\jn.east) {$x$};
                     \fi
 
                     \ifnum\idx=1
-                        \node[rectangle,draw,anchor=west,line width=0.6pt,minimum size=0.75cm,fill=\colr] (elem_\x) at (elem_\jn.east) {$y$};
+                        \node[rectangle,draw,anchor=west,line width=0.6pt,minimum size=\size,fill=\colr] (elem_\x) at (elem_\jn.east) {$y$};
                     \fi
 
                     \ifnum\idx=2
-                        \node[rectangle,draw,anchor=west,line width=0.6pt,minimum size=0.75cm,fill=\colr] (elem_\x) at (elem_\jn.east) {$z$};
+                        \node[rectangle,draw,anchor=west,line width=0.6pt,minimum size=\size,fill=\colr] (elem_\x) at (elem_\jn.east) {$z$};
                     \fi
                 }
+                \draw [->] (elem_0.south) -- +(0,-0.5) -| node[left=2.25,below] {neighbour(i) calc\_force} (elem_6.south);
             \end{tikzpicture}
         \end{figure}
+        \item This affects cache miss ratio when multiple threads access the same data
+        \begin{itemize}
+            \item Reorder such that neighbouring atoms are side by side and can be fetched within one cache line
+        \end{itemize}
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]{Memory layout II}
+
+    \begin{itemize}
+        \item NVIDIA Nsight Compute confirms:
+        \begin{itemize}
+            \item Kernel accesses 7 bytes per thread per memory request but access pattern results in 768 bytes of
+            L1 cache data transfer while $7 \cdot 32 = 224$ bytes would be optimal
+            \begin{itemize}
+                \item Likely to occur because of distance between thread IDs ($\Rightarrow$ reordering)
+            \end{itemize}
+            \item Out of a loaded 128 byte L2 cache line only 38 bytes are used
+        \end{itemize}
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]{What is left}
+
+    \begin{itemize}
+        \item Port reneighbour-function also to GPU such that no memory transfers to CPU within the main \textit{for}-loop are necessary anymore
     \end{itemize}
 
 \end{frame}
