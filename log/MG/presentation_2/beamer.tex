@@ -15,7 +15,8 @@
 \usepackage{tikz}
 \usepackage{ifthen}
 \usepackage{MnSymbol}
-\usetikzlibrary{positioning}
+\usepackage{listofitems}
+\usetikzlibrary{positioning,math}
 \usetikzlibrary{graphs,graphs.standard,quotes}
 \usetikzlibrary{patterns}
 \usepackage{pgfplotstable}
@@ -707,6 +708,69 @@
         \end{tikzpicture}
     \end{figure}
 \end{itemize}
+
+\end{frame}
+
+\section{Conclusions}
+
+\begin{frame}[fragile]{Memory layout}
+
+    \begin{itemize}
+        \item Memory accesses to neighbouring atoms are not optimal:
+        \vspace*{1.0em}
+        \begin{figure}[!H]
+            \centering
+            \begin{tikzpicture}[scale=0.675]
+                \node[rectangle,draw,line width=0.6pt,minimum size=0.75cm,fill=cyan!50!black] (elem_0) at (0,0) {$x$};
+                \foreach \x in {1,...,5} {
+                    \pgfmathtruncatemacro{\jn}{\x - 1}%
+                    \pgfmathtruncatemacro{\idx}{Mod(\x,3)}%
+                    \pgfmathtruncatemacro{\col}{Mod(\x/3,2)}%
+                    \ifnum\col=0
+                        \def\colr{cyan!50!black}
+                    \else
+                        \def\colr{magenta!50!black}
+                    \fi
+
+                    \ifnum\idx=0
+                        \node[rectangle,draw,anchor=west,line width=0.6pt,minimum size=0.75cm,fill=\colr] (elem_\x) at (elem_\jn.east) {$x$};
+                    \fi
+
+                    \ifnum\idx=1
+                        \node[rectangle,draw,anchor=west,line width=0.6pt,minimum size=0.75cm,fill=\colr] (elem_\x) at (elem_\jn.east) {$y$};
+                    \fi
+
+                    \ifnum\idx=2
+                        \node[rectangle,draw,anchor=west,line width=0.6pt,minimum size=0.75cm,fill=\colr] (elem_\x) at (elem_\jn.east) {$z$};
+                    \fi
+                }
+                \node[anchor=west] (separator) at (elem_5.east) {$...$};
+                \node[rectangle,draw,anchor=west,line width=0.6pt,minimum size=0.75cm,fill=cyan!50!black] (elem_6) at (separator.east) {$x$};
+                \foreach \x in {7,...,11} {
+                    \pgfmathtruncatemacro{\jn}{\x - 1}%
+                    \pgfmathtruncatemacro{\idx}{Mod(\x,3)}%
+                    \pgfmathtruncatemacro{\col}{Mod(\x/3,2)}%
+                    \ifnum\col=0
+                        \def\colr{cyan!50!black}
+                    \else
+                        \def\colr{magenta!50!black}
+                    \fi
+
+                    \ifnum\idx=0
+                        \node[rectangle,draw,anchor=west,line width=0.6pt,minimum size=0.75cm,fill=\colr] (elem_\x) at (elem_\jn.east) {$x$};
+                    \fi
+
+                    \ifnum\idx=1
+                        \node[rectangle,draw,anchor=west,line width=0.6pt,minimum size=0.75cm,fill=\colr] (elem_\x) at (elem_\jn.east) {$y$};
+                    \fi
+
+                    \ifnum\idx=2
+                        \node[rectangle,draw,anchor=west,line width=0.6pt,minimum size=0.75cm,fill=\colr] (elem_\x) at (elem_\jn.east) {$z$};
+                    \fi
+                }
+            \end{tikzpicture}
+        \end{figure}
+    \end{itemize}
 
 \end{frame}
 
