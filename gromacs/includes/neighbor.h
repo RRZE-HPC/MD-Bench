@@ -36,6 +36,7 @@ typedef struct {
 extern void initNeighbor(Neighbor*, Parameter*);
 extern void setupNeighbor(Parameter*);
 extern void binatoms(Atom*);
-extern void buildNeighbor(Atom*, Neighbor*);
+extern void buildNeighbor(Parameter*, Atom*, Neighbor*);
 extern void sortAtom(Atom*);
+extern void buildClusters(Parameter*, Atom*);
 #endif
