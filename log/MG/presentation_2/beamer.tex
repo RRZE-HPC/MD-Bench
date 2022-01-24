@@ -81,7 +81,7 @@
 
     \begin{itemize}
         \item Memory throughput
-        \vspace*{2em}
+        \vspace*{1.5em}
         \begin{figure}[!H]
             \centering
             \scalebox{.45}{
@@ -93,6 +93,8 @@
                 ] {Resources/nvprof_basic.csv}
             }
         \end{figure}
+        \vspace*{1.5em}
+        \item atom positions, atom forces, atom type, Lennard-Jones parameters, neighbourlist
     \end{itemize}
 
 \end{frame}
@@ -792,13 +794,13 @@
             \begin{itemize}
                 \item Likely to occur because of distance between thread IDs ($\Rightarrow$ reordering)
             \end{itemize}
-            \item Out of a loaded 128 byte L2 cache line only 38 bytes are used
+            \item Out of a L2 cache line of 128 bytes, only 38 bytes are used
         \end{itemize}
     \end{itemize}
 
 \end{frame}
 
-\begin{frame}[fragile]{What is left}
+\begin{frame}[fragile]{Remaining parts}
 
     \begin{itemize}
         \item Port reneighbour-function also to GPU such that no memory transfers to CPU within the main \textit{for}-loop are necessary anymore
