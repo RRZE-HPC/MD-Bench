@@ -46,16 +46,22 @@ void initAtom(Atom *atom)
     atom->x  = NULL; atom->y  = NULL; atom->z  = NULL;
     atom->vx = NULL; atom->vy = NULL; atom->vz = NULL;
     atom->fx = NULL; atom->fy = NULL; atom->fz = NULL;
+    atom->cl_x = NULL;
     atom->Natoms = 0;
     atom->Nlocal = 0;
     atom->Nghost = 0;
     atom->Nmax   = 0;
+    atom->Nclusters = 0;
+    atom->Nclusters_local = 0;
+    atom->Nclusters_ghost = 0;
+    atom->Nclusters_max = 0;
     atom->type = NULL;
     atom->ntypes = 0;
     atom->epsilon = NULL;
     atom->sigma6 = NULL;
     atom->cutforcesq = NULL;
     atom->cutneighsq = NULL;
+    atom->clusters = NULL;
 }
 
 void createAtom(Atom *atom, Parameter *param)
@@ -273,4 +279,12 @@ void growAtom(Atom *atom)
     atom->fy = (MD_FLOAT*) reallocate(atom->fy, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
     atom->fz = (MD_FLOAT*) reallocate(atom->fz, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
     atom->type = (int *) reallocate(atom->type, ALIGNMENT, atom->Nmax * sizeof(int), nold * sizeof(int));
+}
+
+void growClusters(Atom *atom)
+{
+    int nold = atom->Nclusters_max;
+    atom->Nclusters_max += DELTA;
+    atom->clusters = (Cluster*) reallocate(atom->clusters, ALIGNMENT, atom->Nclusters_max * sizeof(Cluster), nold * sizeof(Cluster));
+    atom->cl_x = (MD_FLOAT*) reallocate(atom->cl_x, ALIGNMENT, atom->Nclusters_max * CLUSTER_DIM_N * 3, nold * CLUSTER_DIM_N * 3);
 }
