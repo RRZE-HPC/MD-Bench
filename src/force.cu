@@ -157,7 +157,6 @@ void cuda_final_integrate(bool doReneighbour, Parameter *param, Atom *atom) {
 
     if(doReneighbour) {
         checkCUDAError( "FinalIntegrate: velocity memcpy", cudaMemcpy(atom->vx, c_atom.vx, sizeof(MD_FLOAT) * atom->Nlocal * 3, cudaMemcpyDeviceToHost) );
-        checkCUDAError( "FinalIntegrate: position memcpy", cudaMemcpy(atom->x, c_atom.x, sizeof(MD_FLOAT) * atom->Nlocal * 3, cudaMemcpyDeviceToHost) );
     }
 }
 
@@ -174,7 +173,9 @@ void cuda_initial_integrate(bool doReneighbour, Parameter *param, Atom *atom) {
     checkCUDAError( "PeekAtLastError InitialIntegrate", cudaPeekAtLastError() );
     checkCUDAError( "DeviceSync InitialIntegrate", cudaDeviceSynchronize() );
 
-    checkCUDAError( "InitialIntegrate: velocity memcpy", cudaMemcpy(atom->vx, c_atom.vx, sizeof(MD_FLOAT) * atom->Nlocal * 3, cudaMemcpyDeviceToHost) );
+    if(doReneighbour) {
+        checkCUDAError( "InitialIntegrate: velocity memcpy", cudaMemcpy(atom->vx, c_atom.vx, sizeof(MD_FLOAT) * atom->Nlocal * 3, cudaMemcpyDeviceToHost) );
+    }
     checkCUDAError( "InitialIntegrate: position memcpy", cudaMemcpy(atom->x, c_atom.x, sizeof(MD_FLOAT) * atom->Nlocal * 3, cudaMemcpyDeviceToHost) );
 }
 
@@ -183,9 +184,13 @@ void initCudaAtom(Atom *atom, Neighbor *neighbor) {
     const int Nlocal = atom->Nlocal;
 
     checkCUDAError( "c_atom.x malloc", cudaMalloc((void**)&(c_atom.x), sizeof(MD_FLOAT) * atom->Nmax * 3) );
+    checkCUDAError( "c_atom.x memcpy", cudaMemcpy(c_atom.x, atom->x, sizeof(MD_FLOAT) * atom->Nmax * 3, cudaMemcpyHostToDevice) );
+
     checkCUDAError( "c_atom.fx malloc", cudaMalloc((void**)&(c_atom.fx), sizeof(MD_FLOAT) * Nlocal * 3) );
+
     checkCUDAError( "c_atom.vx malloc", cudaMalloc((void**)&(c_atom.vx), sizeof(MD_FLOAT) * Nlocal * 3) );
     checkCUDAError( "c_atom.vx memcpy", cudaMemcpy(c_atom.vx, atom->vx, sizeof(MD_FLOAT) * Nlocal * 3, cudaMemcpyHostToDevice) );
+
     checkCUDAError( "c_atom.type malloc", cudaMalloc((void**)&(c_atom.type), sizeof(int) * atom->Nmax) );
     checkCUDAError( "c_atom.epsilon malloc", cudaMalloc((void**)&(c_atom.epsilon), sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes) );
     checkCUDAError( "c_atom.sigma6 malloc", cudaMalloc((void**)&(c_atom.sigma6), sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes) );
@@ -235,13 +240,8 @@ double computeForce(
     }
     */
 
-    // Choose GPU where you want to execute code on
-    // It is possible to execute the same kernel on multiple GPUs but you have to copy the data multiple times
-    // Executing `cudaSetDevice(N)` before cudaMalloc / cudaMemcpy / calc_force <<< >>> will set the GPU accordingly
-
 
     // HINT: Run with cuda-memcheck ./MDBench-NVCC in case of error
-    // HINT: Only works for data layout = AOS!!!
 
     // checkCUDAError( "c_atom.fx memset", cudaMemset(c_atom.fx, 0, sizeof(MD_FLOAT) * Nlocal * 3) );
 
