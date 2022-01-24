@@ -415,8 +415,10 @@ L1- & L2-Cache Hitrate via Nvidia Nsigh Compute:
 < memory workload analysis >
 
 TODO: For final logbook:
-- further performance improvements (coalescing of neighbour list)
+- further performance improvements (sorting of atoms in neighbour list update)
 - remove Cache hit ratio measurements
+- compare FLOPS / Cache bandwidth to theoretical maximum FLOPS / Cache bandwidth
+- look up GPU Cache size
 - make sure likwid measured the right things in parallel
 
 ## Task4: Instrument kernels with MarkerAPI

@@ -265,21 +265,6 @@ double computeForce(
     checkCUDAError( "PeekAtLastError ComputeForce", cudaPeekAtLastError() );
     checkCUDAError( "DeviceSync ComputeForce", cudaDeviceSynchronize() );
 
-    // copy results in c_atom.fx/fy/fz to atom->fx/fy/fz
-
-    checkCUDAError( "memcpy force back", cudaMemcpy(atom->fx, c_atom.fx, sizeof(MD_FLOAT) * Nlocal * 3, cudaMemcpyDeviceToHost) );
-
-    /*
-    cudaFree(c_atom.x);
-    cudaFree(c_atom.fx); cudaFree(c_atom.fy); cudaFree(c_atom.fz);
-    cudaFree(c_atom.type);
-    cudaFree(c_atom.epsilon);
-    cudaFree(c_atom.sigma6);
-    cudaFree(c_atom.cutforcesq);
-    */
-
-    // cudaFree(c_neighs); cudaFree(c_neigh_numneigh);
-
     cudaProfilerStop();
 
     LIKWID_MARKER_STOP("force");
