@@ -26,6 +26,7 @@
 #include <pbc.h>
 #include <atom.h>
 #include <allocate.h>
+#include <neighbor.h>
 
 #define DELTA 20000
 
@@ -177,4 +178,8 @@ void setupPbc(Atom *atom, Parameter *param) {
     // increase by one to make it the ghost atom count
     atom->Nclusters_ghost = Nghost + 1;
     atom->Nclusters = atom->Nclusters_local + Nghost + 1;
+
+    // Update and bin created ghost clusters
+    updatePbc(atom, param);
+    binGhostClusters(param, atom);
 }

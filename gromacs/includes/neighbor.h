@@ -39,4 +39,5 @@ extern void binatoms(Atom*);
 extern void buildNeighbor(Parameter*, Atom*, Neighbor*);
 extern void sortAtom(Atom*);
 extern void buildClusters(Parameter*, Atom*);
+extern void binGhostClusters(Parameter*, Atom*);
 #endif
