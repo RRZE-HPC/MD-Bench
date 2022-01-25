@@ -101,7 +101,7 @@ double setup(
     if(param->input_file == NULL) { adjustThermo(param, atom); }
     setupPbc(atom, param);
     updatePbc(atom, param);
-    buildNeighbor(atom, neighbor);
+    buildNeighbor(param, atom, neighbor);
     E = getTimeStamp();
 
     return E-S;
@@ -120,7 +120,7 @@ double reneighbour(
     setupPbc(atom, param);
     updatePbc(atom, param);
     //sortAtom(atom);
-    buildNeighbor(atom, neighbor);
+    buildNeighbor(param, atom, neighbor);
     LIKWID_MARKER_STOP("reneighbour");
     E = getTimeStamp();
 

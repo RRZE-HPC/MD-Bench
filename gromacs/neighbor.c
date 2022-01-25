@@ -54,8 +54,6 @@ static MD_FLOAT binsizex, binsizey;
 static int coord2bin(MD_FLOAT, MD_FLOAT);
 static MD_FLOAT bindist(int, int);
 
-extern int *PBCx, *PBCy, *PBCz;
-
 /* exported subroutines */
 void initNeighbor(Neighbor *neighbor, Parameter *param)
 {
@@ -510,10 +508,10 @@ void binGhostClusters(Parameter *param, Atom *atom) {
             coord2bin2D(xtmp, ytmp, &nix, &niy);
             // Always put the cluster on the bin of its innermost atom so
             // the cluster should be closer to local clusters
-            if(PBCx[ci] > 0 && ix > nix) { ix = nix; }
-            if(PBCx[ci] < 0 && ix < nix) { ix = nix; }
-            if(PBCy[ci] > 0 && iy > niy) { iy = niy; }
-            if(PBCy[ci] < 0 && iy < niy) { iy = niy; }
+            if(atom->PBCx[ci] > 0 && ix > nix) { ix = nix; }
+            if(atom->PBCx[ci] < 0 && ix < nix) { ix = nix; }
+            if(atom->PBCy[ci] > 0 && iy > niy) { iy = niy; }
+            if(atom->PBCy[ci] < 0 && iy < niy) { iy = niy; }
         }
 
         int bin = iy * mbinx + ix + 1;
