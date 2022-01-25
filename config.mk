@@ -1,7 +1,7 @@
 # Compiler tag (GCC/CLANG/ICC)
 TAG ?= ICC
-# Optimization scheme (default/gromacs/clusters_per_bin)
-OPT_SCHEME = default
+# Optimization scheme (lammps/gromacs/clusters_per_bin)
+OPT_SCHEME = lammps
 # Enable likwid (true or false)
 ENABLE_LIKWID ?= false
 # SP or DP

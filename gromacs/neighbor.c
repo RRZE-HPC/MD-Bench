@@ -219,10 +219,6 @@ void buildNeighbor(Parameter *param, Atom *atom, Neighbor *neighbor) {
         neighbor->neighbors = (int*) malloc(nmax * neighbor->maxneighs * sizeof(int*));
     }
 
-    /* bin local & ghost atoms */
-    binatoms(atom);
-    buildClusters(param, atom);
-
     const MD_FLOAT rBB = cutneighsq / 2.0; // TODO: change this
     int resize = 1;
 
@@ -413,6 +409,9 @@ void sortBinAtomsByZCoord(Parameter *param, Atom *atom, int bin) {
 }
 
 void buildClusters(Parameter *param, Atom *atom) {
+    /* bin local atoms */
+    binatoms(atom);
+
     for(int bin = 0; bin < mbins; bin++) {
         sortBinAtomsByZCoord(param, atom, bin);
     }
