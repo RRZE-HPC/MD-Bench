@@ -52,6 +52,7 @@ typedef struct {
     MD_FLOAT *cutforcesq;
     MD_FLOAT *cutneighsq;
     Cluster *clusters;
+    int *PBCx, *PBCy, *PBCz;
 } Atom;
 
 extern void initAtom(Atom*);

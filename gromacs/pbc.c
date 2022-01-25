@@ -30,7 +30,6 @@
 #define DELTA 20000
 
 static int NmaxGhost;
-static int *PBCx, *PBCy, *PBCz;
 
 static void growPbc(Atom*);
 
@@ -38,7 +37,7 @@ static void growPbc(Atom*);
 void initPbc(Atom* atom) {
     NmaxGhost = 0;
     atom->border_map = NULL;
-    PBCx = NULL; PBCy = NULL; PBCz = NULL;
+    atom->PBCx = NULL; atom->PBCy = NULL; atom->PBCz = NULL;
 }
 
 /* update coordinates of ghost atoms */
@@ -55,9 +54,9 @@ void updatePbc(Atom *atom, Parameter *param) {
         MD_FLOAT *bmap_cptr = cluster_ptr(border_map[ci]);
 
         for(int cii = 0; cii < atom->clusters[ci].natoms; cii++) {
-            cluster_x(cptr, cii) = cluster_x(bmap_cptr, cii) + PBCx[ci] * xprd;
-            cluster_y(cptr, cii) = cluster_y(bmap_cptr, cii) + PBCy[ci] * yprd;
-            cluster_z(cptr, cii) = cluster_z(bmap_cptr, cii) + PBCz[ci] * zprd;
+            cluster_x(cptr, cii) = cluster_x(bmap_cptr, cii) + atom->PBCx[ci] * xprd;
+            cluster_y(cptr, cii) = cluster_y(bmap_cptr, cii) + atom->PBCy[ci] * yprd;
+            cluster_z(cptr, cii) = cluster_z(bmap_cptr, cii) + atom->PBCz[ci] * zprd;
         }
     }
 }
@@ -74,6 +73,7 @@ void updateAtomsPbc(Atom *atom, Parameter *param) {
             atom_x(i) += xprd;
         } else if(atom_x(i) >= xprd) {
             atom_x(i) -= xprd;
+        }
 
         if(atom_y(i) < 0.0) {
             atom_y(i) += yprd;
@@ -96,15 +96,26 @@ void updateAtomsPbc(Atom *atom, Parameter *param) {
 #define ADDGHOST(dx,dy,dz)                                          \
     Nghost++;                                                       \
     border_map[Nghost] = ci;                                        \
-    PBCx[Nghost] = dx;                                              \
-    PBCy[Nghost] = dy;                                              \
-    PBCz[Nghost] = dz;                                              \
+    atom->PBCx[Nghost] = dx;                                        \
+    atom->PBCy[Nghost] = dy;                                        \
+    atom->PBCz[Nghost] = dz;                                        \
     copy_cluster_types(atom, atom->Nclusters_local + Nghost, ci)
 
 void copy_cluster_types(Atom *atom, int dest, int src) {
     for(int cii = 0; cii < atom->clusters[src].natoms; cii++) {
         atom->clusters[dest].type[cii] = atom->clusters[src].type[cii];
     }
+}
+
+/* internal subroutines */
+void growPbc(Atom* atom) {
+    int nold = NmaxGhost;
+    NmaxGhost += DELTA;
+
+    atom->border_map = (int*) reallocate(atom->border_map, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));
+    atom->PBCx = (int*) reallocate(atom->PBCx, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));
+    atom->PBCy = (int*) reallocate(atom->PBCy, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));
+    atom->PBCz = (int*) reallocate(atom->PBCz, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));
 }
 
 void setupPbc(Atom *atom, Parameter *param) {
@@ -131,7 +142,6 @@ void setupPbc(Atom *atom, Parameter *param) {
         MD_FLOAT bbmaxy = atom->clusters[ci].bbmaxy;
         MD_FLOAT bbminz = atom->clusters[ci].bbminz;
         MD_FLOAT bbmaxz = atom->clusters[ci].bbmaxz;
-
         /* Setup ghost atoms */
         /* 6 planes */
         if (bbminx < Cutneigh)         { ADDGHOST(+1,0,0); }
@@ -167,15 +177,4 @@ void setupPbc(Atom *atom, Parameter *param) {
     // increase by one to make it the ghost atom count
     atom->Nclusters_ghost = Nghost + 1;
     atom->Nclusters = atom->Nclusters_local + Nghost + 1;
-}
-
-/* internal subroutines */
-void growPbc(Atom* atom) {
-    int nold = NmaxGhost;
-    NmaxGhost += DELTA;
-
-    atom->border_map = (int*) reallocate(atom->border_map, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));
-    PBCx = (int*) reallocate(PBCx, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));
-    PBCy = (int*) reallocate(PBCy, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));
-    PBCz = (int*) reallocate(PBCz, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));
 }
