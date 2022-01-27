@@ -34,10 +34,11 @@ typedef struct {
 } Neighbor;
 
 extern void initNeighbor(Neighbor*, Parameter*);
-extern void setupNeighbor(Parameter*);
+extern void setupNeighbor(Parameter*, Atom*);
 extern void binatoms(Atom*);
-extern void buildNeighbor(Parameter*, Atom*, Neighbor*);
+extern void buildNeighbor(Atom*, Neighbor*);
 extern void sortAtom(Atom*);
-extern void buildClusters(Parameter*, Atom*);
-extern void binGhostClusters(Parameter*, Atom*);
+extern void buildClusters(Atom*);
+extern void binClusters(Atom*);
+extern void updateSingleAtoms(Atom*);
 #endif

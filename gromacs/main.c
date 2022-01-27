@@ -96,12 +96,13 @@ double setup(
     } else {
         readAtom(atom, param);
     }
-    setupNeighbor(param);
+    setupNeighbor(param, atom);
     setupThermo(param, atom->Natoms);
     if(param->input_file == NULL) { adjustThermo(param, atom); }
+    buildClusters(atom);
     setupPbc(atom, param);
-    buildClusters(param, atom);
-    buildNeighbor(param, atom, neighbor);
+    binClusters(atom);
+    buildNeighbor(atom, neighbor);
     E = getTimeStamp();
 
     return E-S;
@@ -116,9 +117,12 @@ double reneighbour(
 
     S = getTimeStamp();
     LIKWID_MARKER_START("reneighbour");
+    updateSingleAtoms(atom);
     updateAtomsPbc(atom, param);
+    buildClusters(atom);
     setupPbc(atom, param);
-    buildNeighbor(param, atom, neighbor);
+    binClusters(atom);
+    buildNeighbor(atom, neighbor);
     LIKWID_MARKER_STOP("reneighbour");
     E = getTimeStamp();
 
@@ -253,11 +257,13 @@ int main(int argc, char** argv)
 #if defined(MEM_TRACER) || defined(INDEX_TRACER)
     traceAddresses(&param, &atom, &neighbor, n + 1);
 #endif
+    /*
     if(param.force_field == FF_EAM) {
         timer[FORCE] = computeForceEam(&eam, &param, &atom, &neighbor, &stats);
     } else {
         timer[FORCE] = computeForceLJ(&param, &atom, &neighbor, &stats);
     }
+    */
 
     timer[NEIGH] = 0.0;
     timer[TOTAL] = getTimeStamp();
@@ -267,7 +273,7 @@ int main(int argc, char** argv)
     }
 
     for(int n = 0; n < param.ntimes; n++) {
-        initialIntegrate(&param, &atom);
+        //initialIntegrate(&param, &atom);
 
         if((n + 1) % param.every) {
             updatePbc(&atom, &param);
@@ -279,13 +285,15 @@ int main(int argc, char** argv)
         traceAddresses(&param, &atom, &neighbor, n + 1);
 #endif
 
+        /*
         if(param.force_field == FF_EAM) {
             timer[FORCE] += computeForceEam(&eam, &param, &atom, &neighbor, &stats);
         } else {
             timer[FORCE] += computeForceLJ(&param, &atom, &neighbor, &stats);
         }
+        */
 
-        finalIntegrate(&param, &atom);
+        //finalIntegrate(&param, &atom);
 
         if(!((n + 1) % param.nstat) && (n+1) < param.ntimes) {
             computeThermo(n + 1, &param, &atom);
