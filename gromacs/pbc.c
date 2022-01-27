@@ -44,6 +44,7 @@ void initPbc(Atom* atom) {
 /* update coordinates of ghost atoms */
 /* uses mapping created in setupPbc */
 void updatePbc(Atom *atom, Parameter *param) {
+    printf("updatePbc start\n");
     int *border_map = atom->border_map;
     int nlocal = atom->Nclusters_local;
     MD_FLOAT xprd = param->xprd;
@@ -60,11 +61,13 @@ void updatePbc(Atom *atom, Parameter *param) {
             cluster_z(cptr, cii) = cluster_z(bmap_cptr, cii) + atom->PBCz[ci] * zprd;
         }
     }
+    printf("updatePbc end\n");
 }
 
 /* relocate atoms that have left domain according
  * to periodic boundary conditions */
 void updateAtomsPbc(Atom *atom, Parameter *param) {
+    printf("updateAtomsPbc start\n");
     MD_FLOAT xprd = param->xprd;
     MD_FLOAT yprd = param->yprd;
     MD_FLOAT zprd = param->zprd;
@@ -88,6 +91,7 @@ void updateAtomsPbc(Atom *atom, Parameter *param) {
             atom_z(i) -= zprd;
         }
     }
+    printf("updateAtomsPbc end\n");
 }
 
 /* setup periodic boundary conditions by
@@ -120,6 +124,7 @@ void growPbc(Atom* atom) {
 }
 
 void setupPbc(Atom *atom, Parameter *param) {
+    printf("setupPbc start\n");
     int *border_map = atom->border_map;
     MD_FLOAT xprd = param->xprd;
     MD_FLOAT yprd = param->yprd;
@@ -128,11 +133,11 @@ void setupPbc(Atom *atom, Parameter *param) {
     int Nghost = -1;
 
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
-        if (atom->Nclusters_local + atom->Nclusters_ghost + 7 >= atom->Nclusters_max) {
+        if (atom->Nclusters_local + Nghost + 7 >= atom->Nclusters_max) {
             growClusters(atom);
         }
 
-        if (atom->Nclusters_ghost + 7 >= NmaxGhost) {
+        if (Nghost + 7 >= NmaxGhost) {
             growPbc(atom);
             border_map = atom->border_map;
         }
@@ -143,6 +148,7 @@ void setupPbc(Atom *atom, Parameter *param) {
         MD_FLOAT bbmaxy = atom->clusters[ci].bbmaxy;
         MD_FLOAT bbminz = atom->clusters[ci].bbminz;
         MD_FLOAT bbmaxz = atom->clusters[ci].bbmaxz;
+
         /* Setup ghost atoms */
         /* 6 planes */
         if (bbminx < Cutneigh)         { ADDGHOST(+1,0,0); }
@@ -179,7 +185,6 @@ void setupPbc(Atom *atom, Parameter *param) {
     atom->Nclusters_ghost = Nghost + 1;
     atom->Nclusters = atom->Nclusters_local + Nghost + 1;
 
-    // Update and bin created ghost clusters
+    // Update created ghost clusters positions
     updatePbc(atom, param);
-    binGhostClusters(param, atom);
 }

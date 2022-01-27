@@ -32,7 +32,7 @@
 #define SMALL 1.0e-6
 #define FACTOR 0.999
 
-static MD_FLOAT xprd, yprd;
+static MD_FLOAT xprd, yprd, zprd;
 static MD_FLOAT bininvx, bininvy;
 static int mbinxlo, mbinylo;
 static int nbinx, nbiny;
@@ -55,14 +55,12 @@ static int coord2bin(MD_FLOAT, MD_FLOAT);
 static MD_FLOAT bindist(int, int);
 
 /* exported subroutines */
-void initNeighbor(Neighbor *neighbor, Parameter *param)
-{
+void initNeighbor(Neighbor *neighbor, Parameter *param) {
     MD_FLOAT neighscale = 5.0 / 6.0;
     xprd = param->nx * param->lattice;
     yprd = param->ny * param->lattice;
+    zprd = param->nz * param->lattice;
     cutneigh = param->cutneigh;
-    nbinx = neighscale * param->nx;
-    nbiny = neighscale * param->ny;
     nmax = 0;
     atoms_per_bin = 8;
     clusters_per_bin = (atoms_per_bin / CLUSTER_DIM_N) + 4;
@@ -76,7 +74,7 @@ void initNeighbor(Neighbor *neighbor, Parameter *param)
     neighbor->neighbors = NULL;
 }
 
-void setupNeighbor(Parameter* param) {
+void setupNeighbor(Parameter *param, Atom *atom) {
     MD_FLOAT coord;
     int mbinxhi, mbinyhi;
     int nextx, nexty, nextz;
@@ -84,30 +82,31 @@ void setupNeighbor(Parameter* param) {
     if(param->input_file != NULL) {
         xprd = param->xprd;
         yprd = param->yprd;
+        zprd = param->zprd;
     }
 
     // TODO: update lo and hi for standard case and use them here instead
     MD_FLOAT xlo = 0.0; MD_FLOAT xhi = xprd;
     MD_FLOAT ylo = 0.0; MD_FLOAT yhi = yprd;
+    MD_FLOAT zlo = 0.0; MD_FLOAT zhi = zprd;
 
+    MD_FLOAT atom_density = ((MD_FLOAT)(atom->Nlocal)) / ((xhi - xlo) * (yhi - ylo) * (zhi - zlo));
+    MD_FLOAT atoms_in_cell = MAX(CLUSTER_DIM_M, CLUSTER_DIM_N);
+    binsizex = cbrt(atoms_in_cell / atom_density);
+    binsizey = cbrt(atoms_in_cell / atom_density);
     cutneighsq = cutneigh * cutneigh;
+    nbinx = (int)((xhi - xlo) / binsizex);
+    nbiny = (int)((yhi - ylo) / binsizey);
+    if(nbinx == 0) { nbinx = 1; }
+    if(nbiny == 0) { nbiny = 1; }
+    bininvx = 1.0 / binsizex;
+    bininvy = 1.0 / binsizey;
 
-    if(param->input_file != NULL) {
-        binsizex = cutneigh * 0.5;
-        binsizey = cutneigh * 0.5;
-        nbinx = (int)((param->xhi - param->xlo) / binsizex);
-        nbiny = (int)((param->yhi - param->ylo) / binsizey);
-        if(nbinx == 0) { nbinx = 1; }
-        if(nbiny == 0) { nbiny = 1; }
-        bininvx = nbinx / (param->xhi - param->xlo);
-        bininvy = nbiny / (param->yhi - param->ylo);
-    } else {
-        binsizex = xprd / nbinx;
-        binsizey = yprd / nbiny;
-        bininvx = 1.0 / binsizex;
-        bininvy = 1.0 / binsizey;
-    }
-
+    printf("hi = %f, %f\n", xhi, yhi);
+    printf("atom_density = %f\n", atom_density);
+    printf("atoms_in_cell = %f\n", atoms_in_cell);
+    printf("binsize = %f, %f\n", binsizex, binsizey);
+    printf("nbin = %d, %d\n", nbinx, nbiny);
     coord = xlo - cutneigh - SMALL * xprd;
     mbinxlo = (int) (coord * bininvx);
     if (coord < 0.0) {
@@ -207,8 +206,9 @@ int atomDistanceInRange(Atom *atom, int ci, int cj, MD_FLOAT rsq) {
     return 0;
 }
 
-void buildNeighbor(Parameter *param, Atom *atom, Neighbor *neighbor) {
-    int nall = atom->Nlocal + atom->Nghost;
+void buildNeighbor(Atom *atom, Neighbor *neighbor) {
+    printf("buildNeighbor start\n");
+    int nall = atom->Nclusters_local + atom->Nclusters_ghost;
 
     /* extend atom arrays if necessary */
     if(nall > nmax) {
@@ -239,33 +239,35 @@ void buildNeighbor(Parameter *param, Atom *atom, Neighbor *neighbor) {
                 int *loc_bin = &cluster_bins[jbin * clusters_per_bin];
                 int cj, m = -1;
                 MD_FLOAT jbb_zmin, jbb_zmax;
+                const int c = cluster_bincount[jbin];
 
-                do {
-                    m++;
-                    cj = loc_bin[m];
-                    jbb_zmin = atom->clusters[cj].bbminz;
-                    jbb_zmax = atom->clusters[cj].bbmaxz;
-                } while((ibb_zmin - jbb_zmax) * (ibb_zmin - jbb_zmax) > cutneighsq);
+                if(c > 0) {
+                    do {
+                        m++;
+                        cj = loc_bin[m];
+                        jbb_zmin = atom->clusters[cj].bbminz;
+                        jbb_zmax = atom->clusters[cj].bbmaxz;
+                    } while(m + 1 < c && (ibb_zmin - jbb_zmax) * (ibb_zmin - jbb_zmax) > cutneighsq);
 
-                while(m < cluster_bincount[jbin] && jbb_zmax - ibb_zmax < cutneighsq) {
-                    if((jbb_zmin - ibb_zmax) * (jbb_zmin - ibb_zmax) > cutneighsq) {
-                        break;
-                    }
+                    while(m < c && jbb_zmax - ibb_zmax < cutneighsq) {
+                        if((jbb_zmin - ibb_zmax) * (jbb_zmin - ibb_zmax) > cutneighsq) {
+                            break;
+                        }
 
-                    double d_bb_sq = getBoundingBoxDistanceSq(atom, ci, cj);
-                    if(d_bb_sq < cutneighsq) {
-                        if(d_bb_sq < rBB || atomDistanceInRange(atom, ci, cj, cutneighsq)) {
-                            if(cj == ci) {
-                                // Add to neighbor list with diagonal interaction mask
+                        double d_bb_sq = getBoundingBoxDistanceSq(atom, ci, cj);
+                        if(d_bb_sq < cutneighsq) {
+                            if(d_bb_sq < rBB || atomDistanceInRange(atom, ci, cj, cutneighsq)) {
+                                neighptr[n++] = cj;
                             }
-                            neighptr[n++] = cj;
+                        }
+
+                        m++;
+                        if(m < c) {
+                            cj = loc_bin[m];
+                            jbb_zmin = atom->clusters[cj].bbminz;
+                            jbb_zmax = atom->clusters[cj].bbmaxz;
                         }
                     }
-
-                    m++;
-                    cj = loc_bin[m];
-                    jbb_zmin = atom->clusters[cj].bbminz;
-                    jbb_zmax = atom->clusters[cj].bbmaxz;
                 }
             }
 
@@ -287,6 +289,7 @@ void buildNeighbor(Parameter *param, Atom *atom, Neighbor *neighbor) {
             neighbor->neighbors = (int*) malloc(atom->Nmax * neighbor->maxneighs * sizeof(int));
         }
     }
+    printf("buildNeighbor end\n");
 }
 
 /* internal subroutines */
@@ -352,7 +355,8 @@ void coord2bin2D(MD_FLOAT xin, MD_FLOAT yin, int *ix, int *iy) {
     }
 }
 
-void binatoms(Atom *atom) {
+void binAtoms(Atom *atom) {
+    printf("binatoms start\n");
     int nall = atom->Nlocal + atom->Nghost;
     int resize = 1;
 
@@ -380,142 +384,189 @@ void binatoms(Atom *atom) {
             bins = (int*) malloc(mbins * atoms_per_bin * sizeof(int));
         }
     }
+    printf("binatoms end\n");
 }
 
 // TODO: Use pigeonhole sorting
-void sortBinAtomsByZCoord(Parameter *param, Atom *atom, int bin) {
-    int c = bincount[bin];
-    int *bin_ptr = &bins[bin * atoms_per_bin];
+void sortAtomsByZCoord(Atom *atom) {
+    for(int bin = 0; bin < mbins; bin++) {
+        int c = bincount[bin];
+        int *bin_ptr = &bins[bin * atoms_per_bin];
 
-    for(int ac_i = 0; ac_i < c; ac_i++) {
-        int i = bin_ptr[ac_i];
-        int min_ac = ac_i;
-        int min_idx = i;
-        MD_FLOAT min_z = atom_z(i);
+        for(int ac_i = 0; ac_i < c; ac_i++) {
+            int i = bin_ptr[ac_i];
+            int min_ac = ac_i;
+            int min_idx = i;
+            MD_FLOAT min_z = atom_z(i);
 
-        for(int ac_j = ac_i + 1; ac_j < c; ac_j++) {
-            int j = bin_ptr[ac_j];
-            MD_FLOAT zj = atom_z(j);
-            if(zj < min_z) {
-                min_ac = zj;
-                min_idx = j;
-                min_z = zj;
+            for(int ac_j = ac_i + 1; ac_j < c; ac_j++) {
+                int j = bin_ptr[ac_j];
+                MD_FLOAT zj = atom_z(j);
+                if(zj < min_z) {
+                    min_ac = zj;
+                    min_idx = j;
+                    min_z = zj;
+                }
             }
-        }
 
-        bin_ptr[ac_i] = min_idx;
-        bin_ptr[min_ac] = i;
+            bin_ptr[ac_i] = min_idx;
+            bin_ptr[min_ac] = i;
+        }
     }
 }
 
-void buildClusters(Parameter *param, Atom *atom) {
+void buildClusters(Atom *atom) {
+    printf("buildClusters start\n");
+    atom->Nclusters_local = 0;
+
     /* bin local atoms */
-    binatoms(atom);
+    binAtoms(atom);
+    sortAtomsByZCoord(atom);
 
     for(int bin = 0; bin < mbins; bin++) {
-        sortBinAtomsByZCoord(param, atom, bin);
-    }
+        int c = bincount[bin];
+        int ac = 0;
+        const int nclusters = ((c + CLUSTER_DIM_N - 1) / CLUSTER_DIM_N);
+        for(int cl = 0; cl < nclusters; cl++) {
+            const int ci = atom->Nclusters_local;
 
-    int resize = 1;
-    while(resize > 0) {
-        resize = 0;
-        for(int bin = 0; bin < mbins; bin++) {
-            int c = bincount[bin];
-            int ac = 0;
-            const int nclusters = ((c + CLUSTER_DIM_N - 1) / CLUSTER_DIM_N);
+            if(ci >= atom->Nclusters_max) {
+                growClusters(atom);
+            }
 
-            if(nclusters < clusters_per_bin) {
-                for(int cl = 0; cl < nclusters; cl++) {
-                    const int ci = atom->Nclusters_local;
-                    MD_FLOAT *cptr = cluster_ptr(ci);
-                    MD_FLOAT bbminx = INFINITY, bbmaxx = -INFINITY;
-                    MD_FLOAT bbminy = INFINITY, bbmaxy = -INFINITY;
-                    MD_FLOAT bbminz = INFINITY, bbmaxz = -INFINITY;
-                    atom->clusters[ci].natoms = 0;
+            MD_FLOAT *cptr = cluster_ptr(ci);
+            MD_FLOAT bbminx = INFINITY, bbmaxx = -INFINITY;
+            MD_FLOAT bbminy = INFINITY, bbmaxy = -INFINITY;
+            MD_FLOAT bbminz = INFINITY, bbmaxz = -INFINITY;
+            atom->clusters[ci].natoms = 0;
 
-                    for(int cii = 0; cii < CLUSTER_DIM_N; cii++) {
-                        if(ac < c) {
-                            int i = bins[bin * atoms_per_bin + ac];
-                            MD_FLOAT xtmp = atom_x(i);
-                            MD_FLOAT ytmp = atom_y(i);
-                            MD_FLOAT ztmp = atom_z(i);
+            for(int cii = 0; cii < CLUSTER_DIM_N; cii++) {
+                if(ac < c) {
+                    int i = bins[bin * atoms_per_bin + ac];
+                    MD_FLOAT xtmp = atom_x(i);
+                    MD_FLOAT ytmp = atom_y(i);
+                    MD_FLOAT ztmp = atom_z(i);
 
-                            cluster_x(cptr, cii) = xtmp;
-                            cluster_y(cptr, cii) = ytmp;
-                            cluster_z(cptr, cii) = ztmp;
+                    cluster_x(cptr, cii) = xtmp;
+                    cluster_y(cptr, cii) = ytmp;
+                    cluster_z(cptr, cii) = ztmp;
 
-                            // TODO: To create the bounding boxes faster, we can use SIMD operations
-                            if(bbminx > xtmp) { bbminx = xtmp; }
-                            if(bbmaxx < xtmp) { bbmaxx = xtmp; }
-                            if(bbminy > ytmp) { bbminy = ytmp; }
-                            if(bbmaxy < ytmp) { bbmaxy = ytmp; }
-                            if(bbminz > ytmp) { bbminz = ytmp; }
-                            if(bbmaxz < ytmp) { bbmaxz = ytmp; }
+                    // TODO: To create the bounding boxes faster, we can use SIMD operations
+                    if(bbminx > xtmp) { bbminx = xtmp; }
+                    if(bbmaxx < xtmp) { bbmaxx = xtmp; }
+                    if(bbminy > ytmp) { bbminy = ytmp; }
+                    if(bbmaxy < ytmp) { bbmaxy = ytmp; }
+                    if(bbminz > ytmp) { bbminz = ytmp; }
+                    if(bbmaxz < ytmp) { bbmaxz = ytmp; }
 
-                            atom->clusters[ci].type[cii] = atom->type[i];
-                            atom->clusters[ci].natoms++;
-                        } else {
-                            cluster_x(cptr, cii) = INFINITY;
-                            cluster_y(cptr, cii) = INFINITY;
-                            cluster_z(cptr, cii) = INFINITY;
-                        }
-
-                        ac++;
-                    }
-
-                    cluster_bins[bin * clusters_per_bin + cl] = ci;
-                    atom->clusters[ci].bin = bin;
-                    atom->clusters[ci].bbminx = bbminx;
-                    atom->clusters[ci].bbmaxx = bbmaxx;
-                    atom->clusters[ci].bbminy = bbminy;
-                    atom->clusters[ci].bbmaxy = bbmaxy;
-                    atom->clusters[ci].bbminz = bbminz;
-                    atom->clusters[ci].bbmaxz = bbmaxz;
-                    atom->Nclusters_local++;
+                    atom->clusters[ci].type[cii] = atom->type[i];
+                    atom->clusters[ci].natoms++;
+                } else {
+                    cluster_x(cptr, cii) = INFINITY;
+                    cluster_y(cptr, cii) = INFINITY;
+                    cluster_z(cptr, cii) = INFINITY;
                 }
 
-                cluster_bincount[bin] = nclusters;
+                ac++;
+            }
+
+            atom->clusters[ci].bin = bin;
+            atom->clusters[ci].bbminx = bbminx;
+            atom->clusters[ci].bbmaxx = bbmaxx;
+            atom->clusters[ci].bbminy = bbminy;
+            atom->clusters[ci].bbmaxy = bbmaxy;
+            atom->clusters[ci].bbminz = bbminz;
+            atom->clusters[ci].bbmaxz = bbmaxz;
+            atom->Nclusters_local++;
+        }
+    }
+
+    printf("buildClusters end\n");
+}
+
+void binClusters(Atom *atom) {
+    printf("binClusters start\n");
+    const int nlocal = atom->Nclusters_local;
+    int resize = 1;
+
+    while(resize > 0) {
+        resize = 0;
+
+        for(int bin = 0; bin < mbins; bin++) {
+            cluster_bincount[bin] = 0;
+        }
+
+        printf("local\n");
+        for(int ci = 0; ci < nlocal && !resize; ci++) {
+            int bin = atom->clusters[ci].bin;
+            int c = cluster_bincount[bin];
+            if(c < clusters_per_bin) {
+                cluster_bins[bin * clusters_per_bin + c] = ci;
+                cluster_bincount[bin]++;
             } else {
                 resize = 1;
             }
         }
 
+        printf("ghost\n");
+        for(int ci = 0; ci < atom->Nclusters_ghost && !resize; ci++) {
+            MD_FLOAT *cptr = cluster_ptr(nlocal + ci);
+            MD_FLOAT xtmp, ytmp;
+            int ix = -1, iy = -1;
+
+            xtmp = cluster_x(cptr, 0);
+            ytmp = cluster_y(cptr, 0);
+            coord2bin2D(xtmp, ytmp, &ix, &iy);
+
+            for(int cii = 1; cii < atom->clusters[ci].natoms; cii++) {
+                int nix, niy;
+                xtmp = cluster_x(cptr, cii);
+                ytmp = cluster_y(cptr, cii);
+                coord2bin2D(xtmp, ytmp, &nix, &niy);
+                // Always put the cluster on the bin of its innermost atom so
+                // the cluster should be closer to local clusters
+                if(atom->PBCx[ci] > 0 && ix > nix) { ix = nix; }
+                if(atom->PBCx[ci] < 0 && ix < nix) { ix = nix; }
+                if(atom->PBCy[ci] > 0 && iy > niy) { iy = niy; }
+                if(atom->PBCy[ci] < 0 && iy < niy) { iy = niy; }
+            }
+
+            int bin = iy * mbinx + ix + 1;
+            int c = cluster_bincount[bin];
+            if(c < clusters_per_bin) {
+                cluster_bins[bin * clusters_per_bin + c] = nlocal + ci;
+                cluster_bincount[bin]++;
+            } else {
+                resize = 1;
+            }
+        }
+
+        printf("end\n");
         if(resize) {
             free(cluster_bins);
             clusters_per_bin *= 2;
             cluster_bins = (int*) malloc(mbins * clusters_per_bin * sizeof(int));
         }
     }
+
+    printf("binClusters end\n");
 }
 
-void binGhostClusters(Parameter *param, Atom *atom) {
-    int nlocal = atom->Nclusters_local;
+void updateSingleAtoms(Atom *atom) {
+    int Natom = 0;
 
-    for(int ci = 0; ci < atom->Nclusters_ghost; ci++) {
-        MD_FLOAT *cptr = cluster_ptr(nlocal + ci);
-        MD_FLOAT xtmp, ytmp;
-        int ix = -1, iy = -1;
+    for(int ci = 0; ci < atom->Nclusters_local; ci++) {
+        MD_FLOAT *cptr = cluster_ptr(ci);
 
-        xtmp = cluster_x(cptr, 0);
-        ytmp = cluster_y(cptr, 0);
-        coord2bin2D(xtmp, ytmp, &ix, &iy);
-
-        for(int cii = 1; cii < atom->clusters[ci].natoms; cii++) {
-            int nix, niy;
-            xtmp = cluster_x(cptr, cii);
-            ytmp = cluster_y(cptr, cii);
-            coord2bin2D(xtmp, ytmp, &nix, &niy);
-            // Always put the cluster on the bin of its innermost atom so
-            // the cluster should be closer to local clusters
-            if(atom->PBCx[ci] > 0 && ix > nix) { ix = nix; }
-            if(atom->PBCx[ci] < 0 && ix < nix) { ix = nix; }
-            if(atom->PBCy[ci] > 0 && iy > niy) { iy = niy; }
-            if(atom->PBCy[ci] < 0 && iy < niy) { iy = niy; }
+        for(int cii = 0; cii < atom->clusters[ci].natoms; cii++) {
+            atom_x(Natom) = cluster_x(cptr, cii);
+            atom_y(Natom) = cluster_y(cptr, cii);
+            atom_z(Natom) = cluster_z(cptr, cii);
+            Natom++;
         }
+    }
 
-        int bin = iy * mbinx + ix + 1;
-        int c = cluster_bincount[bin];
-        cluster_bins[bin * clusters_per_bin + c] = nlocal + ci;
-        cluster_bincount[bin]++;
+    if(Natom != atom->Nlocal) {
+        fprintf(stderr, "updateSingleAtoms(): Number of atoms changed!\n");
     }
 }
