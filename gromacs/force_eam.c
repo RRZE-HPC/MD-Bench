@@ -33,6 +33,7 @@
 #include <util.h>
 
 double computeForceEam(Eam* eam, Parameter* param, Atom *atom, Neighbor *neighbor, Stats *stats) {
+    /*
     if(eam->nmax < atom->Nmax) {
         eam->nmax = atom->Nmax;
         if(eam->fp != NULL) { free(eam->fp); }
@@ -45,9 +46,11 @@ double computeForceEam(Eam* eam, Parameter* param, Atom *atom, Neighbor *neighbo
     MD_FLOAT* rhor_spline = eam->rhor_spline; MD_FLOAT* frho_spline = eam->frho_spline; MD_FLOAT* z2r_spline = eam->z2r_spline;
     MD_FLOAT rdr = eam->rdr; int nr = eam->nr; int nr_tot = eam->nr_tot; MD_FLOAT rdrho = eam->rdrho;
     int nrho = eam->nrho; int nrho_tot = eam->nrho_tot;
+    */
     double S = getTimeStamp();
 
     LIKWID_MARKER_START("force_eam_fp");
+    /*
     #pragma omp parallel for
     for(int i = 0; i < Nlocal; i++) {
         neighs = &neighbor->neighbors[i * neighbor->maxneighs];
@@ -207,6 +210,7 @@ double computeForceEam(Eam* eam, Parameter* param, Atom *atom, Neighbor *neighbo
         addStat(stats->total_force_iters, (numneighs + VECTOR_WIDTH - 1) / VECTOR_WIDTH);
     }
 
+    */
     LIKWID_MARKER_STOP("force_eam");
     double E = getTimeStamp();
     return E-S;

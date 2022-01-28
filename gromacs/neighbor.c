@@ -184,8 +184,8 @@ MD_FLOAT getBoundingBoxDistanceSq(Atom *atom, int ci, int cj) {
 }
 
 int atomDistanceInRange(Atom *atom, int ci, int cj, MD_FLOAT rsq) {
-    MD_FLOAT *ciptr = cluster_ptr(ci);
-    MD_FLOAT *cjptr = cluster_ptr(cj);
+    MD_FLOAT *ciptr = cluster_pos_ptr(ci);
+    MD_FLOAT *cjptr = cluster_pos_ptr(cj);
 
     for(int cii = 0; cii < atom->clusters[ci].natoms; cii++) {
         for(int cjj = 0; cjj < atom->clusters[cj].natoms; cjj++) {
@@ -422,7 +422,7 @@ void buildClusters(Atom *atom) {
                 growClusters(atom);
             }
 
-            MD_FLOAT *cptr = cluster_ptr(ci);
+            MD_FLOAT *cptr = cluster_pos_ptr(ci);
             MD_FLOAT bbminx = INFINITY, bbmaxx = -INFINITY;
             MD_FLOAT bbminy = INFINITY, bbmaxy = -INFINITY;
             MD_FLOAT bbminz = INFINITY, bbmaxz = -INFINITY;
@@ -493,7 +493,7 @@ void binClusters(Atom *atom) {
         }
 
         for(int ci = 0; ci < atom->Nclusters_ghost && !resize; ci++) {
-            MD_FLOAT *cptr = cluster_ptr(nlocal + ci);
+            MD_FLOAT *cptr = cluster_pos_ptr(nlocal + ci);
             MD_FLOAT xtmp, ytmp;
             int ix = -1, iy = -1;
 
@@ -539,7 +539,7 @@ void updateSingleAtoms(Atom *atom) {
     int Natom = 0;
 
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
-        MD_FLOAT *cptr = cluster_ptr(ci);
+        MD_FLOAT *cptr = cluster_pos_ptr(ci);
 
         for(int cii = 0; cii < atom->clusters[ci].natoms; cii++) {
             atom_x(Natom) = cluster_x(cptr, cii);

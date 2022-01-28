@@ -42,8 +42,9 @@ typedef struct {
     int Nclusters, Nclusters_local, Nclusters_ghost, Nclusters_max;
     MD_FLOAT *x, *y, *z;
     MD_FLOAT *vx, *vy, *vz;
-    MD_FLOAT *fx, *fy, *fz;
     MD_FLOAT *cl_x;
+    MD_FLOAT *cl_v;
+    MD_FLOAT *cl_f;
     int *border_map;
     int *type;
     int ntypes;
@@ -61,7 +62,9 @@ extern int readAtom(Atom*, Parameter*);
 extern void growAtom(Atom*);
 extern void growClusters(Atom*);
 
-#define cluster_ptr(ci)     &(atom->cl_x[(ci) * CLUSTER_DIM_N * 3])
+#define cluster_pos_ptr(ci)       &(atom->cl_x[(ci) * CLUSTER_DIM_N * 3])
+#define cluster_velocity_ptr(ci)  &(atom->cl_v[(ci) * CLUSTER_DIM_N * 3])
+#define cluster_force_ptr(ci)     &(atom->cl_f[(ci) * CLUSTER_DIM_N * 3])
 
 #ifdef AOS
 #define POS_DATA_LAYOUT     "AoS"

@@ -129,30 +129,33 @@ double reneighbour(
     return E-S;
 }
 
-void initialIntegrate(Parameter *param, Atom *atom)
-{
-    MD_FLOAT* fx = atom->fx; MD_FLOAT* fy = atom->fy; MD_FLOAT* fz = atom->fz;
-    MD_FLOAT* vx = atom->vx; MD_FLOAT* vy = atom->vy; MD_FLOAT* vz = atom->vz;
+void initialIntegrate(Parameter *param, Atom *atom) {
+    for(int ci = 0; ci < atom->Nclusters_local; ci++) {
+        MD_FLOAT *ciptr = cluster_pos_ptr(ci);
+        MD_FLOAT *civptr = cluster_velocity_ptr(ci);
+        MD_FLOAT *cifptr = cluster_force_ptr(ci);
 
-    for(int i = 0; i < atom->Nlocal; i++) {
-        vx[i] += param->dtforce * fx[i];
-        vy[i] += param->dtforce * fy[i];
-        vz[i] += param->dtforce * fz[i];
-        atom_x(i) = atom_x(i) + param->dt * vx[i];
-        atom_y(i) = atom_y(i) + param->dt * vy[i];
-        atom_z(i) = atom_z(i) + param->dt * vz[i];
+        for(int cii = 0; cii < atom->clusters[ci].natoms; cii++) {
+            cluster_x(civptr, cii) += param->dtforce * cluster_x(cifptr, cii);
+            cluster_y(civptr, cii) += param->dtforce * cluster_y(cifptr, cii);
+            cluster_z(civptr, cii) += param->dtforce * cluster_z(cifptr, cii);
+            cluster_x(ciptr, cii) += param->dt * cluster_x(civptr, cii);
+            cluster_y(ciptr, cii) += param->dt * cluster_y(civptr, cii);
+            cluster_z(ciptr, cii) += param->dt * cluster_z(civptr, cii);
+        }
     }
 }
 
-void finalIntegrate(Parameter *param, Atom *atom)
-{
-    MD_FLOAT* fx = atom->fx; MD_FLOAT* fy = atom->fy; MD_FLOAT* fz = atom->fz;
-    MD_FLOAT* vx = atom->vx; MD_FLOAT* vy = atom->vy; MD_FLOAT* vz = atom->vz;
+void finalIntegrate(Parameter *param, Atom *atom) {
+    for(int ci = 0; ci < atom->Nclusters_local; ci++) {
+        MD_FLOAT *civptr = cluster_velocity_ptr(ci);
+        MD_FLOAT *cifptr = cluster_force_ptr(ci);
 
-    for(int i = 0; i < atom->Nlocal; i++) {
-        vx[i] += param->dtforce * fx[i];
-        vy[i] += param->dtforce * fy[i];
-        vz[i] += param->dtforce * fz[i];
+        for(int cii = 0; cii < atom->clusters[ci].natoms; cii++) {
+            cluster_x(civptr, cii) += param->dtforce * cluster_x(cifptr, cii);
+            cluster_y(civptr, cii) += param->dtforce * cluster_y(cifptr, cii);
+            cluster_z(civptr, cii) += param->dtforce * cluster_z(cifptr, cii);
+        }
     }
 }
 
@@ -257,13 +260,11 @@ int main(int argc, char** argv)
 #if defined(MEM_TRACER) || defined(INDEX_TRACER)
     traceAddresses(&param, &atom, &neighbor, n + 1);
 #endif
-    /*
     if(param.force_field == FF_EAM) {
         timer[FORCE] = computeForceEam(&eam, &param, &atom, &neighbor, &stats);
     } else {
         timer[FORCE] = computeForceLJ(&param, &atom, &neighbor, &stats);
     }
-    */
 
     timer[NEIGH] = 0.0;
     timer[TOTAL] = getTimeStamp();
@@ -273,7 +274,7 @@ int main(int argc, char** argv)
     }
 
     for(int n = 0; n < param.ntimes; n++) {
-        //initialIntegrate(&param, &atom);
+        initialIntegrate(&param, &atom);
 
         if((n + 1) % param.every) {
             updatePbc(&atom, &param);
@@ -285,15 +286,13 @@ int main(int argc, char** argv)
         traceAddresses(&param, &atom, &neighbor, n + 1);
 #endif
 
-        /*
         if(param.force_field == FF_EAM) {
             timer[FORCE] += computeForceEam(&eam, &param, &atom, &neighbor, &stats);
         } else {
             timer[FORCE] += computeForceLJ(&param, &atom, &neighbor, &stats);
         }
-        */
 
-        //finalIntegrate(&param, &atom);
+        finalIntegrate(&param, &atom);
 
         if(!((n + 1) % param.nstat) && (n+1) < param.ntimes) {
             computeThermo(n + 1, &param, &atom);
