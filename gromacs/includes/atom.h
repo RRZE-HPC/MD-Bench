@@ -61,7 +61,7 @@ extern int readAtom(Atom*, Parameter*);
 extern void growAtom(Atom*);
 extern void growClusters(Atom*);
 
-#define cluster_ptr(ci)     &(atom->cl_x[ci * CLUSTER_DIM_N * 3])
+#define cluster_ptr(ci)     &(atom->cl_x[(ci) * CLUSTER_DIM_N * 3])
 
 #ifdef AOS
 #define POS_DATA_LAYOUT     "AoS"
