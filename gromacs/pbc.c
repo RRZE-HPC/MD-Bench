@@ -44,7 +44,6 @@ void initPbc(Atom* atom) {
 /* update coordinates of ghost atoms */
 /* uses mapping created in setupPbc */
 void updatePbc(Atom *atom, Parameter *param) {
-    printf("updatePbc start\n");
     int *border_map = atom->border_map;
     int nlocal = atom->Nclusters_local;
     MD_FLOAT xprd = param->xprd;
@@ -61,13 +60,11 @@ void updatePbc(Atom *atom, Parameter *param) {
             cluster_z(cptr, cii) = cluster_z(bmap_cptr, cii) + atom->PBCz[ci] * zprd;
         }
     }
-    printf("updatePbc end\n");
 }
 
 /* relocate atoms that have left domain according
  * to periodic boundary conditions */
 void updateAtomsPbc(Atom *atom, Parameter *param) {
-    printf("updateAtomsPbc start\n");
     MD_FLOAT xprd = param->xprd;
     MD_FLOAT yprd = param->yprd;
     MD_FLOAT zprd = param->zprd;
@@ -91,7 +88,6 @@ void updateAtomsPbc(Atom *atom, Parameter *param) {
             atom_z(i) -= zprd;
         }
     }
-    printf("updateAtomsPbc end\n");
 }
 
 /* setup periodic boundary conditions by
@@ -124,7 +120,6 @@ void growPbc(Atom* atom) {
 }
 
 void setupPbc(Atom *atom, Parameter *param) {
-    printf("setupPbc start\n");
     int *border_map = atom->border_map;
     MD_FLOAT xprd = param->xprd;
     MD_FLOAT yprd = param->yprd;

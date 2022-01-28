@@ -102,11 +102,6 @@ void setupNeighbor(Parameter *param, Atom *atom) {
     bininvx = 1.0 / binsizex;
     bininvy = 1.0 / binsizey;
 
-    printf("hi = %f, %f\n", xhi, yhi);
-    printf("atom_density = %f\n", atom_density);
-    printf("atoms_in_cell = %f\n", atoms_in_cell);
-    printf("binsize = %f, %f\n", binsizex, binsizey);
-    printf("nbin = %d, %d\n", nbinx, nbiny);
     coord = xlo - cutneigh - SMALL * xprd;
     mbinxlo = (int) (coord * bininvx);
     if (coord < 0.0) {
@@ -207,7 +202,6 @@ int atomDistanceInRange(Atom *atom, int ci, int cj, MD_FLOAT rsq) {
 }
 
 void buildNeighbor(Atom *atom, Neighbor *neighbor) {
-    printf("buildNeighbor start\n");
     int nall = atom->Nclusters_local + atom->Nclusters_ghost;
 
     /* extend atom arrays if necessary */
@@ -272,7 +266,6 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
             }
 
             neighbor->numneigh[ci] = n;
-
             if(n >= neighbor->maxneighs) {
                 resize = 1;
 
@@ -289,7 +282,6 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
             neighbor->neighbors = (int*) malloc(atom->Nmax * neighbor->maxneighs * sizeof(int));
         }
     }
-    printf("buildNeighbor end\n");
 }
 
 /* internal subroutines */
@@ -356,7 +348,6 @@ void coord2bin2D(MD_FLOAT xin, MD_FLOAT yin, int *ix, int *iy) {
 }
 
 void binAtoms(Atom *atom) {
-    printf("binatoms start\n");
     int nall = atom->Nlocal + atom->Nghost;
     int resize = 1;
 
@@ -369,7 +360,6 @@ void binAtoms(Atom *atom) {
 
         for(int i = 0; i < nall; i++) {
             int ibin = coord2bin(atom_x(i), atom_y(i));
-
             if(bincount[ibin] < atoms_per_bin) {
                 int ac = bincount[ibin]++;
                 bins[ibin * atoms_per_bin + ac] = i;
@@ -384,7 +374,6 @@ void binAtoms(Atom *atom) {
             bins = (int*) malloc(mbins * atoms_per_bin * sizeof(int));
         }
     }
-    printf("binatoms end\n");
 }
 
 // TODO: Use pigeonhole sorting
@@ -416,7 +405,6 @@ void sortAtomsByZCoord(Atom *atom) {
 }
 
 void buildClusters(Atom *atom) {
-    printf("buildClusters start\n");
     atom->Nclusters_local = 0;
 
     /* bin local atoms */
@@ -480,12 +468,9 @@ void buildClusters(Atom *atom) {
             atom->Nclusters_local++;
         }
     }
-
-    printf("buildClusters end\n");
 }
 
 void binClusters(Atom *atom) {
-    printf("binClusters start\n");
     const int nlocal = atom->Nclusters_local;
     int resize = 1;
 
@@ -496,7 +481,6 @@ void binClusters(Atom *atom) {
             cluster_bincount[bin] = 0;
         }
 
-        printf("local\n");
         for(int ci = 0; ci < nlocal && !resize; ci++) {
             int bin = atom->clusters[ci].bin;
             int c = cluster_bincount[bin];
@@ -508,7 +492,6 @@ void binClusters(Atom *atom) {
             }
         }
 
-        printf("ghost\n");
         for(int ci = 0; ci < atom->Nclusters_ghost && !resize; ci++) {
             MD_FLOAT *cptr = cluster_ptr(nlocal + ci);
             MD_FLOAT xtmp, ytmp;
@@ -517,12 +500,15 @@ void binClusters(Atom *atom) {
             xtmp = cluster_x(cptr, 0);
             ytmp = cluster_y(cptr, 0);
             coord2bin2D(xtmp, ytmp, &ix, &iy);
-
+            ix = MAX(MIN(ix, nbinx - 1), 0);
+            iy = MAX(MIN(iy, nbiny - 1), 0);
             for(int cii = 1; cii < atom->clusters[ci].natoms; cii++) {
                 int nix, niy;
                 xtmp = cluster_x(cptr, cii);
                 ytmp = cluster_y(cptr, cii);
                 coord2bin2D(xtmp, ytmp, &nix, &niy);
+                nix = MAX(MIN(nix, nbinx - 1), 0);
+                niy = MAX(MIN(niy, nbiny - 1), 0);
                 // Always put the cluster on the bin of its innermost atom so
                 // the cluster should be closer to local clusters
                 if(atom->PBCx[ci] > 0 && ix > nix) { ix = nix; }
@@ -541,15 +527,12 @@ void binClusters(Atom *atom) {
             }
         }
 
-        printf("end\n");
         if(resize) {
             free(cluster_bins);
             clusters_per_bin *= 2;
             cluster_bins = (int*) malloc(mbins * clusters_per_bin * sizeof(int));
         }
     }
-
-    printf("binClusters end\n");
 }
 
 void updateSingleAtoms(Atom *atom) {
