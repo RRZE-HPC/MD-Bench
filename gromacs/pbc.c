@@ -51,8 +51,8 @@ void updatePbc(Atom *atom, Parameter *param) {
     MD_FLOAT zprd = param->zprd;
 
     for(int ci = 0; ci < atom->Nclusters_ghost; ci++) {
-        MD_FLOAT *cptr = cluster_ptr(nlocal + ci);
-        MD_FLOAT *bmap_cptr = cluster_ptr(border_map[ci]);
+        MD_FLOAT *cptr = cluster_pos_ptr(nlocal + ci);
+        MD_FLOAT *bmap_cptr = cluster_pos_ptr(border_map[ci]);
 
         for(int cii = 0; cii < atom->clusters[ci].natoms; cii++) {
             cluster_x(cptr, cii) = cluster_x(bmap_cptr, cii) + atom->PBCx[ci] * xprd;
