@@ -26,7 +26,7 @@
 #ifndef __PBC_H_
 #define __PBC_H_
 extern void initPbc();
-extern void updatePbc(Atom*, Parameter*);
+extern void updatePbc(Atom*, Parameter*, int);
 extern void updateAtomsPbc(Atom*, Parameter*);
 extern void setupPbc(Atom*, Parameter*);
 #endif
