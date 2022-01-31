@@ -410,6 +410,10 @@ velocity data and position data have to copied from device to host due to neighb
 
 < CPU Pinnend Memory + Malloc only once + Only zero forces + No Param Copy + Neighbour aware + force AoS + integrate cuda >.
 
+< CPU Pinnend Memory + Malloc only once + Only zero forces + No Param Copy + Neighbour aware + force AoS + integrate cuda + neighbor aware integrate >
+
+< CPU Pinnend Memory + Malloc only once + Only zero forces + No Param Copy + Neighbour aware + force AoS + integrate cuda + neighbor aware integrate + no force backcopy >.
+
 L1- & L2-Cache Hitrate via Nvidia Nsigh Compute:
 
 < memory workload analysis >
@@ -418,8 +422,15 @@ TODO: For final logbook:
 - further performance improvements (sorting of atoms in neighbour list update)
 - remove Cache hit ratio measurements
 - compare FLOPS / Cache bandwidth to theoretical maximum FLOPS / Cache bandwidth
+- change neighbour list to row forward
 - look up GPU Cache size
-- make sure likwid measured the right things in parallel
+- L1 Bandwidth / Throughput
+- L2 Bandwidth / Throughput
+- Memory transfer size (because program should fit into Cache it should be low)
+- DRAM Volumen / Bandbreite, L2-Cache Volumen / Bandbreite
+- Function Unit Utilization
+- Single Precision Performance
+- ( Run on A100 + Single Precision )
 
 ## Task4: Instrument kernels with MarkerAPI
 
