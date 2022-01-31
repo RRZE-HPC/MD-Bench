@@ -178,7 +178,7 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor)
         if(neighbor->numneigh) cudaFreeHost(neighbor->numneigh);
         if(neighbor->neighbors) cudaFreeHost(neighbor->neighbors);
         checkCUDAError( "buildNeighbor numneigh", cudaMallocHost((void**)&(neighbor->numneigh), nmax * sizeof(int)) );
-        checkCUDAError( "buildNeighbor neighbors", cudaMallocHost((void**)&(neighbor->neighbors), nmax * neighbor->maxneighs * sizeof(int*)) );
+        checkCUDAError( "buildNeighbor neighbors", cudaMallocHost((void**)&(neighbor->neighbors), nmax * neighbor->maxneighs * sizeof(int)) );
         // neighbor->numneigh = (int*) malloc(nmax * sizeof(int));
         // neighbor->neighbors = (int*) malloc(nmax * neighbor->maxneighs * sizeof(int*));
     }
@@ -193,7 +193,7 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor)
         resize = 0;
 
         for(int i = 0; i < atom->Nlocal; i++) {
-            int* neighptr = &(neighbor->neighbors[i * neighbor->maxneighs]);
+            int* neighptr = &(neighbor->neighbors[i]);
             int n = 0;
             MD_FLOAT xtmp = atom_x(i);
             MD_FLOAT ytmp = atom_y(i);
@@ -226,7 +226,9 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor)
                     #endif
 
                     if( rsq <= cutoff ) {
-                        neighptr[n++] = j;
+                        int idx = atom->Nlocal * n;
+                        neighptr[idx] = j;
+                        n += 1;
                     }
                 }
             }

@@ -51,8 +51,7 @@ __global__ void calc_force(
 
     Atom *atom = &a;
 
-    int *neighs = &neigh_neighbors[i * neigh_maxneighs];
-    int numneighs = neigh_numneigh[i];
+    const int numneighs = neigh_numneigh[i];
 
     MD_FLOAT xtmp = atom_x(i);
     MD_FLOAT ytmp = atom_y(i);
@@ -63,7 +62,7 @@ __global__ void calc_force(
     MD_FLOAT fiz = 0;
 
     for(int k = 0; k < numneighs; k++) {
-        int j = neighs[k];
+        int j = neigh_neighbors[atom->Nlocal * k + i];
         MD_FLOAT delx = xtmp - atom_x(j);
         MD_FLOAT dely = ytmp - atom_y(j);
         MD_FLOAT delz = ztmp - atom_z(j);
