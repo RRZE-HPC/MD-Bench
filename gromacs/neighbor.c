@@ -289,7 +289,7 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
 
     /*
     printf("\ncutneighsq = %f, rbb_sq = %f\n", cutneighsq, rbb_sq);
-    for(int ci = 4; ci < 6; ci++) {
+    for(int ci = 0; ci < 6; ci++) {
         MD_FLOAT *ciptr = cluster_pos_ptr(ci);
         int* neighptr = &(neighbor->neighbors[ci * neighbor->maxneighs]);
         printf("Cluster %d, bbx = {%f, %f}, bby = {%f, %f}, bbz = {%f, %f}\n", ci, atom->clusters[ci].bbminx, atom->clusters[ci].bbmaxx, atom->clusters[ci].bbminy, atom->clusters[ci].bbmaxy, atom->clusters[ci].bbminz, atom->clusters[ci].bbmaxz);
@@ -377,7 +377,6 @@ void coord2bin2D(MD_FLOAT xin, MD_FLOAT yin, int *ix, int *iy) {
 
 void binAtoms(Atom *atom) {
     printf("binAtoms start\n");
-    int nall = atom->Nlocal + atom->Nghost;
     int resize = 1;
 
     while(resize > 0) {
@@ -387,7 +386,7 @@ void binAtoms(Atom *atom) {
             bincount[i] = 0;
         }
 
-        for(int i = 0; i < nall; i++) {
+        for(int i = 0; i < atom->Nlocal; i++) {
             int ibin = coord2bin(atom_x(i), atom_y(i));
             if(ibin < 0 || ibin > mbins) { fprintf(stderr, "%d: %f, %f\n", i, atom_x(i), atom_y(i)); }
             if(bincount[ibin] < atoms_per_bin) {
@@ -507,8 +506,15 @@ void buildClusters(Atom *atom) {
         }
     }
 
+    printf("buildClusters end\n");
+}
+
+void binClusters(Atom *atom) {
+    printf("binClusters start\n");
+
     /*
-    for(int ci = 4; ci < 9; ci++) {
+    fprintf(stdout, "Nghost = %d\n", atom->Nclusters_ghost);
+    for(int ci = atom->Nclusters_local; ci < atom->Nclusters_local + 4; ci++) {
         MD_FLOAT *cptr = cluster_pos_ptr(ci);
         fprintf(stdout, "Cluster %d:\n", ci);
         fprintf(stdout, "bin=%d, Natoms=%d, bbox={%f,%f},{%f,%f},{%f,%f}\n", atom->clusters[ci].bin, atom->clusters[ci].natoms, atom->clusters[ci].bbminx, atom->clusters[ci].bbmaxx, atom->clusters[ci].bbminy, atom->clusters[ci].bbmaxy, atom->clusters[ci].bbminz, atom->clusters[ci].bbmaxz);
@@ -518,11 +524,6 @@ void buildClusters(Atom *atom) {
     }
     */
 
-    printf("buildClusters end\n");
-}
-
-void binClusters(Atom *atom) {
-    printf("binClusters start\n");
     const int nlocal = atom->Nclusters_local;
     int resize = 1;
 

@@ -260,7 +260,8 @@ int main(int argc, char** argv) {
     timer[TOTAL] = getTimeStamp();
 
     if(param.vtk_file != NULL) {
-        write_atoms_to_vtk_file(param.vtk_file, &atom, 0);
+        write_local_atoms_to_vtk_file(param.vtk_file, &atom, 0);
+        write_ghost_atoms_to_vtk_file(param.vtk_file, &atom, 0);
     }
 
     for(int n = 0; n < param.ntimes; n++) {
@@ -289,7 +290,8 @@ int main(int argc, char** argv) {
         }
 
         if(param.vtk_file != NULL) {
-            write_atoms_to_vtk_file(param.vtk_file, &atom, n + 1);
+            write_local_atoms_to_vtk_file(param.vtk_file, &atom, n + 1);
+            write_ghost_atoms_to_vtk_file(param.vtk_file, &atom, n + 1);
         }
     }
 

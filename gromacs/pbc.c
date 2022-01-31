@@ -122,19 +122,18 @@ void updateAtomsPbc(Atom *atom, Parameter *param) {
  * defining ghost atoms around domain
  * only creates mapping and coordinate corrections
  * that are then enforced in updatePbc */
-#define ADDGHOST(dx,dy,dz)                                          \
-    Nghost++;                                                       \
-    border_map[Nghost] = ci;                                        \
-    atom->PBCx[Nghost] = dx;                                        \
-    atom->PBCy[Nghost] = dy;                                        \
-    atom->PBCz[Nghost] = dz;                                        \
-    copy_cluster_types(atom, atom->Nclusters_local + Nghost, ci)
-
-void copy_cluster_types(Atom *atom, int dest, int src) {
-    for(int cii = 0; cii < atom->clusters[src].natoms; cii++) {
-        atom->clusters[dest].type[cii] = atom->clusters[src].type[cii];
+#define ADDGHOST(dx,dy,dz);                                                     \
+    Nghost++;                                                                   \
+    const int g_atom_idx = atom->Nclusters_local + Nghost;                      \
+    border_map[Nghost] = ci;                                                    \
+    atom->PBCx[Nghost] = dx;                                                    \
+    atom->PBCy[Nghost] = dy;                                                    \
+    atom->PBCz[Nghost] = dz;                                                    \
+    atom->clusters[g_atom_idx].natoms = atom->clusters[ci].natoms;              \
+    Nghost_atoms += atom->clusters[g_atom_idx].natoms;                          \
+    for(int cii = 0; cii < atom->clusters[ci].natoms; cii++) {                  \
+        atom->clusters[g_atom_idx].type[cii] = atom->clusters[ci].type[cii];    \
     }
-}
 
 /* internal subroutines */
 void growPbc(Atom* atom) {
@@ -154,6 +153,7 @@ void setupPbc(Atom *atom, Parameter *param) {
     MD_FLOAT zprd = param->zprd;
     MD_FLOAT Cutneigh = param->cutneigh;
     int Nghost = -1;
+    int Nghost_atoms = 0;
 
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
         if (atom->Nclusters_local + Nghost + 7 >= atom->Nclusters_max) {
@@ -205,6 +205,7 @@ void setupPbc(Atom *atom, Parameter *param) {
     }
 
     // increase by one to make it the ghost atom count
+    atom->Nghost = Nghost_atoms;
     atom->Nclusters_ghost = Nghost + 1;
     atom->Nclusters = atom->Nclusters_local + Nghost + 1;
 

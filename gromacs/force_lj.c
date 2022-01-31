@@ -67,7 +67,7 @@ double computeForceLJ(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *s
                 MD_FLOAT fiy = 0;
                 MD_FLOAT fiz = 0;
 
-                for(int cjj = 0; cjj < CLUSTER_DIM_N; cjj++) {
+                for(int cjj = 0; cjj < atom->clusters[cj].natoms; cjj++) {
                     if(ci != cj || cii != cjj) {
                         MD_FLOAT delx = xtmp - cluster_x(cjptr, cjj);
                         MD_FLOAT dely = ytmp - cluster_y(cjptr, cjj);
@@ -80,6 +80,11 @@ double computeForceLJ(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *s
                             fix += delx * force;
                             fiy += dely * force;
                             fiz += delz * force;
+                            /*
+                            if(force < -50.0 || force > 50.0) {
+                                fprintf(stdout, "%d-%d/%d-%d: %f, %f, %f ---- %f, %f, %f, %f\n", ci, cii, cj, cjj, xtmp, ytmp, ztmp, fix, fiy, fiz, force);
+                            }
+                            */
                         }
                     }
                 }
@@ -87,6 +92,10 @@ double computeForceLJ(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *s
                 cluster_x(cifptr, cii) += fix;
                 cluster_y(cifptr, cii) += fiy;
                 cluster_z(cifptr, cii) += fiz;
+                /*
+                if(fix < -100.0 || fix > 100.0 || fiy < -100.0 || fiy > 100.0 || fiz < -100.0 || fiz > 100.0) {
+                    fprintf(stdout, "%d-%d: %f, %f, %f ---- %f, %f, %f\n", ci, cii, xtmp, ytmp, ztmp, fix, fiy, fiz);
+                }*/
             }
         }
 
