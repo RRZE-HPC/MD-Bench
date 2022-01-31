@@ -247,7 +247,7 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
                         jbb_zmax = atom->clusters[cj].bbmaxz;
                     } while(m + 1 < c && (ibb_zmin - jbb_zmax) * (ibb_zmin - jbb_zmax) > cutneighsq);
 
-                    while(m < c && jbb_zmax - ibb_zmax < cutneighsq) {
+                    while(m < c) {
                         if((jbb_zmin - ibb_zmax) * (jbb_zmin - ibb_zmax) > cutneighsq) {
                             break;
                         }
