@@ -22,6 +22,7 @@
  */
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 
 #include <pbc.h>
 #include <atom.h>
@@ -43,21 +44,48 @@ void initPbc(Atom* atom) {
 
 /* update coordinates of ghost atoms */
 /* uses mapping created in setupPbc */
-void updatePbc(Atom *atom, Parameter *param) {
+void updatePbc(Atom *atom, Parameter *param, int updateBoundingBoxes) {
     int *border_map = atom->border_map;
     int nlocal = atom->Nclusters_local;
     MD_FLOAT xprd = param->xprd;
     MD_FLOAT yprd = param->yprd;
     MD_FLOAT zprd = param->zprd;
 
-    for(int ci = 0; ci < atom->Nclusters_ghost; ci++) {
-        MD_FLOAT *cptr = cluster_pos_ptr(nlocal + ci);
-        MD_FLOAT *bmap_cptr = cluster_pos_ptr(border_map[ci]);
+    for(int cg = 0; cg < atom->Nclusters_ghost; cg++) {
+        const int ci = nlocal + cg;
+        MD_FLOAT *cptr = cluster_pos_ptr(ci);
+        MD_FLOAT *bmap_cptr = cluster_pos_ptr(border_map[cg]);
+        MD_FLOAT bbminx = INFINITY, bbmaxx = -INFINITY;
+        MD_FLOAT bbminy = INFINITY, bbmaxy = -INFINITY;
+        MD_FLOAT bbminz = INFINITY, bbmaxz = -INFINITY;
 
         for(int cii = 0; cii < atom->clusters[ci].natoms; cii++) {
-            cluster_x(cptr, cii) = cluster_x(bmap_cptr, cii) + atom->PBCx[ci] * xprd;
-            cluster_y(cptr, cii) = cluster_y(bmap_cptr, cii) + atom->PBCy[ci] * yprd;
-            cluster_z(cptr, cii) = cluster_z(bmap_cptr, cii) + atom->PBCz[ci] * zprd;
+            MD_FLOAT xtmp = cluster_x(bmap_cptr, cii) + atom->PBCx[cg] * xprd;
+            MD_FLOAT ytmp = cluster_y(bmap_cptr, cii) + atom->PBCy[cg] * yprd;
+            MD_FLOAT ztmp = cluster_z(bmap_cptr, cii) + atom->PBCz[cg] * zprd;
+
+            cluster_x(cptr, cii) = xtmp;
+            cluster_y(cptr, cii) = ytmp;
+            cluster_z(cptr, cii) = ztmp;
+
+            if(updateBoundingBoxes) {
+                // TODO: To create the bounding boxes faster, we can use SIMD operations
+                if(bbminx > xtmp) { bbminx = xtmp; }
+                if(bbmaxx < xtmp) { bbmaxx = xtmp; }
+                if(bbminy > ytmp) { bbminy = ytmp; }
+                if(bbmaxy < ytmp) { bbmaxy = ytmp; }
+                if(bbminz > ztmp) { bbminz = ztmp; }
+                if(bbmaxz < ztmp) { bbmaxz = ztmp; }
+            }
+        }
+
+        if(updateBoundingBoxes) {
+            atom->clusters[ci].bbminx = bbminx;
+            atom->clusters[ci].bbmaxx = bbmaxx;
+            atom->clusters[ci].bbminy = bbminy;
+            atom->clusters[ci].bbmaxy = bbmaxy;
+            atom->clusters[ci].bbminz = bbminz;
+            atom->clusters[ci].bbmaxz = bbmaxz;
         }
     }
 }
@@ -181,5 +209,5 @@ void setupPbc(Atom *atom, Parameter *param) {
     atom->Nclusters = atom->Nclusters_local + Nghost + 1;
 
     // Update created ghost clusters positions
-    updatePbc(atom, param);
+    updatePbc(atom, param, 1);
 }

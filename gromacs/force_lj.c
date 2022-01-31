@@ -20,8 +20,9 @@
  *   with MD-Bench.  If not, see <https://www.gnu.org/licenses/>.
  * =======================================================================================
  */
-#include <likwid-marker.h>
+#include <stdio.h>
 
+#include <likwid-marker.h>
 #include <timing.h>
 #include <neighbor.h>
 #include <parameter.h>
@@ -29,6 +30,7 @@
 #include <stats.h>
 
 double computeForceLJ(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *stats) {
+    fprintf(stdout, "computeForceLJ begin\n");
     int Nlocal = atom->Nlocal;
     int* neighs;
     MD_FLOAT cutforcesq = param->cutforce * param->cutforce;
@@ -47,7 +49,7 @@ double computeForceLJ(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *s
     double S = getTimeStamp();
     LIKWID_MARKER_START("force");
 
-#pragma omp parallel for
+    #pragma omp parallel for
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
         MD_FLOAT *ciptr = cluster_pos_ptr(ci);
         MD_FLOAT *cifptr = cluster_force_ptr(ci);
@@ -57,7 +59,7 @@ double computeForceLJ(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *s
         for(int k = 0; k < numneighs; k++) {
             int cj = neighs[k];
             MD_FLOAT *cjptr = cluster_pos_ptr(cj);
-            for(int cii = 0; cii < CLUSTER_DIM_M; cii++) {
+            for(int cii = 0; cii < atom->clusters[ci].natoms; cii++) {
                 MD_FLOAT xtmp = cluster_x(ciptr, cii);
                 MD_FLOAT ytmp = cluster_y(ciptr, cii);
                 MD_FLOAT ztmp = cluster_z(ciptr, cii);
@@ -66,17 +68,19 @@ double computeForceLJ(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *s
                 MD_FLOAT fiz = 0;
 
                 for(int cjj = 0; cjj < CLUSTER_DIM_N; cjj++) {
-                    MD_FLOAT delx = xtmp - cluster_x(cjptr, cjj);
-                    MD_FLOAT dely = ytmp - cluster_y(cjptr, cjj);
-                    MD_FLOAT delz = ztmp - cluster_z(cjptr, cjj);
-                    MD_FLOAT rsq = delx * delx + dely * dely + delz * delz;
-                    if(rsq < cutforcesq) {
-                        MD_FLOAT sr2 = 1.0 / rsq;
-                        MD_FLOAT sr6 = sr2 * sr2 * sr2 * sigma6;
-                        MD_FLOAT force = 48.0 * sr6 * (sr6 - 0.5) * sr2 * epsilon;
-                        fix += delx * force;
-                        fiy += dely * force;
-                        fiz += delz * force;
+                    if(ci != cj || cii != cjj) {
+                        MD_FLOAT delx = xtmp - cluster_x(cjptr, cjj);
+                        MD_FLOAT dely = ytmp - cluster_y(cjptr, cjj);
+                        MD_FLOAT delz = ztmp - cluster_z(cjptr, cjj);
+                        MD_FLOAT rsq = delx * delx + dely * dely + delz * delz;
+                        if(rsq < cutforcesq) {
+                            MD_FLOAT sr2 = 1.0 / rsq;
+                            MD_FLOAT sr6 = sr2 * sr2 * sr2 * sigma6;
+                            MD_FLOAT force = 48.0 * sr6 * (sr6 - 0.5) * sr2 * epsilon;
+                            fix += delx * force;
+                            fiy += dely * force;
+                            fiz += delz * force;
+                        }
                     }
                 }
 
@@ -92,5 +96,6 @@ double computeForceLJ(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *s
 
     LIKWID_MARKER_STOP("force");
     double E = getTimeStamp();
+    fprintf(stdout, "computeForceLJ end\n");
     return E-S;
 }

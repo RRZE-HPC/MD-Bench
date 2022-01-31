@@ -18,8 +18,11 @@ int write_atoms_to_vtk_file(const char* filename, Atom* atom, int timestep) {
     fprintf(fp, "ASCII\n");
     fprintf(fp, "DATASET UNSTRUCTURED_GRID\n");
     fprintf(fp, "POINTS %d double\n", atom->Nlocal);
-    for(int i = 0; i < atom->Nlocal; ++i) {
-        fprintf(fp, "%.4f %.4f %.4f\n", atom_x(i), atom_y(i), atom_z(i));
+    for(int ci = 0; ci < atom->Nclusters_local; ++ci) {
+        MD_FLOAT *cptr = cluster_pos_ptr(ci);
+        for(int cii = 0; cii < atom->clusters[ci].natoms; ++cii) {
+            fprintf(fp, "%.4f %.4f %.4f\n", cluster_x(cptr, cii), cluster_y(cptr, cii), cluster_z(cptr, cii));
+        }
     }
     fprintf(fp, "\n\n");
     fprintf(fp, "CELLS %d %d\n", atom->Nlocal, atom->Nlocal * 2);

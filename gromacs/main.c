@@ -48,8 +48,7 @@
 extern double computeForceLJ(Parameter*, Atom*, Neighbor*, Stats*);
 extern double computeForceEam(Eam*, Parameter*, Atom*, Neighbor*, Stats*);
 
-void init(Parameter *param)
-{
+void init(Parameter *param) {
     param->input_file = NULL;
     param->vtk_file = NULL;
     param->force_field = FF_LJ;
@@ -72,13 +71,7 @@ void init(Parameter *param)
     param->proc_freq = 2.4;
 }
 
-double setup(
-        Parameter *param,
-        Eam *eam,
-        Atom *atom,
-        Neighbor *neighbor,
-        Stats *stats)
-{
+double setup(Parameter *param, Eam *eam, Atom *atom, Neighbor *neighbor, Stats *stats) {
     if(param->force_field == FF_EAM) { initEam(eam, param); }
     double S, E;
     param->lattice = pow((4.0 / param->rho), (1.0 / 3.0));
@@ -91,11 +84,13 @@ double setup(
     initPbc(atom);
     initStats(stats);
     initNeighbor(neighbor, param);
+
     if(param->input_file == NULL) {
         createAtom(atom, param);
     } else {
         readAtom(atom, param);
     }
+
     setupNeighbor(param, atom);
     setupThermo(param, atom->Natoms);
     if(param->input_file == NULL) { adjustThermo(param, atom); }
@@ -104,17 +99,11 @@ double setup(
     binClusters(atom);
     buildNeighbor(atom, neighbor);
     E = getTimeStamp();
-
     return E-S;
 }
 
-double reneighbour(
-        Parameter *param,
-        Atom *atom,
-        Neighbor *neighbor)
-{
+double reneighbour(Parameter *param, Atom *atom, Neighbor *neighbor) {
     double S, E;
-
     S = getTimeStamp();
     LIKWID_MARKER_START("reneighbour");
     updateSingleAtoms(atom);
@@ -125,11 +114,11 @@ double reneighbour(
     buildNeighbor(atom, neighbor);
     LIKWID_MARKER_STOP("reneighbour");
     E = getTimeStamp();
-
     return E-S;
 }
 
 void initialIntegrate(Parameter *param, Atom *atom) {
+    fprintf(stdout, "initialIntegrate start\n");
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
         MD_FLOAT *ciptr = cluster_pos_ptr(ci);
         MD_FLOAT *civptr = cluster_velocity_ptr(ci);
@@ -144,9 +133,11 @@ void initialIntegrate(Parameter *param, Atom *atom) {
             cluster_z(ciptr, cii) += param->dt * cluster_z(civptr, cii);
         }
     }
+    fprintf(stdout, "initialIntegrate end\n");
 }
 
 void finalIntegrate(Parameter *param, Atom *atom) {
+    fprintf(stdout, "finalIntegrate start\n");
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
         MD_FLOAT *civptr = cluster_velocity_ptr(ci);
         MD_FLOAT *cifptr = cluster_force_ptr(ci);
@@ -157,10 +148,10 @@ void finalIntegrate(Parameter *param, Atom *atom) {
             cluster_z(civptr, cii) += param->dtforce * cluster_z(cifptr, cii);
         }
     }
+    fprintf(stdout, "finalIntegrate end\n");
 }
 
-void printAtomState(Atom *atom)
-{
+void printAtomState(Atom *atom) {
     printf("Atom counts: Natoms=%d Nlocal=%d Nghost=%d Nmax=%d\n",
             atom->Natoms, atom->Nlocal, atom->Nghost, atom->Nmax);
 
@@ -171,8 +162,7 @@ void printAtomState(Atom *atom)
     /*     } */
 }
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
     double timer[NUMTIMER];
     Eam eam;
     Atom atom;
@@ -277,7 +267,7 @@ int main(int argc, char** argv)
         initialIntegrate(&param, &atom);
 
         if((n + 1) % param.every) {
-            updatePbc(&atom, &param);
+            updatePbc(&atom, &param, 0);
         } else {
             timer[NEIGH] += reneighbour(&param, &atom, &neighbor);
         }
