@@ -44,7 +44,7 @@ void initPbc(Atom* atom) {
 
 /* update coordinates of ghost atoms */
 /* uses mapping created in setupPbc */
-void updatePbc(Atom *atom, Parameter *param, int updateBoundingBoxes) {
+void updatePbc(Atom *atom, Parameter *param, int firstUpdate) {
     int *border_map = atom->border_map;
     int nlocal = atom->Nclusters_local;
     MD_FLOAT xprd = param->xprd;
@@ -68,7 +68,7 @@ void updatePbc(Atom *atom, Parameter *param, int updateBoundingBoxes) {
             cluster_y(cptr, cii) = ytmp;
             cluster_z(cptr, cii) = ztmp;
 
-            if(updateBoundingBoxes) {
+            if(firstUpdate) {
                 // TODO: To create the bounding boxes faster, we can use SIMD operations
                 if(bbminx > xtmp) { bbminx = xtmp; }
                 if(bbmaxx < xtmp) { bbmaxx = xtmp; }
@@ -79,7 +79,13 @@ void updatePbc(Atom *atom, Parameter *param, int updateBoundingBoxes) {
             }
         }
 
-        if(updateBoundingBoxes) {
+        if(firstUpdate) {
+            for(int cii = atom->clusters[ci].natoms; cii < CLUSTER_DIM_M; cii++) {
+                cluster_x(cptr, cii) = INFINITY;
+                cluster_y(cptr, cii) = INFINITY;
+                cluster_z(cptr, cii) = INFINITY;
+            }
+
             atom->clusters[ci].bbminx = bbminx;
             atom->clusters[ci].bbmaxx = bbmaxx;
             atom->clusters[ci].bbminy = bbminy;

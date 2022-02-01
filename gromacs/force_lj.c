@@ -61,7 +61,7 @@ double computeForceLJ(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *s
         for(int k = 0; k < numneighs; k++) {
             int cj = neighs[k];
             MD_FLOAT *cjptr = cluster_pos_ptr(cj);
-            for(int cii = 0; cii < atom->clusters[ci].natoms; cii++) {
+            for(int cii = 0; cii < CLUSTER_DIM_M; cii++) {
                 MD_FLOAT xtmp = cluster_x(ciptr, cii);
                 MD_FLOAT ytmp = cluster_y(ciptr, cii);
                 MD_FLOAT ztmp = cluster_z(ciptr, cii);
@@ -69,7 +69,7 @@ double computeForceLJ(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *s
                 MD_FLOAT fiy = 0;
                 MD_FLOAT fiz = 0;
 
-                for(int cjj = 0; cjj < atom->clusters[cj].natoms; cjj++) {
+                for(int cjj = 0; cjj < CLUSTER_DIM_N; cjj++) {
                     if(ci != cj || cii != cjj) {
                         MD_FLOAT delx = xtmp - cluster_x(cjptr, cjj);
                         MD_FLOAT dely = ytmp - cluster_y(cjptr, cjj);
