@@ -202,7 +202,7 @@ int atomDistanceInRange(Atom *atom, int ci, int cj, MD_FLOAT rsq) {
 }
 
 void buildNeighbor(Atom *atom, Neighbor *neighbor) {
-    printf("buildNeighbor start\n");
+    DEBUG_MESSAGE("buildNeighbor start\n");
     int nall = atom->Nclusters_local + atom->Nclusters_ghost;
 
     /* extend atom arrays if necessary */
@@ -240,17 +240,17 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
                 const int c = cluster_bincount[jbin];
 
                 if(c > 0) {
-                    do {
+                    //do {
                         m++;
                         cj = loc_bin[m];
                         jbb_zmin = atom->clusters[cj].bbminz;
                         jbb_zmax = atom->clusters[cj].bbmaxz;
-                    } while(m + 1 < c && (ibb_zmin - jbb_zmax) * (ibb_zmin - jbb_zmax) > cutneighsq);
+                    //} while(m + 1 < c && (ibb_zmin - jbb_zmax) * (ibb_zmin - jbb_zmax) > cutneighsq);
 
                     while(m < c) {
-                        if((jbb_zmin - ibb_zmax) * (jbb_zmin - ibb_zmax) > cutneighsq) {
+                        /*if((jbb_zmin - ibb_zmax) * (jbb_zmin - ibb_zmax) > cutneighsq) {
                             break;
-                        }
+                        }*/
 
                         double d_bb_sq = getBoundingBoxDistanceSq(atom, ci, cj);
                         if(d_bb_sq < cutneighsq) {
@@ -280,7 +280,7 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
         }
 
         if(resize) {
-            printf("RESIZE %d\n", neighbor->maxneighs);
+            fprintf(stdout, "RESIZE %d\n", neighbor->maxneighs);
             neighbor->maxneighs = new_maxneighs * 1.2;
             free(neighbor->neighbors);
             neighbor->neighbors = (int*) malloc(atom->Nmax * neighbor->maxneighs * sizeof(int));
@@ -288,28 +288,46 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
     }
 
     /*
-    printf("\ncutneighsq = %f, rbb_sq = %f\n", cutneighsq, rbb_sq);
+    DEBUG_MESSAGE("\ncutneighsq = %f, rbb_sq = %f\n", cutneighsq, rbb_sq);
     for(int ci = 0; ci < 6; ci++) {
         MD_FLOAT *ciptr = cluster_pos_ptr(ci);
         int* neighptr = &(neighbor->neighbors[ci * neighbor->maxneighs]);
-        printf("Cluster %d, bbx = {%f, %f}, bby = {%f, %f}, bbz = {%f, %f}\n", ci, atom->clusters[ci].bbminx, atom->clusters[ci].bbmaxx, atom->clusters[ci].bbminy, atom->clusters[ci].bbmaxy, atom->clusters[ci].bbminz, atom->clusters[ci].bbmaxz);
+
+        DEBUG_MESSAGE("Cluster %d, bbx = {%f, %f}, bby = {%f, %f}, bbz = {%f, %f}\n",
+            ci,
+            atom->clusters[ci].bbminx,
+            atom->clusters[ci].bbmaxx,
+            atom->clusters[ci].bbminy,
+            atom->clusters[ci].bbmaxy,
+            atom->clusters[ci].bbminz,
+            atom->clusters[ci].bbmaxz);
+
         for(int cii = 0; cii < CLUSTER_DIM_N; cii++) {
-            fprintf(stdout, "%f, %f, %f\n", cluster_x(ciptr, cii), cluster_y(ciptr, cii), cluster_z(ciptr, cii));
+            DEBUG_MESSAGE("%f, %f, %f\n", cluster_x(ciptr, cii), cluster_y(ciptr, cii), cluster_z(ciptr, cii));
         }
 
-        printf("Neighbors:\n");
+        DEBUG_MESSAGE("Neighbors:\n");
         for(int k = 0; k < neighbor->numneigh[ci]; k++) {
             const int cj = neighptr[k];
             MD_FLOAT *cjptr = cluster_pos_ptr(cj);
-            printf("    Cluster %d, bbx = {%f, %f}, bby = {%f, %f}, bbz = {%f, %f}\n", cj, atom->clusters[cj].bbminx, atom->clusters[cj].bbmaxx, atom->clusters[cj].bbminy, atom->clusters[cj].bbmaxy, atom->clusters[cj].bbminz, atom->clusters[cj].bbmaxz);
+
+            DEBUG_MESSAGE("    Cluster %d, bbx = {%f, %f}, bby = {%f, %f}, bbz = {%f, %f}\n",
+                cj,
+                atom->clusters[cj].bbminx,
+                atom->clusters[cj].bbmaxx,
+                atom->clusters[cj].bbminy,
+                atom->clusters[cj].bbmaxy,
+                atom->clusters[cj].bbminz,
+                atom->clusters[cj].bbmaxz);
+
             for(int cjj = 0; cjj < CLUSTER_DIM_N; cjj++) {
-                fprintf(stdout, "    %f, %f, %f\n", cluster_x(cjptr, cjj), cluster_y(cjptr, cjj), cluster_z(cjptr, cjj));
+                DEBUG_MESSAGE("    %f, %f, %f\n", cluster_x(cjptr, cjj), cluster_y(cjptr, cjj), cluster_z(cjptr, cjj));
             }
         }
     }
     */
 
-    printf("buildNeighbor end\n");
+    DEBUG_MESSAGE("buildNeighbor end\n");
 }
 
 /* internal subroutines */
@@ -376,7 +394,7 @@ void coord2bin2D(MD_FLOAT xin, MD_FLOAT yin, int *ix, int *iy) {
 }
 
 void binAtoms(Atom *atom) {
-    printf("binAtoms start\n");
+    DEBUG_MESSAGE("binAtoms start\n");
     int resize = 1;
 
     while(resize > 0) {
@@ -388,7 +406,6 @@ void binAtoms(Atom *atom) {
 
         for(int i = 0; i < atom->Nlocal; i++) {
             int ibin = coord2bin(atom_x(i), atom_y(i));
-            if(ibin < 0 || ibin > mbins) { fprintf(stderr, "%d: %f, %f\n", i, atom_x(i), atom_y(i)); }
             if(bincount[ibin] < atoms_per_bin) {
                 int ac = bincount[ibin]++;
                 bins[ibin * atoms_per_bin + ac] = i;
@@ -403,12 +420,13 @@ void binAtoms(Atom *atom) {
             bins = (int*) malloc(mbins * atoms_per_bin * sizeof(int));
         }
     }
-    printf("binAtoms end\n");
+
+    DEBUG_MESSAGE("binAtoms end\n");
 }
 
 // TODO: Use pigeonhole sorting
 void sortAtomsByZCoord(Atom *atom) {
-    printf("sortAtomsByZCoord start\n");
+    DEBUG_MESSAGE("sortAtomsByZCoord start\n");
     for(int bin = 0; bin < mbins; bin++) {
         int c = bincount[bin];
         int *bin_ptr = &bins[bin * atoms_per_bin];
@@ -433,11 +451,12 @@ void sortAtomsByZCoord(Atom *atom) {
             bin_ptr[min_ac] = i;
         }
     }
-    printf("sortAtomsByZCoord end\n");
+
+    DEBUG_MESSAGE("sortAtomsByZCoord end\n");
 }
 
 void buildClusters(Atom *atom) {
-    printf("buildClusters start\n");
+    DEBUG_MESSAGE("buildClusters start\n");
     atom->Nclusters_local = 0;
 
     /* bin local atoms */
@@ -506,20 +525,29 @@ void buildClusters(Atom *atom) {
         }
     }
 
-    printf("buildClusters end\n");
+    DEBUG_MESSAGE("buildClusters end\n");
 }
 
 void binClusters(Atom *atom) {
-    printf("binClusters start\n");
+    DEBUG_MESSAGE("binClusters start\n");
 
     /*
-    fprintf(stdout, "Nghost = %d\n", atom->Nclusters_ghost);
+    DEBUG_MESSAGE("Nghost = %d\n", atom->Nclusters_ghost);
     for(int ci = atom->Nclusters_local; ci < atom->Nclusters_local + 4; ci++) {
         MD_FLOAT *cptr = cluster_pos_ptr(ci);
-        fprintf(stdout, "Cluster %d:\n", ci);
-        fprintf(stdout, "bin=%d, Natoms=%d, bbox={%f,%f},{%f,%f},{%f,%f}\n", atom->clusters[ci].bin, atom->clusters[ci].natoms, atom->clusters[ci].bbminx, atom->clusters[ci].bbmaxx, atom->clusters[ci].bbminy, atom->clusters[ci].bbmaxy, atom->clusters[ci].bbminz, atom->clusters[ci].bbmaxz);
+        DEBUG_MESSAGE("Cluster %d:\n", ci);
+        DEBUG_MESSAGE("bin=%d, Natoms=%d, bbox={%f,%f},{%f,%f},{%f,%f}\n",
+            atom->clusters[ci].bin,
+            atom->clusters[ci].natoms,
+            atom->clusters[ci].bbminx,
+            atom->clusters[ci].bbmaxx,
+            atom->clusters[ci].bbminy,
+            atom->clusters[ci].bbmaxy,
+            atom->clusters[ci].bbminz,
+            atom->clusters[ci].bbmaxz);
+
         for(int cii = 0; cii < CLUSTER_DIM_N; cii++) {
-            fprintf(stdout, "%f, %f, %f\n", cluster_x(cptr, cii), cluster_y(cptr, cii), cluster_z(cptr, cii));
+            DEBUG_MESSAGE("%f, %f, %f\n", cluster_x(cptr, cii), cluster_y(cptr, cii), cluster_z(cptr, cii));
         }
     }
     */
@@ -590,16 +618,16 @@ void binClusters(Atom *atom) {
     }
 
     /*
-    fprintf(stdout, "cluster_bincount\n");
-    for(int i = 0; i < mbins; i++) { fprintf(stdout, "%d, ", cluster_bincount[i]); }
-    fprintf(stdout, "\n");
+    DEBUG_MESSAGE("cluster_bincount\n");
+    for(int i = 0; i < mbins; i++) { DEBUG_MESSAGE("%d, ", cluster_bincount[i]); }
+    DEBUG_MESSAGE("\n");
     */
 
-    printf("binClusters stop\n");
+    DEBUG_MESSAGE("binClusters stop\n");
 }
 
 void updateSingleAtoms(Atom *atom) {
-    printf("updateSingleAtoms start\n");
+    DEBUG_MESSAGE("updateSingleAtoms start\n");
     int Natom = 0;
 
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
@@ -620,5 +648,6 @@ void updateSingleAtoms(Atom *atom) {
     if(Natom != atom->Nlocal) {
         fprintf(stderr, "updateSingleAtoms(): Number of atoms changed!\n");
     }
-    printf("updateSingleAtoms stop\n");
+
+    DEBUG_MESSAGE("updateSingleAtoms stop\n");
 }

@@ -28,9 +28,11 @@
 #include <parameter.h>
 #include <atom.h>
 #include <stats.h>
+#include <util.h>
+
 
 double computeForceLJ(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *stats) {
-    fprintf(stdout, "computeForceLJ begin\n");
+    DEBUG_MESSAGE("computeForceLJ begin\n");
     int Nlocal = atom->Nlocal;
     int* neighs;
     MD_FLOAT cutforcesq = param->cutforce * param->cutforce;
@@ -80,11 +82,6 @@ double computeForceLJ(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *s
                             fix += delx * force;
                             fiy += dely * force;
                             fiz += delz * force;
-                            /*
-                            if(force < -50.0 || force > 50.0) {
-                                fprintf(stdout, "%d-%d/%d-%d: %f, %f, %f ---- %f, %f, %f, %f\n", ci, cii, cj, cjj, xtmp, ytmp, ztmp, fix, fiy, fiz, force);
-                            }
-                            */
                         }
                     }
                 }
@@ -92,10 +89,6 @@ double computeForceLJ(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *s
                 cluster_x(cifptr, cii) += fix;
                 cluster_y(cifptr, cii) += fiy;
                 cluster_z(cifptr, cii) += fiz;
-                /*
-                if(fix < -100.0 || fix > 100.0 || fiy < -100.0 || fiy > 100.0 || fiz < -100.0 || fiz > 100.0) {
-                    fprintf(stdout, "%d-%d: %f, %f, %f ---- %f, %f, %f\n", ci, cii, xtmp, ytmp, ztmp, fix, fiy, fiz);
-                }*/
             }
         }
 
@@ -105,6 +98,6 @@ double computeForceLJ(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *s
 
     LIKWID_MARKER_STOP("force");
     double E = getTimeStamp();
-    fprintf(stdout, "computeForceLJ end\n");
+    DEBUG_MESSAGE("computeForceLJ end\n");
     return E-S;
 }

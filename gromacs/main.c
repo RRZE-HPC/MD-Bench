@@ -118,7 +118,8 @@ double reneighbour(Parameter *param, Atom *atom, Neighbor *neighbor) {
 }
 
 void initialIntegrate(Parameter *param, Atom *atom) {
-    fprintf(stdout, "initialIntegrate start\n");
+    DEBUG_MESSAGE("initialIntegrate start\n");
+
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
         MD_FLOAT *ciptr = cluster_pos_ptr(ci);
         MD_FLOAT *civptr = cluster_velocity_ptr(ci);
@@ -133,11 +134,13 @@ void initialIntegrate(Parameter *param, Atom *atom) {
             cluster_z(ciptr, cii) += param->dt * cluster_z(civptr, cii);
         }
     }
-    fprintf(stdout, "initialIntegrate end\n");
+
+    DEBUG_MESSAGE("initialIntegrate end\n");
 }
 
 void finalIntegrate(Parameter *param, Atom *atom) {
-    fprintf(stdout, "finalIntegrate start\n");
+    DEBUG_MESSAGE("finalIntegrate start\n");
+
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
         MD_FLOAT *civptr = cluster_velocity_ptr(ci);
         MD_FLOAT *cifptr = cluster_force_ptr(ci);
@@ -148,7 +151,8 @@ void finalIntegrate(Parameter *param, Atom *atom) {
             cluster_z(civptr, cii) += param->dtforce * cluster_z(cifptr, cii);
         }
     }
-    fprintf(stdout, "finalIntegrate end\n");
+
+    DEBUG_MESSAGE("finalIntegrate end\n");
 }
 
 void printAtomState(Atom *atom) {
