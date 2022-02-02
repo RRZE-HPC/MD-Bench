@@ -216,18 +216,18 @@ double computeForceLJ_4xn(Parameter *param, Atom *atom, Neighbor *neighbor, Stat
             MD_SIMD_FLOAT force2 = simd_mul(c48_vec, simd_mul(sr6_2, simd_mul(simd_sub(sr6_2, c05_vec), simd_mul(sr2_2, epsilon_vec))));
             MD_SIMD_FLOAT force3 = simd_mul(c48_vec, simd_mul(sr6_3, simd_mul(simd_sub(sr6_3, c05_vec), simd_mul(sr2_3, epsilon_vec))));
 
-            simd_masked_add(fix0, simd_mul(delx0, force0), cutoff_mask0);
-            simd_masked_add(fiy0, simd_mul(dely0, force0), cutoff_mask0);
-            simd_masked_add(fiz0, simd_mul(delz0, force0), cutoff_mask0);
-            simd_masked_add(fix1, simd_mul(delx1, force1), cutoff_mask1);
-            simd_masked_add(fiy1, simd_mul(dely1, force1), cutoff_mask1);
-            simd_masked_add(fiz1, simd_mul(delz1, force1), cutoff_mask1);
-            simd_masked_add(fix2, simd_mul(delx2, force2), cutoff_mask2);
-            simd_masked_add(fiy2, simd_mul(dely2, force2), cutoff_mask2);
-            simd_masked_add(fiz2, simd_mul(delz2, force2), cutoff_mask2);
-            simd_masked_add(fix3, simd_mul(delx3, force3), cutoff_mask3);
-            simd_masked_add(fiy3, simd_mul(dely3, force3), cutoff_mask3);
-            simd_masked_add(fiz3, simd_mul(delz3, force3), cutoff_mask3);
+            fix0 = simd_masked_add(fix0, simd_mul(delx0, force0), cutoff_mask0);
+            fiy0 = simd_masked_add(fiy0, simd_mul(dely0, force0), cutoff_mask0);
+            fiz0 = simd_masked_add(fiz0, simd_mul(delz0, force0), cutoff_mask0);
+            fix1 = simd_masked_add(fix1, simd_mul(delx1, force1), cutoff_mask1);
+            fiy1 = simd_masked_add(fiy1, simd_mul(dely1, force1), cutoff_mask1);
+            fiz1 = simd_masked_add(fiz1, simd_mul(delz1, force1), cutoff_mask1);
+            fix2 = simd_masked_add(fix2, simd_mul(delx2, force2), cutoff_mask2);
+            fiy2 = simd_masked_add(fiy2, simd_mul(dely2, force2), cutoff_mask2);
+            fiz2 = simd_masked_add(fiz2, simd_mul(delz2, force2), cutoff_mask2);
+            fix3 = simd_masked_add(fix3, simd_mul(delx3, force3), cutoff_mask3);
+            fiy3 = simd_masked_add(fiy3, simd_mul(dely3, force3), cutoff_mask3);
+            fiz3 = simd_masked_add(fiz3, simd_mul(delz3, force3), cutoff_mask3);
         }
 
         cluster_x(cifptr, 0) = simd_horizontal_sum(fix0);
