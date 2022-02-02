@@ -210,6 +210,18 @@ void setupPbc(Atom *atom, Parameter *param) {
         if (bbmaxy >= (yprd-Cutneigh) && bbmaxx >= (xprd-Cutneigh)) { ADDGHOST(-1,-1,0); }
     }
 
+    if(atom->Nclusters_local + Nghost + 1 >= atom->Nclusters_max) {
+        growClusters(atom);
+    }
+
+    // Add dummy cluster at the end
+    MD_FLOAT *cptr = cluster_pos_ptr(atom->Nclusters_local + Nghost + 1);
+    for(int cii = 0; cii < CLUSTER_DIM_M; cii++) {
+        cluster_x(cptr, cii) = INFINITY;
+        cluster_y(cptr, cii) = INFINITY;
+        cluster_z(cptr, cii) = INFINITY;
+    }
+
     // increase by one to make it the ghost atom count
     atom->Nghost = Nghost_atoms;
     atom->Nclusters_ghost = Nghost + 1;
