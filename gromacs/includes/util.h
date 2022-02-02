@@ -33,9 +33,9 @@
 #define ABS(a) ((a) >= 0 ? (a) : -(a))
 #endif
 #ifdef DEBUG
-#define DEBUG_MESSAGE(msg)  printf
+#define DEBUG_MESSAGE   printf
 #else
-#define DEBUG_MESSAGE(msg)
+#define DEBUG_MESSAGE
 #endif
 
 #define FF_LJ   0

@@ -56,6 +56,10 @@ ifeq ($(strip $(USE_REFERENCE_VERSION)),true)
     DEFINES += -DUSE_REFERENCE_VERSION
 endif
 
+ifeq ($(strip $(DEBUG)),true)
+    DEFINES += -DDEBUG
+endif
+
 ifneq ($(VECTOR_WIDTH),)
     DEFINES += -DVECTOR_WIDTH=$(VECTOR_WIDTH)
 endif
