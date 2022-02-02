@@ -26,12 +26,12 @@
 #define __ATOM_H_
 
 #define CLUSTER_DIM_M       4
-#define CLUSTER_DIM_N       4
+#define CLUSTER_DIM_N       8
 
 typedef struct {
     int bin;
     int natoms;
-    int type[CLUSTER_DIM_N];
+    int type[CLUSTER_DIM_M];
     MD_FLOAT bbminx, bbmaxx;
     MD_FLOAT bbminy, bbmaxy;
     MD_FLOAT bbminz, bbmaxz;
@@ -62,26 +62,30 @@ extern int readAtom(Atom*, Parameter*);
 extern void growAtom(Atom*);
 extern void growClusters(Atom*);
 
-#define cluster_pos_ptr(ci)       &(atom->cl_x[(ci) * CLUSTER_DIM_N * 3])
-#define cluster_velocity_ptr(ci)  &(atom->cl_v[(ci) * CLUSTER_DIM_N * 3])
-#define cluster_force_ptr(ci)     &(atom->cl_f[(ci) * CLUSTER_DIM_N * 3])
+#define cluster_pos_ptr(ci)       &(atom->cl_x[(ci) * CLUSTER_DIM_M * 3])
+#define cluster_velocity_ptr(ci)  &(atom->cl_v[(ci) * CLUSTER_DIM_M * 3])
+#define cluster_force_ptr(ci)     &(atom->cl_f[(ci) * CLUSTER_DIM_M * 3])
 
 #ifdef AOS
 #define POS_DATA_LAYOUT     "AoS"
 #define atom_x(i)           atom->x[(i) * 3 + 0]
 #define atom_y(i)           atom->x[(i) * 3 + 1]
 #define atom_z(i)           atom->x[(i) * 3 + 2]
-#define cluster_x(cptr, i)  cptr[(i) * 3 + 0]
-#define cluster_y(cptr, i)  cptr[(i) * 3 + 1]
-#define cluster_z(cptr, i)  cptr[(i) * 3 + 2]
 #else
 #define POS_DATA_LAYOUT     "SoA"
 #define atom_x(i)           atom->x[i]
 #define atom_y(i)           atom->y[i]
 #define atom_z(i)           atom->z[i]
-#define cluster_x(cptr, i)  cptr[0 * CLUSTER_DIM_N + (i)]
-#define cluster_y(cptr, i)  cptr[1 * CLUSTER_DIM_N + (i)]
-#define cluster_z(cptr, i)  cptr[2 * CLUSTER_DIM_N + (i)]
+#endif
+
+#ifdef CLUSTER_AOS
+#define cluster_x(cptr, i)  cptr[(i) * 3 + 0]
+#define cluster_y(cptr, i)  cptr[(i) * 3 + 1]
+#define cluster_z(cptr, i)  cptr[(i) * 3 + 2]
+#else
+#define cluster_x(cptr, i)  cptr[0 * CLUSTER_DIM_M + (i)]
+#define cluster_y(cptr, i)  cptr[1 * CLUSTER_DIM_M + (i)]
+#define cluster_z(cptr, i)  cptr[2 * CLUSTER_DIM_M + (i)]
 #endif
 
 #endif

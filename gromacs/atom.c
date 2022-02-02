@@ -284,7 +284,7 @@ void growClusters(Atom *atom)
     int nold = atom->Nclusters_max;
     atom->Nclusters_max += DELTA;
     atom->clusters = (Cluster*) reallocate(atom->clusters, ALIGNMENT, atom->Nclusters_max * sizeof(Cluster), nold * sizeof(Cluster));
-    atom->cl_x = (MD_FLOAT*) reallocate(atom->cl_x, ALIGNMENT, atom->Nclusters_max * CLUSTER_DIM_N * 3 * sizeof(MD_FLOAT), nold * CLUSTER_DIM_N * 3 * sizeof(MD_FLOAT));
-    atom->cl_f = (MD_FLOAT*) reallocate(atom->cl_f, ALIGNMENT, atom->Nclusters_max * CLUSTER_DIM_N * 3 * sizeof(MD_FLOAT), nold * CLUSTER_DIM_N * 3 * sizeof(MD_FLOAT));
-    atom->cl_v = (MD_FLOAT*) reallocate(atom->cl_v, ALIGNMENT, atom->Nclusters_max * CLUSTER_DIM_N * 3 * sizeof(MD_FLOAT), nold * CLUSTER_DIM_N * 3 * sizeof(MD_FLOAT));
+    atom->cl_x = (MD_FLOAT*) reallocate(atom->cl_x, ALIGNMENT, atom->Nclusters_max * CLUSTER_DIM_M * 3 * sizeof(MD_FLOAT), nold * CLUSTER_DIM_M * 3 * sizeof(MD_FLOAT));
+    atom->cl_f = (MD_FLOAT*) reallocate(atom->cl_f, ALIGNMENT, atom->Nclusters_max * CLUSTER_DIM_M * 3 * sizeof(MD_FLOAT), nold * CLUSTER_DIM_M * 3 * sizeof(MD_FLOAT));
+    atom->cl_v = (MD_FLOAT*) reallocate(atom->cl_v, ALIGNMENT, atom->Nclusters_max * CLUSTER_DIM_M * 3 * sizeof(MD_FLOAT), nold * CLUSTER_DIM_M * 3 * sizeof(MD_FLOAT));
 }

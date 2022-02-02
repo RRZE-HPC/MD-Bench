@@ -1,7 +1,7 @@
 # Compiler tag (GCC/CLANG/ICC)
 TAG ?= ICC
 # Optimization scheme (lammps/gromacs/clusters_per_bin)
-OPT_SCHEME = lammps
+OPT_SCHEME = gromacs
 # Enable likwid (true or false)
 ENABLE_LIKWID ?= false
 # SP or DP
@@ -25,6 +25,12 @@ INDEX_TRACER ?= false
 VECTOR_WIDTH ?= 8
 # Compute statistics
 COMPUTE_STATS ?= true
+
+# Configurations for gromacs optimization scheme
+# AOS or SOA
+CLUSTER_LAYOUT ?= SOA
+# Use reference version
+USE_REFERENCE_VERSION ?= true
 
 #Feature options
 OPTIONS =  -DALIGNMENT=64

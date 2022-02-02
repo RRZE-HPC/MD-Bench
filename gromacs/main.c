@@ -45,8 +45,15 @@
 
 #define HLINE "----------------------------------------------------------------------------\n"
 
-extern double computeForceLJ(Parameter*, Atom*, Neighbor*, Stats*);
+extern double computeForceLJ_ref(Parameter*, Atom*, Neighbor*, Stats*);
+extern double computeForceLJ_4xn(Parameter*, Atom*, Neighbor*, Stats*);
 extern double computeForceEam(Eam*, Parameter*, Atom*, Neighbor*, Stats*);
+
+#ifdef USE_REFERENCE_VERSION
+#   define computeForceLJ   computeForceLJ_ref
+#else
+#   define computeForceLJ   computeForceLJ_4xn
+#endif
 
 void init(Parameter *param) {
     param->input_file = NULL;

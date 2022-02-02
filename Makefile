@@ -15,6 +15,9 @@ INCLUDES  += -I./$(SRC_DIR)/includes
 ifeq ($(strip $(DATA_LAYOUT)),AOS)
 DEFINES +=  -DAOS
 endif
+ifeq ($(strip $(CLUSTER_LAYOUT)),AOS)
+DEFINES +=  -DCLUSTER_AOS
+endif
 ifeq ($(strip $(DATA_TYPE)),SP)
 DEFINES +=  -DPRECISION=1
 else
@@ -47,6 +50,10 @@ endif
 
 ifeq ($(strip $(COMPUTE_STATS)),true)
     DEFINES += -DCOMPUTE_STATS
+endif
+
+ifeq ($(strip $(USE_REFERENCE_VERSION)),true)
+    DEFINES += -DUSE_REFERENCE_VERSION
 endif
 
 ifneq ($(VECTOR_WIDTH),)
