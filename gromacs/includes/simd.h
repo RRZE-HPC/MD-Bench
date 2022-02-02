@@ -21,11 +21,14 @@
  * =======================================================================================
  */
 
+#include <string.h>
 #include <immintrin.h>
 #include <zmmintrin.h>
 
-#define MD_SIMD_FLOAT   __m512d
-#define MD_SIMD_MASK    __mmask8
+#define MD_SIMD_FLOAT       __m512d
+#define MD_SIMD_MASK        __mmask8
+#define SIMD_PRINT_REAL(a)  simd_print_real(#a, a);
+#define SIMD_PRINT_MASK(a)  simd_print_mask(#a, a);
 
 static inline MD_SIMD_FLOAT simd_broadcast(double scalar) { return _mm512_set1_pd(scalar); }
 static inline MD_SIMD_FLOAT simd_zero() { return _mm512_set1_pd(0.0); }
@@ -35,7 +38,8 @@ static inline MD_SIMD_FLOAT simd_mul(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b) { return 
 static inline MD_SIMD_FLOAT simd_fma(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b, MD_SIMD_FLOAT c) { return _mm512_fmadd_pd(a, b, c); }
 static inline MD_SIMD_FLOAT simd_reciprocal(MD_SIMD_FLOAT a) { return _mm512_rcp14_pd(a); }
 static inline MD_SIMD_FLOAT simd_masked_add(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b, MD_SIMD_MASK m) { return _mm512_mask_add_pd(a, m, a, b); }
-static inline MD_SIMD_MASK simd_mask_from_u32(unsigned int m) { return _cvtu32_mask8(m); }
+static inline MD_SIMD_MASK simd_mask_from_u32(unsigned int a) { return _cvtu32_mask8(a); }
+static inline MD_SIMD_MASK simd_mask_to_u32(unsigned int a) { return _cvtmask8_u32(a); }
 static inline MD_SIMD_MASK simd_mask_and(MD_SIMD_MASK a, MD_SIMD_MASK b) { return _kand_mask8(a, b); }
 static inline MD_SIMD_MASK simd_mask_cond_lt(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b) { return _mm512_cmp_pd_mask(a, b, _CMP_LT_OQ); }
 
@@ -59,3 +63,17 @@ static inline MD_FLOAT simd_horizontal_sum(MD_SIMD_FLOAT a) {
     x = _mm512_add_pd(x, _mm512_permute_pd(x, 0x01));
     return *((double *) &x);
 }
+
+static inline void simd_print_real(const char *ref, MD_SIMD_FLOAT a) {
+    double x[8];
+    memcpy(x, &a, sizeof(x));
+
+    fprintf(stdout, "%s: ", ref);
+    for(int i = 0; i < 8; i++) {
+        fprintf(stdout, "%f ", x[i]);
+    }
+
+    fprintf(stdout, "\n");
+}
+
+static inline void simd_print_mask(const char *ref, MD_SIMD_MASK a) { fprintf(stdout, "%s: %x\n", ref, simd_mask_to_u32(a)); }

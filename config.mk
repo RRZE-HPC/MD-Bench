@@ -10,6 +10,8 @@ DATA_TYPE ?= DP
 DATA_LAYOUT ?= AOS
 # Assembly syntax to generate (ATT/INTEL)
 ASM_SYNTAX ?= ATT
+# Debug
+DEBUG ?= false
 
 # Number of times to run the atoms loop on stubbed variant
 ATOMS_LOOP_RUNS ?= 1
@@ -30,7 +32,7 @@ COMPUTE_STATS ?= true
 # AOS or SOA
 CLUSTER_LAYOUT ?= SOA
 # Use reference version
-USE_REFERENCE_VERSION ?= true
+USE_REFERENCE_VERSION ?= false
 
 #Feature options
 OPTIONS =  -DALIGNMENT=64
