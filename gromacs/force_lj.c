@@ -118,15 +118,6 @@ double computeForceLJ_4xn(Parameter *param, Atom *atom, Neighbor *neighbor, Stat
     MD_SIMD_FLOAT c05_vec = simd_broadcast(0.5);
     const int unroll_j = CLUSTER_DIM_N / CLUSTER_DIM_M;
 
-    for(int ci = 0; ci < atom->Nclusters_local; ci++) {
-        MD_FLOAT *fptr = cluster_force_ptr(ci);
-        for(int cii = 0; cii < atom->clusters[ci].natoms; cii++) {
-            cluster_x(fptr, cii) = 0.0;
-            cluster_y(fptr, cii) = 0.0;
-            cluster_z(fptr, cii) = 0.0;
-        }
-    }
-
     double S = getTimeStamp();
     LIKWID_MARKER_START("force");
 
