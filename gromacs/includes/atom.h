@@ -26,7 +26,7 @@
 #define __ATOM_H_
 
 #define CLUSTER_DIM_M       4
-#define CLUSTER_DIM_N       8
+#define CLUSTER_DIM_N       VECTOR_WIDTH
 
 typedef struct {
     int bin;
