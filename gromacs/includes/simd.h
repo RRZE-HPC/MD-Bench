@@ -51,8 +51,8 @@ static MD_SIMD_FLOAT simd_gather2(MD_FLOAT *c0, MD_FLOAT *c1, int d) {
     x = _mm512_mask_i32gather_pd(simd_zero(), simd_mask_from_u32(0x0f), vindex, c0, sizeof(double));
     x = _mm512_mask_i32gather_pd(x, simd_mask_from_u32(0xf0), vindex, c1, sizeof(double));
 #else
-    x = _mm512_loadu_pd(&c0[d * CLUSTER_DIM_M]);
-    x = _mm512_insertf64x4(x, _mm256_loadu_pd(&c1[d * CLUSTER_DIM_M]), 1);
+    x = _mm512_load_pd(&c0[d * CLUSTER_DIM_M]);
+    x = _mm512_insertf64x4(x, _mm256_load_pd(&c1[d * CLUSTER_DIM_M]), 1);
 #endif
     return x;
 }
