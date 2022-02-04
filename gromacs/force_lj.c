@@ -155,14 +155,21 @@ double computeForceLJ_4xn(Parameter *param, Atom *atom, Neighbor *neighbor, Stat
 
         for(int k = 0; k < numneighs; k += unroll_j) {
             int cj0 = neighs[k + 0];
-            int cj1 = neighs[k + 1];
             unsigned int cond0 = (unsigned int)(ci == cj0);
-            unsigned int cond1 = (unsigned int)(ci == cj1);
             MD_FLOAT *cj0_ptr = cluster_pos_ptr(cj0);
+
+            #if VECTOR_WIDTH == 8
+            int cj1 = neighs[k + 1];
+            unsigned int cond1 = (unsigned int)(ci == cj1);
             MD_FLOAT *cj1_ptr = cluster_pos_ptr(cj1);
-            MD_SIMD_FLOAT xj_tmp = simd_gather2(cj0_ptr, cj1_ptr, 0);
-            MD_SIMD_FLOAT yj_tmp = simd_gather2(cj0_ptr, cj1_ptr, 1);
-            MD_SIMD_FLOAT zj_tmp = simd_gather2(cj0_ptr, cj1_ptr, 2);
+            MD_SIMD_FLOAT xj_tmp = simd_load2(cj0_ptr, cj1_ptr, 0);
+            MD_SIMD_FLOAT yj_tmp = simd_load2(cj0_ptr, cj1_ptr, 1);
+            MD_SIMD_FLOAT zj_tmp = simd_load2(cj0_ptr, cj1_ptr, 2);
+            #else
+            MD_SIMD_FLOAT xj_tmp = simd_load(cj0_ptr, 0);
+            MD_SIMD_FLOAT yj_tmp = simd_load(cj0_ptr, 1);
+            MD_SIMD_FLOAT zj_tmp = simd_load(cj0_ptr, 2);
+            #endif
 
             MD_SIMD_FLOAT delx0 = simd_sub(xi0_tmp, xj_tmp);
             MD_SIMD_FLOAT dely0 = simd_sub(yi0_tmp, yj_tmp);
@@ -177,10 +184,17 @@ double computeForceLJ_4xn(Parameter *param, Atom *atom, Neighbor *neighbor, Stat
             MD_SIMD_FLOAT dely3 = simd_sub(yi3_tmp, yj_tmp);
             MD_SIMD_FLOAT delz3 = simd_sub(zi3_tmp, zj_tmp);
 
+            #if VECTOR_WIDTH == 8
             MD_SIMD_MASK excl_mask0 = simd_mask_from_u32((unsigned int)(0xff - 0x1 * cond0 - 0x10 * cond1));
             MD_SIMD_MASK excl_mask1 = simd_mask_from_u32((unsigned int)(0xff - 0x2 * cond0 - 0x20 * cond1));
             MD_SIMD_MASK excl_mask2 = simd_mask_from_u32((unsigned int)(0xff - 0x4 * cond0 - 0x40 * cond1));
             MD_SIMD_MASK excl_mask3 = simd_mask_from_u32((unsigned int)(0xff - 0x8 * cond0 - 0x80 * cond1));
+            #else
+            MD_SIMD_MASK excl_mask0 = simd_mask_from_u32((unsigned int)(0xf - 0x1 * cond0));
+            MD_SIMD_MASK excl_mask1 = simd_mask_from_u32((unsigned int)(0xf - 0x2 * cond0));
+            MD_SIMD_MASK excl_mask2 = simd_mask_from_u32((unsigned int)(0xf - 0x4 * cond0));
+            MD_SIMD_MASK excl_mask3 = simd_mask_from_u32((unsigned int)(0xf - 0x8 * cond0));
+            #endif
 
             MD_SIMD_FLOAT rsq0 = simd_fma(delx0, delx0, simd_fma(dely0, dely0, simd_mul(delz0, delz0)));
             MD_SIMD_FLOAT rsq1 = simd_fma(delx1, delx1, simd_fma(dely1, dely1, simd_mul(delz1, delz1)));
