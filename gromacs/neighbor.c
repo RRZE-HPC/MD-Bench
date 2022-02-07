@@ -245,27 +245,35 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
                 const int c = cluster_bincount[jbin];
 
                 if(c > 0) {
-                    //do {
+                    MD_FLOAT dl, dh, dm, dm0, d_bb_sq;
+
+                    do {
                         m++;
                         cj = loc_bin[m];
-                        jbb_xmin = atom->clusters[cj].bbminx;
-                        jbb_xmax = atom->clusters[cj].bbmaxx;
-                        jbb_ymin = atom->clusters[cj].bbminy;
-                        jbb_ymax = atom->clusters[cj].bbmaxy;
                         jbb_zmin = atom->clusters[cj].bbminz;
                         jbb_zmax = atom->clusters[cj].bbmaxz;
-                    //} while(m + 1 < c && (ibb_zmin - jbb_zmax) * (ibb_zmin - jbb_zmax) > cutneighsq);
+                        dl = ibb_zmin - jbb_zmax;
+                        dh = jbb_zmin - ibb_zmax;
+                        dm = MAX(dl, dh);
+                        dm0 = MAX(dm, 0.0);
+                        d_bb_sq = dm0 * dm0;
+                    } while(m + 1 < c && d_bb_sq > cutneighsq);
+
+                    jbb_xmin = atom->clusters[cj].bbminx;
+                    jbb_xmax = atom->clusters[cj].bbmaxx;
+                    jbb_ymin = atom->clusters[cj].bbminy;
+                    jbb_ymax = atom->clusters[cj].bbmaxy;
 
                     while(m < c) {
-                        /*if((jbb_zmin - ibb_zmax) * (jbb_zmin - ibb_zmax) > cutneighsq) {
+                        dl = ibb_zmin - jbb_zmax;
+                        dh = jbb_zmin - ibb_zmax;
+                        dm = MAX(dl, dh);
+                        dm0 = MAX(dm, 0.0);
+                        d_bb_sq = dm0 * dm0;
+
+                        /*if(d_bb_sq > cutneighsq) {
                             break;
                         }*/
-
-                        MD_FLOAT dl = ibb_xmin - jbb_xmax;
-                        MD_FLOAT dh = jbb_xmin - ibb_xmax;
-                        MD_FLOAT dm = MAX(dl, dh);
-                        MD_FLOAT dm0 = MAX(dm, 0.0);
-                        MD_FLOAT d_bb_sq = dm0 * dm0;
 
                         dl = ibb_ymin - jbb_ymax;
                         dh = jbb_ymin - ibb_ymax;
@@ -273,8 +281,8 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
                         dm0 = MAX(dm, 0.0);
                         d_bb_sq += dm0 * dm0;
 
-                        dl = ibb_zmin - jbb_zmax;
-                        dh = jbb_zmin - ibb_zmax;
+                        dl = ibb_xmin - jbb_xmax;
+                        dh = jbb_xmin - ibb_xmax;
                         dm = MAX(dl, dh);
                         dm0 = MAX(dm, 0.0);
                         d_bb_sq += dm0 * dm0;
