@@ -93,8 +93,8 @@ double computeForceLJ_ref(Parameter *param, Atom *atom, Neighbor *neighbor, Stat
             }
         }
 
-        addStat(stats->total_force_neighs, numneighs);
-        addStat(stats->total_force_iters, (numneighs + VECTOR_WIDTH - 1) / VECTOR_WIDTH);
+        addStat(stats->num_neighs, numneighs);
+        addStat(stats->force_iters, (numneighs + VECTOR_WIDTH - 1) / VECTOR_WIDTH);
     }
 
     LIKWID_MARKER_STOP("force");
@@ -248,8 +248,9 @@ double computeForceLJ_4xn(Parameter *param, Atom *atom, Neighbor *neighbor, Stat
         cluster_y(cifptr, 3) = simd_horizontal_sum(fiy3);
         cluster_z(cifptr, 3) = simd_horizontal_sum(fiz3);
 
-        addStat(stats->total_force_neighs, numneighs * CLUSTER_DIM_M * CLUSTER_DIM_N);
-        addStat(stats->total_force_iters, numneighs / 2);
+        addStat(stats->calculated_forces, 1);
+        addStat(stats->num_neighs, numneighs);
+        addStat(stats->force_iters, numneighs / 2);
     }
 
     LIKWID_MARKER_STOP("force");

@@ -26,8 +26,9 @@
 #ifndef __STATS_H_
 #define __STATS_H_
 typedef struct {
-    long long int total_force_neighs;
-    long long int total_force_iters;
+    long long int calculated_forces;
+    long long int num_neighs;
+    long long int force_iters;
 } Stats;
 
 void initStats(Stats *s);
