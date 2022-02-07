@@ -91,8 +91,8 @@ void setupNeighbor(Parameter *param, Atom *atom) {
     MD_FLOAT zlo = 0.0; MD_FLOAT zhi = zprd;
 
     MD_FLOAT atom_density = ((MD_FLOAT)(atom->Nlocal)) / ((xhi - xlo) * (yhi - ylo) * (zhi - zlo));
-    //MD_FLOAT atoms_in_cell = MAX(CLUSTER_DIM_M, CLUSTER_DIM_N);
-    MD_FLOAT atoms_in_cell = CLUSTER_DIM_M;
+    MD_FLOAT atoms_in_cell = MAX(CLUSTER_DIM_M, CLUSTER_DIM_N);
+    //MD_FLOAT atoms_in_cell = CLUSTER_DIM_M;
     binsizex = cbrt(atoms_in_cell / atom_density);
     binsizey = cbrt(atoms_in_cell / atom_density);
     cutneighsq = cutneigh * cutneigh;
@@ -230,6 +230,10 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
             int* neighptr = &(neighbor->neighbors[ci * neighbor->maxneighs]);
             int n = 0;
             int ibin = atom->clusters[ci].bin;
+            MD_FLOAT ibb_xmin = atom->clusters[ci].bbminx;
+            MD_FLOAT ibb_xmax = atom->clusters[ci].bbmaxx;
+            MD_FLOAT ibb_ymin = atom->clusters[ci].bbminy;
+            MD_FLOAT ibb_ymax = atom->clusters[ci].bbmaxy;
             MD_FLOAT ibb_zmin = atom->clusters[ci].bbminz;
             MD_FLOAT ibb_zmax = atom->clusters[ci].bbmaxz;
 
@@ -237,13 +241,17 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
                 int jbin = ibin + stencil[k];
                 int *loc_bin = &cluster_bins[jbin * clusters_per_bin];
                 int cj, m = -1;
-                MD_FLOAT jbb_zmin, jbb_zmax;
+                MD_FLOAT jbb_xmin, jbb_xmax, jbb_ymin, jbb_ymax, jbb_zmin, jbb_zmax;
                 const int c = cluster_bincount[jbin];
 
                 if(c > 0) {
                     //do {
                         m++;
                         cj = loc_bin[m];
+                        jbb_xmin = atom->clusters[cj].bbminx;
+                        jbb_xmax = atom->clusters[cj].bbmaxx;
+                        jbb_ymin = atom->clusters[cj].bbminy;
+                        jbb_ymax = atom->clusters[cj].bbmaxy;
                         jbb_zmin = atom->clusters[cj].bbminz;
                         jbb_zmax = atom->clusters[cj].bbmaxz;
                     //} while(m + 1 < c && (ibb_zmin - jbb_zmax) * (ibb_zmin - jbb_zmax) > cutneighsq);
@@ -253,7 +261,24 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
                             break;
                         }*/
 
-                        double d_bb_sq = getBoundingBoxDistanceSq(atom, ci, cj);
+                        MD_FLOAT dl = ibb_xmin - jbb_xmax;
+                        MD_FLOAT dh = jbb_xmin - ibb_xmax;
+                        MD_FLOAT dm = MAX(dl, dh);
+                        MD_FLOAT dm0 = MAX(dm, 0.0);
+                        MD_FLOAT d_bb_sq = dm0 * dm0;
+
+                        dl = ibb_ymin - jbb_ymax;
+                        dh = jbb_ymin - ibb_ymax;
+                        dm = MAX(dl, dh);
+                        dm0 = MAX(dm, 0.0);
+                        d_bb_sq += dm0 * dm0;
+
+                        dl = ibb_zmin - jbb_zmax;
+                        dh = jbb_zmin - ibb_zmax;
+                        dm = MAX(dl, dh);
+                        dm0 = MAX(dm, 0.0);
+                        d_bb_sq += dm0 * dm0;
+
                         if(d_bb_sq < cutneighsq) {
                             if(d_bb_sq < rbb_sq || atomDistanceInRange(atom, ci, cj, cutneighsq)) {
                                 neighptr[n++] = cj;
@@ -263,6 +288,10 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
                         m++;
                         if(m < c) {
                             cj = loc_bin[m];
+                            jbb_xmin = atom->clusters[cj].bbminx;
+                            jbb_xmax = atom->clusters[cj].bbmaxx;
+                            jbb_ymin = atom->clusters[cj].bbminy;
+                            jbb_ymax = atom->clusters[cj].bbmaxy;
                             jbb_zmin = atom->clusters[cj].bbminz;
                             jbb_zmax = atom->clusters[cj].bbmaxz;
                         }
@@ -583,6 +612,7 @@ void binClusters(Atom *atom) {
         for(int cg = 0; cg < atom->Nclusters_ghost && !resize; cg++) {
             const int ci = nlocal + cg;
             MD_FLOAT *cptr = cluster_pos_ptr(ci);
+            MD_FLOAT ci_minz = atom->clusters[ci].bbminz;
             MD_FLOAT xtmp, ytmp;
             int ix = -1, iy = -1;
 
@@ -598,6 +628,7 @@ void binClusters(Atom *atom) {
                 coord2bin2D(xtmp, ytmp, &nix, &niy);
                 nix = MAX(MIN(nix, mbinx - 1), 0);
                 niy = MAX(MIN(niy, mbiny - 1), 0);
+
                 // Always put the cluster on the bin of its innermost atom so
                 // the cluster should be closer to local clusters
                 if(atom->PBCx[cg] > 0 && ix > nix) { ix = nix; }
@@ -609,8 +640,30 @@ void binClusters(Atom *atom) {
             int bin = iy * mbinx + ix + 1;
             int c = cluster_bincount[bin];
             if(c < clusters_per_bin) {
+                // Insert the current ghost cluster in the bin keeping clusters
+                // sorted by z coordinate
+                int inserted = 0;
+                for(int i = 0; i < c; i++) {
+                    int last_cl = cluster_bins[bin * clusters_per_bin + i];
+                    if(atom->clusters[last_cl].bbminz > ci_minz) {
+                        cluster_bins[bin * clusters_per_bin + i] = ci;
+
+                        for(int j = i + 1; j <= c; j++) {
+                            int tmp = cluster_bins[bin * clusters_per_bin + j];
+                            cluster_bins[bin * clusters_per_bin + j] = last_cl;
+                            last_cl = tmp;
+                        }
+
+                        inserted = 1;
+                        break;
+                    }
+                }
+
+                if(!inserted) {
+                    cluster_bins[bin * clusters_per_bin + c] = ci;
+                }
+
                 atom->clusters[ci].bin = bin;
-                cluster_bins[bin * clusters_per_bin + c] = ci;
                 cluster_bincount[bin]++;
             } else {
                 resize = 1;
