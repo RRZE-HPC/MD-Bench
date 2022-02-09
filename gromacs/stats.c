@@ -14,6 +14,7 @@ void initStats(Stats *s) {
 void displayStatistics(Atom *atom, Parameter *param, Stats *stats, double *timer) {
 #ifdef COMPUTE_STATS
     const int MxN = CLUSTER_DIM_M * CLUSTER_DIM_N;
+    double avg_atoms_cluster = (double)(atom->Nlocal) / (double)(atom->Nclusters_local);
     double force_useful_volume = 1e-9 * ( (double)(atom->Nlocal * (param->ntimes + 1)) * (sizeof(MD_FLOAT) * 6 + sizeof(int)) +
                                           (double)(stats->num_neighs) * (sizeof(MD_FLOAT) * 3 + sizeof(int)) );
     double avg_neigh_atom = (stats->num_neighs * CLUSTER_DIM_N) / (double)(atom->Nlocal * (param->ntimes + 1));
@@ -24,6 +25,7 @@ void displayStatistics(Atom *atom, Parameter *param, Stats *stats, double *timer
 #endif
     printf("Statistics:\n");
     printf("\tVector width: %d, Processor frequency: %.4f GHz\n", VECTOR_WIDTH, param->proc_freq);
+    printf("\tAverage atoms per cluster: %.4f\n", avg_atoms_cluster);
     printf("\tAverage neighbors per atom: %.4f\n", avg_neigh_atom);
     printf("\tAverage neighbors per cluster: %.4f\n", avg_neigh_cluster);
     printf("\tAverage SIMD iterations per atom: %.4f\n", avg_simd);
