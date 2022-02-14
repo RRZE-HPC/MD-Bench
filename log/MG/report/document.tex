@@ -88,22 +88,22 @@ potential to model the potential energy among pairs of particles. The model is a
 \end{figure}
 
 In figure \ref{fig:lennardJonesPotential} the potential energy in relation to the distance between two atoms is depicted.
-The formula of the potential consists of 3 parameters, namely:
+The formula of the potential consists of three parameters, namely:
 \begin{itemize}
     \item $r$: distance between two interacting atoms
     \item $\epsilon$: dispersion energy
     \item $\sigma$: distance at which the particle-potential $V$ is zero
 \end{itemize}
 
-The graph shows that the Lennard-Jones potential is a simplified model but still describes the essential aspects of particle dynamics.
+The figure shows that the Lennard-Jones potential is a simplified model but still describes the essential aspects of particle dynamics.
 Furthermore, particles repel each other at close, attract at medium and have negligible interactions at large distances.
 
 \newpage
 
-\vspace*{6em}
+\vspace*{5.5em}
 MD-Bench is publicly available on GitHub via the URL \url{https://github.com/RRZE-HPC/MD-Bench}.\par
 The main focus of this report is to port the main functions in \textit{force.c} to the CUDA programming model and evaluate the performance
-with respect to the adapted code.\par\par
+with respect to the adapted code, which is available under the branch \textit{mucosim-cuda}.\par\par
 Calculating the Lennard-Jones potential, updating the atom forces as well as positions is done in a main-loop for each time step:
 \begin{figure}[!ht]
     \centering
@@ -125,6 +125,148 @@ Calculating the Lennard-Jones potential, updating the atom forces as well as pos
         \caption{Pseudocode of the main-loop of MD-Bench}
 \end{figure}
 
+\newpage
 
+\vspace*{5.5em}
+\section*{Testsystem}
+\fakesection{Testsystem}
+
+Most of the upcomming performance measurements were performed on:
+
+\begin{itemize}
+    \item Host/Clustername: tg060-tg06b (tinyGPU)
+    \item Cluster Info URL:\\
+    \url{https://hpc.fau.de/systems-services/systems-documentation-instructions/clusters/tinygpu-cluster/}
+    \item CPU type: 2x Intel Xeon Gold 6134 (“Skylake”) @ 3.2 GHz
+    \item GPU type: 4x NVIDIA RTX 2080 Ti (11 GB memory)
+    \item Memory: 96GB RAM
+\end{itemize}
+
+Towards the end there are more comparisons with the RTX2080 Ti and metric evaluations, these were performed on:
+
+\begin{itemize}
+    \item Host/Clustername: tg090-tg097 (tinyGPU)
+    \item Cluster Info URL:\\
+    \url{https://hpc.fau.de/systems-services/systems-documentation-instructions/clusters/tinygpu-cluster/}
+    \item CPU type: 2x AMD Rome 7662 @ 2.0 GHz
+    \item GPU type: 4x NVIDIA A100 SXM4/Nvlink (40GB memory)
+    \item Memory: 512GB RAM
+\end{itemize}
+
+To access either one of the nodes, one have to first connect to \lstinline{woody.rrze.fau.de} and then execute
+
+\begin{itemize}
+    \item srun.tinygpu -N 1 -n 1 --gres=gpu:rtx2080ti:1 --pty /bin/bash -l
+    \item srun.tinygpu -N 1 -n 1 --partition=a100 --gres=gpu:a100:1 --pty /bin/bash -l
+\end{itemize}
+
+respectively.
+
+\newpage
+
+\vspace*{5.5em}
+\section*{Software Environment}
+\fakesection{Software Environment}
+
+The software is compiled with
+
+\begin{itemize}
+    \item Cuda compilation tools, release 11.2, V11.2.152
+    \item Build cuda\_11.2.r11.2/compiler.29618528\_0
+\end{itemize}
+
+on the Operating System Ubuntu 20.04.3 LTS.
+
+\vspace*{1.5em}
+\section*{How to build software}
+\fakesection{How to build software}
+
+After connecting to \lstinline{woody.rrze.fau.de}, the following commands need to be executed to clone to repository
+
+\lstset{
+    literate={~} {$\sim$}{1}
+}
+
+\begin{figure}[!ht]
+    \begin{lstlisting}[language=bash]
+foo@bar:~$ git clone https://github.com/RRZE-HPC/MD-Bench/tree/mucosim_cuda
+foo@bar:~$ cd MD-Bench
+foo@bar:MD-Bench$ git checkout mucosim_cuda
+    \end{lstlisting}
+    \caption{Cloning the repository}
+\end{figure}
+
+Then, the \lstinline{TAG}-variable in \lstinline{config.mk} needs to be changed to \lstinline{TAG ?= NVCC} to
+use the Nvidia CUDA compiler. Compiler flags can be adjusted in \lstinline{include_NVCC.mk}.
+For compiling the code, one has to first connect to a GPU cluster, in this case, either \textit{tinyGPU.tg060-tg06b}
+or \textit{tinyGPU.tg090-tg097} and then execute:
+
+\begin{figure}[!ht]
+    \begin{lstlisting}[language=bash]
+foo@bar:MD-Bench$ module load likwid cuda
+foo@bar:MD-Bench$ make
+    \end{lstlisting}
+    \caption{Compiling the code}
+\end{figure}
+
+This should produce an executable \lstinline{MDBench-NVCC}.
+
+\newpage
+
+\vspace*{5.5em}
+\section*{Testcase description}
+\fakesection{Testcase description}
+
+This report will focus on the standard configuration of MD-Bench, this means \textit{131072} atoms and
+\textit{Lennard-Jones} potential for the force field.
+Only the amount of time steps is modified. For performance tests, 2000 time steps are used.
+Due to the high measurement time, this value has been reduced to 200 for the metric evaluations.\par
+
+\vspace*{1.5em}
+\section*{How to run software}
+\fakesection{How to run software}
+
+MD-Bench has the following command line parameters:
+
+\begin{figure}[!ht]
+    \begin{lstlisting}[language=bash]
+foo@bar:MD-Bench$ ./MDBench-NVCC -h
+MD Bench: A minimalistic re-implementation of miniMD
+----------------------------------------------------
+-f <string>:          force field (lj or eam), default lj
+-i <string>:          input file for EAM
+-n / --nsteps <int>:  set number of timesteps for simulation
+-nx/-ny/-nz <int>:    set linear dimension of systembox in x/y/z direction
+--freq <real>:        processor frequency (GHz)
+--vtk <string>:       VTK file for visualization
+----------------------------------------------------
+    \end{lstlisting}
+    \caption{MD-Bench command line parameters}
+\end{figure}
+
+\newpage
+
+\vspace*{5.5em}
+Running the previously generated executable should produce the following output
+
+\begin{figure}[!ht]
+    \begin{lstlisting}[language=bash]
+foo@bar:MD-Bench$ ./MDBench-NVCC
+step    temp            pressure
+0       1.440000e+00    1.215639e+00
+100     8.200895e-01    6.923143e-01
+200     7.961495e-01    6.721043e-01
+----------------------------------------------------
+Force field: lj
+Data layout for positions: AoS
+Using double precision floating point.
+----------------------------------------------------
+System: 131072 atoms 47265 ghost atoms, Steps: 200
+TOTAL 6.83s FORCE 0.73s NEIGH 3.07s REST 3.04s
+----------------------------------------------------
+Performance: 3.84 million atom updates per second
+    \end{lstlisting}
+    \caption{MD-Bench output}
+\end{figure}
 
 \end{document}
