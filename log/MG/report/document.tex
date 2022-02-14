@@ -269,4 +269,42 @@ Performance: 3.84 million atom updates per second
     \caption{MD-Bench output}
 \end{figure}
 
+\newpage
+
+\chapter{Scaling Runs}
+
+\section*{CUDA Programming Model}
+\fakesection{CUDA Programming Model}
+
+In order to scale the MD-Bench code efficiently on Nvidia GPUs, knowledge about the CUDA programming model
+is necessary.\par
+The basic execution size is a \textit{thread} which is executed by one CUDA core. Typical state-of-the art
+GPUs have 4352 (RTX 2080 Ti) and up to 6912 (A100) CUDA cores.\par
+Threads are grouped together as \textit{blocks}, these are then executed on Streaming Multiprocessors
+(\textit{SM}). Resources on an SM are allocated on a \textit{warp}-size level (multiple of 32 threads
+and up to 1024) and dispatched to execution units of the GPU.\par\par
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=12cm]{../presentation/Images/memory-hierarchy-in-gpus-2.png}
+    \caption{Memory hierarchy in GPUs}
+    \label{fig:GPUMemoryHierarchy}
+\end{figure}
+
+Figure \ref{fig:GPUMemoryHierarchy} shows the memory architectur of Nvidia GPUs such as the A100.
+It consists of
+\begin{itemize}
+    \item Registers: Owned by a thread, not visible to other threads
+    \item L1/Shared memory (SMEM): Each SM has a versatile memory which can be used as
+    L1 cache or as shared memory among all threads in a CUDA block. Size ranges from
+    64KB per SM (RTX 2080 Ti) to 192KB per SM (A100).
+    \item Read-only memory: Each SM has an instruction cache as well as other kinds of memory
+    which can be used for graphics applications.
+    \item L2 cache: Shared across all SMs which means that every CUDA block can access this memory.
+    Typical sizes are 5.5MB (RTX 2080 Ti) and up to 40MB (A100).
+\end{itemize}
+
+\bibliographystyle{acm}
+\bibliography{bibliography.bib}
+
 \end{document}
