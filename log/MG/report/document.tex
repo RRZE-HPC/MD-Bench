@@ -304,6 +304,42 @@ It consists of
     Typical sizes are 5.5MB (RTX 2080 Ti) and up to 40MB (A100).
 \end{itemize}
 
+\newpage
+
+\vspace*{5.5em}
+\section*{CUDA Kernels}
+\fakesection{CUDA Kernels}
+
+In order to scale performance with available CUDA cores, the code is parallelized on an atom-level.
+For 131072 atoms, this means there are 131072 threads and\\
+\lstinline{131702 / num_threads_per_block} number of blocks. Each thread is going to execute
+the same \textit{CUDA kernel} function in parallel on the GPU. In the context of MD-Bench,
+the kernel function calculates the 3D force for a single atom with respect to its neighbour-atoms.\par
+Before the execution can happen, memory has to be copied from host (CPU) to device (GPU). This means
+the neighbour list as well as position data for each atom and Lennard-Jones potential parameters.
+The kernel-code writes the resulting forces into GPU memory which is copied back to the host after
+calculation is finished in order to proceed with other functions that are still running on CPU.\par
+Inside the kernel function there is a precise way to tell which thread is currently executed.
+The CUDA programming model supplies the parameters\\
+\lstinline{blockIdx.x}, \lstinline{blockDim.x} and \lstinline{threadIdx.x}. A combination of these
+parameters can be used as an index into the atom- and force-arrays.
+
+\vspace*{1.5em}
+\section*{NVIDIA Tools}
+\fakesection{NVIDIA Tools}
+NVIDIA supplies a range of tools to evaluate performance of code running on the GPU. \lstinline{nvprof}
+is able to record memory transfers from and to the device. This helps with evaluating memory bottlenecks.\par
+Furthermore, \textit{NVIDIA Nsigh Compute} is available as a command line tool \lstinline{ncu} and for the
+desktop. It captures a vide variety of performance parameters, some of them will be displayed in the metric
+evaluation section.
+
+\newpage
+
+\vspace*{5.5em}
+\section*{GPU Baseline}
+\fakesection{GPU Baseline}
+
+
 \bibliographystyle{acm}
 \bibliography{bibliography.bib}
 
