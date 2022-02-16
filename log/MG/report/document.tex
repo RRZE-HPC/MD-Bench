@@ -6,7 +6,15 @@
 \usepackage{titlesec}
 \usepackage{graphicx}
 \usepackage{hyperref}
-\usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage{caption}
+\usepackage[table]{xcolor}
+
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+\usetikzlibrary{graphs,graphs.standard,quotes}
+\usetikzlibrary{patterns}
+\usepackage{pgfplotstable}
 
 \lstset{
   language=Python,
@@ -312,7 +320,8 @@ It consists of
 
 In order to scale performance with available CUDA cores, the code is parallelized on an atom-level.
 For 131072 atoms, this means there are 131072 threads and\\
-\lstinline{131702 / num_threads_per_block} number of blocks. Each thread is going to execute
+\lstinline{131702 / num_threads_per_block} number of blocks, where performance is evaluated for
+\lstinline{num_threads_per_block} $\in \{1, 2, 4, 8, 16, 32, 64\}$. Each thread is going to execute
 the same \textit{CUDA kernel} function in parallel on the GPU. In the context of MD-Bench,
 the kernel function calculates the 3D force for a single atom with respect to its neighbour-atoms.\par
 Before the execution can happen, memory has to be copied from host (CPU) to device (GPU). This means
@@ -338,6 +347,58 @@ evaluation section.
 \vspace*{5.5em}
 \section*{GPU Baseline}
 \fakesection{GPU Baseline}
+
+For an initial performance base line, the MD-Bench \lstinline{computeForce} function is refactored \textit{as-is}
+to support force calculation in parallel using a CUDA kernel.
+
+\begin{figure}[!ht]
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            xlabel=$\text{Threads per Block}$,
+            ylabel=$\text{Atom updates per s}$,
+            xmin=1, xmax=64,
+            ymin=0, ymax=8e6,
+            legend style={fill=none,draw=white}
+        ]
+
+        \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {../presentation_2/Resources/gpu_basic.csv};
+        \addlegendentry{Performance}
+        \end{axis}
+    \end{tikzpicture}
+    \caption{GPU baseline performance}
+\end{figure}
+
+Using \lstinline{nvprof --print-gpu-trace ./MDBench-NVCC} yields an overview of memory transfers between host and device:
+
+\begin{figure}[!ht]
+    \centering
+    \resizebox{\columnwidth}{!}{
+        \def\arraystretch{1.25}
+        \rowcolors{2}{gray!20}{white}
+        \begin{tabular}{ |c c c c c c| }
+            \hline
+            \textbf{Duration} & \textbf{Size} & \textbf{Throughput} & \textbf{SrcMemType} & \textbf{DstMemType} & \textbf{Name} \\
+            \hline
+            899.68us & 4.1199MB & 4.4719GB/s & Pageable & Device & [CUDA memcpy HtoD] \\
+            87.904us & 1.0000MB & 11.109GB/s & Pageable & Device & [CUDA memcpy HtoD] \\
+            87.616us & 1.0000MB & 11.146GB/s & Pageable & Device & [CUDA memcpy HtoD] \\
+            87.808us & 1.0000MB & 11.122GB/s & Pageable & Device & [CUDA memcpy HtoD] \\
+            60.640us & 703.13KB & 11.058GB/s & Pageable & Device & [CUDA memcpy HtoD] \\
+            896ns & 128B & 136.24MB/s & Pageable & Device & [CUDA memcpy HtoD] \\
+            864ns & 128B & 141.29MB/s & Pageable & Device & [CUDA memcpy HtoD] \\
+            864ns & 128B & 141.29MB/s & Pageable & Device & [CUDA memcpy HtoD] \\
+            11.534ms & 50.000MB & 4.2335GB/s & Pageable & Device & [CUDA memcpy HtoD] \\
+            45.248us & 512.00KB & 10.791GB/s & Pageable & Device & [CUDA memcpy HtoD] \\
+            19.917ms & - & - & - & - & calcforce() [132] \\
+            80.896us & 1.0000MB & 12.072GB/s & Device & Pageable & [CUDA memcpy DtoH] \\
+            80.736us & 1.0000MB & 12.096GB/s & Device & Pageable & [CUDA memcpy DtoH] \\
+            80.480us & 1.0000MB & 12.134GB/s & Device & Pageable & [CUDA memcpy DtoH] \\
+            \hline
+        \end{tabular}
+    }
+    \captionof{table}{Memory transfers for GPU baseline}
+\end{figure}
 
 
 \bibliographystyle{acm}
