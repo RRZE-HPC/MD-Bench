@@ -150,7 +150,7 @@ Most of the upcomming performance measurements were performed on:
     \item Memory: 96GB RAM
 \end{itemize}
 
-Towards the end there are more comparisons with the RTX2080 Ti and metric evaluations, these were performed on:
+Towards the end there are metric evaluations which were performed on:
 
 \begin{itemize}
     \item Host/Clustername: tg090-tg097 (tinyGPU)
@@ -227,8 +227,9 @@ This should produce an executable \lstinline{MDBench-NVCC}.
 
 This report will focus on the standard configuration of MD-Bench, this means \textit{131072} atoms and
 \textit{Lennard-Jones} potential for the force field.
-Only the amount of time steps is modified. For performance tests, 2000 time steps are used.
-Due to the high measurement time, this value has been reduced to 200 for the metric evaluations.\par
+Only the amount of time steps is modified. For performance tests, 2000 time steps on a RTX 2080 Ti are used.
+Due to the high measurement time, this value has been reduced to 200 for the metric evaluations, which are
+done on an A100.\par
 
 \vspace*{1.5em}
 \section*{How to run software}
@@ -348,7 +349,7 @@ evaluation section.
 \section*{GPU Baseline}
 \fakesection{GPU Baseline}
 
-For an initial performance base line, the MD-Bench \lstinline{computeForce} function is refactored \textit{as-is}
+For an initial performance baseline, the MD-Bench \lstinline{computeForce} function is refactored \textit{as-is}
 to support force calculation in parallel using a CUDA kernel.
 
 \begin{figure}[!ht]
@@ -359,47 +360,147 @@ to support force calculation in parallel using a CUDA kernel.
             ylabel=$\text{Atom updates per s}$,
             xmin=1, xmax=64,
             ymin=0, ymax=8e6,
-            legend style={fill=none,draw=white}
+            legend style={fill=none,draw=white},
+            ylabel near ticks
         ]
 
         \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {../presentation_2/Resources/gpu_basic.csv};
         \addlegendentry{Performance}
         \end{axis}
     \end{tikzpicture}
-    \caption{GPU baseline performance}
+    \caption{GPU baseline performance, RTX 2080 Ti}
+    \label{fig:GPUBaseline}
 \end{figure}
 
-Using \lstinline{nvprof --print-gpu-trace ./MDBench-NVCC} yields an overview of memory transfers between host and device:
+Using \lstinline[keywordstyle={}]{nvprof --print-gpu-trace ./MDBench-NVCC} yields an overview of memory transfers between host and device:
 
 \begin{figure}[!ht]
     \centering
     \resizebox{\columnwidth}{!}{
         \def\arraystretch{1.25}
         \rowcolors{2}{gray!20}{white}
-        \begin{tabular}{ |c c c c c c| }
+        \begin{tabular}{ |c c c c c c c| }
             \hline
-            \textbf{Duration} & \textbf{Size} & \textbf{Throughput} & \textbf{SrcMemType} & \textbf{DstMemType} & \textbf{Name} \\
+            \textbf{Duration} & \textbf{Size} & \textbf{Throughput} & \textbf{SrcMemType} & \textbf{DstMemType} & \textbf{Name} & \textbf{Type} \\
             \hline
-            899.68us & 4.1199MB & 4.4719GB/s & Pageable & Device & [CUDA memcpy HtoD] \\
-            87.904us & 1.0000MB & 11.109GB/s & Pageable & Device & [CUDA memcpy HtoD] \\
-            87.616us & 1.0000MB & 11.146GB/s & Pageable & Device & [CUDA memcpy HtoD] \\
-            87.808us & 1.0000MB & 11.122GB/s & Pageable & Device & [CUDA memcpy HtoD] \\
-            60.640us & 703.13KB & 11.058GB/s & Pageable & Device & [CUDA memcpy HtoD] \\
-            896ns & 128B & 136.24MB/s & Pageable & Device & [CUDA memcpy HtoD] \\
-            864ns & 128B & 141.29MB/s & Pageable & Device & [CUDA memcpy HtoD] \\
-            864ns & 128B & 141.29MB/s & Pageable & Device & [CUDA memcpy HtoD] \\
-            11.534ms & 50.000MB & 4.2335GB/s & Pageable & Device & [CUDA memcpy HtoD] \\
-            45.248us & 512.00KB & 10.791GB/s & Pageable & Device & [CUDA memcpy HtoD] \\
-            19.917ms & - & - & - & - & calcforce() [132] \\
-            80.896us & 1.0000MB & 12.072GB/s & Device & Pageable & [CUDA memcpy DtoH] \\
-            80.736us & 1.0000MB & 12.096GB/s & Device & Pageable & [CUDA memcpy DtoH] \\
-            80.480us & 1.0000MB & 12.134GB/s & Device & Pageable & [CUDA memcpy DtoH] \\
+            899.68us & 4.1199MB & 4.4719GB/s & Pageable & Device & [CUDA memcpy HtoD] & atom.x \\
+            87.904us & 1.0000MB & 11.109GB/s & Pageable & Device & [CUDA memcpy HtoD] & atom.fx \\
+            87.616us & 1.0000MB & 11.146GB/s & Pageable & Device & [CUDA memcpy HtoD] & atom.fy\\
+            87.808us & 1.0000MB & 11.122GB/s & Pageable & Device & [CUDA memcpy HtoD] & atom.fz\\
+            60.640us & 703.13KB & 11.058GB/s & Pageable & Device & [CUDA memcpy HtoD] & atom.type\\
+            896ns & 128B & 136.24MB/s & Pageable & Device & [CUDA memcpy HtoD] & LJ $\epsilon$\\
+            864ns & 128B & 141.29MB/s & Pageable & Device & [CUDA memcpy HtoD] & LJ $\sigma$\\
+            864ns & 128B & 141.29MB/s & Pageable & Device & [CUDA memcpy HtoD] & threshold\\
+            11.534ms & 50.000MB & 4.2335GB/s & Pageable & Device & [CUDA memcpy HtoD] & neighbour \\
+            45.248us & 512.00KB & 10.791GB/s & Pageable & Device & [CUDA memcpy HtoD] & numneigh\\
+            19.917ms & - & - & - & - & calcforce() [132] & -\\
+            80.896us & 1.0000MB & 12.072GB/s & Device & Pageable & [CUDA memcpy DtoH] & atom.fx\\
+            80.736us & 1.0000MB & 12.096GB/s & Device & Pageable & [CUDA memcpy DtoH] & atom.fy\\
+            80.480us & 1.0000MB & 12.134GB/s & Device & Pageable & [CUDA memcpy DtoH] & atom.fz\\
             \hline
         \end{tabular}
     }
     \captionof{table}{Memory transfers for GPU baseline}
+    \label{tbl:MemoryTransferGPUBaseline}
 \end{figure}
 
+\newpage
+
+\vspace*{5.5em}
+
+Table \ref{tbl:MemoryTransferGPUBaseline} shows that the performance depicted in figure \ref{fig:GPUBaseline} is severely limited due to memory bottlenecks.
+Because of that, the main goal is to remove as many memory transfers as possible.
+
+\section*{Improvement I: Pinnend memory}
+\fakesection{Improvement I: Pinnend memory}
+
+As a first performance improvement, memory allocations on the host are changed from regular \lstinline{malloc} and \lstinline{free} to their respective CUDA versions
+\lstinline{cudaMallocHost} and \lstinline{cudaFreeHost}.
+
+
+\begin{figure}[!ht]
+    \begin{center}
+        \begin{minipage}{.5\textwidth}
+            \begin{tikzpicture}
+                \begin{axis}[
+                    xlabel=$\text{Threads per Block}$,
+                    ylabel=$\text{Atom updates per s}$,
+                    xmin=1, xmax=64,
+                    ymin=0, ymax=8e6,
+                    legend style={fill=none,draw=white},
+                    ylabel near ticks
+                ]
+
+                \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_except_neighbor.csv};
+                \addlegendentry{Pinnen Atom Memory}
+                \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {../presentation_2/Resources/gpu_basic.csv};
+                \addlegendentry{Baseline}
+                \end{axis}
+            \end{tikzpicture}
+        \end{minipage}
+        \begin{minipage}{.5\textwidth}
+            \begin{tikzpicture}
+                \begin{axis}[
+                    xlabel=$\text{Threads per Block}$,
+                    ylabel=$\text{Atom updates per s}$,
+                    xmin=1, xmax=64,
+                    ymin=0, ymax=8e6,
+                    legend style={fill=none,draw=white,cells={align=center}},
+                    ylabel near ticks
+                ]
+
+                \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything.csv};
+                \addlegendentry{Pinnend Atom + Neighbour\\Memory}
+                \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_except_neighbor.csv};
+                \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {../presentation_2/Resources/gpu_basic.csv};
+                \addlegendentry{Baseline}
+                \end{axis}
+            \end{tikzpicture}
+        \end{minipage}
+    \end{center}
+    \caption{Improvement I: Pinnend memory}
+    \label{fig:ImprovementOne}
+\end{figure}
+
+\lstinline{cudaMallocHost} allocates memory on the host that is page-locked an accessible to the device. This means, this memory block is not available for paging and can therefore
+achieve higher data rates and less access delay.
+
+\newpage
+
+\vspace*{5.5em}
+As shown in figure \ref{fig:ImprovementOne}, this yields a performance improvement of 23\% if all memory is allocated this way, meaning atom as well as neighbour list.
+
+\begin{figure}[!ht]
+    \centering
+    \resizebox{\columnwidth}{!}{
+        \def\arraystretch{1.25}
+        \rowcolors{2}{gray!20}{white}
+        \begin{tabular}{ |c c c c c c c| }
+            \hline
+            \textbf{Duration} & \textbf{Size} & \textbf{Throughput} & \textbf{SrcMemType} & \textbf{DstMemType} & \textbf{Name} & \textbf{Type} \\
+            \hline
+            355.54us & 4.1199MB & 11.316GB/s & Pinned & Device & [CUDA memcpy HtoD] & atom.x\\
+            88.069us & 1.0000MB & 11.089GB/s & Pinned & Device & [CUDA memcpy HtoD] & atom.fx\\
+            87.972us & 1.0000MB & 11.101GB/s & Pinned & Device & [CUDA memcpy HtoD] & atom.fy\\
+            87.844us & 1.0000MB & 11.117GB/s & Pinned & Device & [CUDA memcpy HtoD] & atom.fz\\
+            61.187us & 703.13KB & 10.959GB/s & Pinned & Device & [CUDA memcpy HtoD] & atom.type\\
+            832ns & 128B & 146.72MB/s & Pinned & Device & [CUDA memcpy HtoD] & LJ $\epsilon$\\
+            833ns & 128B & 146.54MB/s & Pinned & Device & [CUDA memcpy HtoD] & LJ $\sigma$\\
+            832ns & 128B & 146.72MB/s & Pinned & Device & [CUDA memcpy HtoD] & threshold\\
+            4.2854ms & 50.000MB & 11.394GB/s & Pinned & Device & [CUDA memcpy HtoD] & neighbour\\
+            45.443us & 512.00KB & 10.745GB/s & Pinned & Device & [CUDA memcpy HtoD] & numneigh\\
+            19.880ms & - & - & - & - & calcforce() [294] & -\\
+            81.285us & 1.0000MB & 12.014GB/s & Device & Pinned & [CUDA memcpy DtoH] & atom.fx\\
+            80.932us & 1.0000MB & 12.066GB/s & Device & Pinned & [CUDA memcpy DtoH] & atom.fy\\
+            80.868us & 1.0000MB & 12.076GB/s & Device & Pinned & [CUDA memcpy DtoH] & atom.fz\\
+            \hline
+        \end{tabular}
+    }
+    \captionof{table}{Memory transfers for Improvement I}
+    \label{tbl:MemoryTransferImprovementI}
+\end{figure}
+
+Table \ref{tbl:MemoryTransferImprovementI} clearly shows the improved memory throughput by pinnend memory for the atom position, neighbour list and Lennard-Jones parameters.
 
 \bibliographystyle{acm}
 \bibliography{bibliography.bib}
