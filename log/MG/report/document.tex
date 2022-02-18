@@ -383,7 +383,7 @@ Using \lstinline[keywordstyle={}]{nvprof --print-gpu-trace ./MDBench-NVCC} yield
             \hline
             \textbf{Duration} & \textbf{Size} & \textbf{Throughput} & \textbf{SrcMemType} & \textbf{DstMemType} & \textbf{Name} & \textbf{Type} \\
             \hline
-            899.68us & 4.1199MB & 4.4719GB/s & Pageable & Device & [CUDA memcpy HtoD] & atom.x \\
+            899.68us & 4.1199MB & 4.4719GB/s & Pageable & Device & [CUDA memcpy HtoD] & atom.x/y/z \\
             87.904us & 1.0000MB & 11.109GB/s & Pageable & Device & [CUDA memcpy HtoD] & atom.fx \\
             87.616us & 1.0000MB & 11.146GB/s & Pageable & Device & [CUDA memcpy HtoD] & atom.fy\\
             87.808us & 1.0000MB & 11.122GB/s & Pageable & Device & [CUDA memcpy HtoD] & atom.fz\\
@@ -468,7 +468,7 @@ achieve higher data rates and less access delay.
 \newpage
 
 \vspace*{5.5em}
-As shown in figure \ref{fig:ImprovementOne}, this yields a performance improvement of 23\% if all memory is allocated this way, meaning atom as well as neighbour list.
+As shown in figure \ref{fig:ImprovementOne}, this yields a performance improvement of 23\% compared to baseline if all memory is allocated this way, meaning atom as well as neighbour list.
 
 \begin{figure}[!ht]
     \centering
@@ -479,7 +479,7 @@ As shown in figure \ref{fig:ImprovementOne}, this yields a performance improveme
             \hline
             \textbf{Duration} & \textbf{Size} & \textbf{Throughput} & \textbf{SrcMemType} & \textbf{DstMemType} & \textbf{Name} & \textbf{Type} \\
             \hline
-            355.54us & 4.1199MB & 11.316GB/s & Pinned & Device & [CUDA memcpy HtoD] & atom.x\\
+            355.54us & 4.1199MB & 11.316GB/s & Pinned & Device & [CUDA memcpy HtoD] & atom.x/y/z\\
             88.069us & 1.0000MB & 11.089GB/s & Pinned & Device & [CUDA memcpy HtoD] & atom.fx\\
             87.972us & 1.0000MB & 11.101GB/s & Pinned & Device & [CUDA memcpy HtoD] & atom.fy\\
             87.844us & 1.0000MB & 11.117GB/s & Pinned & Device & [CUDA memcpy HtoD] & atom.fz\\
@@ -496,11 +496,140 @@ As shown in figure \ref{fig:ImprovementOne}, this yields a performance improveme
             \hline
         \end{tabular}
     }
-    \captionof{table}{Memory transfers for Improvement I}
+    \captionof{table}{Memory transfers after Improvement I}
     \label{tbl:MemoryTransferImprovementI}
 \end{figure}
 
-Table \ref{tbl:MemoryTransferImprovementI} clearly shows the improved memory throughput by pinnend memory for the atom position, neighbour list and Lennard-Jones parameters.
+Table \ref{tbl:MemoryTransferImprovementI} clearly shows the improved memory throughput with pinnend memory for the atom position, neighbour list and Lennard-Jones parameters.
+
+\newpage
+
+\vspace*{5.5em}
+\section*{Improvement II: Allocate and copy memory only once}
+\fakesection{Improvement II: Allocate and copy memory only once}
+
+Instead of allocating memory in every call of \lstinline{computeForce}, memory on the GPU is allocated only once during MD-Bench
+initialization.
+
+\begin{figure}[!ht]
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            xlabel=$\text{Threads per Block}$,
+            ylabel=$\text{Atom updates per s}$,
+            xmin=1, xmax=64,
+            ymin=0, ymax=8e6,
+            legend style={fill=none,draw=white,cells={align=center}},
+            ylabel near ticks
+        ]
+
+        \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once.csv};
+        \addlegendentry{Alloc memory\\only once}
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_except_neighbor.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {../presentation_2/Resources/gpu_basic.csv};
+        \addlegendentry{Baseline}
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Improvement II: Allocate memory only once}
+    \label{fig:ImprovementIIAllocMemOnlyOnce}
+\end{figure}
+
+Furthermore, the force arrays where the computed values for each atom will be stored after the GPU kernel is finished executing can
+be zeroed directly on the GPU instead of copying a zeroed array from host to device. This will replace three memory transfers
+which three \lstinline{memset}.
+
+\begin{figure}[!ht]
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            xlabel=$\text{Threads per Block}$,
+            ylabel=$\text{Atom updates per s}$,
+            xmin=1, xmax=64,
+            ymin=0, ymax=8e6,
+            legend style={fill=none,draw=white,cells={align=center}},
+            ylabel near ticks
+        ]
+
+        \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces.csv};
+        \addlegendentry{Zero force array\\on GPU}
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_except_neighbor.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {../presentation_2/Resources/gpu_basic.csv};
+        \addlegendentry{Baseline}
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Improvement II: Zero force array on GPU}
+    \label{fig:ImprovementIIZeroForceArrayOnGPU}
+\end{figure}
+
+\newpage
+
+\vspace*{5.5em}
+
+The Lennard-Jones parameters and the force cutoff radius only need to be copied once to GPU because they don't change throughout the
+calculation. This means, memory transfers can be reduced by three and performance potentially improved.
+
+\begin{figure}[!ht]
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            xlabel=$\text{Threads per Block}$,
+            ylabel=$\text{Atom updates per s}$,
+            xmin=1, xmax=64,
+            ymin=0, ymax=8e6,
+            legend style={fill=none,draw=white,cells={align=center}},
+            ylabel near ticks
+        ]
+
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_except_neighbor.csv};
+
+        \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy.csv};
+        \addlegendentry{Copy LJ-Parameter\\only once}
+
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {../presentation_2/Resources/gpu_basic.csv};
+        \addlegendentry{Baseline}
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Improvement II: Copy LJ-Parameters only once}
+    \label{fig:ImprovementIICopyParamsOnlyOnce}
+\end{figure}
+
+\begin{figure}[!ht]
+    \centering
+    \resizebox{\columnwidth}{!}{
+        \def\arraystretch{1.25}
+        \rowcolors{2}{gray!20}{white}
+        \begin{tabular}{ |c c c c c c c| }
+            \hline
+            \textbf{Duration} & \textbf{Size} & \textbf{Throughput} & \textbf{SrcMemType} & \textbf{DstMemType} & \textbf{Name} & \textbf{Type} \\
+            \hline
+            354.67us & 4.1199MB & 11.344GB/s & Pinned & Device & [CUDA memcpy HtoD] & atom.x/y/z \\
+            3.2640us & 1.0000MB & 299.19GB/s & Device & - & [CUDA memset] & atom.fx \\
+            3.2650us & 1.0000MB & 299.10GB/s & Device & - & [CUDA memset] & atom.fy \\
+            2.8800us & 1.0000MB & 339.08GB/s & Device & - & [CUDA memset] & atom.fz \\
+            4.2804ms & 50.000MB & 11.407GB/s & Pinned & Device & [CUDA memcpy HtoD] & neighbour \\
+            45.058us & 512.00KB & 10.837GB/s & Pinned & Device & [CUDA memcpy HtoD] & numneigh \\
+            1.5061ms & - & - & - & - & calcforce() [308] & -  \\
+            80.771us & 1.0000MB & 12.091GB/s & Device & Pinned & [CUDA memcpy DtoH] & atom.fx \\
+            80.899us & 1.0000MB & 12.071GB/s & Device & Pinned & [CUDA memcpy DtoH] & atom.fy \\
+            80.803us & 1.0000MB & 12.086GB/s & Device & Pinned & [CUDA memcpy DtoH] & atom.fz \\
+            \hline
+        \end{tabular}
+    }
+    \captionof{table}{Memory transfers after Improvement II}
+    \label{tbl:MemoryTransferImprovementII}
+\end{figure}
+
+Figures \ref{fig:ImprovementIIAllocMemOnlyOnce} and \ref{fig:ImprovementIIZeroForceArrayOnGPU} show improved performance
+because they avoid large memory transfers as depcited in table \ref{tbl:MemoryTransferImprovementII}. However, figure \ref{fig:ImprovementIICopyParamsOnlyOnce} doesn't show a significant
+improvement over figure \ref{fig:ImprovementIIZeroForceArrayOnGPU} which is due to the small size of the Lennard-Jones
+parameter arrays.\par
+In general, performance improved by around 10\% in this section.
 
 \bibliographystyle{acm}
 \bibliography{bibliography.bib}
