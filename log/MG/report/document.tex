@@ -537,7 +537,7 @@ initialization.
 
 Furthermore, the force arrays where the computed values for each atom will be stored after the GPU kernel is finished executing can
 be zeroed directly on the GPU instead of copying a zeroed array from host to device. This will replace three memory transfers
-which three \lstinline{memset}.
+with three \lstinline{memset}.
 
 \begin{figure}[!ht]
     \centering
@@ -626,10 +626,76 @@ calculation. This means, memory transfers can be reduced by three and performanc
 \end{figure}
 
 Figures \ref{fig:ImprovementIIAllocMemOnlyOnce} and \ref{fig:ImprovementIIZeroForceArrayOnGPU} show improved performance
-because they avoid large memory transfers as depcited in table \ref{tbl:MemoryTransferImprovementII}. However, figure \ref{fig:ImprovementIICopyParamsOnlyOnce} doesn't show a significant
-improvement over figure \ref{fig:ImprovementIIZeroForceArrayOnGPU} which is due to the small size of the Lennard-Jones
-parameter arrays.\par
+because they avoid large memory transfers as depicted in table \ref{tbl:MemoryTransferImprovementII}. However, figure
+\ref{fig:ImprovementIICopyParamsOnlyOnce} doesn't show a significant improvement over figure
+\ref{fig:ImprovementIIZeroForceArrayOnGPU} which is due to the small size of the Lennard-Jones parameters.\par
 In general, performance improved by around 10\% in this section.
+
+\newpage
+
+\vspace*{5.5em}
+\section*{Improvement III: Reduce neighbour list copies}
+\fakesection{Improvement III: Reduce neighbour list copies}
+
+Every 20th time step, the neighbour list is updated because the atoms have moved away from their original position due to changes in force and velocity.
+This means, it is not necessary to copy neighbour related data in every time step such that 19 out of 20 memory transfers can be safed.
+
+\begin{figure}[!ht]
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            xlabel=$\text{Threads per Block}$,
+            ylabel=$\text{Atom updates per s}$,
+            xmin=1, xmax=64,
+            ymin=0, ymax=8e6,
+            legend style={fill=none,draw=white,cells={align=center}},
+            ylabel near ticks
+        ]
+
+
+        \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy_neighbour_aware.csv};
+        \addlegendentry{Reduce neighbour copies}
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_except_neighbor.csv};
+
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {../presentation_2/Resources/gpu_basic.csv};
+        \addlegendentry{Baseline}
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Improvement III: Reduce neighbour list copies}
+    \label{fig:ImprovementIIINeighbourListCopies}
+\end{figure}
+
+Figure \ref{fig:ImprovementIIINeighbourListCopies} shows quite a large improvement in performance of 21\% compared to the previous baseline.
+
+\begin{figure}[!ht]
+    \centering
+    \resizebox{\columnwidth}{!}{
+        \def\arraystretch{1.25}
+        \rowcolors{2}{gray!20}{white}
+        \begin{tabular}{ |c c c c c c c| }
+            \hline
+            \textbf{Duration} & \textbf{Size} & \textbf{Throughput} & \textbf{SrcMemType} & \textbf{DstMemType} & \textbf{Name} & \textbf{Type} \\
+            \hline
+            354.67us & 4.1199MB & 11.344GB/s & Pinned & Device & [CUDA memcpy HtoD] & atom.x/y/z \\
+            3.3600us & 1.0000MB & 290.64GB/s & Device & - & [CUDA memset] & atom.fx \\
+            3.2960us & 1.0000MB & 296.29GB/s & Device & - & [CUDA memset] & atom.fy \\
+            2.9760us & 1.0000MB & 328.15GB/s & Device & - & [CUDA memset] & atom.fz \\
+            1.4924ms & - & - & - & - & calcforce() [306] & - \\
+            80.740us & 1.0000MB & 12.095GB/s & Device & Pinned & [CUDA memcpy DtoH] & atom.fx \\
+            80.996us & 1.0000MB & 12.057GB/s & Device & Pinned & [CUDA memcpy DtoH] & atom.fy \\
+            80.836us & 1.0000MB & 12.081GB/s & Device & Pinned & [CUDA memcpy DtoH] & atom.fz \\
+            \hline
+        \end{tabular}
+    }
+    \captionof{table}{Memory transfers after Improvement III}
+    \label{tbl:MemoryTransferImprovementIII}
+\end{figure}
+
+As expected, table \ref{tbl:MemoryTransferImprovementIII} shows that 50.5 MB of memory transfers were safed 19/20 times.
 
 \bibliographystyle{acm}
 \bibliography{bibliography.bib}
