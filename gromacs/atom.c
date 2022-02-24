@@ -267,7 +267,6 @@ int readAtom_pdb(Atom* atom, Parameter* param) {
     fprintf(stdout, "Read %d atoms from %s\n", read_atoms, param->input_file);
     fclose(fp);
     return read_atoms;
-
 }
 
 int readAtom_dmp(Atom* atom, Parameter* param) {
