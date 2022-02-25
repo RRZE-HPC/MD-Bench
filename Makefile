@@ -1,6 +1,6 @@
 #CONFIGURE BUILD SYSTEM
 TARGET	   = MDBench-$(TAG)-$(OPT_SCHEME)
-BUILD_DIR  = ./$(TAG)
+BUILD_DIR  = ./$(TAG)-$(OPT_SCHEME)
 SRC_DIR    = ./$(OPT_SCHEME)
 ASM_DIR    = ./asm
 MAKE_DIR   = ./
