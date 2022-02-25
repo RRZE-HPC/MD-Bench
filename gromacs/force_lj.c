@@ -83,6 +83,9 @@ double computeForceLJ_ref(Parameter *param, Atom *atom, Neighbor *neighbor, Stat
                             fix += delx * force;
                             fiy += dely * force;
                             fiz += delz * force;
+                            addStat(stats->atoms_within_cutoff, 1);
+                        } else {
+                            addStat(stats->atoms_outside_cutoff, 1);
                         }
                     }
                 }
@@ -93,8 +96,9 @@ double computeForceLJ_ref(Parameter *param, Atom *atom, Neighbor *neighbor, Stat
             }
         }
 
+        addStat(stats->calculated_forces, 1);
         addStat(stats->num_neighs, numneighs);
-        addStat(stats->force_iters, (numneighs + VECTOR_WIDTH - 1) / VECTOR_WIDTH);
+        addStat(stats->force_iters, (long long int)((double)numneighs * CLUSTER_DIM_M / CLUSTER_DIM_N));
     }
 
     LIKWID_MARKER_STOP("force");
@@ -250,7 +254,7 @@ double computeForceLJ_4xn(Parameter *param, Atom *atom, Neighbor *neighbor, Stat
 
         addStat(stats->calculated_forces, 1);
         addStat(stats->num_neighs, numneighs);
-        addStat(stats->force_iters, numneighs / 2);
+        addStat(stats->force_iters, (long long int)((double)numneighs * CLUSTER_DIM_M / CLUSTER_DIM_N));
     }
 
     LIKWID_MARKER_STOP("force");

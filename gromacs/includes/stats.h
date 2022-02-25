@@ -29,6 +29,8 @@ typedef struct {
     long long int calculated_forces;
     long long int num_neighs;
     long long int force_iters;
+    long long int atoms_within_cutoff;
+    long long int atoms_outside_cutoff;
 } Stats;
 
 void initStats(Stats *s);
