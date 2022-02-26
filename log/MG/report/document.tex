@@ -232,7 +232,7 @@ This should produce an executable \lstinline{MDBench-NVCC}.
 \section*{Testcase description}
 \fakesection{Testcase description}
 
-This report will focus on the standard configuration of MD-Bench, this means \textit{131072} atoms and
+This report will focus on the standard configuration of MD-Bench, this means \textit{131072} atoms, double precision and
 \textit{Lennard-Jones} potential for the force field.
 Only the amount of time steps is modified. For performance tests, 2000 time steps on a RTX 2080 Ti are used.
 Due to the high measurement time, this value has been reduced to 200 for the metric evaluations, which are
@@ -947,6 +947,120 @@ Because the force data is now completely running inside the GPU, the backcopy fr
 This results in a reduced number of memory transfers as depicted in table \ref{tbl:MemoryTransferImprovementV}.\par
 Overall, performance as shown in tables \ref{fig:ImprovementVForceIntegrateOnGPU}, \ref{fig:ImprovementVForceIntegrateNeighbourAwareOnGPU}
 and \ref{fig:ImprovementVForceIntegrateNoBackcopyOnGPU} was improved by 11\%.
+
+\newpage
+\vspace*{5.5em}
+\section*{Improvement VI: Neighbour list memory layout}
+\fakesection{Improvement VI: Neighbour list memory layout}
+
+Instead of putting all the neighbours of the first atom adjacent to all the neighbours of the 2nd atom and so on in memory, the layout can be changed in such a way
+that all the first neighbours are next to all the 2nd neighbours and so on.
+
+\begin{figure}[!ht]
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            xlabel=$\text{Threads per Block}$,
+            ylabel=$\text{Atom updates per s}$,
+            xmin=1, xmax=64,
+            ymin=0, ymax=8e6,
+            legend style={legend pos=south east,fill=none,draw=white,cells={align=center}},
+            ylabel near ticks
+        ]
+
+        \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy_neighbour_aware_force_AOS_integrate_cuda_neighbour_aware_integrate_no_foce_backcopy_neighbour_aos.csv};
+        \addlegendentry{Neighbour list\\changed memory layout}
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy_neighbour_aware_force_AOS_integrate_cuda_neighbour_aware_integrate_no_force_backcopy.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy_neighbour_aware_force_AOS_integrate_cuda_neighbour_aware_integrate.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy_neighbour_aware_force_AOS_integrate_cuda.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy_neighbour_aware_force_AOS.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy_neighbour_aware.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_except_neighbor.csv};
+
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {../presentation_2/Resources/gpu_basic.csv};
+        \addlegendentry{Baseline}
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Improvement VI: Neighbour list with changed memory layout}
+    \label{fig:ImprovementVINeighbourListMemoryLayout}
+\end{figure}
+
+As depicted in figure \ref{fig:ImprovementVINeighbourListMemoryLayout} this only results in a very minor performance improvement of at most 2\%.
+This could be caused by the application being severely limited by memory transfers. More details will be evaluated in the next chapter.
+
+\newpage
+\vspace*{5.5em}
+\section*{Final performance comparisons}
+\fakesection{Final performance comparisons}
+
+The first comparison is about the current implementation of MD-Bench from improvement VI between an RTX 2080 Ti and A100.
+
+\begin{figure}[!ht]
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            xlabel=$\text{Threads per Block}$,
+            ylabel=$\text{Atom updates per s}$,
+            xmin=1, xmax=64,
+            ymin=0, ymax=8e6,
+            legend style={legend pos=south east,fill=none,draw=white,cells={align=center}},
+            ylabel near ticks
+        ]
+
+        \addplot [orange,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy_neighbour_aware_force_AOS_integrate_cuda_neighbour_aware_integrate_no_foce_backcopy_neighbour_aos_a100_SinglePrecision.csv};
+        \addlegendentry{A100 (SP)}
+        \addplot [cyan,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy_neighbour_aware_force_AOS_integrate_cuda_neighbour_aware_integrate_no_foce_backcopy_neighbour_aos_a100.csv};
+        \addlegendentry{A100 (DP)}
+        \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy_neighbour_aware_force_AOS_integrate_cuda_neighbour_aware_integrate_no_foce_backcopy_neighbour_aos.csv};
+        \addlegendentry{RTX 2080 Ti (DP)}
+
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {../presentation_2/Resources/gpu_basic.csv};
+        \addlegendentry{RTX 2080 Ti Baseline}
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Comparison RTX 2080 Ti vs A100}
+    \label{fig:ComparisonRTX2080vsA100}
+\end{figure}
+
+As shown in figure \ref{fig:ComparisonRTX2080vsA100}, the A100 is memory limited much earlier than the RTX 2080 Ti which is due to the vastly higher double precision performance (10 TFLOPs vs 0.40 TFLOPs).
+This is also why the single precision performance is only marginally higher. In general, the A100 is about 8\% faster in this comparison.
+
+\newpage
+\vspace*{5.5em}
+
+The next comparison is between the CPU implementation of miniMD running on an Intel Xeon Platinum 8360Y of FAU's Fritz cluster and the current implementation of MD-Bench on an A100.
+
+\begin{figure}[!ht]
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            xlabel=$\text{Threads (per Block)}$,
+            ylabel=$\text{Atom updates per s}$,
+            xmin=1, xmax=64,
+            ymin=1e6, ymax=1e10,
+            legend style={legend pos=north west,fill=none,draw=white,cells={align=center},font=\small},
+            ylabel near ticks,
+            ymode=log
+        ]
+
+        \addplot [cyan,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {../presentation_2/Resources/CPU/Metrics/miniMD.csv};
+        \addlegendentry{miniMD @ Xeon Platinum 8360Y}
+        \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy_neighbour_aware_force_AOS_integrate_cuda_neighbour_aware_integrate_no_foce_backcopy_neighbour_aos_a100.csv};
+        \addlegendentry{MD-Bench @ A100 (DP)}
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {../presentation_2/Resources/gpu_basic.csv};
+        \addlegendentry{MD-Bench Baseline GPU}
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Comparison A100 vs Xeon Platinum 8360Y}
+    \label{fig:ComparisonA100vsXeonPlatinum}
+\end{figure}
+
+The Xeon Platinum 8360Y has 2304KB of L1-Cache and 36MB of L2-Cache whereas the A100 has 192KB of L1-Cache and 40MB of L2-Cache. Detailed measurements of the CPU version of miniMD are
+out of the scope of this report but it could be possible that the whole miniMD program fits into L1-Cache which would explain the big lead in performance as depicted in figure \ref{fig:ComparisonA100vsXeonPlatinum}.
 
 \bibliographystyle{acm}
 \bibliography{bibliography.bib}
