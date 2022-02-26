@@ -708,6 +708,7 @@ As expected, table \ref{tbl:MemoryTransferImprovementIII} shows that 50.5 MB of 
 
 \vspace*{5.5em}
 \section*{Improvement IV: Force memory layout}
+\fakesection{Improvement IV: Force memory layout}
 
 The default implementation for the force memory is Structure of Arrays (\textit{SoA}). Assuming the memory was an infinitely long 1D array, then the force data would be
 laying in memory like this
@@ -772,7 +773,7 @@ By doing this, force data of multiple atoms can be loaded into L1-Cache at once 
 
 
         \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy_neighbour_aware_force_AOS.csv};
-        \addlegendentry{Reduce neighbour copies}
+        \addlegendentry{Force array AoS}
         \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy_neighbour_aware.csv};
         \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy.csv};
         \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces.csv};
@@ -811,6 +812,141 @@ By doing this, force data of multiple atoms can be loaded into L1-Cache at once 
 Figure \ref{fig:ImprovementIVForceMemoryLayout} only shows a marginal improvement of around 2\% which can be explained by the fact
 that only little time was saved for the memory transfers. As depcited in table \ref{tbl:MemoryTransferImprovementIV}, around 4.5µs were spared for the force array memset
 and hardly anything for the force copy to host.
+
+\newpage
+\vspace*{5.5em}
+\section*{Improvement V: Force integration on GPU}
+\fakesection{Improvement V: Force integration on GPU}
+
+The two functions \lstinline{initial_integrate} and \lstinline{final_integrate} are summing over the forces for each atom and calculate the change in velocity and position.
+They can be parallelized on an atom level similar to the \lstinline{computeForce} function which makes them relatively easy to port to the GPU.
+
+\begin{figure}[!ht]
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            xlabel=$\text{Threads per Block}$,
+            ylabel=$\text{Atom updates per s}$,
+            xmin=1, xmax=64,
+            ymin=0, ymax=8e6,
+            legend style={legend pos=south east,fill=none,draw=white,cells={align=center}},
+            ylabel near ticks
+        ]
+
+
+        \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy_neighbour_aware_force_AOS_integrate_cuda.csv};
+        \addlegendentry{Force integrate\\on GPU}
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy_neighbour_aware_force_AOS.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy_neighbour_aware.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_except_neighbor.csv};
+
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {../presentation_2/Resources/gpu_basic.csv};
+        \addlegendentry{Baseline}
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Improvement V: Force integration on GPU}
+    \label{fig:ImprovementVForceIntegrateOnGPU}
+\end{figure}
+
+Because the integration needs force data as input and returns velocity and position, these arrays have to be copied from host to device
+and vice versa, respectively.
+
+\begin{figure}[!ht]
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            xlabel=$\text{Threads per Block}$,
+            ylabel=$\text{Atom updates per s}$,
+            xmin=1, xmax=64,
+            ymin=0, ymax=8e6,
+            legend style={legend pos=south east,fill=none,draw=white,cells={align=center}},
+            ylabel near ticks
+        ]
+
+        \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy_neighbour_aware_force_AOS_integrate_cuda_neighbour_aware_integrate.csv};
+        \addlegendentry{Neighbour aware\\force integrate}
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy_neighbour_aware_force_AOS_integrate_cuda.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy_neighbour_aware_force_AOS.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy_neighbour_aware.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_except_neighbor.csv};
+
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {../presentation_2/Resources/gpu_basic.csv};
+        \addlegendentry{Baseline}
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Improvement V: Neighbour aware force integration on GPU}
+    \label{fig:ImprovementVForceIntegrateNeighbourAwareOnGPU}
+\end{figure}
+
+\newpage
+\vspace*{5.5em}
+
+Figure \ref{fig:ImprovementVForceIntegrateNeighbourAwareOnGPU} depicts the performance if those memory transfers are reduced to the number of times a neighbour list update is happening which is
+every 20th iteration.\par
+Because the force data is now completely running inside the GPU, the backcopy from device to host at the end of \lstinline{computeForce} is no longer necessary.
+
+\begin{figure}[!ht]
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            xlabel=$\text{Threads per Block}$,
+            ylabel=$\text{Atom updates per s}$,
+            xmin=1, xmax=64,
+            ymin=0, ymax=8e6,
+            legend style={legend pos=south east,fill=none,draw=white,cells={align=center}},
+            ylabel near ticks
+        ]
+
+        \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy_neighbour_aware_force_AOS_integrate_cuda_neighbour_aware_integrate_no_force_backcopy.csv};
+        \addlegendentry{No force backcopy}
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy_neighbour_aware_force_AOS_integrate_cuda_neighbour_aware_integrate.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy_neighbour_aware_force_AOS_integrate_cuda.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy_neighbour_aware_force_AOS.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy_neighbour_aware.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_except_neighbor.csv};
+
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {../presentation_2/Resources/gpu_basic.csv};
+        \addlegendentry{Baseline}
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Improvement V: Force integration without backcopy on GPU}
+    \label{fig:ImprovementVForceIntegrateNoBackcopyOnGPU}
+\end{figure}
+
+\begin{figure}[!ht]
+    \centering
+    \resizebox{\columnwidth}{!}{
+        \def\arraystretch{1.25}
+        \rowcolors{2}{gray!20}{white}
+        \begin{tabular}{ |c c c c c c c| }
+            \hline
+            \textbf{Duration} & \textbf{Size} & \textbf{Throughput} & \textbf{SrcMemType} & \textbf{DstMemType} & \textbf{Name} & \textbf{Type} \\
+            \hline
+            363.79us & 4.1199MB & 11.059GB/s & Pinned & Device & [CUDA memcpy HtoD] & atom.x/y/z \\
+            5.6960us & 3.0000MB & 514.34GB/s & Device & - & [CUDA memset] & atom.fx/fy/fz \\
+            1.4892ms & - & - & - & - & calcforce() [273] & - \\
+            \hline
+        \end{tabular}
+    }
+    \captionof{table}{Memory transfers after Improvement V}
+    \label{tbl:MemoryTransferImprovementV}
+\end{figure}
+
+This results in a reduced number of memory transfers as depicted in table \ref{tbl:MemoryTransferImprovementV}.\par
+Overall, performance as shown in tables \ref{fig:ImprovementVForceIntegrateOnGPU}, \ref{fig:ImprovementVForceIntegrateNeighbourAwareOnGPU}
+and \ref{fig:ImprovementVForceIntegrateNoBackcopyOnGPU} was improved by 11\%.
 
 \bibliographystyle{acm}
 \bibliography{bibliography.bib}
