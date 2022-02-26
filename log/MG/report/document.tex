@@ -1062,6 +1062,111 @@ The next comparison is between the CPU implementation of miniMD running on an In
 The Xeon Platinum 8360Y has 2304KB of L1-Cache and 36MB of L2-Cache whereas the A100 has 192KB of L1-Cache and 40MB of L2-Cache. Detailed measurements of the CPU version of miniMD are
 out of the scope of this report but it could be possible that the whole miniMD program fits into L1-Cache which would explain the big lead in performance as depicted in figure \ref{fig:ComparisonA100vsXeonPlatinum}.
 
+\newpage
+
+\chapter{Whole application measurements}
+\vspace*{-2em}
+
+For metric measurements of this chapter, the NVIDIA Nsight™ Compute tool is used. This is an interactive kernel profiler for CUDA applications. It provides detailed performance metrics
+via a user- and command line interface. The tool was instructed via \lstinline[keywordstyle={}]{$ ncu --set full ./MDBench-NVCC -n 200} for 1 up to 64 threads per block on a Nvidia A100 GPU.
+
+\section*{Resource Utilization}
+\fakesection{Resource Utilization}
+
+\begin{figure}[!ht]
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            xlabel=$\text{Threads per Block}$,
+            ylabel=$\text{Utilization in \%}$,
+            xmin=1, xmax=64,
+            ymin=0, ymax=100,
+            legend style={legend pos=north east,fill=none,draw=white,cells={align=center},font=\small},
+            ylabel near ticks
+        ]
+
+        \addplot [cyan,mark=*,smooth] table [x=threads,y=compute_utilization,col sep=comma] {../presentation_2/Resources/GPU/Metrics/metrics_DP.csv};
+        \addlegendentry{Compute Utilization}
+        \addplot [magenta,mark=*,smooth] table [x=threads,y=l1_utilization,col sep=comma] {../presentation_2/Resources/GPU/Metrics/metrics_DP.csv};
+        \addlegendentry{L1 Cache Utilization}
+        \addplot [orange,mark=*,smooth] table [x=threads,y=l2_utilization,col sep=comma] {../presentation_2/Resources/GPU/Metrics/metrics_DP.csv};
+        \addlegendentry{L2 Cache Utilization}
+        \addplot [gray,mark=*,smooth] table [x=threads,y=dram_utilization,col sep=comma] {../presentation_2/Resources/GPU/Metrics/metrics_DP.csv};
+        \addlegendentry{DRAM Utilization}
+        \addplot [violet,mark=*,smooth] table [x=threads,y=fp64_utilization,col sep=comma] {../presentation_2/Resources/GPU/Metrics/metrics_DP.csv};
+        \addlegendentry{FP64 Utilization}
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Resource utilization}
+    \label{fig:ResourceUtilization}
+\end{figure}
+
+\section*{FLOP/s}
+\fakesection{FLOP/s}
+
+\begin{figure}[!ht]
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            xlabel=$\text{Threads per Block}$,
+            ylabel=$\text{GFLOPs/s}$,
+            xmin=1, xmax=64,
+            ymin=100, ymax=2000,
+            ytick distance={500},
+            legend style={legend pos=south east,fill=none,draw=white,cells={align=center},font=\small},
+            ylabel near ticks
+        ]
+
+        \addplot [magenta,mark=*,smooth] table [x=threads,y=flops,y expr=\thisrow{flops}*1e-9,col sep=comma] {../presentation_2/Resources/GPU/Metrics/metrics_DP.csv};
+        \addlegendentry{GFLOPs per second (DP)}
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Floating point operations per second}
+    \label{fig:flops}
+\end{figure}
+
+\section*{Memory Transfers}
+\fakesection{Memory Transfers}
+
+\begin{figure}[!ht]
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            xlabel=$\text{Threads per Block}$,
+            ylabel=$\text{Transfer size in MByte}$,
+            xmin=1, xmax=64,
+            ymin=1, ymax=750,
+            ytick distance={125},
+            legend style={legend pos=north west,fill=none,draw=white,cells={align=center},font=\small},
+            ylabel near ticks
+        ]
+
+        \addplot [magenta,mark=*,smooth] table [x=threads,y=l2_l1_transfer,col sep=comma] {../presentation_2/Resources/GPU/Metrics/metrics_DP.csv};
+        \addlegendentry{L2-Cache to L1-Cache}
+        \addplot [violet,mark=*,smooth] table [x=threads,y=mem_l2_transfer,col sep=comma] {../presentation_2/Resources/GPU/Metrics/metrics_DP.csv};
+        \addlegendentry{DRAM to L2-Cache}
+        \end{axis}
+
+        \begin{axis}[
+            axis y line=right,
+            xlabel=$\text{Threads per Block}$,
+            ylabel=$\text{Throughput in Gbyte/s}$,
+            xmin=1, xmax=64,
+            ymin=1, ymax=750,
+            ytick distance={125},
+            legend style={anchor=west,at={(0.325,0.51)},fill=none,draw=white,cells={align=center},font=\small},
+            ylabel near ticks
+        ]
+        \addplot [cyan,mark=*,smooth] table [x=threads,y=l2_l1_throughput,col sep=comma] {../presentation_2/Resources/GPU/Metrics/metrics_DP.csv};
+        \addlegendentry{L2-Cache to L1-Cache}
+        \addplot [teal,mark=*,smooth] table [x=threads,y=mem_l2_throughput,col sep=comma] {../presentation_2/Resources/GPU/Metrics/metrics_DP.csv};
+        \addlegendentry{DRAM to L2-Cache}
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Memory transfers}
+    \label{fig:memTransfer}
+\end{figure}
+
 \bibliographystyle{acm}
 \bibliography{bibliography.bib}
 
