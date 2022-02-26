@@ -32,6 +32,13 @@
   xleftmargin=15pt
 }
 
+\makeatletter
+% Expand #1 once before comparing it to #2
+\newcommand*{\mystrcmp}[2]{%
+  \expandafter\pdf@strcmp\expandafter{#1}{#2}%
+}
+\makeatother
+
 \newcommand{\fakesection}[1]{%
   \par\refstepcounter{section}% Increase section counter
   \sectionmark{#1}% Add section mark (header)
@@ -695,7 +702,115 @@ Figure \ref{fig:ImprovementIIINeighbourListCopies} shows quite a large improveme
     \label{tbl:MemoryTransferImprovementIII}
 \end{figure}
 
-As expected, table \ref{tbl:MemoryTransferImprovementIII} shows that 50.5 MB of memory transfers were safed 19/20 times.
+As expected, table \ref{tbl:MemoryTransferImprovementIII} shows that 50.5 MB of memory transfers were spared.
+
+\newpage
+
+\vspace*{5.5em}
+\section*{Improvement IV: Force memory layout}
+
+The default implementation for the force memory is Structure of Arrays (\textit{SoA}). Assuming the memory was an infinitely long 1D array, then the force data would be
+laying in memory like this
+
+\begin{figure}[!ht]
+    \centering
+    \begin{tikzpicture}[scale=0.675]
+        \def\size{0.625cm}
+        \node (elem_0) at (0,0) {};
+        \xdef\anchor{elem_0.east};
+        \foreach \txt in {x,y,z} {
+            \foreach \idx in {0,1,2} {
+                \node[rectangle,draw,anchor=west,line width=0.6pt,minimum size=\size,fill=cyan!75!black] (elem_\txt_\idx) at (\anchor) {$\txt_\idx$};
+
+                \xdef\anchor{elem_\txt_\idx.east};
+            }
+
+            \ifnum\mystrcmp{\txt}{z}=-1
+                \node[anchor=west] (separator_\txt) at (elem_\txt_2.east) {$...$};
+                \xdef\anchor{separator_\txt.east};
+            \fi
+        }
+    \end{tikzpicture}
+\end{figure}
+
+Changing the force memory layout to Array of Structures (\textit{AoS}) would look like this
+
+\begin{figure}[!ht]
+    \centering
+    \begin{tikzpicture}[scale=0.675]
+        \def\size{0.625cm}
+        \node (elem_0) at (0,0) {};
+        \xdef\anchor{elem_0.east};
+        \foreach \idx in {0,1,2} {
+            \foreach \txt in {x,y,z} {
+                \node[rectangle,draw,anchor=west,line width=0.6pt,minimum size=\size,fill=cyan!75!black] (elem_\txt_\idx) at (\anchor) {$\txt_\idx$};
+
+                \xdef\anchor{elem_\txt_\idx.east};
+            }
+
+            \ifnum\idx<2
+                \node[anchor=west] (separator_\idx) at (elem_z_\idx.east) {$...$};
+                \xdef\anchor{separator_\idx.east};
+            \fi
+        }
+    \end{tikzpicture}
+\end{figure}
+
+By doing this, force data of multiple atoms can be loaded into L1-Cache at once while the original SoA-approach would probably take multiple depending on the amount of atoms.
+
+\begin{figure}[!ht]
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            xlabel=$\text{Threads per Block}$,
+            ylabel=$\text{Atom updates per s}$,
+            xmin=1, xmax=64,
+            ymin=0, ymax=8e6,
+            legend style={legend pos=south east,fill=none,draw=white,cells={align=center}},
+            ylabel near ticks
+        ]
+
+
+        \addplot [magenta,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy_neighbour_aware_force_AOS.csv};
+        \addlegendentry{Reduce neighbour copies}
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy_neighbour_aware.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces_no_param_copy.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once_only_zero_forces.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything_malloc_only_once.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_everything.csv};
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma,forget plot] {../presentation_2/Resources/GPU/Runtime/cpu_pinnend_mem_except_neighbor.csv};
+
+        \addplot [gray,mark=*,smooth] table [x=threads,y=updates,col sep=comma] {../presentation_2/Resources/gpu_basic.csv};
+        \addlegendentry{Baseline}
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Improvement IV: Force memory layout}
+    \label{fig:ImprovementIVForceMemoryLayout}
+\end{figure}
+
+\begin{figure}[!ht]
+    \centering
+    \resizebox{\columnwidth}{!}{
+        \def\arraystretch{1.25}
+        \rowcolors{2}{gray!20}{white}
+        \begin{tabular}{ |c c c c c c c| }
+            \hline
+            \textbf{Duration} & \textbf{Size} & \textbf{Throughput} & \textbf{SrcMemType} & \textbf{DstMemType} & \textbf{Name} & \textbf{Type} \\
+            \hline
+            355.01us & 4.1199MB & 11.333GB/s & Pinned & Device & [CUDA memcpy HtoD] & atom.x/y/z \\
+            5.0240us & 3.0000MB & 583.14GB/s & Device & - & [CUDA memset] & atom.fx/fy/fz \\
+            1.5084ms & - & - & - & - & calcforce() [288] & - \\
+            242.34us & 3.0000MB & 12.089GB/s & Device & Pinned & [CUDA memcpy DtoH] & atom.fx/fy/fz \\
+            \hline
+        \end{tabular}
+    }
+    \captionof{table}{Memory transfers after Improvement IV}
+    \label{tbl:MemoryTransferImprovementIV}
+\end{figure}
+
+Figure \ref{fig:ImprovementIVForceMemoryLayout} only shows a marginal improvement of around 2\% which can be explained by the fact
+that only little time was saved for the memory transfers. As depcited in table \ref{tbl:MemoryTransferImprovementIV}, around 4.5µs were spared for the force array memset
+and hardly anything for the force copy to host.
 
 \bibliographystyle{acm}
 \bibliography{bibliography.bib}
