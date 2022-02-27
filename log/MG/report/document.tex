@@ -993,7 +993,7 @@ As depicted in figure \ref{fig:ImprovementVINeighbourListMemoryLayout} this only
 This could be caused by the application being severely limited by memory transfers. More details will be evaluated in the next chapter.
 
 \newpage
-\vspace*{5.5em}
+\vspace*{5.25em}
 \section*{Final performance comparisons}
 \fakesection{Final performance comparisons}
 
@@ -1001,7 +1001,7 @@ The first comparison is about the current implementation of MD-Bench from improv
 
 \begin{figure}[!ht]
     \centering
-    \begin{tikzpicture}
+    \begin{tikzpicture}[scale=0.90]
         \begin{axis}[
             xlabel=$\text{Threads per Block}$,
             ylabel=$\text{Atom updates per s}$,
@@ -1027,11 +1027,34 @@ The first comparison is about the current implementation of MD-Bench from improv
 \end{figure}
 
 As shown in figure \ref{fig:ComparisonRTX2080vsA100}, the A100 is memory limited much earlier than the RTX 2080 Ti which is due to the vastly higher double precision performance (10 TFLOPs vs 0.40 TFLOPs).
-This is also why the single precision performance is only marginally higher. In general, the A100 is about 8\% faster in this comparison.
+This is also why the single precision performance is only marginally higher. In general, the A100 is about 8\% faster in this comparison.\par
+Comparing the runtime with respect to the amount of atoms helps to figure out whether there is a large overhead for PCIe transfers which limits performance for smaller memory.
+
+\begin{figure}[!ht]
+    \centering
+    \begin{tikzpicture}[scale=0.9]
+        \begin{axis}[
+            xlabel=$\text{Amount of Atoms}$,
+            ylabel=$\text{Atom updates per s}$,
+            xmin=1e3, xmax=1e6,
+            ymin=1, ymax=8e6,
+            legend style={legend pos=south east,fill=none,draw=white,cells={align=center},font=\small},
+            ylabel near ticks,
+            xmode=log
+        ]
+
+        \addplot [magenta,mark=*,smooth] table [x=atom_count,y=updates,col sep=comma] {../presentation_2/Resources/GPU/increase_atom_count.csv};
+        \addlegendentry{A100}
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Atom updates on an A100 with 64 threads per block}
+    \label{fig:IncreaseAtomCountA100Runtime}
+\end{figure}
 
 \newpage
 \vspace*{5.5em}
 
+As shown in figure \ref{fig:IncreaseAtomCountA100Runtime} there doesn't seem to be such a overhead because above 100'000 atoms, the performance stays the same.\par
 The next comparison is between the CPU implementation of miniMD running on an Intel Xeon Platinum 8360Y of FAU's Fritz cluster and the current implementation of MD-Bench on an A100.
 
 \begin{figure}[!ht]
@@ -1063,7 +1086,21 @@ The Xeon Platinum 8360Y has 2304KB of L1-Cache and 36MB of L2-Cache whereas the 
 out of the scope of this report but it could be possible that the whole miniMD program fits into L1-Cache which would explain the big lead in performance as depicted in figure \ref{fig:ComparisonA100vsXeonPlatinum}.\par
 And, of course, the atom reneighbouring algorithm hasn't been converted to a CUDA kernel yet which makes memory transfers between host and device necessary.
 Thus, performance of MD-Bench is limited by the transfer rate between CPU and GPU.\par
-Taking a look at the execution time of just the \lstinline{computeForce} function of miniMD as well as MD-Bench
+
+
+\newpage
+
+\chapter{Detailed kernel measurements}
+\vspace*{-2.25em}
+
+For metric measurements of this chapter, the NVIDIA Nsight™ Compute tool is used. This is an interactive kernel profiler for CUDA applications. It provides detailed performance metrics
+via a user- and command line interface. The tool was instructed via \lstinline[keywordstyle={}]{$ ncu --set full ./MDBench-NVCC -n 200} for 1 up to 64 threads per block on a Nvidia A100 GPU
+to measure the \lstinline{computeForce} kernel.
+
+\section*{Kernel runtime}
+\fakesection{Kernel runtime}
+
+Taking a look at the execution time of miniMD as well as MD-Bench
 
 \begin{figure}[!ht]
     \centering
@@ -1084,29 +1121,19 @@ Taking a look at the execution time of just the \lstinline{computeForce} functio
     \label{tbl:KernelExecutionTimeMiniMDvsMDBench}
 \end{figure}
 
-confirms once again that the overall MD-Bench performance is limited by memory throughput as the GPU kernel is $10^6$-times quicker. To alleviate the memory limitation, the reneighbouring algorithm
-should be converted to a CUDA kernel in the future as well.\par
-Measurements for MD-Bench depicted in table \ref{tbl:KernelExecutionTimeMiniMDvsMDBench} were done via\\
+confirms once again that the overall MD-Bench performance is limited by memory throughput as the GPU \lstinline{computeForce} kernel is $10^6$-times quicker than miniMD on CPU.
+Measurements for MD-Bench depicted in table \ref{tbl:KernelExecutionTimeMiniMDvsMDBench} were done via
 \lstinline[keywordstyle={}]{$ nsys profile --stats=true ./MDBench-NVCC -n 2000}.
-
-\newpage
-
-\chapter{Detailed kernel measurements}
-\vspace*{-2em}
-
-For metric measurements of this chapter, the NVIDIA Nsight™ Compute tool is used. This is an interactive kernel profiler for CUDA applications. It provides detailed performance metrics
-via a user- and command line interface. The tool was instructed via \lstinline[keywordstyle={}]{$ ncu --set full ./MDBench-NVCC -n 200} for 1 up to 64 threads per block on a Nvidia A100 GPU
-to measure the \lstinline{computeForce} kernel.
 
 \section*{Resource Utilization}
 \fakesection{Resource Utilization}
 
-Nvidia Nsight Compute provides a high-level overview for compute and memory resources of the GPU. The measured values report the achieved percentage of utilization with respect
+Nsight Compute provides a high-level overview for compute and memory resources of the GPU. The measured values report the achieved percentage of utilization with respect
 to the theoretical maximum.
 
 \begin{figure}[!ht]
     \centering
-    \begin{tikzpicture}
+    \begin{tikzpicture}[scale=0.95]
         \begin{axis}[
             xlabel=$\text{Threads per Block}$,
             ylabel=$\text{Utilization in \%}$,
@@ -1132,14 +1159,14 @@ to the theoretical maximum.
     \label{fig:ResourceUtilization}
 \end{figure}
 
+\newpage
+\vspace*{5.5em}
+
 Figure \ref{fig:ResourceUtilization} shows that no compute or memory resource is at its limit regarding utilization. The decrease of compute and FP64
 utilization from 1 to 32 threads per block can be explained by the fact that block execution always happens on a warp-size level, which is multiple of 32
 threads.\par
 Memory utilization is constantly increasing because L1- and L2-Cache can be used as shared memory accorss threads within a streaming multiprocessor.
 So it only makes sense that the utilization increases with more threads.
-
-\newpage
-\vspace*{5.5em}
 
 \section*{FLOPs/s}
 \fakesection{FLOPs/s}
@@ -1169,6 +1196,9 @@ Measuring the number of floating point (double precision) operations per second 
 
 As figure \ref{fig:flops} and also table \ref{tbl:KernelExecutionTimeMiniMDvsMDBench} already indicated, the \lstinline{computeForce} kernel scales well with more threads.
 
+\newpage
+
+\vspace*{5.5em}
 \section*{Memory Transfers}
 \fakesection{Memory Transfers}
 
@@ -1210,10 +1240,6 @@ As figure \ref{fig:flops} and also table \ref{tbl:KernelExecutionTimeMiniMDvsMDB
     \caption{Memory transfers}
     \label{fig:MemTransfer}
 \end{figure}
-
-\newpage
-
-\vspace*{5.5em}
 
 Figure \ref{fig:MemTransfer} shows on one hand that the transfer size between L2- and L1-Cache decreases with increasing
 amount of threads per block and on the other hand that the throughput increases.\par
