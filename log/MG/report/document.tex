@@ -326,7 +326,7 @@ It consists of
 \section*{CUDA Kernels}
 \fakesection{CUDA Kernels}
 
-In order to scale performance with available CUDA cores, the code is parallelized on an atom-level.
+Parallelization of force calculation on available CUDA cores is best done via the number of atoms.
 For 131072 atoms, this means there are 131072 threads and\\
 \lstinline{131702 / num_threads_per_block} number of blocks, where performance is evaluated for
 \lstinline{num_threads_per_block} $\in \{1, 2, 4, 8, 16, 32, 64\}$. Each thread is going to execute
@@ -1060,18 +1060,49 @@ The next comparison is between the CPU implementation of miniMD running on an In
 \end{figure}
 
 The Xeon Platinum 8360Y has 2304KB of L1-Cache and 36MB of L2-Cache whereas the A100 has 192KB of L1-Cache and 40MB of L2-Cache. Detailed measurements of the CPU version of miniMD are
-out of the scope of this report but it could be possible that the whole miniMD program fits into L1-Cache which would explain the big lead in performance as depicted in figure \ref{fig:ComparisonA100vsXeonPlatinum}.
+out of the scope of this report but it could be possible that the whole miniMD program fits into L1-Cache which would explain the big lead in performance as depicted in figure \ref{fig:ComparisonA100vsXeonPlatinum}.\par
+And, of course, the atom reneighbouring algorithm hasn't been converted to a CUDA kernel yet which makes memory transfers between host and device necessary.
+Thus, performance of MD-Bench is limited by the transfer rate between CPU and GPU.\par
+Taking a look at the execution time of just the \lstinline{computeForce} function of miniMD as well as MD-Bench
+
+\begin{figure}[!ht]
+    \centering
+    \resizebox{14cm}{!}{
+        \def\arraystretch{1.25}
+        \rowcolors{2}{gray!20}{white}
+        \begin{tabular}{ | c | c c c c c c c |}
+            \hline
+            \multicolumn{1}{|l|}{\textbf{Threads} (per Block)} & \textbf{1} & \textbf{2} & \textbf{4} & \textbf{8} & \textbf{16} & \textbf{32} & \textbf{64} \\
+            \hline
+            \multicolumn{1}{|l|}{\textbf{Duration miniMD} (Xeon 8360Y)} & 27.75s & 13.81s & 6.61s & 3.30s & 1.64s & 0.82s & 0.43s \\
+            \hline
+            \multicolumn{1}{|l|}{\textbf{Duration MD-Bench} (A100)} & 2.56µs & 1.54µs & 0.90µs & 0.52µs & 0.33µs & 0.23µs & 0.14µs \\
+            \hline
+        \end{tabular}
+    }
+    \captionof{table}{Kernel execution time}
+    \label{tbl:KernelExecutionTimeMiniMDvsMDBench}
+\end{figure}
+
+confirms once again that the overall MD-Bench performance is limited by memory throughput as the GPU kernel is $10^6$-times quicker. To alleviate the memory limitation, the reneighbouring algorithm
+should be converted to a CUDA kernel in the future as well.\par
+Measurements for MD-Bench depicted in table \ref{tbl:KernelExecutionTimeMiniMDvsMDBench} were done via\\
+\lstinline[keywordstyle={}]{$ nsys profile --stats=true ./MDBench-NVCC -n 2000}.
 
 \newpage
 
-\chapter{Whole application measurements}
+\chapter{Detailed kernel measurements}
 \vspace*{-2em}
 
 For metric measurements of this chapter, the NVIDIA Nsight™ Compute tool is used. This is an interactive kernel profiler for CUDA applications. It provides detailed performance metrics
-via a user- and command line interface. The tool was instructed via \lstinline[keywordstyle={}]{$ ncu --set full ./MDBench-NVCC -n 200} for 1 up to 64 threads per block on a Nvidia A100 GPU.
+via a user- and command line interface. The tool was instructed via \lstinline[keywordstyle={}]{$ ncu --set full ./MDBench-NVCC -n 200} for 1 up to 64 threads per block on a Nvidia A100 GPU
+to measure the \lstinline{computeForce} kernel.
 
 \section*{Resource Utilization}
 \fakesection{Resource Utilization}
+
+Nvidia Nsight Compute provides a high-level overview for compute and memory resources of the GPU. The measured values report the achieved percentage of utilization with respect
+to the theoretical maximum.
 
 \begin{figure}[!ht]
     \centering
@@ -1101,8 +1132,19 @@ via a user- and command line interface. The tool was instructed via \lstinline[k
     \label{fig:ResourceUtilization}
 \end{figure}
 
-\section*{FLOP/s}
-\fakesection{FLOP/s}
+Figure \ref{fig:ResourceUtilization} shows that no compute or memory resource is at its limit regarding utilization. The decrease of compute and FP64
+utilization from 1 to 32 threads per block can be explained by the fact that block execution always happens on a warp-size level, which is multiple of 32
+threads.\par
+Memory utilization is constantly increasing because L1- and L2-Cache can be used as shared memory accorss threads within a streaming multiprocessor.
+So it only makes sense that the utilization increases with more threads.
+
+\newpage
+\vspace*{5.5em}
+
+\section*{FLOPs/s}
+\fakesection{FLOPs/s}
+
+Measuring the number of floating point (double precision) operations per second indicates how well the kernel scales with the number of threads.
 
 \begin{figure}[!ht]
     \centering
@@ -1124,6 +1166,8 @@ via a user- and command line interface. The tool was instructed via \lstinline[k
     \caption{Floating point operations per second}
     \label{fig:flops}
 \end{figure}
+
+As figure \ref{fig:flops} and also table \ref{tbl:KernelExecutionTimeMiniMDvsMDBench} already indicated, the \lstinline{computeForce} kernel scales well with more threads.
 
 \section*{Memory Transfers}
 \fakesection{Memory Transfers}
@@ -1164,8 +1208,26 @@ via a user- and command line interface. The tool was instructed via \lstinline[k
         \end{axis}
     \end{tikzpicture}
     \caption{Memory transfers}
-    \label{fig:memTransfer}
+    \label{fig:MemTransfer}
 \end{figure}
+
+\newpage
+
+\vspace*{5.5em}
+
+Figure \ref{fig:MemTransfer} shows on one hand that the transfer size between L2- and L1-Cache decreases with increasing
+amount of threads per block and on the other hand that the throughput increases.\par
+This can be explained similarly to the memory utilization in figure \ref{fig:ResourceUtilization}: With more threads allocated for a streaming multiprocessor (SM)
+the amount of data that needs to be fetched from L2-Cache is less than if the same number of threads is spread out on more SMs (less threads per block).
+Thus, the memory throughput increases as more threads on an SM are accessing the shared L1- or L2-Cache.\par
+The transfer size from DRAM to L2-Cache stays the same at around 40MB no matter how many threads per blocks. This indicates, that the whole application can
+fit into L2-Cache, which is 40MB in size in the case of an A100.
+
+\newpage
+
+\chapter{Conclusion}
+
+
 
 \bibliographystyle{acm}
 \bibliography{bibliography.bib}
