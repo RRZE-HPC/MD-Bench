@@ -1227,8 +1227,14 @@ fit into L2-Cache, which is 40MB in size in the case of an A100.
 
 \chapter{Conclusion}
 
+As shown in the \textit{Scaling Runs} chapter of this report, the performance of MD-Bench on GPU improves with either more parts of the code running in a CUDA kernel
+or less memory transfers between CPU and GPU as these are limitied by PCIe 4.0 x 16 (A100) or PCIe 3.0 x 16 (RTX 2080 Ti) which provide a theoretical maximum
+throughput of 32GB/s and 16GB/s, respectively.\par
+In general, the execution time of the \lstinline{computeForce} kernel is much lower on GPU than on CPU, which was shown by the comparison with miniMD.\par
+Because the resources are currently not fully utilized and the kernel implementation scales well with more threads per block, the performance could be
+probably increased many times over to rival miniMD if the reneighbouring function were to run completely on the GPU.
 
-
+\nocite{*}
 \bibliographystyle{acm}
 \bibliography{bibliography.bib}
 
