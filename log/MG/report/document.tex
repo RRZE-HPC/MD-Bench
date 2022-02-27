@@ -73,7 +73,7 @@
 \begin{flushleft}
     \normalsize Instructor:\hfill Dr. Jan Eitzinger\\
     \vspace*{.5em}
-    \normalsize Supervisor:\hfill Rafael Ravedutti
+    \normalsize Supervisor:\hfill Rafael Ravedutti Lucio Machado
 \end{flushleft}
 
 \newpage
@@ -111,13 +111,13 @@ The formula of the potential consists of three parameters, namely:
 \end{itemize}
 
 The figure shows that the Lennard-Jones potential is a simplified model but still describes the essential aspects of particle dynamics.
-Furthermore, particles repel each other at close, attract at medium and have negligible interactions at large distances.
+This means, particles repel each other at close, attract at medium and have negligible interactions at large distances.
 
 \newpage
 
 \vspace*{5.5em}
 MD-Bench is publicly available on GitHub via the URL \url{https://github.com/RRZE-HPC/MD-Bench}.\par
-The main focus of this report is to port the main functions in \textit{force.c} to the CUDA programming model and evaluate the performance
+The main focus of this report is to port the functions in \textit{force.c} to the CUDA programming model and evaluate the performance
 with respect to the adapted code, which is available under the branch \textit{mucosim-cuda}.\par\par
 Calculating the Lennard-Jones potential, updating the atom forces as well as positions is done in a main-loop for each time step:
 \begin{figure}[!ht]
@@ -232,8 +232,8 @@ This should produce an executable \lstinline{MDBench-NVCC}.
 \section*{Testcase description}
 \fakesection{Testcase description}
 
-This report will focus on the standard configuration of MD-Bench, this means \textit{131072} atoms, double precision and
-\textit{Lennard-Jones} potential for the force field.
+This report will focus, if not stated otherwise, on the standard configuration of MD-Bench, this means \textit{131072} atoms,
+double precision and \textit{Lennard-Jones} potential for the force field.
 Only the amount of time steps is modified. For performance tests, 2000 time steps on a RTX 2080 Ti are used.
 Due to the high measurement time, this value has been reduced to 200 for the metric evaluations, which are
 done on an A100.\par
@@ -263,9 +263,10 @@ MD Bench: A minimalistic re-implementation of miniMD
 \newpage
 
 \vspace*{5.5em}
-Running the previously generated executable should produce the following output
+Running the previously generated executable should produce a similar output to this
 
 \begin{figure}[!ht]
+    \centering
     \begin{lstlisting}[language=bash]
 foo@bar:MD-Bench$ ./MDBench-NVCC
 step    temp            pressure
@@ -331,7 +332,7 @@ For 131072 atoms, this means there are 131072 threads and\\
 \lstinline{131702 / num_threads_per_block} number of blocks, where performance is evaluated for
 \lstinline{num_threads_per_block} $\in \{1, 2, 4, 8, 16, 32, 64\}$. Each thread is going to execute
 the same \textit{CUDA kernel} function in parallel on the GPU. In the context of MD-Bench,
-the kernel function calculates the 3D force for a single atom with respect to its neighbour-atoms.\par
+the kernel function calculates the 3D force for a single atom with respect to its neighbour atoms.\par
 Before the execution can happen, memory has to be copied from host (CPU) to device (GPU). This means
 the neighbour list as well as position data for each atom and Lennard-Jones potential parameters.
 The kernel-code writes the resulting forces into GPU memory which is copied back to the host after
@@ -346,8 +347,8 @@ parameters can be used as an index into the atom- and force-arrays.
 \fakesection{NVIDIA Tools}
 NVIDIA supplies a range of tools to evaluate performance of code running on the GPU. \lstinline{nvprof}
 is able to record memory transfers from and to the device. This helps with evaluating memory bottlenecks.\par
-Furthermore, \textit{NVIDIA Nsigh Compute} is available as a command line tool \lstinline{ncu} and for the
-desktop. It captures a vide variety of performance parameters, some of them will be displayed in the metric
+Furthermore, \textit{NVIDIA Nsigh Compute} is available as a command line tool \lstinline{ncu} and as a GUI application
+for the desktop. It captures a vide variety of performance parameters, some of them will be displayed in the metric
 evaluation section.
 
 \newpage
@@ -469,13 +470,13 @@ As a first performance improvement, memory allocations on the host are changed f
     \label{fig:ImprovementOne}
 \end{figure}
 
-\lstinline{cudaMallocHost} allocates memory on the host that is page-locked an accessible to the device. This means, this memory block is not available for paging and can therefore
+\lstinline{cudaMallocHost} allocates memory on the host that is page-locked and accessible to the device. This means, this memory block is not available for paging and can therefore
 achieve higher data rates and less access delay.
 
 \newpage
 
 \vspace*{5.5em}
-As shown in figure \ref{fig:ImprovementOne}, this yields a performance improvement of 23\% compared to baseline if all memory is allocated this way, meaning atom as well as neighbour list.
+As shown in figure \ref{fig:ImprovementOne}, this yields a performance improvement of 23\% compared to baseline if all memory is allocated this way, meaning atom data as well as the neighbour list.
 
 \begin{figure}[!ht]
     \centering
@@ -818,7 +819,7 @@ and hardly anything for the force copy to host.
 \section*{Improvement V: Force integration on GPU}
 \fakesection{Improvement V: Force integration on GPU}
 
-The two functions \lstinline{initial_integrate} and \lstinline{final_integrate} are summing over the forces for each atom and calculate the change in velocity and position.
+The two functions \lstinline{initial_integrate} and \lstinline{final_integrate} are summing over the forces for each atom and calculating the change in velocity and position.
 They can be parallelized on an atom level similar to the \lstinline{computeForce} function which makes them relatively easy to port to the GPU.
 
 \begin{figure}[!ht]
@@ -945,7 +946,7 @@ Because the force data is now completely running inside the GPU, the backcopy fr
 \end{figure}
 
 This results in a reduced number of memory transfers as depicted in table \ref{tbl:MemoryTransferImprovementV}.\par
-Overall, performance as shown in tables \ref{fig:ImprovementVForceIntegrateOnGPU}, \ref{fig:ImprovementVForceIntegrateNeighbourAwareOnGPU}
+Overall, performance as shown in figures \ref{fig:ImprovementVForceIntegrateOnGPU}, \ref{fig:ImprovementVForceIntegrateNeighbourAwareOnGPU}
 and \ref{fig:ImprovementVForceIntegrateNoBackcopyOnGPU} was improved by 11\%.
 
 \newpage
@@ -1054,7 +1055,7 @@ Comparing the runtime with respect to the amount of atoms helps to figure out wh
 \newpage
 \vspace*{5.5em}
 
-As shown in figure \ref{fig:IncreaseAtomCountA100Runtime} there doesn't seem to be such a overhead because above 100'000 atoms, the performance stays the same.\par
+As shown in figure \ref{fig:IncreaseAtomCountA100Runtime} there doesn't seem to be such an overhead because above 100'000 atoms, the performance stays the same.\par
 The next comparison is between the CPU implementation of miniMD running on an Intel Xeon Platinum 8360Y of FAU's Fritz cluster and the current implementation of MD-Bench on an A100.
 
 \begin{figure}[!ht]
@@ -1165,7 +1166,7 @@ to the theoretical maximum.
 Figure \ref{fig:ResourceUtilization} shows that no compute or memory resource is at its limit regarding utilization. The decrease of compute and FP64
 utilization from 1 to 32 threads per block can be explained by the fact that block execution always happens on a warp-size level, which is multiple of 32
 threads.\par
-Memory utilization is constantly increasing because L1- and L2-Cache can be used as shared memory accorss threads within a streaming multiprocessor.
+Memory utilization is constantly increasing because L1- and L2-Cache can be used as shared memory accross threads within a streaming multiprocessor.
 So it only makes sense that the utilization increases with more threads.
 
 \section*{FLOPs/s}
@@ -1254,7 +1255,7 @@ fit into L2-Cache, which is 40MB in size in the case of an A100.
 \chapter{Conclusion}
 
 As shown in the \textit{Scaling Runs} chapter of this report, the performance of MD-Bench on GPU improves with either more parts of the code running in a CUDA kernel
-or less memory transfers between CPU and GPU as these are limitied by PCIe 4.0 x 16 (A100) or PCIe 3.0 x 16 (RTX 2080 Ti) which provide a theoretical maximum
+or less memory transfers between CPU and GPU as these are limited by PCIe 4.0 x 16 (A100) or PCIe 3.0 x 16 (RTX 2080 Ti) which provide a theoretical maximum
 throughput of 32GB/s and 16GB/s, respectively.\par
 In general, the execution time of the \lstinline{computeForce} kernel is much lower on GPU than on CPU, which was shown by the comparison with miniMD.\par
 Because the resources are currently not fully utilized and the kernel implementation scales well with more threads per block, the performance could be
