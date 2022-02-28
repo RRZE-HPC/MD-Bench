@@ -44,6 +44,7 @@ typedef struct {
     int every;
     MD_FLOAT dt;
     MD_FLOAT dtforce;
+    MD_FLOAT skin;
     MD_FLOAT cutforce;
     MD_FLOAT cutneigh;
     int nx, ny, nz;

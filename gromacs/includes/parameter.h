@@ -46,6 +46,7 @@ typedef struct {
     MD_FLOAT dt;
     MD_FLOAT dtforce;
     MD_FLOAT cutforce;
+    MD_FLOAT skin;
     MD_FLOAT cutneigh;
     int nx, ny, nz;
     MD_FLOAT lattice;

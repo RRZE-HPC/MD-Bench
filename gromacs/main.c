@@ -69,7 +69,8 @@ void init(Parameter *param) {
     param->ny = 32;
     param->nz = 32;
     param->cutforce = 2.5;
-    param->cutneigh = param->cutforce + 0.30;
+    param->skin = 0.3;
+    param->cutneigh = param->cutforce + param->skin;
     param->temp = 1.44;
     param->nstat = 100;
     param->mass = 1.0;
@@ -193,56 +194,54 @@ int main(int argc, char** argv) {
 
     for(int i = 0; i < argc; i++)
     {
-        if((strcmp(argv[i], "-f") == 0))
-        {
+        if((strcmp(argv[i], "-f") == 0)) {
             if((param.force_field = str2ff(argv[++i])) < 0) {
                 fprintf(stderr, "Invalid force field!\n");
                 exit(-1);
             }
             continue;
         }
-        if((strcmp(argv[i], "-i") == 0))
-        {
+        if((strcmp(argv[i], "-i") == 0)) {
             param.input_file = strdup(argv[++i]);
             continue;
         }
-        if((strcmp(argv[i], "-e") == 0))
-        {
+        if((strcmp(argv[i], "-e") == 0)) {
             param.eam_file = strdup(argv[++i]);
             continue;
         }
-        if((strcmp(argv[i], "-n") == 0) || (strcmp(argv[i], "--nsteps") == 0))
-        {
+        if((strcmp(argv[i], "-n") == 0) || (strcmp(argv[i], "--nsteps") == 0)) {
             param.ntimes = atoi(argv[++i]);
             continue;
         }
-        if((strcmp(argv[i], "-nx") == 0))
-        {
+        if((strcmp(argv[i], "-nx") == 0)) {
             param.nx = atoi(argv[++i]);
             continue;
         }
-        if((strcmp(argv[i], "-ny") == 0))
-        {
+        if((strcmp(argv[i], "-ny") == 0)) {
             param.ny = atoi(argv[++i]);
             continue;
         }
-        if((strcmp(argv[i], "-nz") == 0))
-        {
+        if((strcmp(argv[i], "-nz") == 0)) {
             param.nz = atoi(argv[++i]);
             continue;
         }
-        if((strcmp(argv[i], "--freq") == 0))
-        {
+        if((strcmp(argv[i], "-r") == 0) || (strcmp(argv[i], "--radius") == 0)) {
+            param.cutforce = atof(argv[++i]);
+            continue;
+        }
+        if((strcmp(argv[i], "-s") == 0) || (strcmp(argv[i], "--skin") == 0)) {
+            param.skin = atof(argv[++i]);
+            continue;
+        }
+        if((strcmp(argv[i], "--freq") == 0)) {
             param.proc_freq = atof(argv[++i]);
             continue;
         }
-        if((strcmp(argv[i], "--vtk") == 0))
-        {
+        if((strcmp(argv[i], "--vtk") == 0)) {
             param.vtk_file = strdup(argv[++i]);
             continue;
         }
-        if((strcmp(argv[i], "-h") == 0) || (strcmp(argv[i], "--help") == 0))
-        {
+        if((strcmp(argv[i], "-h") == 0) || (strcmp(argv[i], "--help") == 0)) {
             printf("MD Bench: A minimalistic re-implementation of miniMD\n");
             printf(HLINE);
             printf("-f <string>:          force field (lj or eam), default lj\n");
@@ -250,6 +249,8 @@ int main(int argc, char** argv) {
             printf("-e <string>:          input file for EAM\n");
             printf("-n / --nsteps <int>:  set number of timesteps for simulation\n");
             printf("-nx/-ny/-nz <int>:    set linear dimension of systembox in x/y/z direction\n");
+            printf("-r / --radius <real>: set cutoff radius\n");
+            printf("-s / --skin <real>:   set skin (verlet buffer)\n");
             printf("--freq <real>:        processor frequency (GHz)\n");
             printf("--vtk <string>:       VTK file for visualization\n");
             printf(HLINE);
@@ -257,6 +258,7 @@ int main(int argc, char** argv) {
         }
     }
 
+    param.cutneigh = param.cutforce + param.skin;
     setup(&param, &eam, &atom, &neighbor, &stats);
     computeThermo(0, &param, &atom);
 #if defined(MEM_TRACER) || defined(INDEX_TRACER)
