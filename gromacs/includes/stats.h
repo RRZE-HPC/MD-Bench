@@ -31,6 +31,8 @@ typedef struct {
     long long int force_iters;
     long long int atoms_within_cutoff;
     long long int atoms_outside_cutoff;
+    long long int clusters_within_cutoff;
+    long long int clusters_outside_cutoff;
 } Stats;
 
 void initStats(Stats *s);

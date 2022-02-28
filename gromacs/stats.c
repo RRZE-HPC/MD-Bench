@@ -11,6 +11,8 @@ void initStats(Stats *s) {
     s->force_iters = 0;
     s->atoms_within_cutoff = 0;
     s->atoms_outside_cutoff = 0;
+    s->clusters_within_cutoff = 0;
+    s->clusters_outside_cutoff = 0;
 }
 
 void displayStatistics(Atom *atom, Parameter *param, Stats *stats, double *timer) {
@@ -40,8 +42,10 @@ void displayStatistics(Atom *atom, Parameter *param, Stats *stats, double *timer
     printf("\tCycles/SIMD iteration: %.4f\n", timer[FORCE] * param->proc_freq * 1e9 / stats->force_iters);
 
     #ifdef USE_REFERENCE_VERSION
-    const double eff_pct = (double)stats->atoms_within_cutoff / (double)(stats->atoms_within_cutoff + stats->atoms_outside_cutoff) * 100.0;
-    printf("\tAtoms within/outside cutoff radius: %lld/%lld (%.2f%%)\n", stats->atoms_within_cutoff, stats->atoms_outside_cutoff, eff_pct);
+    const double atoms_eff = (double)stats->atoms_within_cutoff / (double)(stats->atoms_within_cutoff + stats->atoms_outside_cutoff) * 100.0;
+    printf("\tAtoms within/outside cutoff radius: %lld/%lld (%.2f%%)\n", stats->atoms_within_cutoff, stats->atoms_outside_cutoff, atoms_eff);
+    const double clusters_eff = (double)stats->clusters_within_cutoff / (double)(stats->clusters_within_cutoff + stats->clusters_outside_cutoff) * 100.0;
+    printf("\tClusters within/outside cutoff radius: %lld/%lld (%.2f%%)\n", stats->clusters_within_cutoff, stats->clusters_outside_cutoff, clusters_eff);
     #endif
 
 #endif
