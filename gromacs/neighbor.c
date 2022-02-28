@@ -381,6 +381,47 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
     DEBUG_MESSAGE("buildNeighbor end\n");
 }
 
+void pruneNeighbor(Parameter *param, Atom *atom, Neighbor *neighbor) {
+    DEBUG_MESSAGE("pruneNeighbor start\n");
+    int nall = atom->Nclusters_local + atom->Nclusters_ghost;
+    //MD_FLOAT cutsq = param->cutforce * param->cutforce;
+    MD_FLOAT cutsq = cutneighsq;
+
+    for(int ci = 0; ci < atom->Nclusters_local; ci++) {
+        int *neighs = &neighbor->neighbors[ci * neighbor->maxneighs];
+        int numneighs = neighbor->numneigh[ci];
+        int k = 0;
+
+        // Remove dummy clusters if necessary
+        if(CLUSTER_DIM_N > CLUSTER_DIM_M) {
+            while(neighs[numneighs - 1] == nall - 1) {
+                numneighs--;
+            }
+        }
+
+        while(k < numneighs) {
+            int cj = neighs[k];
+            if(atomDistanceInRange(atom, ci, cj, cutsq)) {
+                k++;
+            } else {
+                numneighs--;
+                neighs[k] = neighs[numneighs];
+            }
+        }
+
+        // Readd dummy clusters if necessary
+        if(CLUSTER_DIM_N > CLUSTER_DIM_M) {
+            while(numneighs % (CLUSTER_DIM_N / CLUSTER_DIM_M)) {
+                neighs[numneighs++] = nall - 1; // Last cluster is always a dummy cluster
+            }
+        }
+
+        neighbor->numneigh[ci] = numneighs;
+    }
+
+    DEBUG_MESSAGE("pruneNeighbor end\n");
+}
+
 /* internal subroutines */
 MD_FLOAT bindist(int i, int j) {
     MD_FLOAT delx, dely, delz;

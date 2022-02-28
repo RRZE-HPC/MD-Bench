@@ -75,6 +75,7 @@ void init(Parameter *param) {
     param->mass = 1.0;
     param->dtforce = 0.5 * param->dt;
     param->every = 20;
+    param->prune_every = 1000;
     param->proc_freq = 2.4;
 }
 
@@ -278,6 +279,10 @@ int main(int argc, char** argv) {
         initialIntegrate(&param, &atom);
 
         if((n + 1) % param.every) {
+            if(!((n + 1) % param.prune_every)) {
+                pruneNeighbor(&param, &atom, &neighbor);
+            }
+
             updatePbc(&atom, &param, 0);
         } else {
             timer[NEIGH] += reneighbour(&param, &atom, &neighbor);
