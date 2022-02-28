@@ -37,6 +37,7 @@ extern void initNeighbor(Neighbor*, Parameter*);
 extern void setupNeighbor(Parameter*, Atom*);
 extern void binatoms(Atom*);
 extern void buildNeighbor(Atom*, Neighbor*);
+extern void pruneNeighbor(Parameter*, Atom*, Neighbor*);
 extern void sortAtom(Atom*);
 extern void buildClusters(Atom*);
 extern void binClusters(Atom*);
