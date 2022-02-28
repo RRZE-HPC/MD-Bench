@@ -61,6 +61,7 @@ double computeForceLJ_ref(Parameter *param, Atom *atom, Neighbor *neighbor, Stat
 
         for(int k = 0; k < numneighs; k++) {
             int cj = neighs[k];
+            int any = 0;
             MD_FLOAT *cjptr = cluster_pos_ptr(cj);
             for(int cii = 0; cii < CLUSTER_DIM_M; cii++) {
                 MD_FLOAT xtmp = cluster_x(ciptr, cii);
@@ -83,11 +84,18 @@ double computeForceLJ_ref(Parameter *param, Atom *atom, Neighbor *neighbor, Stat
                             fix += delx * force;
                             fiy += dely * force;
                             fiz += delz * force;
+                            any = 1;
                             addStat(stats->atoms_within_cutoff, 1);
                         } else {
                             addStat(stats->atoms_outside_cutoff, 1);
                         }
                     }
+                }
+
+                if(any != 0) {
+                    addStat(stats->clusters_within_cutoff, 1);
+                } else {
+                    addStat(stats->clusters_outside_cutoff, 1);
                 }
 
                 cluster_x(cifptr, cii) += fix;
