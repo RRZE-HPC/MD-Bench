@@ -20,42 +20,18 @@
  *   with MD-Bench.  If not, see <https://www.gnu.org/licenses/>.
  * =======================================================================================
  */
-#ifndef __PARAMETER_H_
-#define __PARAMETER_H_
+#include <atom.h>
 
-#if PRECISION == 1
-#define MD_FLOAT float
+#ifndef __XTC_H_
+#define __XTC_H_
+
+#ifdef XTC_OUTPUT
+void xtc_init(const char *, Atom*, int);
+void xtc_write(Atom*, int, int, int);
+void xtc_end();
 #else
-#define MD_FLOAT double
+#define xtc_init(a,b,c)
+#define xtc_write(a,b,c,d)
+#define xtc_end()
 #endif
-
-typedef struct {
-    int force_field;
-    char* input_file;
-    char* vtk_file;
-    char *xtc_file;
-    MD_FLOAT epsilon;
-    MD_FLOAT sigma6;
-    MD_FLOAT temp;
-    MD_FLOAT rho;
-    MD_FLOAT mass;
-    int ntypes;
-    int ntimes;
-    int nstat;
-    int reneigh_every;
-    int prune_every;
-    int x_out_every;
-    int v_out_every;
-    MD_FLOAT dt;
-    MD_FLOAT dtforce;
-    MD_FLOAT cutforce;
-    MD_FLOAT skin;
-    MD_FLOAT cutneigh;
-    int nx, ny, nz;
-    MD_FLOAT lattice;
-    MD_FLOAT xlo, xhi, ylo, yhi, zlo, zhi;
-    MD_FLOAT xprd, yprd, zprd;
-    double proc_freq;
-    char* eam_file;
-} Parameter;
 #endif
