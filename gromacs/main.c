@@ -41,6 +41,7 @@
 #include <timers.h>
 #include <eam.h>
 #include <vtk.h>
+#include <xtc.h>
 #include <util.h>
 
 #define HLINE "----------------------------------------------------------------------------\n"
@@ -58,6 +59,7 @@ extern double computeForceEam(Eam*, Parameter*, Atom*, Neighbor*, Stats*);
 void init(Parameter *param) {
     param->input_file = NULL;
     param->vtk_file = NULL;
+    param->xtc_file = NULL;
     param->force_field = FF_LJ;
     param->epsilon = 1.0;
     param->sigma6 = 1.0;
@@ -75,8 +77,10 @@ void init(Parameter *param) {
     param->nstat = 100;
     param->mass = 1.0;
     param->dtforce = 0.5 * param->dt;
-    param->every = 20;
+    param->reneigh_every = 20;
     param->prune_every = 1000;
+    param->x_out_every = 20;
+    param->v_out_every = 5;
     param->proc_freq = 2.4;
 }
 
@@ -241,6 +245,15 @@ int main(int argc, char** argv) {
             param.vtk_file = strdup(argv[++i]);
             continue;
         }
+        if((strcmp(argv[i], "--xtc") == 0)) {
+            #ifndef XTC_OUTPUT
+            fprintf(stderr, "XTC not available, set XTC_OUTPUT option in config.mk file and recompile MD-Bench!");
+            exit(-1);
+            #else
+            param.xtc_file = strdup(argv[++i]);
+            #endif
+            continue;
+        }
         if((strcmp(argv[i], "-h") == 0) || (strcmp(argv[i], "--help") == 0)) {
             printf("MD Bench: A minimalistic re-implementation of miniMD\n");
             printf(HLINE);
@@ -253,6 +266,7 @@ int main(int argc, char** argv) {
             printf("-s / --skin <real>:   set skin (verlet buffer)\n");
             printf("--freq <real>:        processor frequency (GHz)\n");
             printf("--vtk <string>:       VTK file for visualization\n");
+            printf("--xtc <string>:       XTC file for visualization\n");
             printf(HLINE);
             exit(EXIT_SUCCESS);
         }
@@ -277,10 +291,14 @@ int main(int argc, char** argv) {
         write_data_to_vtk_file(param.vtk_file, &atom, 0);
     }
 
+    if(param.xtc_file != NULL) {
+        xtc_init(param.xtc_file, &atom, 0);
+    }
+
     for(int n = 0; n < param.ntimes; n++) {
         initialIntegrate(&param, &atom);
 
-        if((n + 1) % param.every) {
+        if((n + 1) % param.reneigh_every) {
             if(!((n + 1) % param.prune_every)) {
                 pruneNeighbor(&param, &atom, &neighbor);
             }
@@ -306,13 +324,25 @@ int main(int argc, char** argv) {
             computeThermo(n + 1, &param, &atom);
         }
 
-        if(param.vtk_file != NULL) {
-            write_data_to_vtk_file(param.vtk_file, &atom, n + 1);
+        int write_pos = !((n + 1) % param.x_out_every);
+        int write_vel = !((n + 1) % param.v_out_every);
+        if(write_pos || write_vel) {
+            if(param.vtk_file != NULL) {
+                write_data_to_vtk_file(param.vtk_file, &atom, n + 1);
+            }
+
+            if(param.xtc_file != NULL) {
+                xtc_write(&atom, n + 1, write_pos, write_vel);
+            }
         }
     }
 
     timer[TOTAL] = getTimeStamp() - timer[TOTAL];
     computeThermo(-1, &param, &atom);
+
+    if(param.xtc_file != NULL) {
+        xtc_end();
+    }
 
     printf(HLINE);
     printf("Force field: %s\n", ff2str(param.force_field));
