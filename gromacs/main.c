@@ -229,6 +229,10 @@ int main(int argc, char** argv) {
             param.nz = atoi(argv[++i]);
             continue;
         }
+        if((strcmp(argv[i], "-m") == 0) || (strcmp(argv[i], "--mass") == 0)) {
+            param.mass = atof(argv[++i]);
+            continue;
+        }
         if((strcmp(argv[i], "-r") == 0) || (strcmp(argv[i], "--radius") == 0)) {
             param.cutforce = atof(argv[++i]);
             continue;
