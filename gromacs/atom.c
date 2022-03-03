@@ -41,8 +41,7 @@
 #define MAX(a,b)    ((a) > (b) ? (a) : (b))
 #endif
 
-void initAtom(Atom *atom)
-{
+void initAtom(Atom *atom) {
     atom->x  = NULL; atom->y  = NULL; atom->z  = NULL;
     atom->vx = NULL; atom->vy = NULL; atom->vz = NULL;
     atom->cl_x = NULL;
@@ -65,8 +64,7 @@ void initAtom(Atom *atom)
     atom->clusters = NULL;
 }
 
-void createAtom(Atom *atom, Parameter *param)
-{
+void createAtom(Atom *atom, Parameter *param) {
     MD_FLOAT xlo = 0.0; MD_FLOAT xhi = param->xprd;
     MD_FLOAT ylo = 0.0; MD_FLOAT yhi = param->yprd;
     MD_FLOAT zlo = 0.0; MD_FLOAT zhi = param->zprd;
@@ -106,47 +104,25 @@ void createAtom(Atom *atom, Parameter *param)
     int subboxdim = 8;
 
     while(oz * subboxdim <= khi) {
-
         k = oz * subboxdim + sz;
         j = oy * subboxdim + sy;
         i = ox * subboxdim + sx;
 
-        if(((i + j + k) % 2 == 0) &&
-                (i >= ilo) && (i <= ihi) &&
-                (j >= jlo) && (j <= jhi) &&
-                (k >= klo) && (k <= khi)) {
-
+        if(((i + j + k) % 2 == 0) && (i >= ilo) && (i <= ihi) && (j >= jlo) && (j <= jhi) && (k >= klo) && (k <= khi)) {
             xtmp = 0.5 * alat * i;
             ytmp = 0.5 * alat * j;
             ztmp = 0.5 * alat * k;
 
-            if( xtmp >= xlo && xtmp < xhi &&
-                    ytmp >= ylo && ytmp < yhi &&
-                    ztmp >= zlo && ztmp < zhi ) {
-
-                n = k * (2 * param->ny) * (2 * param->nx) +
-                    j * (2 * param->nx) +
-                    i + 1;
-
-                for(m = 0; m < 5; m++) {
-                    myrandom(&n);
-                }
+            if(xtmp >= xlo && xtmp < xhi && ytmp >= ylo && ytmp < yhi && ztmp >= zlo && ztmp < zhi ) {
+                n = k * (2 * param->ny) * (2 * param->nx) + j * (2 * param->nx) + i + 1;
+                for(m = 0; m < 5; m++) { myrandom(&n); }
                 vxtmp = myrandom(&n);
-
-                for(m = 0; m < 5; m++){
-                    myrandom(&n);
-                }
+                for(m = 0; m < 5; m++){ myrandom(&n); }
                 vytmp = myrandom(&n);
-
-                for(m = 0; m < 5; m++) {
-                    myrandom(&n);
-                }
+                for(m = 0; m < 5; m++) { myrandom(&n); }
                 vztmp = myrandom(&n);
 
-                if(atom->Nlocal == atom->Nmax) {
-                    growAtom(atom);
-                }
-
+                if(atom->Nlocal == atom->Nmax) { growAtom(atom); }
                 atom_x(atom->Nlocal) = xtmp;
                 atom_y(atom->Nlocal) = ytmp;
                 atom_z(atom->Nlocal) = ztmp;
@@ -159,7 +135,6 @@ void createAtom(Atom *atom, Parameter *param)
         }
 
         sx++;
-
         if(sx == subboxdim) { sx = 0; sy++; }
         if(sy == subboxdim) { sy = 0; sz++; }
         if(sz == subboxdim) { sz = 0; ox++; }
@@ -178,8 +153,9 @@ int type_str2int(const char *type) {
 int readAtom(Atom* atom, Parameter* param) {
     int len = strlen(param->input_file);
     if(strncmp(&param->input_file[len - 4], ".pdb", 4) == 0) { return readAtom_pdb(atom, param); }
+    if(strncmp(&param->input_file[len - 4], ".gro", 4) == 0) { return readAtom_gro(atom, param); }
     if(strncmp(&param->input_file[len - 4], ".dmp", 4) == 0) { return readAtom_dmp(atom, param); }
-    fprintf(stderr, "Invalid input file extension: %s\nValid choices are: pdb, dmp\n", param->input_file);
+    fprintf(stderr, "Invalid input file extension: %s\nValid choices are: pdb, gro, dmp\n", param->input_file);
     exit(-1);
     return -1;
 }
@@ -249,6 +225,85 @@ int readAtom_pdb(Atom* atom, Parameter* param) {
 
     if(!read_atoms) {
         fprintf(stderr, "Input error: No atoms read!\n");
+        exit(-1);
+        return -1;
+    }
+
+    atom->epsilon = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
+    atom->sigma6 = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
+    atom->cutforcesq = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
+    atom->cutneighsq = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
+    for(int i = 0; i < atom->ntypes * atom->ntypes; i++) {
+        atom->epsilon[i] = param->epsilon;
+        atom->sigma6[i] = param->sigma6;
+        atom->cutneighsq[i] = param->cutneigh * param->cutneigh;
+        atom->cutforcesq[i] = param->cutforce * param->cutforce;
+    }
+
+    fprintf(stdout, "Read %d atoms from %s\n", read_atoms, param->input_file);
+    fclose(fp);
+    return read_atoms;
+}
+
+int readAtom_gro(Atom* atom, Parameter* param) {
+    FILE *fp = fopen(param->input_file, "r");
+    char line[MAXLINE];
+    char desc[MAXLINE];
+    int read_atoms = 0;
+    int atoms_to_read = 0;
+    int i = 0;
+
+    if(!fp) {
+        fprintf(stderr, "Could not open input file: %s\n", param->input_file);
+        exit(-1);
+        return -1;
+    }
+
+    fgets(desc, MAXLINE, fp);
+    for(i = 0; desc[i] != '\n'; i++);
+    desc[i] = '\0';
+    fgets(line, MAXLINE, fp);
+    atoms_to_read = atoi(strtok(line, " "));
+    fprintf(stdout, "System: %s with %d atoms\n", desc, atoms_to_read);
+
+    while(!feof(fp) && read_atoms < atoms_to_read) {
+        fgets(line, MAXLINE, fp);
+        char *label = strtok(line, " ");
+        int type = type_str2int(strtok(NULL, " "));
+        int atom_id = atoi(strtok(NULL, " ")) - 1;
+        atom_id = read_atoms;
+        while(atom_id + 1 >= atom->Nmax) {
+            growAtom(atom);
+        }
+
+        atom->type[atom_id] = type;
+        atom_x(atom_id) = atof(strtok(NULL, " "));
+        atom_y(atom_id) = atof(strtok(NULL, " "));
+        atom_z(atom_id) = atof(strtok(NULL, " "));
+        atom->vx[atom_id] = atof(strtok(NULL, " "));
+        atom->vy[atom_id] = atof(strtok(NULL, " "));
+        atom->vz[atom_id] = atof(strtok(NULL, " "));
+        atom->ntypes = MAX(atom->type[atom_id] + 1, atom->ntypes);
+        atom->Natoms++;
+        atom->Nlocal++;
+        read_atoms++;
+    }
+
+    if(!feof(fp)) {
+        fgets(line, MAXLINE, fp);
+        param->xlo = 0.0;
+        param->xhi = atof(strtok(line, " "));
+        param->ylo = 0.0;
+        param->yhi = atof(strtok(NULL, " "));
+        param->zlo = 0.0;
+        param->zhi = atof(strtok(NULL, " "));
+        param->xprd = param->xhi - param->xlo;
+        param->yprd = param->yhi - param->ylo;
+        param->zprd = param->zhi - param->zlo;
+    }
+
+    if(read_atoms != atoms_to_read) {
+        fprintf(stderr, "Input error: Number of atoms read do not match (%d/%d).\n", read_atoms, atoms_to_read);
         exit(-1);
         return -1;
     }
@@ -362,8 +417,7 @@ int readAtom_dmp(Atom* atom, Parameter* param) {
     return natoms;
 }
 
-void growAtom(Atom *atom)
-{
+void growAtom(Atom *atom) {
     int nold = atom->Nmax;
     atom->Nmax += DELTA;
 
@@ -380,8 +434,7 @@ void growAtom(Atom *atom)
     atom->type = (int *) reallocate(atom->type, ALIGNMENT, atom->Nmax * sizeof(int), nold * sizeof(int));
 }
 
-void growClusters(Atom *atom)
-{
+void growClusters(Atom *atom) {
     int nold = atom->Nclusters_max;
     atom->Nclusters_max += DELTA;
     atom->clusters = (Cluster*) reallocate(atom->clusters, ALIGNMENT, atom->Nclusters_max * sizeof(Cluster), nold * sizeof(Cluster));

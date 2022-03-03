@@ -11,7 +11,7 @@ DATA_LAYOUT ?= AOS
 # Assembly syntax to generate (ATT/INTEL)
 ASM_SYNTAX ?= ATT
 # Debug
-DEBUG ?= false
+DEBUG ?= true
 
 # Number of times to run the atoms loop on stubbed variant
 ATOMS_LOOP_RUNS ?= 1
@@ -24,9 +24,9 @@ MEM_TRACER ?= false
 # Trace indexes and distances for gather-md (true or false)
 INDEX_TRACER ?= false
 # Vector width (elements) for index and distance tracer
-VECTOR_WIDTH ?= 4
+VECTOR_WIDTH ?= 8
 # When vector width is 4 but AVX2 is not supported (AVX only), set this to true
-NO_AVX2 ?= true
+NO_AVX2 ?= false
 # Compute statistics
 COMPUTE_STATS ?= true
 
