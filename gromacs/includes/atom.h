@@ -25,6 +25,8 @@
 #ifndef __ATOM_H_
 #define __ATOM_H_
 
+#define DELTA 20000
+
 #define CLUSTER_DIM_M       4
 #define CLUSTER_DIM_N       VECTOR_WIDTH
 

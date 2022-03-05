@@ -11,7 +11,7 @@ DATA_LAYOUT ?= AOS
 # Assembly syntax to generate (ATT/INTEL)
 ASM_SYNTAX ?= ATT
 # Debug
-DEBUG ?= true
+DEBUG ?= false
 
 # Number of times to run the atoms loop on stubbed variant
 ATOMS_LOOP_RUNS ?= 1

@@ -31,16 +31,6 @@
 #include <allocate.h>
 #include <util.h>
 
-#define DELTA 20000
-
-#ifndef MAXLINE
-#define MAXLINE 4096
-#endif
-
-#ifndef MAX
-#define MAX(a,b)    ((a) > (b) ? (a) : (b))
-#endif
-
 void initAtom(Atom *atom) {
     atom->x  = NULL; atom->y  = NULL; atom->z  = NULL;
     atom->vx = NULL; atom->vy = NULL; atom->vz = NULL;

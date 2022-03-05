@@ -31,10 +31,12 @@
 
 typedef struct {
     int force_field;
+    char* param_file;
     char* input_file;
     char* vtk_file;
     char *xtc_file;
     MD_FLOAT epsilon;
+    MD_FLOAT sigma;
     MD_FLOAT sigma6;
     MD_FLOAT temp;
     MD_FLOAT rho;
@@ -58,4 +60,9 @@ typedef struct {
     double proc_freq;
     char* eam_file;
 } Parameter;
+
+void initParameter(Parameter*);
+void readParameter(Parameter*, const char*);
+void printParameter(Parameter*);
+
 #endif
