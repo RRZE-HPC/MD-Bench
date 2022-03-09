@@ -27,13 +27,60 @@
 
 #define DELTA 20000
 
-#define CLUSTER_DIM_M       4
-#define CLUSTER_DIM_N       VECTOR_WIDTH
+#define CLUSTER_M 4
+
+// Nbnxn layouts (as of GROMACS):
+// Simd4xN: M=4, N=VECTOR_WIDTH
+// Simd2xNN: M=4, N=(VECTOR_WIDTH/2)
+
+// Simd2XNN (here used for single-precision)
+#if VECTOR_WIDTH > CLUSTER_M * 2
+#   define CLUSTER_N                (VECTOR_WIDTH / 2)
+// Simd4xN
+#else
+#   define CLUSTER_N                VECTOR_WIDTH
+#endif
+
+#if CLUSTER_M == CLUSTER_N
+#   define CJ0_FROM_CI(a)           (a)
+#   define CJ1_FROM_CI(a)           (a)
+#   define CI_BASE_INDEX(a,b)       ((a) * CLUSTER_N * (b))
+#   define CJ_BASE_INDEX(a,b)       ((a) * CLUSTER_N * (b))
+#elif CLUSTER_M == CLUSTER_N * 2 // M > N
+#   define CJ0_FROM_CI(a)           ((a) << 1)
+#   define CJ1_FROM_CI(a)           (((a) << 1) | 0x1)
+#   define CI_BASE_INDEX(a,b)       ((a) * CLUSTER_M * (b))
+#   define CJ_BASE_INDEX(a,b)       (((a) >> 1) * CLUSTER_M * (b) + ((a) & 0x1) * (CLUSTER_M >> 1))
+#elif CLUSTER_M == CLUSTER_N / 2 // M < N
+#   define CJ0_FROM_CI(a)           ((a) >> 1)
+#   define CJ1_FROM_CI(a)           ((a) >> 1)
+#   define CI_BASE_INDEX(a,b)       (((a) >> 1) * CLUSTER_N * (b) + ((a) & 0x1) * (CLUSTER_N >> 1))
+#   define CJ_BASE_INDEX(a,b)       ((a) * CLUSTER_N * (b))
+#else
+#   error "Invalid cluster configuration!"
+#endif
+
+#if CLUSTER_N != 2 && CLUSTER_N != 4 && CLUSTER_N != 8
+#   error "Cluster N dimension can be only 2, 4 and 8"
+#endif
+
+#define CI_SCALAR_BASE_INDEX(a)     (CI_BASE_INDEX(a, 1))
+#define CI_VECTOR_BASE_INDEX(a)     (CI_BASE_INDEX(a, 3))
+#define CJ_SCALAR_BASE_INDEX(a)     (CJ_BASE_INDEX(a, 1))
+#define CJ_VECTOR_BASE_INDEX(a)     (CJ_BASE_INDEX(a, 3))
+
+#if CLUSTER_M >= CLUSTER_N
+#   define CL_X_OFFSET              (0 * CLUSTER_M)
+#   define CL_Y_OFFSET              (1 * CLUSTER_M)
+#   define CL_Z_OFFSET              (2 * CLUSTER_M)
+#else
+#   define CL_X_OFFSET              (0 * CLUSTER_N)
+#   define CL_Y_OFFSET              (1 * CLUSTER_N)
+#   define CL_Z_OFFSET              (2 * CLUSTER_N)
+#endif
 
 typedef struct {
-    int bin;
     int natoms;
-    int type[CLUSTER_DIM_M];
     MD_FLOAT bbminx, bbmaxx;
     MD_FLOAT bbminy, bbmaxy;
     MD_FLOAT bbminz, bbmaxz;
@@ -44,9 +91,6 @@ typedef struct {
     int Nclusters, Nclusters_local, Nclusters_ghost, Nclusters_max;
     MD_FLOAT *x, *y, *z;
     MD_FLOAT *vx, *vy, *vz;
-    MD_FLOAT *cl_x;
-    MD_FLOAT *cl_v;
-    MD_FLOAT *cl_f;
     int *border_map;
     int *type;
     int ntypes;
@@ -54,8 +98,13 @@ typedef struct {
     MD_FLOAT *sigma6;
     MD_FLOAT *cutforcesq;
     MD_FLOAT *cutneighsq;
-    Cluster *clusters;
     int *PBCx, *PBCy, *PBCz;
+    // Data in cluster format
+    MD_FLOAT *cl_x;
+    MD_FLOAT *cl_v;
+    MD_FLOAT *cl_f;
+    int *cl_type;
+    Cluster *iclusters, *jclusters;
 } Atom;
 
 extern void initAtom(Atom*);
@@ -67,10 +116,6 @@ extern int readAtom_dmp(Atom*, Parameter*);
 extern void growAtom(Atom*);
 extern void growClusters(Atom*);
 
-#define cluster_pos_ptr(ci)       &(atom->cl_x[(ci) * CLUSTER_DIM_M * 3])
-#define cluster_velocity_ptr(ci)  &(atom->cl_v[(ci) * CLUSTER_DIM_M * 3])
-#define cluster_force_ptr(ci)     &(atom->cl_f[(ci) * CLUSTER_DIM_M * 3])
-
 #ifdef AOS
 #define POS_DATA_LAYOUT     "AoS"
 #define atom_x(i)           atom->x[(i) * 3 + 0]
@@ -81,16 +126,6 @@ extern void growClusters(Atom*);
 #define atom_x(i)           atom->x[i]
 #define atom_y(i)           atom->y[i]
 #define atom_z(i)           atom->z[i]
-#endif
-
-#ifdef CLUSTER_AOS
-#define cluster_x(cptr, i)  cptr[(i) * 3 + 0]
-#define cluster_y(cptr, i)  cptr[(i) * 3 + 1]
-#define cluster_z(cptr, i)  cptr[(i) * 3 + 2]
-#else
-#define cluster_x(cptr, i)  cptr[0 * CLUSTER_DIM_M + (i)]
-#define cluster_y(cptr, i)  cptr[1 * CLUSTER_DIM_M + (i)]
-#define cluster_z(cptr, i)  cptr[2 * CLUSTER_DIM_M + (i)]
 #endif
 
 #endif

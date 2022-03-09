@@ -1,5 +1,7 @@
 # Compiler tag (GCC/CLANG/ICC)
 TAG ?= ICC
+# Instruction set (SSE/AVX/AVX2/AVX512)
+ISA ?= AVX512
 # Optimization scheme (lammps/gromacs/clusters_per_bin)
 OPT_SCHEME ?= gromacs
 # Enable likwid (true or false)
@@ -23,10 +25,6 @@ EXPLICIT_TYPES ?= false
 MEM_TRACER ?= false
 # Trace indexes and distances for gather-md (true or false)
 INDEX_TRACER ?= false
-# Vector width (elements) for index and distance tracer
-VECTOR_WIDTH ?= 8
-# When vector width is 4 but AVX2 is not supported (AVX only), set this to true
-NO_AVX2 ?= false
 # Compute statistics
 COMPUTE_STATS ?= true
 

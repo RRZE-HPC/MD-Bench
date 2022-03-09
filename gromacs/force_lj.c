@@ -63,7 +63,7 @@ double computeForceLJ_ref(Parameter *param, Atom *atom, Neighbor *neighbor, Stat
             int cj = neighs[k];
             int any = 0;
             MD_FLOAT *cjptr = cluster_pos_ptr(cj);
-            for(int cii = 0; cii < CLUSTER_DIM_M; cii++) {
+            for(int cii = 0; cii < CLUSTER_M; cii++) {
                 MD_FLOAT xtmp = cluster_x(ciptr, cii);
                 MD_FLOAT ytmp = cluster_y(ciptr, cii);
                 MD_FLOAT ztmp = cluster_z(ciptr, cii);
@@ -71,7 +71,7 @@ double computeForceLJ_ref(Parameter *param, Atom *atom, Neighbor *neighbor, Stat
                 MD_FLOAT fiy = 0;
                 MD_FLOAT fiz = 0;
 
-                for(int cjj = 0; cjj < CLUSTER_DIM_M; cjj++) {
+                for(int cjj = 0; cjj < CLUSTER_M; cjj++) {
                     if(ci != cj || cii != cjj) {
                         MD_FLOAT delx = xtmp - cluster_x(cjptr, cjj);
                         MD_FLOAT dely = ytmp - cluster_y(cjptr, cjj);
@@ -106,7 +106,7 @@ double computeForceLJ_ref(Parameter *param, Atom *atom, Neighbor *neighbor, Stat
 
         addStat(stats->calculated_forces, 1);
         addStat(stats->num_neighs, numneighs);
-        addStat(stats->force_iters, (long long int)((double)numneighs * CLUSTER_DIM_M / CLUSTER_DIM_N));
+        addStat(stats->force_iters, (long long int)((double)numneighs * CLUSTER_M / CLUSTER_N));
     }
 
     LIKWID_MARKER_STOP("force");
@@ -128,7 +128,7 @@ double computeForceLJ_4xn(Parameter *param, Atom *atom, Neighbor *neighbor, Stat
     MD_SIMD_FLOAT epsilon_vec = simd_broadcast(epsilon);
     MD_SIMD_FLOAT c48_vec = simd_broadcast(48.0);
     MD_SIMD_FLOAT c05_vec = simd_broadcast(0.5);
-    const int unroll_j = CLUSTER_DIM_N / CLUSTER_DIM_M;
+    const int unroll_j = CLUSTER_N / CLUSTER_M;
 
     double S = getTimeStamp();
     LIKWID_MARKER_START("force");
@@ -262,7 +262,7 @@ double computeForceLJ_4xn(Parameter *param, Atom *atom, Neighbor *neighbor, Stat
 
         addStat(stats->calculated_forces, 1);
         addStat(stats->num_neighs, numneighs);
-        addStat(stats->force_iters, (long long int)((double)numneighs * CLUSTER_DIM_M / CLUSTER_DIM_N));
+        addStat(stats->force_iters, (long long int)((double)numneighs * CLUSTER_M / CLUSTER_N));
     }
 
     LIKWID_MARKER_STOP("force");

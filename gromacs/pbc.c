@@ -53,20 +53,22 @@ void updatePbc(Atom *atom, Parameter *param, int firstUpdate) {
 
     for(int cg = 0; cg < atom->Nclusters_ghost; cg++) {
         const int ci = nlocal + cg;
-        MD_FLOAT *cptr = cluster_pos_ptr(ci);
-        MD_FLOAT *bmap_cptr = cluster_pos_ptr(border_map[cg]);
+        int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
+        int bmap_vec_base = CI_VECTOR_BASE_INDEX(border_map[cg]);
+        MD_FLOAT *ci_x = &atom->cl_x[ci_vec_base];
+        MD_FLOAT *bmap_x = &atom->cl_x[bmap_vec_base];
         MD_FLOAT bbminx = INFINITY, bbmaxx = -INFINITY;
         MD_FLOAT bbminy = INFINITY, bbmaxy = -INFINITY;
         MD_FLOAT bbminz = INFINITY, bbmaxz = -INFINITY;
 
         for(int cii = 0; cii < atom->clusters[ci].natoms; cii++) {
-            MD_FLOAT xtmp = cluster_x(bmap_cptr, cii) + atom->PBCx[cg] * xprd;
-            MD_FLOAT ytmp = cluster_y(bmap_cptr, cii) + atom->PBCy[cg] * yprd;
-            MD_FLOAT ztmp = cluster_z(bmap_cptr, cii) + atom->PBCz[cg] * zprd;
+            MD_FLOAT xtmp = bmap_x[CL_X_OFFSET + cii] + atom->PBCx[cg] * xprd;
+            MD_FLOAT ytmp = bmap_x[CL_Y_OFFSET + cii] + atom->PBCy[cg] * yprd;
+            MD_FLOAT ztmp = bmap_x[CL_Z_OFFSET + cii] + atom->PBCz[cg] * zprd;
 
-            cluster_x(cptr, cii) = xtmp;
-            cluster_y(cptr, cii) = ytmp;
-            cluster_z(cptr, cii) = ztmp;
+            ci_x[CL_X_OFFSET + cii] = xtmp;
+            ci_x[CL_Y_OFFSET + cii] = ytmp;
+            ci_x[CL_Z_OFFSET + cii] = ztmp;
 
             if(firstUpdate) {
                 // TODO: To create the bounding boxes faster, we can use SIMD operations
@@ -80,18 +82,18 @@ void updatePbc(Atom *atom, Parameter *param, int firstUpdate) {
         }
 
         if(firstUpdate) {
-            for(int cii = atom->clusters[ci].natoms; cii < CLUSTER_DIM_M; cii++) {
-                cluster_x(cptr, cii) = INFINITY;
-                cluster_y(cptr, cii) = INFINITY;
-                cluster_z(cptr, cii) = INFINITY;
+            for(int cii = atom->clusters[ci].natoms; cii < CLUSTER_M; cii++) {
+                ci_x[CL_X_OFFSET + cii] = INFINITY;
+                ci_x[CL_Y_OFFSET + cii] = INFINITY;
+                ci_x[CL_Z_OFFSET + cii] = INFINITY;
             }
 
-            atom->clusters[ci].bbminx = bbminx;
-            atom->clusters[ci].bbmaxx = bbmaxx;
-            atom->clusters[ci].bbminy = bbminy;
-            atom->clusters[ci].bbmaxy = bbmaxy;
-            atom->clusters[ci].bbminz = bbminz;
-            atom->clusters[ci].bbmaxz = bbmaxz;
+            atom->iclusters[ci].bbminx = bbminx;
+            atom->iclusters[ci].bbmaxx = bbmaxx;
+            atom->iclusters[ci].bbminy = bbminy;
+            atom->iclusters[ci].bbmaxy = bbmaxy;
+            atom->iclusters[ci].bbminz = bbminz;
+            atom->iclusters[ci].bbmaxz = bbmaxz;
         }
     }
 }
@@ -131,14 +133,17 @@ void updateAtomsPbc(Atom *atom, Parameter *param) {
 #define ADDGHOST(dx,dy,dz);                                                     \
     Nghost++;                                                                   \
     const int g_atom_idx = atom->Nclusters_local + Nghost;                      \
+    const int natoms_ci = atom->iclusters[ci].natoms;                           \
     border_map[Nghost] = ci;                                                    \
     atom->PBCx[Nghost] = dx;                                                    \
     atom->PBCy[Nghost] = dy;                                                    \
     atom->PBCz[Nghost] = dz;                                                    \
-    atom->clusters[g_atom_idx].natoms = atom->clusters[ci].natoms;              \
-    Nghost_atoms += atom->clusters[g_atom_idx].natoms;                          \
-    for(int cii = 0; cii < atom->clusters[ci].natoms; cii++) {                  \
-        atom->clusters[g_atom_idx].type[cii] = atom->clusters[ci].type[cii];    \
+    atom->iclusters[g_atom_idx].natoms = natoms_ci;                             \
+    Nghost_atoms += natoms_ci;                                                  \
+    int ci_sca_base = CI_SCALAR_BASE_INDEX(ci);                                 \
+    int cg_sca_base = CI_SCALAR_BASE_INDEX(cg);                                 \
+    for(int cii = 0; cii < natoms_ci; cii++) {                                  \
+        atom->cl_type[cg_sca_base + cii] = atom->cl_type[ci_sca_base + cii];    \
     }
 
 /* internal subroutines */
@@ -171,12 +176,12 @@ void setupPbc(Atom *atom, Parameter *param) {
             border_map = atom->border_map;
         }
 
-        MD_FLOAT bbminx = atom->clusters[ci].bbminx;
-        MD_FLOAT bbmaxx = atom->clusters[ci].bbmaxx;
-        MD_FLOAT bbminy = atom->clusters[ci].bbminy;
-        MD_FLOAT bbmaxy = atom->clusters[ci].bbmaxy;
-        MD_FLOAT bbminz = atom->clusters[ci].bbminz;
-        MD_FLOAT bbmaxz = atom->clusters[ci].bbmaxz;
+        MD_FLOAT bbminx = atom->iclusters[ci].bbminx;
+        MD_FLOAT bbmaxx = atom->iclusters[ci].bbmaxx;
+        MD_FLOAT bbminy = atom->iclusters[ci].bbminy;
+        MD_FLOAT bbmaxy = atom->iclusters[ci].bbmaxy;
+        MD_FLOAT bbminz = atom->iclusters[ci].bbminz;
+        MD_FLOAT bbmaxz = atom->iclusters[ci].bbmaxz;
 
         /* Setup ghost atoms */
         /* 6 planes */
@@ -210,16 +215,17 @@ void setupPbc(Atom *atom, Parameter *param) {
         if (bbmaxy >= (yprd-Cutneigh) && bbmaxx >= (xprd-Cutneigh)) { ADDGHOST(-1,-1,0); }
     }
 
-    if(atom->Nclusters_local + Nghost + 1 >= atom->Nclusters_max) {
+    if(atom->Nclusters_local + Nghost + 2 >= atom->Nclusters_max) {
         growClusters(atom);
     }
 
     // Add dummy cluster at the end
-    MD_FLOAT *cptr = cluster_pos_ptr(atom->Nclusters_local + Nghost + 1);
-    for(int cii = 0; cii < CLUSTER_DIM_M; cii++) {
-        cluster_x(cptr, cii) = INFINITY;
-        cluster_y(cptr, cii) = INFINITY;
-        cluster_z(cptr, cii) = INFINITY;
+    int ci_vec_base = CI_VECTOR_BASE_INDEX(atom->Nclusters_local + Nghost + 1);
+    MD_FLOAT *ci_x = &atom->cl_x[ci_vec_base];
+    for(int cii = 0; cii < MAX(CLUSTER_M, CLUSTER_N); cii++) {
+        ci_x[CL_X_OFFSET + cii] = INFINITY;
+        ci_x[CL_Y_OFFSET + cii] = INFINITY;
+        ci_x[CL_Z_OFFSET + cii] = INFINITY;
     }
 
     // increase by one to make it the ghost atom count
