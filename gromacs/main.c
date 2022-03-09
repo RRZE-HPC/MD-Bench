@@ -101,17 +101,18 @@ void initialIntegrate(Parameter *param, Atom *atom) {
     DEBUG_MESSAGE("initialIntegrate start\n");
 
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
-        MD_FLOAT *ciptr = cluster_pos_ptr(ci);
-        MD_FLOAT *civptr = cluster_velocity_ptr(ci);
-        MD_FLOAT *cifptr = cluster_force_ptr(ci);
+        int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
+        MD_FLOAT *ci_x = &atom->cl_x[ci_vec_base];
+        MD_FLOAT *ci_v = &atom->cl_v[ci_vec_base];
+        MD_FLOAT *ci_f = &atom->cl_f[ci_vec_base];
 
-        for(int cii = 0; cii < atom->clusters[ci].natoms; cii++) {
-            cluster_x(civptr, cii) += param->dtforce * cluster_x(cifptr, cii);
-            cluster_y(civptr, cii) += param->dtforce * cluster_y(cifptr, cii);
-            cluster_z(civptr, cii) += param->dtforce * cluster_z(cifptr, cii);
-            cluster_x(ciptr, cii) += param->dt * cluster_x(civptr, cii);
-            cluster_y(ciptr, cii) += param->dt * cluster_y(civptr, cii);
-            cluster_z(ciptr, cii) += param->dt * cluster_z(civptr, cii);
+        for(int cii = 0; cii < atom->iclusters[ci].natoms; cii++) {
+            ci_v[CL_X_OFFSET + cii] += param->dtforce * ci_f[CL_X_OFFSET + cii];
+            ci_v[CL_Y_OFFSET + cii] += param->dtforce * ci_f[CL_Y_OFFSET + cii];
+            ci_v[CL_Z_OFFSET + cii] += param->dtforce * ci_f[CL_Z_OFFSET + cii];
+            ci_x[CL_X_OFFSET + cii] += param->dt * ci_v[CL_X_OFFSET + cii];
+            ci_x[CL_Y_OFFSET + cii] += param->dt * ci_v[CL_Y_OFFSET + cii];
+            ci_x[CL_Z_OFFSET + cii] += param->dt * ci_v[CL_Z_OFFSET + cii];
         }
     }
 
@@ -122,13 +123,14 @@ void finalIntegrate(Parameter *param, Atom *atom) {
     DEBUG_MESSAGE("finalIntegrate start\n");
 
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
-        MD_FLOAT *civptr = cluster_velocity_ptr(ci);
-        MD_FLOAT *cifptr = cluster_force_ptr(ci);
+        int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
+        MD_FLOAT *ci_v = &atom->cl_v[ci_vec_base];
+        MD_FLOAT *ci_f = &atom->cl_f[ci_vec_base];
 
-        for(int cii = 0; cii < atom->clusters[ci].natoms; cii++) {
-            cluster_x(civptr, cii) += param->dtforce * cluster_x(cifptr, cii);
-            cluster_y(civptr, cii) += param->dtforce * cluster_y(cifptr, cii);
-            cluster_z(civptr, cii) += param->dtforce * cluster_z(cifptr, cii);
+        for(int cii = 0; cii < atom->iclusters[ci].natoms; cii++) {
+            ci_v[CL_X_OFFSET + cii] += param->dtforce * ci_f[CL_X_OFFSET + cii];
+            ci_v[CL_Y_OFFSET + cii] += param->dtforce * ci_f[CL_Y_OFFSET + cii];
+            ci_v[CL_Z_OFFSET + cii] += param->dtforce * ci_f[CL_Z_OFFSET + cii];
         }
     }
 

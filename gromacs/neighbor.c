@@ -753,7 +753,7 @@ void binClusters(Atom *atom) {
 
                     if(CLUSTER_M > CLUSTER_N) {
                         int cj1 = CJ1_FROM_CI(ci);
-                        if(atoms->jclusters[cj1].natoms > 0) {
+                        if(atom->jclusters[cj1].natoms > 0) {
                             bin_clusters[bin * clusters_per_bin + c + 1] = cj1;
                             bin_nclusters[bin]++;
                         }
@@ -780,15 +780,15 @@ void binClusters(Atom *atom) {
                         MD_FLOAT *cj_x = &atom->cl_x[cj_vec_base];
                         MD_FLOAT cj_minz = atom->jclusters[cj].bbminz;
 
-                        xtmp = cj_x[CL_X_OFFSET + 0]
-                        ytmp = cj_x[CL_Y_OFFSET + 0]
+                        xtmp = cj_x[CL_X_OFFSET + 0];
+                        ytmp = cj_x[CL_Y_OFFSET + 0];
                         coord2bin2D(xtmp, ytmp, &ix, &iy);
                         ix = MAX(MIN(ix, mbinx - 1), 0);
                         iy = MAX(MIN(iy, mbiny - 1), 0);
                         for(int cjj = 1; cjj < n; cjj++) {
                             int nix, niy;
-                            xtmp = cj_x[CL_X_OFFSET + cjj]
-                            ytmp = cj_x[CL_Y_OFFSET + cjj]
+                            xtmp = cj_x[CL_X_OFFSET + cjj];
+                            ytmp = cj_x[CL_Y_OFFSET + cjj];
                             coord2bin2D(xtmp, ytmp, &nix, &niy);
                             nix = MAX(MIN(nix, mbinx - 1), 0);
                             niy = MAX(MIN(niy, mbiny - 1), 0);
@@ -862,7 +862,7 @@ void updateSingleAtoms(Atom *atom) {
         MD_FLOAT *ci_x = &atom->cl_x[ci_vec_base];
         MD_FLOAT *ci_v = &atom->cl_v[ci_vec_base];
 
-        for(int cii = 0; cii < atom->clusters[ci].natoms; cii++) {
+        for(int cii = 0; cii < atom->iclusters[ci].natoms; cii++) {
             atom_x(Natom) = ci_x[CL_X_OFFSET + cii];
             atom_y(Natom) = ci_x[CL_Y_OFFSET + cii];
             atom_z(Natom) = ci_x[CL_Z_OFFSET + cii];
