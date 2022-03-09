@@ -28,6 +28,7 @@
 #include <atom.h>
 #include <allocate.h>
 #include <neighbor.h>
+#include <util.h>
 
 #define DELTA 20000
 
@@ -61,7 +62,7 @@ void updatePbc(Atom *atom, Parameter *param, int firstUpdate) {
         MD_FLOAT bbminy = INFINITY, bbmaxy = -INFINITY;
         MD_FLOAT bbminz = INFINITY, bbmaxz = -INFINITY;
 
-        for(int cii = 0; cii < atom->clusters[ci].natoms; cii++) {
+        for(int cii = 0; cii < atom->iclusters[ci].natoms; cii++) {
             MD_FLOAT xtmp = bmap_x[CL_X_OFFSET + cii] + atom->PBCx[cg] * xprd;
             MD_FLOAT ytmp = bmap_x[CL_Y_OFFSET + cii] + atom->PBCy[cg] * yprd;
             MD_FLOAT ztmp = bmap_x[CL_Z_OFFSET + cii] + atom->PBCz[cg] * zprd;
@@ -82,7 +83,7 @@ void updatePbc(Atom *atom, Parameter *param, int firstUpdate) {
         }
 
         if(firstUpdate) {
-            for(int cii = atom->clusters[ci].natoms; cii < CLUSTER_M; cii++) {
+            for(int cii = atom->iclusters[ci].natoms; cii < CLUSTER_M; cii++) {
                 ci_x[CL_X_OFFSET + cii] = INFINITY;
                 ci_x[CL_Y_OFFSET + cii] = INFINITY;
                 ci_x[CL_Z_OFFSET + cii] = INFINITY;
@@ -132,13 +133,13 @@ void updateAtomsPbc(Atom *atom, Parameter *param) {
  * that are then enforced in updatePbc */
 #define ADDGHOST(dx,dy,dz);                                                     \
     Nghost++;                                                                   \
-    const int g_atom_idx = atom->Nclusters_local + Nghost;                      \
+    const int cg = atom->Nclusters_local + Nghost;                                      \
     const int natoms_ci = atom->iclusters[ci].natoms;                           \
     border_map[Nghost] = ci;                                                    \
     atom->PBCx[Nghost] = dx;                                                    \
     atom->PBCy[Nghost] = dy;                                                    \
     atom->PBCz[Nghost] = dz;                                                    \
-    atom->iclusters[g_atom_idx].natoms = natoms_ci;                             \
+    atom->iclusters[cg].natoms = natoms_ci;                                     \
     Nghost_atoms += natoms_ci;                                                  \
     int ci_sca_base = CI_SCALAR_BASE_INDEX(ci);                                 \
     int cg_sca_base = CI_SCALAR_BASE_INDEX(cg);                                 \
