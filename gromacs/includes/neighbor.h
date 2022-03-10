@@ -40,6 +40,7 @@ extern void buildNeighbor(Atom*, Neighbor*);
 extern void pruneNeighbor(Parameter*, Atom*, Neighbor*);
 extern void sortAtom(Atom*);
 extern void buildClusters(Atom*);
+extern void defineJClusters(Atom*);
 extern void binClusters(Atom*);
 extern void updateSingleAtoms(Atom*);
 #endif

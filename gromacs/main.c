@@ -70,6 +70,7 @@ double setup(Parameter *param, Eam *eam, Atom *atom, Neighbor *neighbor, Stats *
     setupThermo(param, atom->Natoms);
     if(param->input_file == NULL) { adjustThermo(param, atom); }
     buildClusters(atom);
+    defineJClusters(atom);
     setupPbc(atom, param);
     binClusters(atom);
     buildNeighbor(atom, neighbor);
@@ -84,6 +85,7 @@ double reneighbour(Parameter *param, Atom *atom, Neighbor *neighbor) {
     updateSingleAtoms(atom);
     updateAtomsPbc(atom, param);
     buildClusters(atom);
+    defineJClusters(atom);
     setupPbc(atom, param);
     binClusters(atom);
     buildNeighbor(atom, neighbor);
@@ -313,6 +315,7 @@ int main(int argc, char** argv) {
     }
 
     timer[TOTAL] = getTimeStamp() - timer[TOTAL];
+    updateSingleAtoms(&atom);
     computeThermo(-1, &param, &atom);
 
     if(param.xtc_file != NULL) {

@@ -429,10 +429,10 @@ void growAtom(Atom *atom) {
 
 void growClusters(Atom *atom) {
     int nold = atom->Nclusters_max;
-    int jfac = MIN(1, CLUSTER_M / CLUSTER_N); // If M>N, we need to allocate more j-clusters
+    int jterm = MAX(1, CLUSTER_M / CLUSTER_N); // If M>N, we need to allocate more j-clusters
     atom->Nclusters_max += DELTA;
     atom->iclusters = (Cluster*) reallocate(atom->iclusters, ALIGNMENT, atom->Nclusters_max * sizeof(Cluster), nold * sizeof(Cluster));
-    atom->jclusters = (Cluster*) reallocate(atom->jclusters, ALIGNMENT, atom->Nclusters_max * jfac * sizeof(Cluster), nold * jfac * sizeof(Cluster));
+    atom->jclusters = (Cluster*) reallocate(atom->jclusters, ALIGNMENT, atom->Nclusters_max * jterm * sizeof(Cluster), nold * jterm * sizeof(Cluster));
     atom->icluster_bin = (int*) reallocate(atom->icluster_bin, ALIGNMENT, atom->Nclusters_max * sizeof(int), nold * sizeof(int));
     atom->cl_x = (MD_FLOAT*) reallocate(atom->cl_x, ALIGNMENT, atom->Nclusters_max * CLUSTER_M * 3 * sizeof(MD_FLOAT), nold * CLUSTER_M * 3 * sizeof(MD_FLOAT));
     atom->cl_f = (MD_FLOAT*) reallocate(atom->cl_f, ALIGNMENT, atom->Nclusters_max * CLUSTER_M * 3 * sizeof(MD_FLOAT), nold * CLUSTER_M * 3 * sizeof(MD_FLOAT));
