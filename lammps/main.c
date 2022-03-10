@@ -45,7 +45,8 @@
 
 #define HLINE "----------------------------------------------------------------------------\n"
 
-extern double computeForceLJ(Parameter*, Atom*, Neighbor*, Stats*);
+extern double computeForceLJFullNeigh(Parameter*, Atom*, Neighbor*, Stats*);
+extern double computeForceLJHalfNeigh(Parameter*, Atom*, Neighbor*, Stats*);
 extern double computeForceEam(Eam*, Parameter*, Atom*, Neighbor*, Stats*);
 
 void init(Parameter *param)
@@ -70,6 +71,7 @@ void init(Parameter *param)
     param->dtforce = 0.5 * param->dt;
     param->every = 20;
     param->proc_freq = 2.4;
+    param->halfneigh = 0;
 }
 
 double setup(
@@ -258,7 +260,11 @@ int main(int argc, char** argv)
     if(param.force_field == FF_EAM) {
         timer[FORCE] = computeForceEam(&eam, &param, &atom, &neighbor, &stats);
     } else {
-        timer[FORCE] = computeForceLJ(&param, &atom, &neighbor, &stats);
+        if( param.halfneigh ) {
+            timer[FORCE] = computeForceLJHalfNeigh(&param, &atom, &neighbor, &stats);
+        } else {
+            timer[FORCE] = computeForceLJFullNeigh(&param, &atom, &neighbor, &stats);
+        }
     }
 
     timer[NEIGH] = 0.0;
@@ -284,7 +290,11 @@ int main(int argc, char** argv)
         if(param.force_field == FF_EAM) {
             timer[FORCE] += computeForceEam(&eam, &param, &atom, &neighbor, &stats);
         } else {
-            timer[FORCE] += computeForceLJ(&param, &atom, &neighbor, &stats);
+            if( param.halfneigh ) {
+                timer[FORCE] = computeForceLJHalfNeigh(&param, &atom, &neighbor, &stats);
+            } else {
+                timer[FORCE] = computeForceLJFullNeigh(&param, &atom, &neighbor, &stats);
+            }
         }
 
         finalIntegrate(&param, &atom);

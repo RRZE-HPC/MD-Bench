@@ -46,6 +46,7 @@ static int nmax;
 static int nstencil;      // # of bins in stencil
 static int* stencil;      // stencil list of bin offsets
 static MD_FLOAT binsizex, binsizey, binsizez;
+static int halfneigh; //use half neighbour list
 
 static int coord2bin(MD_FLOAT, MD_FLOAT , MD_FLOAT);
 static MD_FLOAT bindist(int, int, int);
@@ -69,6 +70,7 @@ void initNeighbor(Neighbor *neighbor, Parameter *param)
     neighbor->maxneighs = 100;
     neighbor->numneigh = NULL;
     neighbor->neighbors = NULL;
+    neighbor->halfneigh = param->halfneigh;
 }
 
 void setupNeighbor(Parameter* param)
