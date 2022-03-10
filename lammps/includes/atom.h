@@ -42,6 +42,8 @@ typedef struct {
 extern void initAtom(Atom*);
 extern void createAtom(Atom*, Parameter*);
 extern int readAtom(Atom*, Parameter*);
+extern int readAtom_pdb(Atom*, Parameter*);
+extern int readAtom_dmp(Atom*, Parameter*);
 extern void growAtom(Atom*);
 
 #ifdef AOS

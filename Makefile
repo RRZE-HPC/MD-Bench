@@ -1,6 +1,6 @@
 #CONFIGURE BUILD SYSTEM
 TARGET	   = MDBench-$(TAG)-$(OPT_SCHEME)
-BUILD_DIR  = ./$(TAG)
+BUILD_DIR  = ./$(TAG)-$(OPT_SCHEME)
 SRC_DIR    = ./$(OPT_SCHEME)
 ASM_DIR    = ./asm
 MAKE_DIR   = ./
@@ -10,6 +10,7 @@ Q         ?= @
 include $(MAKE_DIR)/config.mk
 include $(MAKE_DIR)/include_$(TAG).mk
 include $(MAKE_DIR)/include_LIKWID.mk
+include $(MAKE_DIR)/include_GROMACS.mk
 INCLUDES  += -I./$(SRC_DIR)/includes
 
 ifeq ($(strip $(DATA_LAYOUT)),AOS)
@@ -52,6 +53,10 @@ ifeq ($(strip $(COMPUTE_STATS)),true)
     DEFINES += -DCOMPUTE_STATS
 endif
 
+ifeq ($(strip $(XTC_OUTPUT)),true)
+    DEFINES += -DXTC_OUTPUT
+endif
+
 ifeq ($(strip $(USE_REFERENCE_VERSION)),true)
     DEFINES += -DUSE_REFERENCE_VERSION
 endif
@@ -62,6 +67,10 @@ endif
 
 ifneq ($(VECTOR_WIDTH),)
     DEFINES += -DVECTOR_WIDTH=$(VECTOR_WIDTH)
+endif
+
+ifeq ($(strip $(NO_AVX2)),true)
+    DEFINES += -DNO_AVX2
 endif
 
 VPATH     = $(SRC_DIR) $(ASM_DIR)

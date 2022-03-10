@@ -92,16 +92,15 @@ void setupNeighbor(Parameter *param, Atom *atom) {
 
     MD_FLOAT atom_density = ((MD_FLOAT)(atom->Nlocal)) / ((xhi - xlo) * (yhi - ylo) * (zhi - zlo));
     MD_FLOAT atoms_in_cell = MAX(CLUSTER_DIM_M, CLUSTER_DIM_N);
-    //MD_FLOAT atoms_in_cell = CLUSTER_DIM_M;
-    binsizex = cbrt(atoms_in_cell / atom_density);
-    binsizey = cbrt(atoms_in_cell / atom_density);
-    cutneighsq = cutneigh * cutneigh;
-    nbinx = (int)((xhi - xlo) / binsizex);
-    nbiny = (int)((yhi - ylo) / binsizey);
-    if(nbinx == 0) { nbinx = 1; }
-    if(nbiny == 0) { nbiny = 1; }
+    MD_FLOAT targetsizex = cbrt(atoms_in_cell / atom_density);
+    MD_FLOAT targetsizey = cbrt(atoms_in_cell / atom_density);
+    nbinx = MAX(1, (int)ceil((xhi - xlo) / targetsizex));
+    nbiny = MAX(1, (int)ceil((yhi - ylo) / targetsizey));
+    binsizex = (xhi - xlo) / nbinx;
+    binsizey = (yhi - ylo) / nbiny;
     bininvx = 1.0 / binsizex;
     bininvy = 1.0 / binsizey;
+    cutneighsq = cutneigh * cutneigh;
 
     coord = xlo - cutneigh - SMALL * xprd;
     mbinxlo = (int) (coord * bininvx);
@@ -161,6 +160,14 @@ void setupNeighbor(Parameter *param, Atom *atom) {
 
     if (cluster_bins) { free(cluster_bins); }
     cluster_bins = (int*) malloc(mbins * clusters_per_bin * sizeof(int));
+
+    /*
+    DEBUG_MESSAGE("lo, hi = (%e, %e, %e), (%e, %e, %e)\n", xlo, ylo, zlo, xhi, yhi, zhi);
+    DEBUG_MESSAGE("binsize = %e, %e\n", binsizex, binsizey);
+    DEBUG_MESSAGE("mbin lo, hi = (%d, %d), (%d, %d)\n", mbinxlo, mbinylo, mbinxhi, mbinyhi);
+    DEBUG_MESSAGE("mbins = %d (%d x %d)\n", mbins, mbinx, mbiny);
+    DEBUG_MESSAGE("nextx = %d, nexty = %d\n", nextx, nexty);
+    */
 }
 
 MD_FLOAT getBoundingBoxDistanceSq(Atom *atom, int ci, int cj) {
@@ -372,6 +379,47 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
     */
 
     DEBUG_MESSAGE("buildNeighbor end\n");
+}
+
+void pruneNeighbor(Parameter *param, Atom *atom, Neighbor *neighbor) {
+    DEBUG_MESSAGE("pruneNeighbor start\n");
+    int nall = atom->Nclusters_local + atom->Nclusters_ghost;
+    //MD_FLOAT cutsq = param->cutforce * param->cutforce;
+    MD_FLOAT cutsq = cutneighsq;
+
+    for(int ci = 0; ci < atom->Nclusters_local; ci++) {
+        int *neighs = &neighbor->neighbors[ci * neighbor->maxneighs];
+        int numneighs = neighbor->numneigh[ci];
+        int k = 0;
+
+        // Remove dummy clusters if necessary
+        if(CLUSTER_DIM_N > CLUSTER_DIM_M) {
+            while(neighs[numneighs - 1] == nall - 1) {
+                numneighs--;
+            }
+        }
+
+        while(k < numneighs) {
+            int cj = neighs[k];
+            if(atomDistanceInRange(atom, ci, cj, cutsq)) {
+                k++;
+            } else {
+                numneighs--;
+                neighs[k] = neighs[numneighs];
+            }
+        }
+
+        // Readd dummy clusters if necessary
+        if(CLUSTER_DIM_N > CLUSTER_DIM_M) {
+            while(numneighs % (CLUSTER_DIM_N / CLUSTER_DIM_M)) {
+                neighs[numneighs++] = nall - 1; // Last cluster is always a dummy cluster
+            }
+        }
+
+        neighbor->numneigh[ci] = numneighs;
+    }
+
+    DEBUG_MESSAGE("pruneNeighbor end\n");
 }
 
 /* internal subroutines */

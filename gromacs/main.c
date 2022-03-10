@@ -20,16 +20,11 @@
  *   with MD-Bench.  If not, see <https://www.gnu.org/licenses/>.
  * =======================================================================================
  */
-#include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-#include <limits.h>
 #include <math.h>
-#include <float.h>
-
+//--
 #include <likwid-marker.h>
-
+//--
 #include <timing.h>
 #include <allocate.h>
 #include <neighbor.h>
@@ -41,6 +36,7 @@
 #include <timers.h>
 #include <eam.h>
 #include <vtk.h>
+#include <xtc.h>
 #include <util.h>
 
 #define HLINE "----------------------------------------------------------------------------\n"
@@ -54,29 +50,6 @@ extern double computeForceEam(Eam*, Parameter*, Atom*, Neighbor*, Stats*);
 #else
 #   define computeForceLJ   computeForceLJ_4xn
 #endif
-
-void init(Parameter *param) {
-    param->input_file = NULL;
-    param->vtk_file = NULL;
-    param->force_field = FF_LJ;
-    param->epsilon = 1.0;
-    param->sigma6 = 1.0;
-    param->rho = 0.8442;
-    param->ntypes = 4;
-    param->ntimes = 200;
-    param->dt = 0.005;
-    param->nx = 32;
-    param->ny = 32;
-    param->nz = 32;
-    param->cutforce = 2.5;
-    param->cutneigh = param->cutforce + 0.30;
-    param->temp = 1.44;
-    param->nstat = 100;
-    param->mass = 1.0;
-    param->dtforce = 0.5 * param->dt;
-    param->every = 20;
-    param->proc_freq = 2.4;
-}
 
 double setup(Parameter *param, Eam *eam, Atom *atom, Neighbor *neighbor, Stats *stats) {
     if(param->force_field == FF_EAM) { initEam(eam, param); }
@@ -188,75 +161,97 @@ int main(int argc, char** argv) {
         //LIKWID_MARKER_REGISTER("reneighbour");
         //LIKWID_MARKER_REGISTER("pbc");
     }
-    init(&param);
 
-    for(int i = 0; i < argc; i++)
-    {
-        if((strcmp(argv[i], "-f") == 0))
-        {
+    initParameter(&param);
+    for(int i = 0; i < argc; i++) {
+        if((strcmp(argv[i], "-p") == 0)) {
+            readParameter(&param, argv[++i]);
+            continue;
+        }
+        if((strcmp(argv[i], "-f") == 0)) {
             if((param.force_field = str2ff(argv[++i])) < 0) {
                 fprintf(stderr, "Invalid force field!\n");
                 exit(-1);
             }
             continue;
         }
-        if((strcmp(argv[i], "-i") == 0))
-        {
+        if((strcmp(argv[i], "-i") == 0)) {
             param.input_file = strdup(argv[++i]);
             continue;
         }
-        if((strcmp(argv[i], "-e") == 0))
-        {
+        if((strcmp(argv[i], "-e") == 0)) {
             param.eam_file = strdup(argv[++i]);
             continue;
         }
-        if((strcmp(argv[i], "-n") == 0) || (strcmp(argv[i], "--nsteps") == 0))
-        {
+        if((strcmp(argv[i], "-n") == 0) || (strcmp(argv[i], "--nsteps") == 0)) {
             param.ntimes = atoi(argv[++i]);
             continue;
         }
-        if((strcmp(argv[i], "-nx") == 0))
-        {
+        if((strcmp(argv[i], "-nx") == 0)) {
             param.nx = atoi(argv[++i]);
             continue;
         }
-        if((strcmp(argv[i], "-ny") == 0))
-        {
+        if((strcmp(argv[i], "-ny") == 0)) {
             param.ny = atoi(argv[++i]);
             continue;
         }
-        if((strcmp(argv[i], "-nz") == 0))
-        {
+        if((strcmp(argv[i], "-nz") == 0)) {
             param.nz = atoi(argv[++i]);
             continue;
         }
-        if((strcmp(argv[i], "--freq") == 0))
-        {
+        if((strcmp(argv[i], "-m") == 0) || (strcmp(argv[i], "--mass") == 0)) {
+            param.mass = atof(argv[++i]);
+            continue;
+        }
+        if((strcmp(argv[i], "-r") == 0) || (strcmp(argv[i], "--radius") == 0)) {
+            param.cutforce = atof(argv[++i]);
+            continue;
+        }
+        if((strcmp(argv[i], "-s") == 0) || (strcmp(argv[i], "--skin") == 0)) {
+            param.skin = atof(argv[++i]);
+            continue;
+        }
+        if((strcmp(argv[i], "--freq") == 0)) {
             param.proc_freq = atof(argv[++i]);
             continue;
         }
-        if((strcmp(argv[i], "--vtk") == 0))
-        {
+        if((strcmp(argv[i], "--vtk") == 0)) {
             param.vtk_file = strdup(argv[++i]);
             continue;
         }
-        if((strcmp(argv[i], "-h") == 0) || (strcmp(argv[i], "--help") == 0))
-        {
+        if((strcmp(argv[i], "--xtc") == 0)) {
+            #ifndef XTC_OUTPUT
+            fprintf(stderr, "XTC not available, set XTC_OUTPUT option in config.mk file and recompile MD-Bench!");
+            exit(-1);
+            #else
+            param.xtc_file = strdup(argv[++i]);
+            #endif
+            continue;
+        }
+        if((strcmp(argv[i], "-h") == 0) || (strcmp(argv[i], "--help") == 0)) {
             printf("MD Bench: A minimalistic re-implementation of miniMD\n");
             printf(HLINE);
+            printf("-p <string>:          file to read parameters from (can be specified more than once)\n");
             printf("-f <string>:          force field (lj or eam), default lj\n");
             printf("-i <string>:          input file with atom positions (dump)\n");
             printf("-e <string>:          input file for EAM\n");
             printf("-n / --nsteps <int>:  set number of timesteps for simulation\n");
             printf("-nx/-ny/-nz <int>:    set linear dimension of systembox in x/y/z direction\n");
+            printf("-r / --radius <real>: set cutoff radius\n");
+            printf("-s / --skin <real>:   set skin (verlet buffer)\n");
             printf("--freq <real>:        processor frequency (GHz)\n");
             printf("--vtk <string>:       VTK file for visualization\n");
+            printf("--xtc <string>:       XTC file for visualization\n");
             printf(HLINE);
             exit(EXIT_SUCCESS);
         }
     }
 
+    param.cutneigh = param.cutforce + param.skin;
     setup(&param, &eam, &atom, &neighbor, &stats);
+    printParameter(&param);
+
+    printf("step\ttemp\t\tpressure\n");
     computeThermo(0, &param, &atom);
 #if defined(MEM_TRACER) || defined(INDEX_TRACER)
     traceAddresses(&param, &atom, &neighbor, n + 1);
@@ -274,10 +269,18 @@ int main(int argc, char** argv) {
         write_data_to_vtk_file(param.vtk_file, &atom, 0);
     }
 
+    if(param.xtc_file != NULL) {
+        xtc_init(param.xtc_file, &atom, 0);
+    }
+
     for(int n = 0; n < param.ntimes; n++) {
         initialIntegrate(&param, &atom);
 
-        if((n + 1) % param.every) {
+        if((n + 1) % param.reneigh_every) {
+            if(!((n + 1) % param.prune_every)) {
+                pruneNeighbor(&param, &atom, &neighbor);
+            }
+
             updatePbc(&atom, &param, 0);
         } else {
             timer[NEIGH] += reneighbour(&param, &atom, &neighbor);
@@ -299,16 +302,27 @@ int main(int argc, char** argv) {
             computeThermo(n + 1, &param, &atom);
         }
 
-        if(param.vtk_file != NULL) {
-            write_data_to_vtk_file(param.vtk_file, &atom, n + 1);
+        int write_pos = !((n + 1) % param.x_out_every);
+        int write_vel = !((n + 1) % param.v_out_every);
+        if(write_pos || write_vel) {
+            if(param.vtk_file != NULL) {
+                write_data_to_vtk_file(param.vtk_file, &atom, n + 1);
+            }
+
+            if(param.xtc_file != NULL) {
+                xtc_write(&atom, n + 1, write_pos, write_vel);
+            }
         }
     }
 
     timer[TOTAL] = getTimeStamp() - timer[TOTAL];
     computeThermo(-1, &param, &atom);
 
+    if(param.xtc_file != NULL) {
+        xtc_end();
+    }
+
     printf(HLINE);
-    printf("Force field: %s\n", ff2str(param.force_field));
     printf("Data layout for positions: %s\n", POS_DATA_LAYOUT);
 #if PRECISION == 1
     printf("Using single precision floating point.\n");

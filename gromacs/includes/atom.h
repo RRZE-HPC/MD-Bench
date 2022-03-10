@@ -25,6 +25,8 @@
 #ifndef __ATOM_H_
 #define __ATOM_H_
 
+#define DELTA 20000
+
 #define CLUSTER_DIM_M       4
 #define CLUSTER_DIM_N       VECTOR_WIDTH
 
@@ -59,6 +61,9 @@ typedef struct {
 extern void initAtom(Atom*);
 extern void createAtom(Atom*, Parameter*);
 extern int readAtom(Atom*, Parameter*);
+extern int readAtom_pdb(Atom*, Parameter*);
+extern int readAtom_gro(Atom*, Parameter*);
+extern int readAtom_dmp(Atom*, Parameter*);
 extern void growAtom(Atom*);
 extern void growClusters(Atom*);
 
