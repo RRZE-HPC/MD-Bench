@@ -161,7 +161,108 @@ void createAtom(Atom *atom, Parameter *param)
     }
 }
 
-int readAtom(Atom* atom, Parameter* param)
+int type_str2int(const char *type) {
+    if(strncmp(type, "Ar", 2) == 0) { return 0; } // Argon
+    fprintf(stderr, "Invalid atom type: %s\n", type);
+    exit(-1);
+    return -1;
+}
+
+int readAtom(Atom* atom, Parameter* param) {
+    int len = strlen(param->input_file);
+    if(strncmp(&param->input_file[len - 4], ".pdb", 4) == 0) { return readAtom_pdb(atom, param); }
+    if(strncmp(&param->input_file[len - 4], ".dmp", 4) == 0) { return readAtom_dmp(atom, param); }
+    fprintf(stderr, "Invalid input file extension: %s\nValid choices are: pdb, dmp\n", param->input_file);
+    exit(-1);
+    return -1;
+}
+
+int readAtom_pdb(Atom* atom, Parameter* param) {
+    FILE *fp = fopen(param->input_file, "r");
+    char line[MAXLINE];
+    int read_atoms = 0;
+
+    if(!fp) {
+        fprintf(stderr, "Could not open input file: %s\n", param->input_file);
+        exit(-1);
+        return -1;
+    }
+
+    while(!feof(fp)) {
+        fgets(line, MAXLINE, fp);
+        char *item = strtok(line, " ");
+        if(strncmp(item, "CRYST1", 6) == 0) {
+            param->xlo = 0.0;
+            param->xhi = atof(strtok(NULL, " "));
+            param->ylo = 0.0;
+            param->yhi = atof(strtok(NULL, " "));
+            param->zlo = 0.0;
+            param->zhi = atof(strtok(NULL, " "));
+            param->xprd = param->xhi - param->xlo;
+            param->yprd = param->yhi - param->ylo;
+            param->zprd = param->zhi - param->zlo;
+            // alpha, beta, gamma, sGroup, z
+        } else if(strncmp(item, "ATOM", 4) == 0) {
+            char *label;
+            int atom_id, comp_id;
+            MD_FLOAT occupancy, charge;
+            atom_id = atoi(strtok(NULL, " ")) - 1;
+
+            while(atom_id + 1 >= atom->Nmax) {
+                growAtom(atom);
+            }
+
+            atom->type[atom_id] = type_str2int(strtok(NULL, " "));
+            label = strtok(NULL, " ");
+            comp_id = atoi(strtok(NULL, " "));
+            atom_x(atom_id) = atof(strtok(NULL, " "));
+            atom_y(atom_id) = atof(strtok(NULL, " "));
+            atom_z(atom_id) = atof(strtok(NULL, " "));
+            atom->vx[atom_id] = 0.0;
+            atom->vy[atom_id] = 0.0;
+            atom->vz[atom_id] = 0.0;
+            occupancy = atof(strtok(NULL, " "));
+            charge = atof(strtok(NULL, " "));
+            atom->ntypes = MAX(atom->type[atom_id] + 1, atom->ntypes);
+            atom->Natoms++;
+            atom->Nlocal++;
+            read_atoms++;
+        } else if(strncmp(item, "HEADER", 6) == 0 ||
+                  strncmp(item, "REMARK", 6) == 0 ||
+                  strncmp(item, "MODEL", 5) == 0 ||
+                  strncmp(item, "TER", 3) == 0 ||
+                  strncmp(item, "ENDMDL", 6) == 0) {
+            // Do nothing
+        } else {
+            fprintf(stderr, "Invalid item: %s\n", item);
+            exit(-1);
+            return -1;
+        }
+    }
+
+    if(!read_atoms) {
+        fprintf(stderr, "Input error: No atoms read!\n");
+        exit(-1);
+        return -1;
+    }
+
+    atom->epsilon = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
+    atom->sigma6 = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
+    atom->cutforcesq = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
+    atom->cutneighsq = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
+    for(int i = 0; i < atom->ntypes * atom->ntypes; i++) {
+        atom->epsilon[i] = param->epsilon;
+        atom->sigma6[i] = param->sigma6;
+        atom->cutneighsq[i] = param->cutneigh * param->cutneigh;
+        atom->cutforcesq[i] = param->cutforce * param->cutforce;
+    }
+
+    fprintf(stdout, "Read %d atoms from %s\n", read_atoms, param->input_file);
+    fclose(fp);
+    return read_atoms;
+}
+
+int readAtom_dmp(Atom* atom, Parameter* param)
 {
     FILE *fp = fopen(param->input_file, "r");
     char line[MAXLINE];

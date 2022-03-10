@@ -87,6 +87,11 @@ double computeForceLJFullNeigh(Parameter *param, Atom *atom, Neighbor *neighbor,
                 fix += delx * force;
                 fiy += dely * force;
                 fiz += delz * force;
+#ifdef USE_REFERENCE_VERSION
+                addStat(stats->atoms_within_cutoff, 1);
+            } else {
+                addStat(stats->atoms_outside_cutoff, 1);
+#endif
             }
         }
 
