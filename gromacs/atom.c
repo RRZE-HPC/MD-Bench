@@ -37,6 +37,7 @@ void initAtom(Atom *atom) {
     atom->cl_x = NULL;
     atom->cl_v = NULL;
     atom->cl_f = NULL;
+    atom->cl_type = NULL;
     atom->Natoms = 0;
     atom->Nlocal = 0;
     atom->Nghost = 0;
@@ -53,6 +54,7 @@ void initAtom(Atom *atom) {
     atom->cutneighsq = NULL;
     atom->iclusters = NULL;
     atom->jclusters = NULL;
+    atom->icluster_bin = NULL;
 }
 
 void createAtom(Atom *atom, Parameter *param) {
@@ -431,7 +433,9 @@ void growClusters(Atom *atom) {
     atom->Nclusters_max += DELTA;
     atom->iclusters = (Cluster*) reallocate(atom->iclusters, ALIGNMENT, atom->Nclusters_max * sizeof(Cluster), nold * sizeof(Cluster));
     atom->jclusters = (Cluster*) reallocate(atom->jclusters, ALIGNMENT, atom->Nclusters_max * jfac * sizeof(Cluster), nold * jfac * sizeof(Cluster));
+    atom->icluster_bin = (int*) reallocate(atom->icluster_bin, ALIGNMENT, atom->Nclusters_max * sizeof(int), nold * sizeof(int));
     atom->cl_x = (MD_FLOAT*) reallocate(atom->cl_x, ALIGNMENT, atom->Nclusters_max * CLUSTER_M * 3 * sizeof(MD_FLOAT), nold * CLUSTER_M * 3 * sizeof(MD_FLOAT));
     atom->cl_f = (MD_FLOAT*) reallocate(atom->cl_f, ALIGNMENT, atom->Nclusters_max * CLUSTER_M * 3 * sizeof(MD_FLOAT), nold * CLUSTER_M * 3 * sizeof(MD_FLOAT));
     atom->cl_v = (MD_FLOAT*) reallocate(atom->cl_v, ALIGNMENT, atom->Nclusters_max * CLUSTER_M * 3 * sizeof(MD_FLOAT), nold * CLUSTER_M * 3 * sizeof(MD_FLOAT));
+    atom->cl_type = (int*) reallocate(atom->cl_type, ALIGNMENT, atom->Nclusters_max * CLUSTER_M * sizeof(int), nold * CLUSTER_M * sizeof(int));
 }

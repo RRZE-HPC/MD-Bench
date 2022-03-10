@@ -46,6 +46,7 @@ void initPbc(Atom* atom) {
 /* update coordinates of ghost atoms */
 /* uses mapping created in setupPbc */
 void updatePbc(Atom *atom, Parameter *param, int firstUpdate) {
+    DEBUG_MESSAGE("updatePbc start\n");
     int *border_map = atom->border_map;
     int nlocal = atom->Nclusters_local;
     MD_FLOAT xprd = param->xprd;
@@ -97,6 +98,8 @@ void updatePbc(Atom *atom, Parameter *param, int firstUpdate) {
             atom->iclusters[ci].bbmaxz = bbmaxz;
         }
     }
+
+    DEBUG_MESSAGE("updatePbc end\n");
 }
 
 /* relocate atoms that have left domain according
@@ -159,6 +162,7 @@ void growPbc(Atom* atom) {
 }
 
 void setupPbc(Atom *atom, Parameter *param) {
+    DEBUG_MESSAGE("setupPbc start\n");
     int *border_map = atom->border_map;
     MD_FLOAT xprd = param->xprd;
     MD_FLOAT yprd = param->yprd;
@@ -236,4 +240,5 @@ void setupPbc(Atom *atom, Parameter *param) {
 
     // Update created ghost clusters positions
     updatePbc(atom, param, 1);
+    DEBUG_MESSAGE("setupPbc end\n");
 }

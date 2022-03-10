@@ -33,12 +33,23 @@
 // Simd4xN: M=4, N=VECTOR_WIDTH
 // Simd2xNN: M=4, N=(VECTOR_WIDTH/2)
 
-// Simd2XNN (here used for single-precision)
+// Simd2xNN (here used for single-precision)
 #if VECTOR_WIDTH > CLUSTER_M * 2
+#   define KERNEL_NAME              "Simd2xNN"
 #   define CLUSTER_N                (VECTOR_WIDTH / 2)
+#   define computeForceLJ           computeForceLJ_2xnn
 // Simd4xN
 #else
+#   define KERNEL_NAME              "Simd4xN"
 #   define CLUSTER_N                VECTOR_WIDTH
+#   define computeForceLJ           computeForceLJ_4xn
+#endif
+
+#ifdef USE_REFERENCE_VERSION
+#   undef KERNEL_NAME
+#   undef computeForceLJ
+#   define KERNEL_NAME              "Reference"
+#   define computeForceLJ           computeForceLJ_ref
 #endif
 
 #if CLUSTER_M == CLUSTER_N
@@ -105,6 +116,7 @@ typedef struct {
     MD_FLOAT *cl_f;
     int *cl_type;
     Cluster *iclusters, *jclusters;
+    int *icluster_bin;
 } Atom;
 
 extern void initAtom(Atom*);
