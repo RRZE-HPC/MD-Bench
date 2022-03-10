@@ -31,6 +31,7 @@ typedef struct {
     int* neighbors;
     int maxneighs;
     int* numneigh;
+    int halfneigh;
 } Neighbor;
 
 extern void initNeighbor(Neighbor*, Parameter*);
