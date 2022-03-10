@@ -43,13 +43,8 @@
 
 extern double computeForceLJ_ref(Parameter*, Atom*, Neighbor*, Stats*);
 extern double computeForceLJ_4xn(Parameter*, Atom*, Neighbor*, Stats*);
+extern double computeForceLJ_2xnn(Parameter*, Atom*, Neighbor*, Stats*);
 extern double computeForceEam(Eam*, Parameter*, Atom*, Neighbor*, Stats*);
-
-#ifdef USE_REFERENCE_VERSION
-#   define computeForceLJ   computeForceLJ_ref
-#else
-#   define computeForceLJ   computeForceLJ_4xn
-#endif
 
 double setup(Parameter *param, Eam *eam, Atom *atom, Neighbor *neighbor, Stats *stats) {
     if(param->force_field == FF_EAM) { initEam(eam, param); }
@@ -325,6 +320,7 @@ int main(int argc, char** argv) {
     }
 
     printf(HLINE);
+    printf("Kernel: %s, MxN: %dx%d, Vector width: %d\n", KERNEL_NAME, CLUSTER_M, CLUSTER_N, VECTOR_WIDTH);
     printf("Data layout for positions: %s\n", POS_DATA_LAYOUT);
 #if PRECISION == 1
     printf("Using single precision floating point.\n");

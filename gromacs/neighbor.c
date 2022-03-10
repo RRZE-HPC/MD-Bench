@@ -41,7 +41,6 @@ static int *bincount;
 static int *bins;
 static int *bin_nclusters;
 static int *bin_clusters;
-static int *icluster_bin;
 static int mbins; //total number of bins
 static int atoms_per_bin;  // max atoms per bin
 static int clusters_per_bin;  // max clusters per bin
@@ -64,7 +63,7 @@ void initNeighbor(Neighbor *neighbor, Parameter *param) {
     cutneigh = param->cutneigh;
     nmax = 0;
     atoms_per_bin = 8;
-    clusters_per_bin = (atoms_per_bin / CLUSTER_M) + 4;
+    clusters_per_bin = (atoms_per_bin / CLUSTER_M) + 10;
     stencil = NULL;
     bins = NULL;
     bincount = NULL;
@@ -227,7 +226,7 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
         for(int ci = 0; ci < atom->Nclusters_local; ci++) {
             int *neighptr = &(neighbor->neighbors[ci * neighbor->maxneighs]);
             int n = 0;
-            int ibin = icluster_bin[ci];
+            int ibin = atom->icluster_bin[ci];
             MD_FLOAT ibb_xmin = atom->iclusters[ci].bbminx;
             MD_FLOAT ibb_xmax = atom->iclusters[ci].bbmaxx;
             MD_FLOAT ibb_ymin = atom->iclusters[ci].bbminy;
@@ -590,7 +589,7 @@ void buildClusters(Atom *atom) {
                     if(bbminz > ztmp) { bbminz = ztmp; }
                     if(bbmaxz < ztmp) { bbmaxz = ztmp; }
 
-                    atom->cl_type[cii] = atom->type[i];
+                    ci_type[cii] = atom->type[i];
                     atom->iclusters[ci].natoms++;
                 } else {
                     ci_x[CL_X_OFFSET + cii] = INFINITY;
@@ -601,7 +600,7 @@ void buildClusters(Atom *atom) {
                 ac++;
             }
 
-            icluster_bin[ci] = bin;
+            atom->icluster_bin[ci] = bin;
             atom->iclusters[ci].bbminx = bbminx;
             atom->iclusters[ci].bbmaxx = bbmaxx;
             atom->iclusters[ci].bbminy = bbminy;
@@ -711,7 +710,7 @@ void binClusters(Atom *atom) {
         MD_FLOAT *cptr = cluster_pos_ptr(ci);
         DEBUG_MESSAGE("Cluster %d:\n", ci);
         DEBUG_MESSAGE("bin=%d, Natoms=%d, bbox={%f,%f},{%f,%f},{%f,%f}\n",
-            icluster_bin[ci],
+            atom->icluster_bin[ci],
             atom->clusters[ci].natoms,
             atom->clusters[ci].bbminx,
             atom->clusters[ci].bbmaxx,
@@ -745,7 +744,7 @@ void binClusters(Atom *atom) {
         for(int ci = 0; ci < nlocal && !resize; ci++) {
             // Assure we add this j-cluster only once in the bin
             if(!(CLUSTER_M < CLUSTER_N && ci % 2)) {
-                int bin = icluster_bin[ci];
+                int bin = atom->icluster_bin[ci];
                 int c = bin_nclusters[bin];
                 if(c + 1 < clusters_per_bin) {
                     bin_clusters[bin * clusters_per_bin + c] = CJ0_FROM_CI(ci);
@@ -827,7 +826,7 @@ void binClusters(Atom *atom) {
                                 bin_clusters[bin * clusters_per_bin + c] = cj;
                             }
 
-                            icluster_bin[ci] = bin;
+                            atom->icluster_bin[ci] = bin;
                             bin_nclusters[bin]++;
                         } else {
                             resize = 1;
