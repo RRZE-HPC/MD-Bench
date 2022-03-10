@@ -117,6 +117,7 @@ typedef struct {
     int *cl_type;
     Cluster *iclusters, *jclusters;
     int *icluster_bin;
+    int dummy_cj;
 } Atom;
 
 extern void initAtom(Atom*);

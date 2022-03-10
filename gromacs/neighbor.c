@@ -201,11 +201,10 @@ int atomDistanceInRange(Atom *atom, int ci, int cj, MD_FLOAT rsq) {
 
 void buildNeighbor(Atom *atom, Neighbor *neighbor) {
     DEBUG_MESSAGE("buildNeighbor start\n");
-    int nall = atom->Nclusters_local + atom->Nclusters_ghost;
 
     /* extend atom arrays if necessary */
-    if(nall > nmax) {
-        nmax = nall;
+    if(atom->Nclusters_local > nmax) {
+        nmax = atom->Nclusters_local;
         if(neighbor->numneigh) free(neighbor->numneigh);
         if(neighbor->neighbors) free(neighbor->neighbors);
         neighbor->numneigh = (int*) malloc(nmax * sizeof(int));
@@ -307,7 +306,7 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
             // Fill neighbor list with dummy values to fit vector width
             if(CLUSTER_N < VECTOR_WIDTH) {
                 while(n % (VECTOR_WIDTH / CLUSTER_N)) {
-                    neighptr[n++] = CJ0_FROM_CI(nall - 1); // Last cluster is always a dummy cluster
+                    neighptr[n++] = atom->dummy_cj; // Last cluster is always a dummy cluster
                 }
             }
 
@@ -332,38 +331,40 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
     /*
     DEBUG_MESSAGE("\ncutneighsq = %f, rbb_sq = %f\n", cutneighsq, rbb_sq);
     for(int ci = 0; ci < 6; ci++) {
-        MD_FLOAT *ciptr = cluster_pos_ptr(ci);
+        int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
+        MD_FLOAT *ci_x = &atom->cl_x[ci_vec_base];
         int* neighptr = &(neighbor->neighbors[ci * neighbor->maxneighs]);
 
         DEBUG_MESSAGE("Cluster %d, bbx = {%f, %f}, bby = {%f, %f}, bbz = {%f, %f}\n",
             ci,
-            atom->clusters[ci].bbminx,
-            atom->clusters[ci].bbmaxx,
-            atom->clusters[ci].bbminy,
-            atom->clusters[ci].bbmaxy,
-            atom->clusters[ci].bbminz,
-            atom->clusters[ci].bbmaxz);
+            atom->iclusters[ci].bbminx,
+            atom->iclusters[ci].bbmaxx,
+            atom->iclusters[ci].bbminy,
+            atom->iclusters[ci].bbmaxy,
+            atom->iclusters[ci].bbminz,
+            atom->iclusters[ci].bbmaxz);
 
         for(int cii = 0; cii < CLUSTER_M; cii++) {
-            DEBUG_MESSAGE("%f, %f, %f\n", cluster_x(ciptr, cii), cluster_y(ciptr, cii), cluster_z(ciptr, cii));
+            DEBUG_MESSAGE("%f, %f, %f\n", ci_x[CL_X_OFFSET + cii], ci_x[CL_Y_OFFSET + cii], ci_x[CL_Z_OFFSET + cii]);
         }
 
         DEBUG_MESSAGE("Neighbors:\n");
         for(int k = 0; k < neighbor->numneigh[ci]; k++) {
-            const int cj = neighptr[k];
-            MD_FLOAT *cjptr = cluster_pos_ptr(cj);
+            int cj = neighptr[k];
+            int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
+            MD_FLOAT *cj_x = &atom->cl_x[cj_vec_base];
 
             DEBUG_MESSAGE("    Cluster %d, bbx = {%f, %f}, bby = {%f, %f}, bbz = {%f, %f}\n",
                 cj,
-                atom->clusters[cj].bbminx,
-                atom->clusters[cj].bbmaxx,
-                atom->clusters[cj].bbminy,
-                atom->clusters[cj].bbmaxy,
-                atom->clusters[cj].bbminz,
-                atom->clusters[cj].bbmaxz);
+                atom->jclusters[cj].bbminx,
+                atom->jclusters[cj].bbmaxx,
+                atom->jclusters[cj].bbminy,
+                atom->jclusters[cj].bbmaxy,
+                atom->jclusters[cj].bbminz,
+                atom->jclusters[cj].bbmaxz);
 
-            for(int cjj = 0; cjj < CLUSTER_M; cjj++) {
-                DEBUG_MESSAGE("    %f, %f, %f\n", cluster_x(cjptr, cjj), cluster_y(cjptr, cjj), cluster_z(cjptr, cjj));
+            for(int cjj = 0; cjj < CLUSTER_N; cjj++) {
+                DEBUG_MESSAGE("    %f, %f, %f\n", cj_x[CL_X_OFFSET + cjj], cj_x[CL_Y_OFFSET + cjj], cj_x[CL_Z_OFFSET + cjj]);
             }
         }
     }
@@ -374,7 +375,6 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
 
 void pruneNeighbor(Parameter *param, Atom *atom, Neighbor *neighbor) {
     DEBUG_MESSAGE("pruneNeighbor start\n");
-    int nall = atom->Nclusters_local + atom->Nclusters_ghost;
     //MD_FLOAT cutsq = param->cutforce * param->cutforce;
     MD_FLOAT cutsq = cutneighsq;
 
@@ -385,7 +385,7 @@ void pruneNeighbor(Parameter *param, Atom *atom, Neighbor *neighbor) {
 
         // Remove dummy clusters if necessary
         if(CLUSTER_N < VECTOR_WIDTH) {
-            while(neighs[numneighs - 1] == CJ0_FROM_CI(nall - 1)) {
+            while(neighs[numneighs - 1] == atom->dummy_cj) {
                 numneighs--;
             }
         }
@@ -403,7 +403,7 @@ void pruneNeighbor(Parameter *param, Atom *atom, Neighbor *neighbor) {
         // Readd dummy clusters if necessary
         if(CLUSTER_N < VECTOR_WIDTH) {
             while(numneighs % (VECTOR_WIDTH / CLUSTER_N)) {
-                neighs[numneighs++] = CJ0_FROM_CI(nall - 1); // Last cluster is always a dummy cluster
+                neighs[numneighs++] = atom->dummy_cj; // Last cluster is always a dummy cluster
             }
         }
 
@@ -617,7 +617,7 @@ void buildClusters(Atom *atom) {
 void defineJClusters(Atom *atom) {
     DEBUG_MESSAGE("defineJClusters start\n");
 
-    for(int ci = 0; ci < atom->Nclusters_local + atom->Nclusters_ghost; ci++) {
+    for(int ci = 0; ci < atom->Nclusters_local; ci++) {
         int cj0 = CJ0_FROM_CI(ci);
 
         if(CLUSTER_M == CLUSTER_N) {
@@ -687,13 +687,14 @@ void defineJClusters(Atom *atom) {
 
         } else {
             if(ci % 2 == 0) {
-                atom->jclusters[cj0].bbminx = MIN(atom->iclusters[ci].bbminx, atom->iclusters[ci + 1].bbminx);
-                atom->jclusters[cj0].bbmaxx = MAX(atom->iclusters[ci].bbmaxx, atom->iclusters[ci + 1].bbmaxx);
-                atom->jclusters[cj0].bbminy = MIN(atom->iclusters[ci].bbminy, atom->iclusters[ci + 1].bbminy);
-                atom->jclusters[cj0].bbmaxy = MAX(atom->iclusters[ci].bbmaxy, atom->iclusters[ci + 1].bbmaxy);
-                atom->jclusters[cj0].bbminz = MIN(atom->iclusters[ci].bbminz, atom->iclusters[ci + 1].bbminz);
-                atom->jclusters[cj0].bbmaxz = MAX(atom->iclusters[ci].bbmaxz, atom->iclusters[ci + 1].bbmaxz);
-                atom->jclusters[cj0].natoms = atom->iclusters[ci].natoms + atom->iclusters[ci + 1].natoms;
+                const int ci1 = ci + 1;
+                atom->jclusters[cj0].bbminx = MIN(atom->iclusters[ci].bbminx, atom->iclusters[ci1].bbminx);
+                atom->jclusters[cj0].bbmaxx = MAX(atom->iclusters[ci].bbmaxx, atom->iclusters[ci1].bbmaxx);
+                atom->jclusters[cj0].bbminy = MIN(atom->iclusters[ci].bbminy, atom->iclusters[ci1].bbminy);
+                atom->jclusters[cj0].bbmaxy = MAX(atom->iclusters[ci].bbmaxy, atom->iclusters[ci1].bbmaxy);
+                atom->jclusters[cj0].bbminz = MIN(atom->iclusters[ci].bbminz, atom->iclusters[ci1].bbminz);
+                atom->jclusters[cj0].bbmaxz = MAX(atom->iclusters[ci].bbmaxz, atom->iclusters[ci1].bbmaxz);
+                atom->jclusters[cj0].natoms = atom->iclusters[ci].natoms + atom->iclusters[ci1].natoms;
             }
         }
     }
@@ -726,12 +727,8 @@ void binClusters(Atom *atom) {
     */
 
     const int nlocal = atom->Nclusters_local;
-    const int ncji = MAX(1, CLUSTER_M / CLUSTER_N);
-    if(ncji > 2) {
-        fprintf(stderr, "binClusters(): ncji cannot be higher than 2!");
-    }
-
-    defineJClusters(atom);
+    const int jfac = MAX(1, CLUSTER_N / CLUSTER_M);
+    const int ncj = atom->Nclusters_local / jfac;
 
     int resize = 1;
     while(resize > 0) {
@@ -764,74 +761,65 @@ void binClusters(Atom *atom) {
         }
 
         for(int cg = 0; cg < atom->Nclusters_ghost && !resize; cg++) {
-            // Assure we add this j-cluster only once in the bin
-            if(!(CLUSTER_M < CLUSTER_N && cg % 2)) {
-                const int ci = nlocal + cg;
-                int ix = -1, iy = -1;
-                MD_FLOAT xtmp, ytmp;
+            const int cj = ncj + cg;
+            int ix = -1, iy = -1;
+            MD_FLOAT xtmp, ytmp;
 
-                for(int cji = 0; cji < ncji && !resize; cji++) {
-                    int cj = (cji == 0) ? CJ0_FROM_CI(ci) : CJ1_FROM_CI(ci);
-                    const int n = atom->jclusters[cj].natoms;
+            if(atom->jclusters[cj].natoms > 0) {
+                int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
+                MD_FLOAT *cj_x = &atom->cl_x[cj_vec_base];
+                MD_FLOAT cj_minz = atom->jclusters[cj].bbminz;
 
-                    if(n > 0) {
-                        int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
-                        MD_FLOAT *cj_x = &atom->cl_x[cj_vec_base];
-                        MD_FLOAT cj_minz = atom->jclusters[cj].bbminz;
+                xtmp = cj_x[CL_X_OFFSET + 0];
+                ytmp = cj_x[CL_Y_OFFSET + 0];
+                coord2bin2D(xtmp, ytmp, &ix, &iy);
+                ix = MAX(MIN(ix, mbinx - 1), 0);
+                iy = MAX(MIN(iy, mbiny - 1), 0);
+                for(int cjj = 1; cjj < atom->jclusters[cj].natoms; cjj++) {
+                    int nix, niy;
+                    xtmp = cj_x[CL_X_OFFSET + cjj];
+                    ytmp = cj_x[CL_Y_OFFSET + cjj];
+                    coord2bin2D(xtmp, ytmp, &nix, &niy);
+                    nix = MAX(MIN(nix, mbinx - 1), 0);
+                    niy = MAX(MIN(niy, mbiny - 1), 0);
 
-                        xtmp = cj_x[CL_X_OFFSET + 0];
-                        ytmp = cj_x[CL_Y_OFFSET + 0];
-                        coord2bin2D(xtmp, ytmp, &ix, &iy);
-                        ix = MAX(MIN(ix, mbinx - 1), 0);
-                        iy = MAX(MIN(iy, mbiny - 1), 0);
-                        for(int cjj = 1; cjj < n; cjj++) {
-                            int nix, niy;
-                            xtmp = cj_x[CL_X_OFFSET + cjj];
-                            ytmp = cj_x[CL_Y_OFFSET + cjj];
-                            coord2bin2D(xtmp, ytmp, &nix, &niy);
-                            nix = MAX(MIN(nix, mbinx - 1), 0);
-                            niy = MAX(MIN(niy, mbiny - 1), 0);
+                    // Always put the cluster on the bin of its innermost atom so
+                    // the cluster should be closer to local clusters
+                    if(atom->PBCx[cg] > 0 && ix > nix) { ix = nix; }
+                    if(atom->PBCx[cg] < 0 && ix < nix) { ix = nix; }
+                    if(atom->PBCy[cg] > 0 && iy > niy) { iy = niy; }
+                    if(atom->PBCy[cg] < 0 && iy < niy) { iy = niy; }
+                }
 
-                            // Always put the cluster on the bin of its innermost atom so
-                            // the cluster should be closer to local clusters
-                            if(atom->PBCx[cg] > 0 && ix > nix) { ix = nix; }
-                            if(atom->PBCx[cg] < 0 && ix < nix) { ix = nix; }
-                            if(atom->PBCy[cg] > 0 && iy > niy) { iy = niy; }
-                            if(atom->PBCy[cg] < 0 && iy < niy) { iy = niy; }
-                        }
+                int bin = iy * mbinx + ix + 1;
+                int c = bin_nclusters[bin];
+                if(c < clusters_per_bin) {
+                    // Insert the current ghost cluster in the bin keeping clusters
+                    // sorted by z coordinate
+                    int inserted = 0;
+                    for(int i = 0; i < c; i++) {
+                        int last_cl = bin_clusters[bin * clusters_per_bin + i];
+                        if(atom->jclusters[last_cl].bbminz > cj_minz) {
+                            bin_clusters[bin * clusters_per_bin + i] = cj;
 
-                        int bin = iy * mbinx + ix + 1;
-                        int c = bin_nclusters[bin];
-                        if(c < clusters_per_bin) {
-                            // Insert the current ghost cluster in the bin keeping clusters
-                            // sorted by z coordinate
-                            int inserted = 0;
-                            for(int i = 0; i < c; i++) {
-                                int last_cl = bin_clusters[bin * clusters_per_bin + i];
-                                if(atom->jclusters[last_cl].bbminz > cj_minz) {
-                                    bin_clusters[bin * clusters_per_bin + i] = cj;
-
-                                    for(int j = i + 1; j <= c; j++) {
-                                        int tmp = bin_clusters[bin * clusters_per_bin + j];
-                                        bin_clusters[bin * clusters_per_bin + j] = last_cl;
-                                        last_cl = tmp;
-                                    }
-
-                                    inserted = 1;
-                                    break;
-                                }
+                            for(int j = i + 1; j <= c; j++) {
+                                int tmp = bin_clusters[bin * clusters_per_bin + j];
+                                bin_clusters[bin * clusters_per_bin + j] = last_cl;
+                                last_cl = tmp;
                             }
 
-                            if(!inserted) {
-                                bin_clusters[bin * clusters_per_bin + c] = cj;
-                            }
-
-                            atom->icluster_bin[ci] = bin;
-                            bin_nclusters[bin]++;
-                        } else {
-                            resize = 1;
+                            inserted = 1;
+                            break;
                         }
                     }
+
+                    if(!inserted) {
+                        bin_clusters[bin * clusters_per_bin + c] = cj;
+                    }
+
+                    bin_nclusters[bin]++;
+                } else {
+                    resize = 1;
                 }
             }
         }
