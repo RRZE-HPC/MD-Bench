@@ -72,7 +72,7 @@ void init(Parameter *param)
     param->dtforce = 0.5 * param->dt;
     param->every = 20;
     param->proc_freq = 2.4;
-    param->halfneigh = 0;
+    param->halfneigh = 1;
 }
 
 double setup(

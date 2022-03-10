@@ -132,7 +132,7 @@ double computeForceLJHalfNeigh(Parameter *param, Atom *atom, Neighbor *neighbor,
 
     for(int i = 0; i < Nlocal; i++) {
         neighs = &neighbor->neighbors[i * neighbor->maxneighs];
-        int numneighs = neighbor.numneigh[i];
+        int numneighs = neighbor->numneigh[i];
         MD_FLOAT xtmp = atom_x(i);
         MD_FLOAT ytmp = atom_y(i);
         MD_FLOAT ztmp = atom_z(i);

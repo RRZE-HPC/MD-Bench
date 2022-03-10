@@ -232,7 +232,7 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor)
                 for(int m = 0; m < bincount[jbin]; m++) {
                     int j = loc_bin[m];
 
-                    if ( j == i ){
+                    if ( (j == i) || (neighbor->halfneigh && (j < i))) {
                         continue;
                     }
 
