@@ -42,6 +42,7 @@ typedef struct {
     int ntimes;
     int nstat;
     int every;
+    int halfneigh;
     MD_FLOAT dt;
     MD_FLOAT dtforce;
     MD_FLOAT cutforce;
