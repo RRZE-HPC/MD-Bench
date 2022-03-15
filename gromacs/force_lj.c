@@ -141,6 +141,16 @@ double computeForceLJ_2xnn(Parameter *param, Atom *atom, Neighbor *neighbor, Sta
     MD_SIMD_FLOAT c05_vec = simd_broadcast(0.5);
     const unsigned int half_mask_bits = VECTOR_WIDTH >> 1;
 
+    for(int ci = 0; ci < atom->Nclusters_local; ci++) {
+        int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
+        MD_FLOAT *ci_f = &atom->cl_f[ci_vec_base];
+        for(int cii = 0; cii < atom->iclusters[ci].natoms; cii++) {
+            ci_f[CL_X_OFFSET + cii] = 0.0;
+            ci_f[CL_Y_OFFSET + cii] = 0.0;
+            ci_f[CL_Z_OFFSET + cii] = 0.0;
+        }
+    }
+
     double S = getTimeStamp();
     LIKWID_MARKER_START("force");
 
@@ -165,7 +175,7 @@ double computeForceLJ_2xnn(Parameter *param, Atom *atom, Neighbor *neighbor, Sta
         MD_SIMD_FLOAT fiy2 = simd_zero();
         MD_SIMD_FLOAT fiz2 = simd_zero();
 
-        for(int k = 0; k < numneighs; k += 2) {
+        for(int k = 0; k < numneighs; k++) {
             int cj = neighs[k];
             int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
             MD_FLOAT *cj_x = &atom->cl_x[cj_vec_base];
