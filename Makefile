@@ -10,14 +10,12 @@ Q         ?= @
 include $(MAKE_DIR)/config.mk
 include $(MAKE_DIR)/include_$(TAG).mk
 include $(MAKE_DIR)/include_LIKWID.mk
+include $(MAKE_DIR)/include_ISA.mk
 include $(MAKE_DIR)/include_GROMACS.mk
 INCLUDES  += -I./$(SRC_DIR)/includes
 
 ifeq ($(strip $(DATA_LAYOUT)),AOS)
 DEFINES +=  -DAOS
-endif
-ifeq ($(strip $(CLUSTER_LAYOUT)),AOS)
-DEFINES +=  -DCLUSTER_AOS
 endif
 ifeq ($(strip $(DATA_TYPE)),SP)
 DEFINES +=  -DPRECISION=1
@@ -27,14 +25,6 @@ endif
 
 ifneq ($(ASM_SYNTAX), ATT)
     ASFLAGS += -masm=intel
-endif
-
-ifneq ($(ATOMS_LOOP_RUNS),)
-    DEFINES += -DATOMS_LOOP_RUNS=$(ATOMS_LOOP_RUNS)
-endif
-
-ifneq ($(NEIGHBORS_LOOP_RUNS),)
-    DEFINES += -DNEIGHBORS_LOOP_RUNS=$(NEIGHBORS_LOOP_RUNS)
 endif
 
 ifeq ($(strip $(EXPLICIT_TYPES)),true)
@@ -71,6 +61,10 @@ endif
 
 ifeq ($(strip $(NO_AVX2)),true)
     DEFINES += -DNO_AVX2
+endif
+
+ifeq ($(strip $(AVX512)),true)
+    DEFINES += -DAVX512
 endif
 
 VPATH     = $(SRC_DIR) $(ASM_DIR)

@@ -28,6 +28,7 @@
 #include <atom.h>
 #include <allocate.h>
 #include <neighbor.h>
+#include <util.h>
 
 #define DELTA 20000
 
@@ -45,28 +46,31 @@ void initPbc(Atom* atom) {
 /* update coordinates of ghost atoms */
 /* uses mapping created in setupPbc */
 void updatePbc(Atom *atom, Parameter *param, int firstUpdate) {
-    int *border_map = atom->border_map;
-    int nlocal = atom->Nclusters_local;
+    DEBUG_MESSAGE("updatePbc start\n");
+    int jfac = MAX(1, CLUSTER_N / CLUSTER_M);
+    int ncj = atom->Nclusters_local / jfac;
     MD_FLOAT xprd = param->xprd;
     MD_FLOAT yprd = param->yprd;
     MD_FLOAT zprd = param->zprd;
 
     for(int cg = 0; cg < atom->Nclusters_ghost; cg++) {
-        const int ci = nlocal + cg;
-        MD_FLOAT *cptr = cluster_pos_ptr(ci);
-        MD_FLOAT *bmap_cptr = cluster_pos_ptr(border_map[cg]);
+        const int cj = ncj + cg;
+        int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
+        int bmap_vec_base = CJ_VECTOR_BASE_INDEX(atom->border_map[cg]);
+        MD_FLOAT *cj_x = &atom->cl_x[cj_vec_base];
+        MD_FLOAT *bmap_x = &atom->cl_x[bmap_vec_base];
         MD_FLOAT bbminx = INFINITY, bbmaxx = -INFINITY;
         MD_FLOAT bbminy = INFINITY, bbmaxy = -INFINITY;
         MD_FLOAT bbminz = INFINITY, bbmaxz = -INFINITY;
 
-        for(int cii = 0; cii < atom->clusters[ci].natoms; cii++) {
-            MD_FLOAT xtmp = cluster_x(bmap_cptr, cii) + atom->PBCx[cg] * xprd;
-            MD_FLOAT ytmp = cluster_y(bmap_cptr, cii) + atom->PBCy[cg] * yprd;
-            MD_FLOAT ztmp = cluster_z(bmap_cptr, cii) + atom->PBCz[cg] * zprd;
+        for(int cjj = 0; cjj < atom->jclusters[cj].natoms; cjj++) {
+            MD_FLOAT xtmp = bmap_x[CL_X_OFFSET + cjj] + atom->PBCx[cg] * xprd;
+            MD_FLOAT ytmp = bmap_x[CL_Y_OFFSET + cjj] + atom->PBCy[cg] * yprd;
+            MD_FLOAT ztmp = bmap_x[CL_Z_OFFSET + cjj] + atom->PBCz[cg] * zprd;
 
-            cluster_x(cptr, cii) = xtmp;
-            cluster_y(cptr, cii) = ytmp;
-            cluster_z(cptr, cii) = ztmp;
+            cj_x[CL_X_OFFSET + cjj] = xtmp;
+            cj_x[CL_Y_OFFSET + cjj] = ytmp;
+            cj_x[CL_Z_OFFSET + cjj] = ztmp;
 
             if(firstUpdate) {
                 // TODO: To create the bounding boxes faster, we can use SIMD operations
@@ -80,20 +84,22 @@ void updatePbc(Atom *atom, Parameter *param, int firstUpdate) {
         }
 
         if(firstUpdate) {
-            for(int cii = atom->clusters[ci].natoms; cii < CLUSTER_DIM_M; cii++) {
-                cluster_x(cptr, cii) = INFINITY;
-                cluster_y(cptr, cii) = INFINITY;
-                cluster_z(cptr, cii) = INFINITY;
+            for(int cjj = atom->jclusters[cj].natoms; cjj < CLUSTER_N; cjj++) {
+                cj_x[CL_X_OFFSET + cjj] = INFINITY;
+                cj_x[CL_Y_OFFSET + cjj] = INFINITY;
+                cj_x[CL_Z_OFFSET + cjj] = INFINITY;
             }
 
-            atom->clusters[ci].bbminx = bbminx;
-            atom->clusters[ci].bbmaxx = bbmaxx;
-            atom->clusters[ci].bbminy = bbminy;
-            atom->clusters[ci].bbmaxy = bbmaxy;
-            atom->clusters[ci].bbminz = bbminz;
-            atom->clusters[ci].bbmaxz = bbmaxz;
+            atom->jclusters[cj].bbminx = bbminx;
+            atom->jclusters[cj].bbmaxx = bbmaxx;
+            atom->jclusters[cj].bbminy = bbminy;
+            atom->jclusters[cj].bbmaxy = bbmaxy;
+            atom->jclusters[cj].bbminz = bbminz;
+            atom->jclusters[cj].bbmaxz = bbmaxz;
         }
     }
+
+    DEBUG_MESSAGE("updatePbc end\n");
 }
 
 /* relocate atoms that have left domain according
@@ -130,15 +136,18 @@ void updateAtomsPbc(Atom *atom, Parameter *param) {
  * that are then enforced in updatePbc */
 #define ADDGHOST(dx,dy,dz);                                                     \
     Nghost++;                                                                   \
-    const int g_atom_idx = atom->Nclusters_local + Nghost;                      \
-    border_map[Nghost] = ci;                                                    \
+    const int cg = ncj + Nghost;                                                \
+    const int cj_natoms = atom->jclusters[cj].natoms;                           \
+    atom->border_map[Nghost] = cj;                                              \
     atom->PBCx[Nghost] = dx;                                                    \
     atom->PBCy[Nghost] = dy;                                                    \
     atom->PBCz[Nghost] = dz;                                                    \
-    atom->clusters[g_atom_idx].natoms = atom->clusters[ci].natoms;              \
-    Nghost_atoms += atom->clusters[g_atom_idx].natoms;                          \
-    for(int cii = 0; cii < atom->clusters[ci].natoms; cii++) {                  \
-        atom->clusters[g_atom_idx].type[cii] = atom->clusters[ci].type[cii];    \
+    atom->jclusters[cg].natoms = cj_natoms;                                     \
+    Nghost_atoms += cj_natoms;                                                  \
+    int cj_sca_base = CJ_SCALAR_BASE_INDEX(cj);                                 \
+    int cg_sca_base = CJ_SCALAR_BASE_INDEX(cg);                                 \
+    for(int cjj = 0; cjj < cj_natoms; cjj++) {                                  \
+        atom->cl_type[cg_sca_base + cjj] = atom->cl_type[cj_sca_base + cjj];    \
     }
 
 /* internal subroutines */
@@ -153,80 +162,86 @@ void growPbc(Atom* atom) {
 }
 
 void setupPbc(Atom *atom, Parameter *param) {
-    int *border_map = atom->border_map;
+    DEBUG_MESSAGE("setupPbc start\n");
     MD_FLOAT xprd = param->xprd;
     MD_FLOAT yprd = param->yprd;
     MD_FLOAT zprd = param->zprd;
     MD_FLOAT Cutneigh = param->cutneigh;
+    int jfac = MAX(1, CLUSTER_N / CLUSTER_M);
+    int ncj = atom->Nclusters_local / jfac;
     int Nghost = -1;
     int Nghost_atoms = 0;
 
-    for(int ci = 0; ci < atom->Nclusters_local; ci++) {
-        if (atom->Nclusters_local + Nghost + 7 >= atom->Nclusters_max) {
-            growClusters(atom);
+    for(int cj = 0; cj < ncj; cj++) {
+        if(atom->jclusters[cj].natoms > 0) {
+            if(atom->Nclusters_local + (Nghost + 7) * jfac >= atom->Nclusters_max) {
+                growClusters(atom);
+            }
+
+            if((Nghost + 7) * jfac >= NmaxGhost) {
+                growPbc(atom);
+            }
+
+            MD_FLOAT bbminx = atom->jclusters[cj].bbminx;
+            MD_FLOAT bbmaxx = atom->jclusters[cj].bbmaxx;
+            MD_FLOAT bbminy = atom->jclusters[cj].bbminy;
+            MD_FLOAT bbmaxy = atom->jclusters[cj].bbmaxy;
+            MD_FLOAT bbminz = atom->jclusters[cj].bbminz;
+            MD_FLOAT bbmaxz = atom->jclusters[cj].bbmaxz;
+
+            /* Setup ghost atoms */
+            /* 6 planes */
+            if (bbminx < Cutneigh)         { ADDGHOST(+1,0,0); }
+            if (bbmaxx >= (xprd-Cutneigh)) { ADDGHOST(-1,0,0); }
+            if (bbminy < Cutneigh)         { ADDGHOST(0,+1,0); }
+            if (bbmaxy >= (yprd-Cutneigh)) { ADDGHOST(0,-1,0); }
+            if (bbminz < Cutneigh)         { ADDGHOST(0,0,+1); }
+            if (bbmaxz >= (zprd-Cutneigh)) { ADDGHOST(0,0,-1); }
+            /* 8 corners */
+            if (bbminx < Cutneigh         && bbminy < Cutneigh         && bbminz < Cutneigh)         { ADDGHOST(+1,+1,+1); }
+            if (bbminx < Cutneigh         && bbmaxy >= (yprd-Cutneigh) && bbminz < Cutneigh)         { ADDGHOST(+1,-1,+1); }
+            if (bbminx < Cutneigh         && bbminy < Cutneigh         && bbmaxz >= (zprd-Cutneigh)) { ADDGHOST(+1,+1,-1); }
+            if (bbminx < Cutneigh         && bbmaxy >= (yprd-Cutneigh) && bbmaxz >= (zprd-Cutneigh)) { ADDGHOST(+1,-1,-1); }
+            if (bbmaxx >= (xprd-Cutneigh) && bbminy < Cutneigh         && bbminz < Cutneigh)         { ADDGHOST(-1,+1,+1); }
+            if (bbmaxx >= (xprd-Cutneigh) && bbmaxy >= (yprd-Cutneigh) && bbminz < Cutneigh)         { ADDGHOST(-1,-1,+1); }
+            if (bbmaxx >= (xprd-Cutneigh) && bbminy < Cutneigh         && bbmaxz >= (zprd-Cutneigh)) { ADDGHOST(-1,+1,-1); }
+            if (bbmaxx >= (xprd-Cutneigh) && bbmaxy >= (yprd-Cutneigh) && bbmaxz >= (zprd-Cutneigh)) { ADDGHOST(-1,-1,-1); }
+            /* 12 edges */
+            if (bbminx < Cutneigh         && bbminz < Cutneigh)         { ADDGHOST(+1,0,+1); }
+            if (bbminx < Cutneigh         && bbmaxz >= (zprd-Cutneigh)) { ADDGHOST(+1,0,-1); }
+            if (bbmaxx >= (xprd-Cutneigh) && bbminz < Cutneigh)         { ADDGHOST(-1,0,+1); }
+            if (bbmaxx >= (xprd-Cutneigh) && bbmaxz >= (zprd-Cutneigh)) { ADDGHOST(-1,0,-1); }
+            if (bbminy < Cutneigh         && bbminz < Cutneigh)         { ADDGHOST(0,+1,+1); }
+            if (bbminy < Cutneigh         && bbmaxz >= (zprd-Cutneigh)) { ADDGHOST(0,+1,-1); }
+            if (bbmaxy >= (yprd-Cutneigh) && bbminz < Cutneigh)         { ADDGHOST(0,-1,+1); }
+            if (bbmaxy >= (yprd-Cutneigh) && bbmaxz >= (zprd-Cutneigh)) { ADDGHOST(0,-1,-1); }
+            if (bbminy < Cutneigh         && bbminx < Cutneigh)         { ADDGHOST(+1,+1,0); }
+            if (bbminy < Cutneigh         && bbmaxx >= (xprd-Cutneigh)) { ADDGHOST(-1,+1,0); }
+            if (bbmaxy >= (yprd-Cutneigh) && bbminx < Cutneigh)         { ADDGHOST(+1,-1,0); }
+            if (bbmaxy >= (yprd-Cutneigh) && bbmaxx >= (xprd-Cutneigh)) { ADDGHOST(-1,-1,0); }
         }
-
-        if (Nghost + 7 >= NmaxGhost) {
-            growPbc(atom);
-            border_map = atom->border_map;
-        }
-
-        MD_FLOAT bbminx = atom->clusters[ci].bbminx;
-        MD_FLOAT bbmaxx = atom->clusters[ci].bbmaxx;
-        MD_FLOAT bbminy = atom->clusters[ci].bbminy;
-        MD_FLOAT bbmaxy = atom->clusters[ci].bbmaxy;
-        MD_FLOAT bbminz = atom->clusters[ci].bbminz;
-        MD_FLOAT bbmaxz = atom->clusters[ci].bbmaxz;
-
-        /* Setup ghost atoms */
-        /* 6 planes */
-        if (bbminx < Cutneigh)         { ADDGHOST(+1,0,0); }
-        if (bbmaxx >= (xprd-Cutneigh)) { ADDGHOST(-1,0,0); }
-        if (bbminy < Cutneigh)         { ADDGHOST(0,+1,0); }
-        if (bbmaxy >= (yprd-Cutneigh)) { ADDGHOST(0,-1,0); }
-        if (bbminz < Cutneigh)         { ADDGHOST(0,0,+1); }
-        if (bbmaxz >= (zprd-Cutneigh)) { ADDGHOST(0,0,-1); }
-        /* 8 corners */
-        if (bbminx < Cutneigh         && bbminy < Cutneigh         && bbminz < Cutneigh)         { ADDGHOST(+1,+1,+1); }
-        if (bbminx < Cutneigh         && bbmaxy >= (yprd-Cutneigh) && bbminz < Cutneigh)         { ADDGHOST(+1,-1,+1); }
-        if (bbminx < Cutneigh         && bbminy < Cutneigh         && bbmaxz >= (zprd-Cutneigh)) { ADDGHOST(+1,+1,-1); }
-        if (bbminx < Cutneigh         && bbmaxy >= (yprd-Cutneigh) && bbmaxz >= (zprd-Cutneigh)) { ADDGHOST(+1,-1,-1); }
-        if (bbmaxx >= (xprd-Cutneigh) && bbminy < Cutneigh         && bbminz < Cutneigh)         { ADDGHOST(-1,+1,+1); }
-        if (bbmaxx >= (xprd-Cutneigh) && bbmaxy >= (yprd-Cutneigh) && bbminz < Cutneigh)         { ADDGHOST(-1,-1,+1); }
-        if (bbmaxx >= (xprd-Cutneigh) && bbminy < Cutneigh         && bbmaxz >= (zprd-Cutneigh)) { ADDGHOST(-1,+1,-1); }
-        if (bbmaxx >= (xprd-Cutneigh) && bbmaxy >= (yprd-Cutneigh) && bbmaxz >= (zprd-Cutneigh)) { ADDGHOST(-1,-1,-1); }
-        /* 12 edges */
-        if (bbminx < Cutneigh         && bbminz < Cutneigh)         { ADDGHOST(+1,0,+1); }
-        if (bbminx < Cutneigh         && bbmaxz >= (zprd-Cutneigh)) { ADDGHOST(+1,0,-1); }
-        if (bbmaxx >= (xprd-Cutneigh) && bbminz < Cutneigh)         { ADDGHOST(-1,0,+1); }
-        if (bbmaxx >= (xprd-Cutneigh) && bbmaxz >= (zprd-Cutneigh)) { ADDGHOST(-1,0,-1); }
-        if (bbminy < Cutneigh         && bbminz < Cutneigh)         { ADDGHOST(0,+1,+1); }
-        if (bbminy < Cutneigh         && bbmaxz >= (zprd-Cutneigh)) { ADDGHOST(0,+1,-1); }
-        if (bbmaxy >= (yprd-Cutneigh) && bbminz < Cutneigh)         { ADDGHOST(0,-1,+1); }
-        if (bbmaxy >= (yprd-Cutneigh) && bbmaxz >= (zprd-Cutneigh)) { ADDGHOST(0,-1,-1); }
-        if (bbminy < Cutneigh         && bbminx < Cutneigh)         { ADDGHOST(+1,+1,0); }
-        if (bbminy < Cutneigh         && bbmaxx >= (xprd-Cutneigh)) { ADDGHOST(-1,+1,0); }
-        if (bbmaxy >= (yprd-Cutneigh) && bbminx < Cutneigh)         { ADDGHOST(+1,-1,0); }
-        if (bbmaxy >= (yprd-Cutneigh) && bbmaxx >= (xprd-Cutneigh)) { ADDGHOST(-1,-1,0); }
     }
 
-    if(atom->Nclusters_local + Nghost + 1 >= atom->Nclusters_max) {
+    if(ncj + (Nghost + 1) * jfac >= atom->Nclusters_max) {
         growClusters(atom);
     }
 
     // Add dummy cluster at the end
-    MD_FLOAT *cptr = cluster_pos_ptr(atom->Nclusters_local + Nghost + 1);
-    for(int cii = 0; cii < CLUSTER_DIM_M; cii++) {
-        cluster_x(cptr, cii) = INFINITY;
-        cluster_y(cptr, cii) = INFINITY;
-        cluster_z(cptr, cii) = INFINITY;
+    int cj_vec_base = CJ_VECTOR_BASE_INDEX(ncj + Nghost + 1);
+    MD_FLOAT *cj_x = &atom->cl_x[cj_vec_base];
+    for(int cjj = 0; cjj < CLUSTER_N; cjj++) {
+        cj_x[CL_X_OFFSET + cjj] = INFINITY;
+        cj_x[CL_Y_OFFSET + cjj] = INFINITY;
+        cj_x[CL_Z_OFFSET + cjj] = INFINITY;
     }
 
     // increase by one to make it the ghost atom count
+    atom->dummy_cj = ncj + Nghost + 1;
     atom->Nghost = Nghost_atoms;
     atom->Nclusters_ghost = Nghost + 1;
     atom->Nclusters = atom->Nclusters_local + Nghost + 1;
 
     // Update created ghost clusters positions
     updatePbc(atom, param, 1);
+    DEBUG_MESSAGE("setupPbc end\n");
 }

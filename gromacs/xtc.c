@@ -52,11 +52,12 @@ void xtc_init(const char *filename, Atom *atom, int timestep) {
 void xtc_write(Atom *atom, int timestep, int write_pos, int write_vel) {
     int i = 0;
     for(int ci = 0; ci < atom->Nclusters_local; ++ci) {
-        MD_FLOAT *cptr = cluster_pos_ptr(ci);
+        int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
+        MD_FLOAT *ci_x = &atom->cl_x[ci_vec_base];
         for(int cii = 0; cii < atom->clusters[ci].natoms; ++cii) {
-            x_buf[i][XX] = cluster_x(cptr, cii);
-            x_buf[i][YY] = cluster_y(cptr, cii);
-            x_buf[i][ZZ] = cluster_z(cptr, cii);
+            x_buf[i][XX] = ci_x[CL_X_OFFSET + cii];
+            x_buf[i][YY] = ci_x[CL_Y_OFFSET + cii];
+            x_buf[i][ZZ] = ci_x[CL_Z_OFFSET + cii];
             i++;
         }
     }

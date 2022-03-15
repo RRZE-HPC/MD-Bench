@@ -27,9 +27,10 @@ int write_local_atoms_to_vtk_file(const char* filename, Atom* atom, int timestep
     fprintf(fp, "DATASET UNSTRUCTURED_GRID\n");
     fprintf(fp, "POINTS %d double\n", atom->Nlocal);
     for(int ci = 0; ci < atom->Nclusters_local; ++ci) {
-        MD_FLOAT *cptr = cluster_pos_ptr(ci);
-        for(int cii = 0; cii < atom->clusters[ci].natoms; ++cii) {
-            fprintf(fp, "%.4f %.4f %.4f\n", cluster_x(cptr, cii), cluster_y(cptr, cii), cluster_z(cptr, cii));
+        int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
+        MD_FLOAT *ci_x = &atom->cl_x[ci_vec_base];
+        for(int cii = 0; cii < atom->iclusters[ci].natoms; ++cii) {
+            fprintf(fp, "%.4f %.4f %.4f\n", ci_x[CL_X_OFFSET + cii], ci_x[CL_Y_OFFSET + cii], ci_x[CL_Z_OFFSET + cii]);
         }
     }
     fprintf(fp, "\n\n");
@@ -70,9 +71,10 @@ int write_ghost_atoms_to_vtk_file(const char* filename, Atom* atom, int timestep
     fprintf(fp, "DATASET UNSTRUCTURED_GRID\n");
     fprintf(fp, "POINTS %d double\n", atom->Nghost);
     for(int ci = atom->Nclusters_local; ci < atom->Nclusters_local + atom->Nclusters_ghost; ++ci) {
-        MD_FLOAT *cptr = cluster_pos_ptr(ci);
-        for(int cii = 0; cii < atom->clusters[ci].natoms; ++cii) {
-            fprintf(fp, "%.4f %.4f %.4f\n", cluster_x(cptr, cii), cluster_y(cptr, cii), cluster_z(cptr, cii));
+        int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
+        MD_FLOAT *ci_x = &atom->cl_x[ci_vec_base];
+        for(int cii = 0; cii < atom->iclusters[ci].natoms; ++cii) {
+            fprintf(fp, "%.4f %.4f %.4f\n", ci_x[CL_X_OFFSET + cii], ci_x[CL_Y_OFFSET + cii], ci_x[CL_Z_OFFSET + cii]);
         }
     }
     fprintf(fp, "\n\n");
@@ -116,18 +118,19 @@ int write_local_cluster_edges_to_vtk_file(const char* filename, Atom* atom, int 
     fprintf(fp, "DATASET POLYDATA\n");
     fprintf(fp, "POINTS %d double\n", atom->Nlocal);
     for(int ci = 0; ci < N; ++ci) {
-        MD_FLOAT *cptr = cluster_pos_ptr(ci);
-        for(int cii = 0; cii < atom->clusters[ci].natoms; ++cii) {
-            fprintf(fp, "%.4f %.4f %.4f\n", cluster_x(cptr, cii), cluster_y(cptr, cii), cluster_z(cptr, cii));
+        int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
+        MD_FLOAT *ci_x = &atom->cl_x[ci_vec_base];
+        for(int cii = 0; cii < atom->iclusters[ci].natoms; ++cii) {
+            fprintf(fp, "%.4f %.4f %.4f\n", ci_x[CL_X_OFFSET + cii], ci_x[CL_Y_OFFSET + cii], ci_x[CL_Z_OFFSET + cii]);
         }
 
-        tot_lines += atom->clusters[ci].natoms;
+        tot_lines += atom->iclusters[ci].natoms;
     }
     fprintf(fp, "\n\n");
     fprintf(fp, "LINES %d %d\n", N, N + tot_lines);
     for(int ci = 0; ci < N; ++ci) {
-        fprintf(fp, "%d ", atom->clusters[ci].natoms);
-        for(int cii = 0; cii < atom->clusters[ci].natoms; ++cii) {
+        fprintf(fp, "%d ", atom->iclusters[ci].natoms);
+        for(int cii = 0; cii < atom->iclusters[ci].natoms; ++cii) {
             fprintf(fp, "%d ", i++);
         }
 
@@ -157,18 +160,19 @@ int write_ghost_cluster_edges_to_vtk_file(const char* filename, Atom* atom, int 
     fprintf(fp, "DATASET POLYDATA\n");
     fprintf(fp, "POINTS %d double\n", atom->Nghost);
     for(int ci = atom->Nclusters_local; ci < N; ++ci) {
-        MD_FLOAT *cptr = cluster_pos_ptr(ci);
-        for(int cii = 0; cii < atom->clusters[ci].natoms; ++cii) {
-            fprintf(fp, "%.4f %.4f %.4f\n", cluster_x(cptr, cii), cluster_y(cptr, cii), cluster_z(cptr, cii));
+        int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
+        MD_FLOAT *ci_x = &atom->cl_x[ci_vec_base];
+        for(int cii = 0; cii < atom->iclusters[ci].natoms; ++cii) {
+            fprintf(fp, "%.4f %.4f %.4f\n", ci_x[CL_X_OFFSET + cii], ci_x[CL_Y_OFFSET + cii], ci_x[CL_Z_OFFSET + cii]);
         }
 
-        tot_lines += atom->clusters[ci].natoms;
+        tot_lines += atom->iclusters[ci].natoms;
     }
     fprintf(fp, "\n\n");
     fprintf(fp, "LINES %d %d\n", atom->Nclusters_ghost, atom->Nclusters_ghost + tot_lines);
     for(int ci = atom->Nclusters_local; ci < N; ++ci) {
-        fprintf(fp, "%d ", atom->clusters[ci].natoms);
-        for(int cii = 0; cii < atom->clusters[ci].natoms; ++cii) {
+        fprintf(fp, "%d ", atom->iclusters[ci].natoms);
+        for(int cii = 0; cii < atom->iclusters[ci].natoms; ++cii) {
             fprintf(fp, "%d ", i++);
         }
 
