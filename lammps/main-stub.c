@@ -217,8 +217,6 @@ int main(int argc, const char *argv[]) {
 
     if(!csv) {
         printf("Number of timesteps: %d\n", param.ntimes);
-        printf("Number of times to compute the atoms loop: %d\n", ATOMS_LOOP_RUNS);
-        printf("Number of times to compute the neighbors loop: %d\n", NEIGHBORS_LOOP_RUNS);
         printf("System size (unit cells): %dx%dx%d\n", param.nx, param.ny, param.nz);
         printf("Atoms per unit cell: %d\n", atoms_per_unit_cell);
         printf("Total number of atoms: %d\n", atom->Nlocal);
@@ -257,9 +255,8 @@ int main(int argc, const char *argv[]) {
     E = getTimeStamp();
     double T_accum = E-S;
     double freq_hz = param.proc_freq * 1.e9;
-    const double repeats = ATOMS_LOOP_RUNS * NEIGHBORS_LOOP_RUNS;
-    const double atoms_updates_per_sec = (double)(atom->Nlocal) / T_accum * (double)(param.ntimes * repeats);
-    const double cycles_per_atom = T_accum / (double)(atom->Nlocal) / (double)(param.ntimes * repeats) * freq_hz;
+    const double atoms_updates_per_sec = (double)(atom->Nlocal) / T_accum * (double)(param.ntimes);
+    const double cycles_per_atom = T_accum / (double)(atom->Nlocal) / (double)(param.ntimes) * freq_hz;
     const double cycles_per_neigh = cycles_per_atom / (double)(atoms_per_unit_cell - 1);
 
     if(!csv) {
