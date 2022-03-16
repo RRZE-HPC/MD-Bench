@@ -239,9 +239,9 @@ double computeForceLJ_2xnn(Parameter *param, Atom *atom, Neighbor *neighbor, Sta
             fiz2 = simd_masked_add(fiz2, simd_mul(delz2, force2), cutoff_mask2);
         }
 
-        simd_h_dual_reduce_sum(&ci_f[CL_X_OFFSET], fix0, fix2);
-        simd_h_dual_reduce_sum(&ci_f[CL_Y_OFFSET], fiy0, fiy2);
-        simd_h_dual_reduce_sum(&ci_f[CL_Z_OFFSET], fiz0, fiz2);
+        simd_h_dual_incr_reduced_sum(&ci_f[CL_X_OFFSET], fix0, fix2);
+        simd_h_dual_incr_reduced_sum(&ci_f[CL_Y_OFFSET], fiy0, fiy2);
+        simd_h_dual_incr_reduced_sum(&ci_f[CL_Z_OFFSET], fiz0, fiz2);
 
         addStat(stats->calculated_forces, 1);
         addStat(stats->num_neighs, numneighs);
@@ -268,6 +268,16 @@ double computeForceLJ_4xn(Parameter *param, Atom *atom, Neighbor *neighbor, Stat
     MD_SIMD_FLOAT c05_vec = simd_broadcast(0.5);
     double S = getTimeStamp();
     LIKWID_MARKER_START("force");
+
+    for(int ci = 0; ci < atom->Nclusters_local; ci++) {
+        int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
+        MD_FLOAT *ci_f = &atom->cl_f[ci_vec_base];
+        for(int cii = 0; cii < atom->iclusters[ci].natoms; cii++) {
+            ci_f[CL_X_OFFSET + cii] = 0.0;
+            ci_f[CL_Y_OFFSET + cii] = 0.0;
+            ci_f[CL_Z_OFFSET + cii] = 0.0;
+        }
+    }
 
     #pragma omp parallel for
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
@@ -387,6 +397,10 @@ double computeForceLJ_4xn(Parameter *param, Atom *atom, Neighbor *neighbor, Stat
             fiz3 = simd_masked_add(fiz3, simd_mul(delz3, force3), cutoff_mask3);
         }
 
+        simd_incr_reduced_sum(&ci_f[CL_X_OFFSET], fix0, fix1, fix2, fix3);
+        simd_incr_reduced_sum(&ci_f[CL_Y_OFFSET], fiy0, fiy1, fiy2, fiy3);
+        simd_incr_reduced_sum(&ci_f[CL_Z_OFFSET], fiz0, fiz1, fiz2, fiz3);
+        /*
         ci_f[CL_X_OFFSET + 0] = simd_h_reduce_sum(fix0);
         ci_f[CL_X_OFFSET + 1] = simd_h_reduce_sum(fix1);
         ci_f[CL_X_OFFSET + 2] = simd_h_reduce_sum(fix2);
@@ -399,6 +413,7 @@ double computeForceLJ_4xn(Parameter *param, Atom *atom, Neighbor *neighbor, Stat
         ci_f[CL_Z_OFFSET + 1] = simd_h_reduce_sum(fiz1);
         ci_f[CL_Z_OFFSET + 2] = simd_h_reduce_sum(fiz2);
         ci_f[CL_Z_OFFSET + 3] = simd_h_reduce_sum(fiz3);
+        */
 
         addStat(stats->calculated_forces, 1);
         addStat(stats->num_neighs, numneighs);
