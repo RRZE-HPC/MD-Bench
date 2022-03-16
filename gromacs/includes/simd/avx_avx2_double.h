@@ -29,17 +29,56 @@
 #define MD_SIMD_FLOAT       __m256d
 
 #ifdef NO_AVX2
-#define MD_SIMD_MASK        __m256d
+#   define MD_SIMD_MASK     __m256d
 #else
-#define MD_SIMD_MASK        __mmask8
+#   define MD_SIMD_MASK     __mmask8
 #endif
 
-static inline MD_SIMD_FLOAT simd_broadcast(double scalar) { return _mm256_set1_pd(scalar); }
+static inline MD_SIMD_FLOAT simd_broadcast(MD_FLOAT scalar) { return _mm256_set1_pd(scalar); }
 static inline MD_SIMD_FLOAT simd_zero() { return _mm256_set1_pd(0.0); }
 static inline MD_SIMD_FLOAT simd_add(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b) { return _mm256_add_pd(a, b); }
 static inline MD_SIMD_FLOAT simd_sub(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b) { return _mm256_sub_pd(a, b); }
 static inline MD_SIMD_FLOAT simd_mul(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b) { return _mm256_mul_pd(a, b); }
 static inline MD_SIMD_FLOAT simd_load(MD_FLOAT *p) { return _mm256_load_pd(p); }
+static inline MD_SIMD_FLOAT simd_load_h_duplicate(const MD_FLOAT *m) {
+    MD_SIMD_FLOAT ret;
+    fprintf(stderr, "simd_load_h_duplicate(): Not implemented for AVX/AVX2 with double precision!");
+    exit(-1);
+    return ret;
+}
+
+static inline MD_SIMD_FLOAT simd_load_h_dual(const MD_FLOAT *m) {
+    MD_SIMD_FLOAT ret;
+    fprintf(stderr, "simd_load_h_dual(): Not implemented for AVX/AVX2 with double precision!");
+    exit(-1);
+    return ret;
+}
+
+static inline MD_FLOAT simd_h_dual_incr_reduced_sum(MD_FLOAT *m, MD_SIMD_FLOAT v0, MD_SIMD_FLOAT v1) {
+    fprintf(stderr, "simd_h_dual_incr_reduced_sum(): Not implemented for AVX/AVX2 with double precision!");
+    exit(-1);
+    return 0.0;
+}
+
+static inline MD_FLOAT simd_incr_reduced_sum(MD_FLOAT *m, MD_SIMD_FLOAT v0, MD_SIMD_FLOAT v1, MD_SIMD_FLOAT v2, MD_SIMD_FLOAT v3) {
+    __m256d t0, t1, t2;
+    __m128d a0, a1;
+
+    t0 = _mm256_hadd_pd(v0, v1);
+    t1 = _mm256_hadd_pd(v2, v3);
+    t2 = _mm256_permute2f128_pd(t0, t1, 0x21);
+    t0 = _mm256_add_pd(t0, t2);
+    t1 = _mm256_add_pd(t1, t2);
+    t0 = _mm256_blend_pd(t0, t1, 0b1100);
+    t1 = _mm256_add_pd(t0, _mm256_load_pd(m));
+    _mm256_store_pd(m, t1);
+
+    t0 = _mm256_add_pd(t0, _mm256_permute_pd(t0, 0b0101));
+    a0 = _mm256_castpd256_pd128(t0);
+    a1 = _mm256_extractf128_pd(t0, 0x1);
+    a0 = _mm_add_sd(a0, a1);
+    return *((MD_FLOAT *) &a0);
+}
 
 #ifdef NO_AVX2
 
