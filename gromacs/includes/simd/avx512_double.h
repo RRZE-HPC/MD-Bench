@@ -29,7 +29,7 @@
 #define MD_SIMD_FLOAT       __m512d
 #define MD_SIMD_MASK        __mmask8
 
-static inline MD_SIMD_FLOAT simd_broadcast(double scalar) { return _mm512_set1_pd(scalar); }
+static inline MD_SIMD_FLOAT simd_broadcast(MD_FLOAT scalar) { return _mm512_set1_pd(scalar); }
 static inline MD_SIMD_FLOAT simd_zero() { return _mm512_set1_pd(0.0); }
 static inline MD_SIMD_FLOAT simd_add(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b) { return _mm512_add_pd(a, b); }
 static inline MD_SIMD_FLOAT simd_sub(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b) { return _mm512_sub_pd(a, b); }
@@ -50,15 +50,37 @@ static inline MD_FLOAT simd_h_reduce_sum(MD_SIMD_FLOAT a) {
     return *((MD_FLOAT *) &x);
 }
 
-static inline MD_SIMD_FLOAT simd_load_h_duplicate(const double* m) {
+static inline MD_FLOAT simd_incr_reduced_sum(MD_FLOAT *m, MD_SIMD_FLOAT v0, MD_SIMD_FLOAT v1, MD_SIMD_FLOAT v2, MD_SIMD_FLOAT v3) {
+    __m512d t0, t2;
+    __m256d t3, t4;
+
+    t0 = _mm512_add_pd(v0, _mm512_permute_pd(v0, 0x55));
+    t2 = _mm512_add_pd(v2, _mm512_permute_pd(v2, 0x55));
+    t0 = _mm512_mask_add_pd(t0, simd_mask_from_u32(0xaa), v1, _mm512_permute_pd(v1, 0x55));
+    t2 = _mm512_mask_add_pd(t2, simd_mask_from_u32(0xaa), v3, _mm512_permute_pd(v3, 0x55));
+    t0 = _mm512_add_pd(t0, _mm512_shuffle_f64x2(t0, t0, 0x4e));
+    t0 = _mm512_mask_add_pd(t0, simd_mask_from_u32(0xF0), t2, _mm512_shuffle_f64x2(t2, t2, 0x4e));
+    t0 = _mm512_add_pd(t0, _mm512_shuffle_f64x2(t0, t0, 0xb1));
+    t0 = _mm512_mask_shuffle_f64x2(t0, simd_mask_from_u32(0x0C), t0, t0, 0xee);
+    t3 = _mm512_castpd512_pd256(t0);
+    t4 = _mm256_load_pd(m);
+    t4 = _mm256_add_pd(t4, t3);
+    _mm256_store_pd(m, t4);
+
+    t0 = _mm512_add_pd(t0, _mm512_permutex_pd(t0, 0x4e));
+    t0 = _mm512_add_pd(t0, _mm512_permutex_pd(t0, 0xb1));
+    return _mm_cvtsd_f64(_mm512_castpd512_pd128(t0));
+}
+
+static inline MD_SIMD_FLOAT simd_load_h_duplicate(const MD_FLOAT *m) {
     return _mm512_broadcast_f64x4(_mm256_load_pd(m));
 }
 
-static inline MD_SIMD_FLOAT simd_load_h_dual(const double* m) {
+static inline MD_SIMD_FLOAT simd_load_h_dual(const MD_FLOAT *m) {
     return _mm512_insertf64x4(_mm512_broadcastsd_pd(_mm_load_sd(m)), _mm256_broadcastsd_pd(_mm_load_sd(m + 1)), 1);
 }
 
-static inline double simd_h_dual_reduce_sum(double* m, MD_SIMD_FLOAT v0, MD_SIMD_FLOAT v1) {
+static inline MD_FLOAT simd_h_dual_incr_reduced_sum(MD_FLOAT *m, MD_SIMD_FLOAT v0, MD_SIMD_FLOAT v1) {
     __m512d t0;
     __m256d t2, t3;
 
