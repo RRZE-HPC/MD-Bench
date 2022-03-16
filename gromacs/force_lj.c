@@ -156,6 +156,10 @@ double computeForceLJ_2xnn(Parameter *param, Atom *atom, Neighbor *neighbor, Sta
 
     #pragma omp parallel for
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
+        int ci_cj0 = CJ0_FROM_CI(ci);
+        #if CLUSTER_M > CLUSTER_N
+        int ci_cj1 = CJ1_FROM_CI(ci);
+        #endif
         int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
         MD_FLOAT *ci_x = &atom->cl_x[ci_vec_base];
         MD_FLOAT *ci_f = &atom->cl_f[ci_vec_base];
@@ -400,20 +404,6 @@ double computeForceLJ_4xn(Parameter *param, Atom *atom, Neighbor *neighbor, Stat
         simd_incr_reduced_sum(&ci_f[CL_X_OFFSET], fix0, fix1, fix2, fix3);
         simd_incr_reduced_sum(&ci_f[CL_Y_OFFSET], fiy0, fiy1, fiy2, fiy3);
         simd_incr_reduced_sum(&ci_f[CL_Z_OFFSET], fiz0, fiz1, fiz2, fiz3);
-        /*
-        ci_f[CL_X_OFFSET + 0] = simd_h_reduce_sum(fix0);
-        ci_f[CL_X_OFFSET + 1] = simd_h_reduce_sum(fix1);
-        ci_f[CL_X_OFFSET + 2] = simd_h_reduce_sum(fix2);
-        ci_f[CL_X_OFFSET + 3] = simd_h_reduce_sum(fix3);
-        ci_f[CL_Y_OFFSET + 0] = simd_h_reduce_sum(fiy0);
-        ci_f[CL_Y_OFFSET + 1] = simd_h_reduce_sum(fiy1);
-        ci_f[CL_Y_OFFSET + 2] = simd_h_reduce_sum(fiy2);
-        ci_f[CL_Y_OFFSET + 3] = simd_h_reduce_sum(fiy3);
-        ci_f[CL_Z_OFFSET + 0] = simd_h_reduce_sum(fiz0);
-        ci_f[CL_Z_OFFSET + 1] = simd_h_reduce_sum(fiz1);
-        ci_f[CL_Z_OFFSET + 2] = simd_h_reduce_sum(fiz2);
-        ci_f[CL_Z_OFFSET + 3] = simd_h_reduce_sum(fiz3);
-        */
 
         addStat(stats->calculated_forces, 1);
         addStat(stats->num_neighs, numneighs);

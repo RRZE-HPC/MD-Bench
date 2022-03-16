@@ -21,13 +21,11 @@
  * =======================================================================================
  */
 
-#include <stdlib.h>
-#include <string.h>
 #include <immintrin.h>
 #include <zmmintrin.h>
 
-#define MD_SIMD_FLOAT       __m512d
-#define MD_SIMD_MASK        __mmask8
+#define MD_SIMD_FLOAT   __m512d
+#define MD_SIMD_MASK    __mmask8
 
 static inline MD_SIMD_FLOAT simd_broadcast(MD_FLOAT scalar) { return _mm512_set1_pd(scalar); }
 static inline MD_SIMD_FLOAT simd_zero() { return _mm512_set1_pd(0.0); }
@@ -42,7 +40,6 @@ static inline MD_SIMD_MASK simd_mask_cond_lt(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b) {
 static inline MD_SIMD_MASK simd_mask_from_u32(unsigned int a) { return _cvtu32_mask8(a); }
 static inline unsigned int simd_mask_to_u32(MD_SIMD_MASK a) { return _cvtmask8_u32(a); }
 static inline MD_SIMD_FLOAT simd_load(MD_FLOAT *p) { return _mm512_load_pd(p); }
-
 static inline MD_FLOAT simd_h_reduce_sum(MD_SIMD_FLOAT a) {
     MD_SIMD_FLOAT x = _mm512_add_pd(a, _mm512_shuffle_f64x2(a, a, 0xee));
     x = _mm512_add_pd(x, _mm512_shuffle_f64x2(x, x, 0x11));
