@@ -49,6 +49,13 @@ static inline MD_FLOAT simd_h_reduce_sum(MD_SIMD_FLOAT a) {
     return 0.0;
 }
 
+static inline MD_FLOAT simd_incr_reduced_sum(MD_FLOAT *m, MD_SIMD_FLOAT v0, MD_SIMD_FLOAT v1, MD_SIMD_FLOAT v2, MD_SIMD_FLOAT v3) {
+    // This would only be called in a Mx16 configuration, which is not valid in GROMACS
+    fprintf(stderr, "simd_h_reduce_sum(): Called with AVX512 intrinsics and single-precision which is not valid!\n");
+    exit(-1);
+    return 0.0;
+}
+
 static inline MD_SIMD_FLOAT simd_load_h_duplicate(const float* m) {
     return _mm512_castpd_ps(_mm512_broadcast_f64x4(_mm256_load_pd((const double *)(m))));
 }
@@ -57,7 +64,7 @@ static inline MD_SIMD_FLOAT simd_load_h_dual(const float* m) {
     return _mm512_shuffle_f32x4(_mm512_broadcastss_ps(_mm_load_ss(m)), _mm512_broadcastss_ps(_mm_load_ss(m + 1)), 0x44);
 }
 
-static inline MD_FLOAT simd_h_dual_reduce_sum(float* m, MD_SIMD_FLOAT v0, MD_SIMD_FLOAT v1) {
+static inline MD_FLOAT simd_h_dual_incr_reduced_sum(float* m, MD_SIMD_FLOAT v0, MD_SIMD_FLOAT v1) {
     __m512 t0, t1;
     __m128 t2, t3;
 

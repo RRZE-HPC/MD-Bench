@@ -65,8 +65,6 @@ void setupThermo(Parameter *param, int natoms)
         e_scale = 524287.985533;//16.0;
         param->dtforce /= mvv2e;
     }
-
-    printf("step\ttemp\t\tpressure\n");
 }
 
 void computeThermo(int iflag, Parameter *param, Atom *atom)

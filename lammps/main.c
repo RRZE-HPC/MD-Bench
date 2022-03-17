@@ -49,39 +49,7 @@ extern double computeForceLJFullNeigh(Parameter*, Atom*, Neighbor*, Stats*);
 extern double computeForceLJHalfNeigh(Parameter*, Atom*, Neighbor*, Stats*);
 extern double computeForceEam(Eam*, Parameter*, Atom*, Neighbor*, Stats*);
 
-void init(Parameter *param)
-{
-    param->input_file = NULL;
-    param->vtk_file = NULL;
-    param->force_field = FF_LJ;
-    param->epsilon = 1.0;
-    param->sigma6 = 1.0;
-    param->rho = 0.8442;
-    param->ntypes = 4;
-    param->ntimes = 200;
-    param->dt = 0.005;
-    param->nx = 32;
-    param->ny = 32;
-    param->nz = 32;
-    param->cutforce = 2.5;
-    param->skin = 0.3;
-    param->cutneigh = param->cutforce + param->skin;
-    param->temp = 1.44;
-    param->nstat = 100;
-    param->mass = 1.0;
-    param->dtforce = 0.5 * param->dt;
-    param->every = 20;
-    param->proc_freq = 2.4;
-    param->halfneigh = 1;
-}
-
-double setup(
-        Parameter *param,
-        Eam *eam,
-        Atom *atom,
-        Neighbor *neighbor,
-        Stats *stats)
-{
+double setup(Parameter *param, Eam *eam, Atom *atom, Neighbor *neighbor, Stats *stats) {
     if(param->force_field == FF_EAM) { initEam(eam, param); }
     double S, E;
     param->lattice = pow((4.0 / param->rho), (1.0 / 3.0));
@@ -99,6 +67,7 @@ double setup(
     } else {
         readAtom(atom, param);
     }
+
     setupNeighbor(param);
     setupThermo(param, atom->Natoms);
     if(param->input_file == NULL) { adjustThermo(param, atom); }
@@ -106,17 +75,11 @@ double setup(
     updatePbc(atom, param);
     buildNeighbor(atom, neighbor);
     E = getTimeStamp();
-
     return E-S;
 }
 
-double reneighbour(
-        Parameter *param,
-        Atom *atom,
-        Neighbor *neighbor)
-{
+double reneighbour(Parameter *param, Atom *atom, Neighbor *neighbor) {
     double S, E;
-
     S = getTimeStamp();
     LIKWID_MARKER_START("reneighbour");
     updateAtomsPbc(atom, param);
@@ -126,12 +89,10 @@ double reneighbour(
     buildNeighbor(atom, neighbor);
     LIKWID_MARKER_STOP("reneighbour");
     E = getTimeStamp();
-
     return E-S;
 }
 
-void initialIntegrate(Parameter *param, Atom *atom)
-{
+void initialIntegrate(Parameter *param, Atom *atom) {
     MD_FLOAT* fx = atom->fx; MD_FLOAT* fy = atom->fy; MD_FLOAT* fz = atom->fz;
     MD_FLOAT* vx = atom->vx; MD_FLOAT* vy = atom->vy; MD_FLOAT* vz = atom->vz;
 
@@ -145,8 +106,7 @@ void initialIntegrate(Parameter *param, Atom *atom)
     }
 }
 
-void finalIntegrate(Parameter *param, Atom *atom)
-{
+void finalIntegrate(Parameter *param, Atom *atom) {
     MD_FLOAT* fx = atom->fx; MD_FLOAT* fy = atom->fy; MD_FLOAT* fz = atom->fz;
     MD_FLOAT* vx = atom->vx; MD_FLOAT* vy = atom->vy; MD_FLOAT* vz = atom->vz;
 
@@ -157,8 +117,7 @@ void finalIntegrate(Parameter *param, Atom *atom)
     }
 }
 
-void printAtomState(Atom *atom)
-{
+void printAtomState(Atom *atom) {
     printf("Atom counts: Natoms=%d Nlocal=%d Nghost=%d Nmax=%d\n",
             atom->Natoms, atom->Nlocal, atom->Nghost, atom->Nmax);
 
@@ -169,8 +128,7 @@ void printAtomState(Atom *atom)
     /*     } */
 }
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
     double timer[NUMTIMER];
     Eam eam;
     Atom atom;
@@ -185,10 +143,13 @@ int main(int argc, char** argv)
         //LIKWID_MARKER_REGISTER("reneighbour");
         //LIKWID_MARKER_REGISTER("pbc");
     }
-    init(&param);
 
-    for(int i = 0; i < argc; i++)
-    {
+    initParameter(&param);
+    for(int i = 0; i < argc; i++) {
+        if((strcmp(argv[i], "-p") == 0)) {
+            readParameter(&param, argv[++i]);
+            continue;
+        }
         if((strcmp(argv[i], "-f") == 0)) {
             if((param.force_field = str2ff(argv[++i])) < 0) {
                 fprintf(stderr, "Invalid force field!\n");
@@ -239,6 +200,7 @@ int main(int argc, char** argv)
         if((strcmp(argv[i], "-h") == 0) || (strcmp(argv[i], "--help") == 0)) {
             printf("MD Bench: A minimalistic re-implementation of miniMD\n");
             printf(HLINE);
+            printf("-p <string>:          file to read parameters from (can be specified more than once)\n");
             printf("-f <string>:          force field (lj or eam), default lj\n");
             printf("-i <string>:          input file with atom positions (dump)\n");
             printf("-e <string>:          input file for EAM\n");
@@ -255,6 +217,9 @@ int main(int argc, char** argv)
 
     param.cutneigh = param.cutforce + param.skin;
     setup(&param, &eam, &atom, &neighbor, &stats);
+    printParameter(&param);
+
+    printf("step\ttemp\t\tpressure\n");
     computeThermo(0, &param, &atom);
 #if defined(MEM_TRACER) || defined(INDEX_TRACER)
     traceAddresses(&param, &atom, &neighbor, n + 1);
@@ -262,7 +227,7 @@ int main(int argc, char** argv)
     if(param.force_field == FF_EAM) {
         timer[FORCE] = computeForceEam(&eam, &param, &atom, &neighbor, &stats);
     } else {
-        if( param.halfneigh ) {
+        if(param.half_neigh) {
             timer[FORCE] = computeForceLJHalfNeigh(&param, &atom, &neighbor, &stats);
         } else {
             timer[FORCE] = computeForceLJFullNeigh(&param, &atom, &neighbor, &stats);
@@ -279,7 +244,7 @@ int main(int argc, char** argv)
     for(int n = 0; n < param.ntimes; n++) {
         initialIntegrate(&param, &atom);
 
-        if((n + 1) % param.every) {
+        if((n + 1) % param.reneigh_every) {
             updatePbc(&atom, &param);
         } else {
             timer[NEIGH] += reneighbour(&param, &atom, &neighbor);
@@ -292,7 +257,7 @@ int main(int argc, char** argv)
         if(param.force_field == FF_EAM) {
             timer[FORCE] += computeForceEam(&eam, &param, &atom, &neighbor, &stats);
         } else {
-            if( param.halfneigh ) {
+            if(param.half_neigh) {
                 timer[FORCE] = computeForceLJHalfNeigh(&param, &atom, &neighbor, &stats);
             } else {
                 timer[FORCE] = computeForceLJFullNeigh(&param, &atom, &neighbor, &stats);

@@ -32,6 +32,15 @@
 #ifndef ABS
 #define ABS(a) ((a) >= 0 ? (a) : -(a))
 #endif
+#ifdef DEBUG
+#define DEBUG_MESSAGE   printf
+#else
+#define DEBUG_MESSAGE
+#endif
+
+#ifndef MAXLINE
+#define MAXLINE 4096
+#endif
 
 #define FF_LJ   0
 #define FF_EAM  1
