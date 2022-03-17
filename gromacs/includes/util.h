@@ -42,10 +42,6 @@
 #define MAXLINE 4096
 #endif
 
-#ifndef MAX
-#define MAX(a,b)    ((a) > (b) ? (a) : (b))
-#endif
-
 #define FF_LJ   0
 #define FF_EAM  1
 

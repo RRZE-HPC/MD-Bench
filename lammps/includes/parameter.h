@@ -31,9 +31,11 @@
 
 typedef struct {
     int force_field;
+    char* param_file;
     char* input_file;
     char* vtk_file;
     MD_FLOAT epsilon;
+    MD_FLOAT sigma;
     MD_FLOAT sigma6;
     MD_FLOAT temp;
     MD_FLOAT rho;
@@ -41,8 +43,10 @@ typedef struct {
     int ntypes;
     int ntimes;
     int nstat;
-    int every;
-    int halfneigh;
+    int reneigh_every;
+    int x_out_every;
+    int v_out_every;
+    int half_neigh;
     MD_FLOAT dt;
     MD_FLOAT dtforce;
     MD_FLOAT skin;
@@ -55,4 +59,9 @@ typedef struct {
     double proc_freq;
     char* eam_file;
 } Parameter;
+
+void initParameter(Parameter*);
+void readParameter(Parameter*, const char*);
+void printParameter(Parameter*);
+
 #endif

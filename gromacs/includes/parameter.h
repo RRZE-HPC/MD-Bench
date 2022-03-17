@@ -34,7 +34,7 @@ typedef struct {
     char* param_file;
     char* input_file;
     char* vtk_file;
-    char *xtc_file;
+    char* xtc_file;
     MD_FLOAT epsilon;
     MD_FLOAT sigma;
     MD_FLOAT sigma6;
