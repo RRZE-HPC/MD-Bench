@@ -258,9 +258,9 @@ int main(int argc, char** argv) {
             timer[FORCE] += computeForceEam(&eam, &param, &atom, &neighbor, &stats);
         } else {
             if(param.half_neigh) {
-                timer[FORCE] = computeForceLJHalfNeigh(&param, &atom, &neighbor, &stats);
+                timer[FORCE] += computeForceLJHalfNeigh(&param, &atom, &neighbor, &stats);
             } else {
-                timer[FORCE] = computeForceLJFullNeigh(&param, &atom, &neighbor, &stats);
+                timer[FORCE] += computeForceLJFullNeigh(&param, &atom, &neighbor, &stats);
             }
         }
 
