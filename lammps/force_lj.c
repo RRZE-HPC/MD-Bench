@@ -31,9 +31,6 @@
 double computeForceLJFullNeigh(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *stats) {
     int Nlocal = atom->Nlocal;
     int* neighs;
-    MD_FLOAT* fx = atom->fx;
-    MD_FLOAT* fy = atom->fy;
-    MD_FLOAT* fz = atom->fz;
 #ifndef EXPLICIT_TYPES
     MD_FLOAT cutforcesq = param->cutforce * param->cutforce;
     MD_FLOAT sigma6 = param->sigma6;
@@ -41,9 +38,9 @@ double computeForceLJFullNeigh(Parameter *param, Atom *atom, Neighbor *neighbor,
 #endif
 
     for(int i = 0; i < Nlocal; i++) {
-        fx[i] = 0.0;
-        fy[i] = 0.0;
-        fz[i] = 0.0;
+        atom_fx(i) = 0.0;
+        atom_fy(i) = 0.0;
+        atom_fz(i) = 0.0;
     }
 
     double S = getTimeStamp();
@@ -94,9 +91,9 @@ double computeForceLJFullNeigh(Parameter *param, Atom *atom, Neighbor *neighbor,
             }
         }
 
-        fx[i] += fix;
-        fy[i] += fiy;
-        fz[i] += fiz;
+        atom_fx(i) += fix;
+        atom_fy(i) += fiy;
+        atom_fz(i) += fiz;
 
         addStat(stats->total_force_neighs, numneighs);
         addStat(stats->total_force_iters, (numneighs + VECTOR_WIDTH - 1) / VECTOR_WIDTH);
@@ -110,9 +107,6 @@ double computeForceLJFullNeigh(Parameter *param, Atom *atom, Neighbor *neighbor,
 double computeForceLJHalfNeigh(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *stats) {
     int Nlocal = atom->Nlocal;
     int* neighs;
-    MD_FLOAT* fx = atom->fx;
-    MD_FLOAT* fy = atom->fy;
-    MD_FLOAT* fz = atom->fz;
 #ifndef EXPLICIT_TYPES
     MD_FLOAT cutforcesq = param->cutforce * param->cutforce;
     MD_FLOAT sigma6 = param->sigma6;
@@ -120,9 +114,9 @@ double computeForceLJHalfNeigh(Parameter *param, Atom *atom, Neighbor *neighbor,
 #endif
 
     for(int i = 0; i < Nlocal; i++) {
-        fx[i] = 0.0;
-        fy[i] = 0.0;
-        fz[i] = 0.0;
+        atom_fx(i) = 0.0;
+        atom_fy(i) = 0.0;
+        atom_fz(i) = 0.0;
     }
 
     double S = getTimeStamp();
@@ -167,17 +161,16 @@ double computeForceLJHalfNeigh(Parameter *param, Atom *atom, Neighbor *neighbor,
 
                 // We do not need to update forces for ghost atoms
                 if(j < Nlocal) {
-                    // TODO: Experiment with AoS layout for forces
-                    fx[j] -= delx * force;
-                    fy[j] -= dely * force;
-                    fz[j] -= delz * force;
+                    atom_fx(j) -= delx * force;
+                    atom_fy(j) -= dely * force;
+                    atom_fz(j) -= delz * force;
                 }
             }
         }
 
-        fx[i] += fix;
-        fy[i] += fiy;
-        fz[i] += fiz;
+        atom_fx(i) += fix;
+        atom_fy(i) += fiy;
+        atom_fz(i) += fiz;
 
         addStat(stats->total_force_neighs, numneighs);
         addStat(stats->total_force_iters, (numneighs + VECTOR_WIDTH - 1) / VECTOR_WIDTH);
