@@ -41,7 +41,7 @@ double computeForceEam(Eam* eam, Parameter* param, Atom *atom, Neighbor *neighbo
 
     int Nlocal = atom->Nlocal;
     int* neighs;
-    MD_FLOAT* fx = atom->fx; MD_FLOAT* fy = atom->fy; MD_FLOAT* fz = atom->fz; int ntypes = atom->ntypes; MD_FLOAT* fp = eam->fp;
+    int ntypes = atom->ntypes; MD_FLOAT* fp = eam->fp;
     MD_FLOAT* rhor_spline = eam->rhor_spline; MD_FLOAT* frho_spline = eam->frho_spline; MD_FLOAT* z2r_spline = eam->z2r_spline;
     MD_FLOAT rdr = eam->rdr; int nr = eam->nr; int nr_tot = eam->nr_tot; MD_FLOAT rdrho = eam->rdrho;
     int nrho = eam->nrho; int nrho_tot = eam->nrho_tot;
@@ -200,9 +200,9 @@ double computeForceEam(Eam* eam, Parameter* param, Atom *atom, Neighbor *neighbo
             }
         }
 
-        fx[i] = fix;
-        fy[i] = fiy;
-        fz[i] = fiz;
+        atom_fx(i) = fix;
+        atom_fy(i) = fiy;
+        atom_fz(i) = fiz;
         addStat(stats->total_force_neighs, numneighs);
         addStat(stats->total_force_iters, (numneighs + VECTOR_WIDTH - 1) / VECTOR_WIDTH);
     }
