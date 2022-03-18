@@ -28,10 +28,10 @@
 typedef struct {
     int every;
     int ncalls;
-    int* neighbors;
     int maxneighs;
+    int half_neigh;
+    int* neighbors;
     int* numneigh;
-    int halfneigh;
 } Neighbor;
 
 extern void initNeighbor(Neighbor*, Parameter*);
