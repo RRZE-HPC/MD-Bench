@@ -52,7 +52,7 @@ void initParameter(Parameter *param) {
     param->reneigh_every = 20;
     param->x_out_every = 20;
     param->v_out_every = 5;
-    param->half_neigh = 1;
+    param->half_neigh = 0;
     param->proc_freq = 2.4;
 }
 

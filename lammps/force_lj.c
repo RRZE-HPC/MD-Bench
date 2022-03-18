@@ -28,8 +28,7 @@
 #include <atom.h>
 #include <stats.h>
 
-double computeForceLJFullNeigh(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *stats)
-{
+double computeForceLJFullNeigh(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *stats) {
     int Nlocal = atom->Nlocal;
     int* neighs;
     MD_FLOAT* fx = atom->fx;
@@ -108,8 +107,7 @@ double computeForceLJFullNeigh(Parameter *param, Atom *atom, Neighbor *neighbor,
     return E-S;
 }
 
-double computeForceLJHalfNeigh(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *stats)
-{
+double computeForceLJHalfNeigh(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *stats) {
     int Nlocal = atom->Nlocal;
     int* neighs;
     MD_FLOAT* fx = atom->fx;
@@ -167,9 +165,13 @@ double computeForceLJHalfNeigh(Parameter *param, Atom *atom, Neighbor *neighbor,
                 fiy += dely * force;
                 fiz += delz * force;
 
-                fx[j] -= delx * force;
-                fy[j] -= dely * force;
-                fz[j] -= delz * force;
+                // We do not need to update forces for ghost atoms
+                if(j < Nlocal) {
+                    // TODO: Experiment with AoS layout for forces
+                    fx[j] -= delx * force;
+                    fy[j] -= dely * force;
+                    fz[j] -= delz * force;
+                }
             }
         }
 

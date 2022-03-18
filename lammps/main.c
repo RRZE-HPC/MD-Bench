@@ -181,6 +181,10 @@ int main(int argc, char** argv) {
             param.nz = atoi(argv[++i]);
             continue;
         }
+        if((strcmp(argv[i], "-half") == 0)) {
+            param.half_neigh = atoi(argv[++i]);
+            continue;
+        }
         if((strcmp(argv[i], "-r") == 0) || (strcmp(argv[i], "--radius") == 0)) {
             param.cutforce = atof(argv[++i]);
             continue;

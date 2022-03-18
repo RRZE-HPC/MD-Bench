@@ -46,14 +46,11 @@ static int nmax;
 static int nstencil;      // # of bins in stencil
 static int* stencil;      // stencil list of bin offsets
 static MD_FLOAT binsizex, binsizey, binsizez;
-static int halfneigh; //use half neighbour list
-
 static int coord2bin(MD_FLOAT, MD_FLOAT , MD_FLOAT);
 static MD_FLOAT bindist(int, int, int);
 
 /* exported subroutines */
-void initNeighbor(Neighbor *neighbor, Parameter *param)
-{
+void initNeighbor(Neighbor *neighbor, Parameter *param) {
     MD_FLOAT neighscale = 5.0 / 6.0;
     xprd = param->nx * param->lattice;
     yprd = param->ny * param->lattice;
@@ -70,11 +67,10 @@ void initNeighbor(Neighbor *neighbor, Parameter *param)
     neighbor->maxneighs = 100;
     neighbor->numneigh = NULL;
     neighbor->neighbors = NULL;
-    neighbor->halfneigh = param->half_neigh;
+    neighbor->half_neigh = param->half_neigh;
 }
 
-void setupNeighbor(Parameter* param)
-{
+void setupNeighbor(Parameter* param) {
     MD_FLOAT coord;
     int mbinxhi, mbinyhi, mbinzhi;
     int nextx, nexty, nextz;
@@ -116,25 +112,19 @@ void setupNeighbor(Parameter* param)
 
     coord = xlo - cutneigh - SMALL * xprd;
     mbinxlo = (int) (coord * bininvx);
-    if (coord < 0.0) {
-        mbinxlo = mbinxlo - 1;
-    }
+    if (coord < 0.0) { mbinxlo = mbinxlo - 1; }
     coord = xhi + cutneigh + SMALL * xprd;
     mbinxhi = (int) (coord * bininvx);
 
     coord = ylo - cutneigh - SMALL * yprd;
     mbinylo = (int) (coord * bininvy);
-    if (coord < 0.0) {
-        mbinylo = mbinylo - 1;
-    }
+    if (coord < 0.0) { mbinylo = mbinylo - 1; }
     coord = yhi + cutneigh + SMALL * yprd;
     mbinyhi = (int) (coord * bininvy);
 
     coord = zlo - cutneigh - SMALL * zprd;
     mbinzlo = (int) (coord * bininvz);
-    if (coord < 0.0) {
-        mbinzlo = mbinzlo - 1;
-    }
+    if (coord < 0.0) { mbinzlo = mbinzlo - 1; }
     coord = zhi + cutneigh + SMALL * zprd;
     mbinzhi = (int) (coord * bininvz);
 
@@ -152,20 +142,13 @@ void setupNeighbor(Parameter* param)
 
     nextx = (int) (cutneigh * bininvx);
     if(nextx * binsizex < FACTOR * cutneigh) nextx++;
-
     nexty = (int) (cutneigh * bininvy);
     if(nexty * binsizey < FACTOR * cutneigh) nexty++;
-
     nextz = (int) (cutneigh * bininvz);
     if(nextz * binsizez < FACTOR * cutneigh) nextz++;
 
-    if (stencil) {
-        free(stencil);
-    }
-
-    stencil = (int*) malloc(
-            (2 * nextz + 1) * (2 * nexty + 1) * (2 * nextx + 1) * sizeof(int));
-
+    if (stencil) { free(stencil); }
+    stencil = (int*) malloc((2 * nextz + 1) * (2 * nexty + 1) * (2 * nextx + 1) * sizeof(int));
     nstencil = 0;
     int kstart = -nextz;
 
@@ -173,28 +156,20 @@ void setupNeighbor(Parameter* param)
         for(int j = -nexty; j <= nexty; j++) {
             for(int i = -nextx; i <= nextx; i++) {
                 if(bindist(i, j, k) < cutneighsq) {
-                    stencil[nstencil++] =
-                        k * mbiny * mbinx + j * mbinx + i;
+                    stencil[nstencil++] = k * mbiny * mbinx + j * mbinx + i;
                 }
             }
         }
     }
 
     mbins = mbinx * mbiny * mbinz;
-
-    if (bincount) {
-        free(bincount);
-    }
+    if (bincount) { free(bincount); }
     bincount = (int*) malloc(mbins * sizeof(int));
-
-    if (bins) {
-        free(bins);
-    }
+    if (bins) { free(bins); }
     bins = (int*) malloc(mbins * atoms_per_bin * sizeof(int));
 }
 
-void buildNeighbor(Atom *atom, Neighbor *neighbor)
-{
+void buildNeighbor(Atom *atom, Neighbor *neighbor) {
     int nall = atom->Nlocal + atom->Nghost;
 
     /* extend atom arrays if necessary */
@@ -231,8 +206,7 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor)
 
                 for(int m = 0; m < bincount[jbin]; m++) {
                     int j = loc_bin[m];
-
-                    if ( (j == i) || (neighbor->halfneigh && (j < i))) {
+                    if((j == i) || (neighbor->half_neigh && (j < i))) {
                         continue;
                     }
 
@@ -247,7 +221,7 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor)
                     #else
                     const MD_FLOAT cutoff = cutneighsq;
                     #endif
-                    if( rsq <= cutoff ) {
+                    if(rsq <= cutoff) {
                         neighptr[n++] = j;
                     }
                 }
@@ -274,8 +248,7 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor)
 }
 
 /* internal subroutines */
-MD_FLOAT bindist(int i, int j, int k)
-{
+MD_FLOAT bindist(int i, int j, int k) {
     MD_FLOAT delx, dely, delz;
 
     if(i > 0) {
@@ -305,8 +278,7 @@ MD_FLOAT bindist(int i, int j, int k)
     return (delx * delx + dely * dely + delz * delz);
 }
 
-int coord2bin(MD_FLOAT xin, MD_FLOAT yin, MD_FLOAT zin)
-{
+int coord2bin(MD_FLOAT xin, MD_FLOAT yin, MD_FLOAT zin) {
     int ix, iy, iz;
 
     if(xin >= xprd) {
@@ -336,8 +308,7 @@ int coord2bin(MD_FLOAT xin, MD_FLOAT yin, MD_FLOAT zin)
     return (iz * mbiny * mbinx + iy * mbinx + ix + 1);
 }
 
-void binatoms(Atom *atom)
-{
+void binatoms(Atom *atom) {
     int nall = atom->Nlocal + atom->Nghost;
     int resize = 1;
 
