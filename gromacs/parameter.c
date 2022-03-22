@@ -43,6 +43,7 @@ void initParameter(Parameter *param) {
     param->nx = 32;
     param->ny = 32;
     param->nz = 32;
+    param->half_neigh = 0;
     param->cutforce = 2.5;
     param->skin = 0.3;
     param->cutneigh = param->cutforce + param->skin;
@@ -101,6 +102,7 @@ void readParameter(Parameter *param, const char *filename) {
             PARSE_INT(nx);
             PARSE_INT(ny);
             PARSE_INT(nz);
+            PARSE_INT(half_neigh);
             PARSE_INT(nstat);
             PARSE_INT(reneigh_every);
             PARSE_INT(prune_every);
@@ -152,5 +154,6 @@ void printParameter(Parameter *param) {
     printf("\tDelta time (dt): %e\n", param->dt);
     printf("\tCutoff radius: %e\n", param->cutforce);
     printf("\tSkin: %e\n", param->skin);
+    printf("\tHalf neighbor lists: %d\n", param->half_neigh);
     printf("\tProcessor frequency (GHz): %.4f\n\n", param->proc_freq);
 }

@@ -42,6 +42,7 @@ static inline MD_SIMD_MASK simd_mask_cond_lt(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b) {
 static inline MD_SIMD_MASK simd_mask_from_u32(unsigned int a) { return _cvtu32_mask16(a); }
 static inline unsigned int simd_mask_to_u32(MD_SIMD_MASK a) { return _cvtmask16_u32(a); }
 static inline MD_SIMD_FLOAT simd_load(MD_FLOAT *p) { return _mm512_load_ps(p); }
+static inline MD_SIMD_FLOAT select_by_mask(MD_SIMD_FLOAT a, MD_SIMD_MASK m) { return _mm512_mask_mov_ps(_mm512_setzero_ps(), m, a); }
 static inline MD_FLOAT simd_h_reduce_sum(MD_SIMD_FLOAT a) {
     // This would only be called in a Mx16 configuration, which is not valid in GROMACS
     fprintf(stderr, "simd_h_reduce_sum(): Called with AVX512 intrinsics and single-precision which is not valid!\n");
@@ -83,3 +84,18 @@ static inline MD_FLOAT simd_h_dual_incr_reduced_sum(float* m, MD_SIMD_FLOAT v0, 
     t3 = _mm_add_ps(t3, _mm_permute_ps(t3, 0xb1));
     return _mm_cvtss_f32(t3);
 }
+
+inline void simd_h_decr(MD_FLOAT *m, MD_SIMD_FLOAT a) {
+    __m256 t;
+    a = _mm512_add_ps(a, _mm512_shuffle_f32x4(a, a, 0xee));
+    t = _mm256_load_ps(m);
+    t = _mm256_sub_ps(t, _mm512_castps512_ps256(a));
+    _mm256_store_ps(m, t);
+}
+
+static inline void simd_h_decr3(MD_FLOAT *m, MD_SIMD_FLOAT a0, MD_SIMD_FLOAT a1, MD_SIMD_FLOAT a2) {
+    simd_h_decr(m, a0);
+    simd_h_decr(m + CLUSTER_M, a1);
+    simd_h_decr(m + CLUSTER_M * 2, a2);
+}
+

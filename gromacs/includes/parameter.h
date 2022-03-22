@@ -48,12 +48,13 @@ typedef struct {
     int prune_every;
     int x_out_every;
     int v_out_every;
+    int half_neigh;
+    int nx, ny, nz;
     MD_FLOAT dt;
     MD_FLOAT dtforce;
     MD_FLOAT cutforce;
     MD_FLOAT skin;
     MD_FLOAT cutneigh;
-    int nx, ny, nz;
     MD_FLOAT lattice;
     MD_FLOAT xlo, xhi, ylo, yhi, zlo, zhi;
     MD_FLOAT xprd, yprd, zprd;

@@ -198,6 +198,10 @@ int main(int argc, char** argv) {
             param.nz = atoi(argv[++i]);
             continue;
         }
+        if((strcmp(argv[i], "-half") == 0)) {
+            param.half_neigh = atoi(argv[++i]);
+            continue;
+        }
         if((strcmp(argv[i], "-m") == 0) || (strcmp(argv[i], "--mass") == 0)) {
             param.mass = atof(argv[++i]);
             continue;
