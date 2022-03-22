@@ -69,6 +69,7 @@ void initNeighbor(Neighbor *neighbor, Parameter *param) {
     bincount = NULL;
     bin_clusters = NULL;
     bin_nclusters = NULL;
+    neighbor->half_neigh = param->half_neigh;
     neighbor->maxneighs = 100;
     neighbor->numneigh = NULL;
     neighbor->neighbors = NULL;
@@ -223,6 +224,7 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
         resize = 0;
 
         for(int ci = 0; ci < atom->Nclusters_local; ci++) {
+            int ci_cj1 = CJ1_FROM_CI(ci);
             int *neighptr = &(neighbor->neighbors[ci * neighbor->maxneighs]);
             int n = 0;
             int ibin = atom->icluster_bin[ci];
@@ -246,6 +248,9 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
                     do {
                         m++;
                         cj = loc_bin[m];
+                        if(neighbor->half_neigh && ci_cj1 > cj) {
+                            continue;
+                        }
                         jbb_zmin = atom->jclusters[cj].bbminz;
                         jbb_zmax = atom->jclusters[cj].bbmaxz;
                         dl = ibb_zmin - jbb_zmax;
@@ -261,31 +266,33 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
                     jbb_ymax = atom->jclusters[cj].bbmaxy;
 
                     while(m < c) {
-                        dl = ibb_zmin - jbb_zmax;
-                        dh = jbb_zmin - ibb_zmax;
-                        dm = MAX(dl, dh);
-                        dm0 = MAX(dm, 0.0);
-                        d_bb_sq = dm0 * dm0;
+                        if(!neighbor->half_neigh || ci_cj1 <= cj) {
+                            dl = ibb_zmin - jbb_zmax;
+                            dh = jbb_zmin - ibb_zmax;
+                            dm = MAX(dl, dh);
+                            dm0 = MAX(dm, 0.0);
+                            d_bb_sq = dm0 * dm0;
 
-                        /*if(d_bb_sq > cutneighsq) {
-                            break;
-                        }*/
+                            /*if(d_bb_sq > cutneighsq) {
+                                break;
+                            }*/
 
-                        dl = ibb_ymin - jbb_ymax;
-                        dh = jbb_ymin - ibb_ymax;
-                        dm = MAX(dl, dh);
-                        dm0 = MAX(dm, 0.0);
-                        d_bb_sq += dm0 * dm0;
+                            dl = ibb_ymin - jbb_ymax;
+                            dh = jbb_ymin - ibb_ymax;
+                            dm = MAX(dl, dh);
+                            dm0 = MAX(dm, 0.0);
+                            d_bb_sq += dm0 * dm0;
 
-                        dl = ibb_xmin - jbb_xmax;
-                        dh = jbb_xmin - ibb_xmax;
-                        dm = MAX(dl, dh);
-                        dm0 = MAX(dm, 0.0);
-                        d_bb_sq += dm0 * dm0;
+                            dl = ibb_xmin - jbb_xmax;
+                            dh = jbb_xmin - ibb_xmax;
+                            dm = MAX(dl, dh);
+                            dm0 = MAX(dm, 0.0);
+                            d_bb_sq += dm0 * dm0;
 
-                        if(d_bb_sq < cutneighsq) {
-                            if(d_bb_sq < rbb_sq || atomDistanceInRange(atom, ci, cj, cutneighsq)) {
-                                neighptr[n++] = cj;
+                            if(d_bb_sq < cutneighsq) {
+                                if(d_bb_sq < rbb_sq || atomDistanceInRange(atom, ci, cj, cutneighsq)) {
+                                    neighptr[n++] = cj;
+                                }
                             }
                         }
 
