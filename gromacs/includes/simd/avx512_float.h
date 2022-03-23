@@ -98,4 +98,3 @@ static inline void simd_h_decr3(MD_FLOAT *m, MD_SIMD_FLOAT a0, MD_SIMD_FLOAT a1,
     simd_h_decr(m + CLUSTER_M, a1);
     simd_h_decr(m + CLUSTER_M * 2, a2);
 }
-

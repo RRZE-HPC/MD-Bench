@@ -79,13 +79,18 @@ double computeForceLJ_ref(Parameter *param, Atom *atom, Neighbor *neighbor, Stat
                 MD_FLOAT fiz = 0;
 
                 for(int cjj = 0; cjj < CLUSTER_N; cjj++) {
+                    int cond;
                     #if CLUSTER_M == CLUSTER_N
-                    if(ci_cj0 != cj || cii != cjj) {
+                    cond = neighbor->half_neigh ? (ci_cj0 != cj || cii < cjj) :
+                                                  (ci_cj0 != cj || cii != cjj);
                     #elif CLUSTER_M < CLUSTER_N
-                    if(ci_cj0 != cj || cii + CLUSTER_M * (ci & 0x1) != cjj) {
+                    cond = neighbor->half_neigh ? (ci_cj0 != cj || cii + CLUSTER_M * (ci & 0x1) < cjj) :
+                                                  (ci_cj0 != cj || cii + CLUSTER_M * (ci & 0x1) != cjj);
                     #else
-                    if((ci_cj0 != cj || cii != cjj) && (ci_cj1 != cj || cii != cjj + CLUSTER_N)) {
+                    cond = neighbor->half_neigh ? (ci_cj0 != cj || cii < cjj) && (ci_cj1 != cj || cii < cjj + CLUSTER_N) :
+                                                  (ci_cj0 != cj || cii != cjj) && (ci_cj1 != cj || cii != cjj + CLUSTER_N);
                     #endif
+                    if(cond) {
                         MD_FLOAT delx = xtmp - cj_x[CL_X_OFFSET + cjj];
                         MD_FLOAT dely = ytmp - cj_x[CL_Y_OFFSET + cjj];
                         MD_FLOAT delz = ztmp - cj_x[CL_Z_OFFSET + cjj];
