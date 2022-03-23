@@ -42,6 +42,7 @@ static inline MD_SIMD_MASK simd_mask_cond_lt(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b) {
 static inline MD_SIMD_MASK simd_mask_from_u32(unsigned int a) { return _cvtu32_mask16(a); }
 static inline unsigned int simd_mask_to_u32(MD_SIMD_MASK a) { return _cvtmask16_u32(a); }
 static inline MD_SIMD_FLOAT simd_load(MD_FLOAT *p) { return _mm512_load_ps(p); }
+static inline void simd_store(MD_FLOAT *p, MD_SIMD_FLOAT a) { _mm512_store_ps(p, a); }
 static inline MD_SIMD_FLOAT select_by_mask(MD_SIMD_FLOAT a, MD_SIMD_MASK m) { return _mm512_mask_mov_ps(_mm512_setzero_ps(), m, a); }
 static inline MD_FLOAT simd_h_reduce_sum(MD_SIMD_FLOAT a) {
     // This would only be called in a Mx16 configuration, which is not valid in GROMACS

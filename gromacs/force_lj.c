@@ -486,6 +486,7 @@ double computeForceLJ_4xn_half(Parameter *param, Atom *atom, Neighbor *neighbor,
             int cj = neighs[k];
             int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
             MD_FLOAT *cj_x = &atom->cl_x[cj_vec_base];
+            MD_FLOAT *cj_f = &atom->cl_f[cj_vec_base];
             MD_SIMD_FLOAT xj_tmp = simd_load(&cj_x[CL_X_OFFSET]);
             MD_SIMD_FLOAT yj_tmp = simd_load(&cj_x[CL_Y_OFFSET]);
             MD_SIMD_FLOAT zj_tmp = simd_load(&cj_x[CL_Z_OFFSET]);
@@ -549,18 +550,35 @@ double computeForceLJ_4xn_half(Parameter *param, Atom *atom, Neighbor *neighbor,
             MD_SIMD_FLOAT force2 = simd_mul(c48_vec, simd_mul(sr6_2, simd_mul(simd_sub(sr6_2, c05_vec), simd_mul(sr2_2, eps_vec))));
             MD_SIMD_FLOAT force3 = simd_mul(c48_vec, simd_mul(sr6_3, simd_mul(simd_sub(sr6_3, c05_vec), simd_mul(sr2_3, eps_vec))));
 
-            fix0 = simd_masked_add(fix0, simd_mul(delx0, force0), cutoff_mask0);
-            fiy0 = simd_masked_add(fiy0, simd_mul(dely0, force0), cutoff_mask0);
-            fiz0 = simd_masked_add(fiz0, simd_mul(delz0, force0), cutoff_mask0);
-            fix1 = simd_masked_add(fix1, simd_mul(delx1, force1), cutoff_mask1);
-            fiy1 = simd_masked_add(fiy1, simd_mul(dely1, force1), cutoff_mask1);
-            fiz1 = simd_masked_add(fiz1, simd_mul(delz1, force1), cutoff_mask1);
-            fix2 = simd_masked_add(fix2, simd_mul(delx2, force2), cutoff_mask2);
-            fiy2 = simd_masked_add(fiy2, simd_mul(dely2, force2), cutoff_mask2);
-            fiz2 = simd_masked_add(fiz2, simd_mul(delz2, force2), cutoff_mask2);
-            fix3 = simd_masked_add(fix3, simd_mul(delx3, force3), cutoff_mask3);
-            fiy3 = simd_masked_add(fiy3, simd_mul(dely3, force3), cutoff_mask3);
-            fiz3 = simd_masked_add(fiz3, simd_mul(delz3, force3), cutoff_mask3);
+            MD_SIMD_FLOAT tx0 = select_by_mask(simd_mul(delx0, force0), cutoff_mask0);
+            MD_SIMD_FLOAT ty0 = select_by_mask(simd_mul(dely0, force0), cutoff_mask0);
+            MD_SIMD_FLOAT tz0 = select_by_mask(simd_mul(delz0, force0), cutoff_mask0);
+            MD_SIMD_FLOAT tx1 = select_by_mask(simd_mul(delx1, force1), cutoff_mask1);
+            MD_SIMD_FLOAT ty1 = select_by_mask(simd_mul(dely1, force1), cutoff_mask1);
+            MD_SIMD_FLOAT tz1 = select_by_mask(simd_mul(delz1, force1), cutoff_mask1);
+            MD_SIMD_FLOAT tx2 = select_by_mask(simd_mul(delx2, force2), cutoff_mask2);
+            MD_SIMD_FLOAT ty2 = select_by_mask(simd_mul(dely2, force2), cutoff_mask2);
+            MD_SIMD_FLOAT tz2 = select_by_mask(simd_mul(delz2, force2), cutoff_mask2);
+            MD_SIMD_FLOAT tx3 = select_by_mask(simd_mul(delx3, force3), cutoff_mask3);
+            MD_SIMD_FLOAT ty3 = select_by_mask(simd_mul(dely3, force3), cutoff_mask3);
+            MD_SIMD_FLOAT tz3 = select_by_mask(simd_mul(delz3, force3), cutoff_mask3);
+
+            fix0 = simd_add(fix0, tx0);
+            fiy0 = simd_add(fiy0, ty0);
+            fiz0 = simd_add(fiz0, tz0);
+            fix1 = simd_add(fix1, tx1);
+            fiy1 = simd_add(fiy1, ty1);
+            fiz1 = simd_add(fiz1, tz1);
+            fix2 = simd_add(fix2, tx2);
+            fiy2 = simd_add(fiy2, ty2);
+            fiz2 = simd_add(fiz2, tz2);
+            fix3 = simd_add(fix3, tx3);
+            fiy3 = simd_add(fiy3, ty3);
+            fiz3 = simd_add(fiz3, tz3);
+
+            simd_store(&cj_f[CL_X_OFFSET], simd_load(&cj_f[CL_X_OFFSET]) - (tx0 + tx1 + tx2 + tx3));
+            simd_store(&cj_f[CL_Y_OFFSET], simd_load(&cj_f[CL_Y_OFFSET]) - (ty0 + ty1 + ty2 + ty3));
+            simd_store(&cj_f[CL_Z_OFFSET], simd_load(&cj_f[CL_Z_OFFSET]) - (tz0 + tz1 + tz2 + tz3));
         }
 
         simd_incr_reduced_sum(&ci_f[CL_X_OFFSET], fix0, fix1, fix2, fix3);

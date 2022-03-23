@@ -40,6 +40,7 @@ static inline MD_SIMD_MASK simd_mask_cond_lt(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b) {
 static inline MD_SIMD_MASK simd_mask_from_u32(unsigned int a) { return _cvtu32_mask8(a); }
 static inline unsigned int simd_mask_to_u32(MD_SIMD_MASK a) { return _cvtmask8_u32(a); }
 static inline MD_SIMD_FLOAT simd_load(MD_FLOAT *p) { return _mm512_load_pd(p); }
+static inline void simd_store(MD_FLOAT *p, MD_SIMD_FLOAT a) { _mm512_store_pd(p, a); }
 static inline MD_SIMD_FLOAT select_by_mask(MD_SIMD_FLOAT a, MD_SIMD_MASK m) { return _mm512_mask_mov_pd(_mm512_setzero_pd(), m, a); }
 static inline MD_FLOAT simd_h_reduce_sum(MD_SIMD_FLOAT a) {
     MD_SIMD_FLOAT x = _mm512_add_pd(a, _mm512_shuffle_f64x2(a, a, 0xee));
