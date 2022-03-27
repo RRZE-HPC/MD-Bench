@@ -40,6 +40,8 @@ static inline MD_SIMD_FLOAT simd_add(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b) { return 
 static inline MD_SIMD_FLOAT simd_sub(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b) { return _mm256_sub_pd(a, b); }
 static inline MD_SIMD_FLOAT simd_mul(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b) { return _mm256_mul_pd(a, b); }
 static inline MD_SIMD_FLOAT simd_load(MD_FLOAT *p) { return _mm256_load_pd(p); }
+static inline void simd_store(MD_FLOAT *p, MD_SIMD_FLOAT a) { _mm256_store_pd(p, a); }
+static inline MD_SIMD_FLOAT select_by_mask(MD_SIMD_FLOAT a, MD_SIMD_MASK m) { return _mm256_mask_mov_pd(_mm256_setzero_pd(), m, a); }
 static inline MD_SIMD_FLOAT simd_load_h_duplicate(const MD_FLOAT *m) {
     MD_SIMD_FLOAT ret;
     fprintf(stderr, "simd_load_h_duplicate(): Not implemented for AVX/AVX2 with double precision!");
@@ -121,6 +123,11 @@ static inline MD_FLOAT simd_h_reduce_sum(MD_SIMD_FLOAT a) {
     a1 = _mm256_extractf128_pd(a, 0x1);
     a0 = _mm_add_sd(a0, a1);
     return *((MD_FLOAT *) &a0);
+}
+
+static inline void simd_h_decr3(MD_FLOAT *m, MD_SIMD_FLOAT a0, MD_SIMD_FLOAT a1, MD_SIMD_FLOAT a2) {
+    fprintf(stderr, "simd_h_decr3(): Not implemented for AVX/AVX2 with double precision!");
+    exit(-1);
 }
 
 #endif
