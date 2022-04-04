@@ -29,6 +29,8 @@ COMPUTE_STATS ?= true
 USE_REFERENCE_VERSION ?= false
 # Enable XTC output
 XTC_OUTPUT ?= false
+# Check if cj is local when decreasing reaction force
+HALF_NEIGHBOR_LISTS_CHECK_CJ ?= false
 
 #Feature options
 OPTIONS =  -DALIGNMENT=64
