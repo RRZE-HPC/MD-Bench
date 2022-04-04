@@ -51,6 +51,10 @@ ifeq ($(strip $(USE_REFERENCE_VERSION)),true)
     DEFINES += -DUSE_REFERENCE_VERSION
 endif
 
+ifeq ($(strip $(HALF_NEIGHBOR_LISTS_CHECK_CJ)),true)
+    DEFINES += -DHALF_NEIGHBOR_LISTS_CHECK_CJ
+endif
+
 ifeq ($(strip $(DEBUG)),true)
     DEFINES += -DDEBUG
 endif
