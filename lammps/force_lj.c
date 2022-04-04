@@ -137,7 +137,9 @@ double computeForceLJHalfNeigh(Parameter *param, Atom *atom, Neighbor *neighbor,
 #endif
 
         // Pragma required to vectorize the inner loop
-        #pragma simd reduction(+: fix,fiy,fiz)
+#ifdef ENABLE_OMP_SIMD
+        #pragma omp simd reduction(+: fix,fiy,fiz)
+#endif
         for(int k = 0; k < numneighs; k++) {
             int j = neighs[k];
             MD_FLOAT delx = xtmp - atom_x(j);

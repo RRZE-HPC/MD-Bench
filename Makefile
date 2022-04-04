@@ -71,6 +71,10 @@ ifeq ($(strip $(AVX512)),true)
     DEFINES += -DAVX512
 endif
 
+ifeq ($(strip $(ENABLE_OMP_SIMD)),true)
+    DEFINES += -DENABLE_OMP_SIMD
+endif
+
 VPATH     = $(SRC_DIR) $(ASM_DIR)
 ASM       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.s,$(wildcard $(SRC_DIR)/*.c))
 OVERWRITE:= $(patsubst $(ASM_DIR)/%-new.s, $(BUILD_DIR)/%.o,$(wildcard $(ASM_DIR)/*-new.s))
