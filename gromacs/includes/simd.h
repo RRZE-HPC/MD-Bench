@@ -21,10 +21,19 @@
  * =======================================================================================
  */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <immintrin.h>
 #include <zmmintrin.h>
+
+#ifndef CLUSTER_M
+#   define CLUSTER_M 1
+#endif
+
+#ifndef CLUSTER_N
+#   define CLUSTER_N 1
+#endif
 
 #ifdef AVX512
 #   if PRECISION == 2

@@ -45,9 +45,18 @@
 
 #define HLINE "----------------------------------------------------------------------------\n"
 
-extern double computeForceLJFullNeigh(Parameter*, Atom*, Neighbor*, Stats*);
+extern double computeForceLJFullNeigh_plain_c(Parameter*, Atom*, Neighbor*, Stats*);
+extern double computeForceLJFullNeigh_simd(Parameter*, Atom*, Neighbor*, Stats*);
 extern double computeForceLJHalfNeigh(Parameter*, Atom*, Neighbor*, Stats*);
 extern double computeForceEam(Eam*, Parameter*, Atom*, Neighbor*, Stats*);
+
+#ifdef USE_SIMD_KERNEL
+#   define KERNEL_NAME              "SIMD"
+#   define computeForceLJFullNeigh  computeForceLJFullNeigh_simd
+#else
+#   define KERNEL_NAME              "plain-C"
+#   define computeForceLJFullNeigh  computeForceLJFullNeigh_plain_c
+#endif
 
 double setup(Parameter *param, Eam *eam, Atom *atom, Neighbor *neighbor, Stats *stats) {
     if(param->force_field == FF_EAM) { initEam(eam, param); }

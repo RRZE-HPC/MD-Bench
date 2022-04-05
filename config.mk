@@ -14,8 +14,6 @@ DATA_LAYOUT ?= AOS
 ASM_SYNTAX ?= ATT
 # Debug
 DEBUG ?= false
-# Use omp simd pragma for lammps halfneigh
-ENABLE_OMP_SIMD ?= true
 
 # Explicitly store and load atom types (true or false)
 EXPLICIT_TYPES ?= false
@@ -25,6 +23,12 @@ MEM_TRACER ?= false
 INDEX_TRACER ?= false
 # Compute statistics
 COMPUTE_STATS ?= false
+
+# Configurations for lammps optimization scheme
+# Use omp simd pragma when running with half neighbor-lists
+ENABLE_OMP_SIMD ?= true
+# Use kernel with explicit SIMD intrinsics
+USE_SIMD_KERNEL ?= false
 
 # Configurations for gromacs optimization scheme
 # Use reference version
