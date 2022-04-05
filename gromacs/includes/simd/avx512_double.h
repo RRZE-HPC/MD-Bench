@@ -26,6 +26,7 @@
 
 #define MD_SIMD_FLOAT   __m512d
 #define MD_SIMD_MASK    __mmask8
+#define MD_SIMD_INT     __m256i
 
 static inline MD_SIMD_FLOAT simd_broadcast(MD_FLOAT scalar) { return _mm512_set1_pd(scalar); }
 static inline MD_SIMD_FLOAT simd_zero() { return _mm512_set1_pd(0.0); }
@@ -110,3 +111,14 @@ static inline void simd_h_decr3(MD_FLOAT *m, MD_SIMD_FLOAT a0, MD_SIMD_FLOAT a1,
     simd_h_decr(m + CLUSTER_N, a1);
     simd_h_decr(m + CLUSTER_N * 2, a2);
 }
+
+// Functions used in LAMMPS kernel
+static inline MD_SIMD_FLOAT simd_gather(MD_SIMD_INT vidx, const MD_FLOAT *m, int s) { return _mm512_i32gather_pd(vidx, m, s); }
+static inline MD_SIMD_INT simd_int_broadcast(int scalar) { return _mm256_set1_epi32(scalar); }
+static inline MD_SIMD_INT simd_int_zero() { return _mm256_setzero_si256(); }
+static inline MD_SIMD_INT simd_int_seq() { return _mm256_set_epi32(7, 6, 5, 4, 3, 2, 1, 0); }
+static inline MD_SIMD_INT simd_int_load(const int *m) { return _mm256_load_epi32(m); }
+static inline MD_SIMD_INT simd_int_add(MD_SIMD_INT a, MD_SIMD_INT b) { return _mm256_add_epi32(a, b); }
+static inline MD_SIMD_INT simd_int_mul(MD_SIMD_INT a, MD_SIMD_INT b) { return _mm256_mul_epi32(a, b); }
+static inline MD_SIMD_INT simd_int_mask_load(const int *m, MD_SIMD_MASK k) { return _mm256_mask_load_epi32(simd_int_zero(), k, m); }
+static inline MD_SIMD_MASK simd_mask_int_cond_lt(MD_SIMD_INT a, MD_SIMD_INT b) { return _mm256_cmp_epi32_mask(a, b, _MM_CMPINT_LT); }
