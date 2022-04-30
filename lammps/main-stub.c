@@ -20,8 +20,18 @@
 #define LATTICE_DISTANCE    10.0
 #define NEIGH_DISTANCE      1.0
 
-extern double computeForceLJ(Parameter*, Atom*, Neighbor*, Stats*);
+extern double computeForceLJFullNeigh_plain_c(Parameter*, Atom*, Neighbor*, Stats*);
+extern double computeForceLJFullNeigh_simd(Parameter*, Atom*, Neighbor*, Stats*);
+extern double computeForceLJHalfNeigh(Parameter*, Atom*, Neighbor*, Stats*);
 extern double computeForceEam(Eam*, Parameter*, Atom*, Neighbor*, Stats*);
+
+#ifdef USE_SIMD_KERNEL
+#   define KERNEL_NAME              "SIMD"
+#   define computeForceLJFullNeigh  computeForceLJFullNeigh_simd
+#else
+#   define KERNEL_NAME              "plain-C"
+#   define computeForceLJFullNeigh  computeForceLJFullNeigh_plain_c
+#endif
 
 void init(Parameter *param) {
     param->input_file = NULL;
@@ -42,7 +52,7 @@ void init(Parameter *param) {
     param->dtforce = 0.5 * param->dt;
     param->nstat = 100;
     param->temp = 1.44;
-    param->every = 20;
+    param->reneigh_every = 20;
     param->proc_freq = 2.4;
     param->eam_file = NULL;
 }
@@ -235,13 +245,15 @@ int main(int argc, const char *argv[]) {
     if(param.force_field == FF_EAM) {
         computeForceEam(&eam, &param, atom, &neighbor, &stats);
     } else {
-        computeForceLJ(&param, atom, &neighbor, &stats);
+        if(param.half_neigh) {
+            computeForceLJHalfNeigh(&param, atom, &neighbor, &stats);
+        } else {
+            computeForceLJFullNeigh(&param, atom, &neighbor, &stats);
+        }
     }
 
-    double S, E;
-    S = getTimeStamp();
+    double T_accum = 0.0;
     for(int i = 0; i < param.ntimes; i++) {
-
 #if defined(MEM_TRACER) || defined(INDEX_TRACER)
         traceAddresses(&param, atom, &neighbor, i + 1);
 #endif
@@ -249,11 +261,14 @@ int main(int argc, const char *argv[]) {
         if(param.force_field == FF_EAM) {
             computeForceEam(&eam, &param, atom, &neighbor, &stats);
         } else {
-            computeForceLJ(&param, atom, &neighbor, &stats);
+            if(param.half_neigh) {
+                T_accum += computeForceLJHalfNeigh(&param, atom, &neighbor, &stats);
+            } else {
+                T_accum += computeForceLJFullNeigh(&param, atom, &neighbor, &stats);
+            }
         }
     }
-    E = getTimeStamp();
-    double T_accum = E-S;
+
     double freq_hz = param.proc_freq * 1.e9;
     const double atoms_updates_per_sec = (double)(atom->Nlocal) / T_accum * (double)(param.ntimes);
     const double cycles_per_atom = T_accum / (double)(atom->Nlocal) / (double)(param.ntimes) * freq_hz;
