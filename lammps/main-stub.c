@@ -47,7 +47,7 @@ void init(Parameter *param) {
     param->ny = 1;
     param->nz = 1;
     param->lattice = 1.0;
-    param->cutforce = 5.0;
+    param->cutforce = 1000000.0;
     param->cutneigh = param->cutforce;
     param->mass = 1.0;
     // Unused
@@ -224,9 +224,9 @@ int main(int argc, const char *argv[]) {
         }
 
         atom->type[atom->Nlocal] = rand() % atom->ntypes;
-        atom_x(atom->Nlocal) = (MD_FLOAT)(i);
-        atom_y(atom->Nlocal) = (MD_FLOAT)(i);
-        atom_z(atom->Nlocal) = (MD_FLOAT)(i);
+        atom_x(atom->Nlocal) = (MD_FLOAT)(i) * 0.00001;
+        atom_y(atom->Nlocal) = (MD_FLOAT)(i) * 0.00001;
+        atom_z(atom->Nlocal) = (MD_FLOAT)(i) * 0.00001;
         atom->vx[atom->Nlocal] = 0.0;
         atom->vy[atom->Nlocal] = 0.0;
         atom->vz[atom->Nlocal] = 0.0;
