@@ -11,73 +11,99 @@ Optional: Document how much time was spent. A simple python command line tool
 for time tracking is [Watson](http://tailordev.github.io/Watson/).
 ------------------------------------------------------------------------------>
 
-# MuCoSim: Analysis of TeaLeaf
+# MuCoSim: MD-Bench on Cuda
 [TOC]
 ## Project Description
 
 ### Customer Info
 
-* Name: Thomas Gruber
-* E-Mail: [thomas.gruber@fau.de](mailto:thomas.gruber@fau.de)
+* Name: Martin Bauernfeind
+* E-Mail: [martin.m.bauernfeind@fau.de](mailto:martin.m.bauernfeind@fau.de)
 
 ### Application Info
 
-* Code: TeaLeaf
-* URL: https://github.com/UK-MAC/TeaLeaf
+* Code: MD-Bench on Cuda
+* URL: https://github.com/RRZE-HPC/MD-Bench/tree/mucosim_cuda
 
-Tealeaf is a miniapp solving linear heat conduction equation on a spatially decomposed regularly grid using a 5 point stencil with implicit solvers. The benchmark was part of the Mantevo Benchmark Suite that contains selected benchmarks of the National Labratories in the USA. The TeaLeaf mini-app itself was created and is maintained by researchers from the UK (https://ieeexplore.ieee.org/document/8049027)
+The original MD-Bench is a mini-app to simulate molecular dynamics.
+Its code is written in sequential C with less than 1000 lines of code.
+MD-Bench on Cuda is aimed to port this code to Cuda to use the power of massive parallelism on GPGPUs.
+Even though many parts are already ported to Cuda, significant parts still remain in C and therefore on the CPU.
 
+Description of initial MD-Bench taken from Maximilian Gaul:
 
+Performance analysis of MD-Bench, a molecular dynamics application which calculates the interactions among particles and how these affect their motion.
+The simulation system's constituents are
+* Number of atoms with initial state (position & velocity)
+* Boundary conditions (periodic)
 
+The force of each atom is based on its interaction with neighboring atoms. In MD-Bench, the Lennard-Jones potential is used to model the potential among
+pairs of particles, here: electronically neutral atoms. This potential models repulsive as well as attractive interactions:
 
-> <media-tag title="Example of heat conduction. The arrow shows the direction of heat flow in the rod. By MikeRun, CC BY-SA 4.0 &lt;https://creativecommons.org/licenses/by-sa/4.0&gt;, via Wikimedia Commons" src="https://files.cryptpad.fr/blob/6a/6a7ab991aa406f811167e25701a769b8d999a68160ac30e4" data-crypto-key="cryptpad:PDJgMmn8suVztlmHa1sBk+ZyyBRXaGu3qz2IhMX1zEI="></media-tag>
-> _Symbolic picture of linear heat conduction._ ([source, CC license](https://commons.wikimedia.org/wiki/File:Heat-conduction.svg))
+<p align="center">
+  <img src="https://github.com/RRZE-HPC/MD-Bench/blob/mucosim_cuda/log/MG/resources/d7cacc33b0cedf5b4aa171cd20e4af9931ed38e2.svg" />
+</p>
 
+where ***r*** is the distance between the two interacting atoms, ***ε*** is the dispersion energy and ***σ*** the distance at which the
+particle-potential ***V*** is zero:
 
+<p align="center">
+  <img src="https://github.com/RRZE-HPC/MD-Bench/blob/mucosim_cuda/log/MG/resources/320px-Graph_of_Lenanrd-Jones_potential.png" />
+</p>
 
-But the heat conduction calculations are only a placeholder. The idea of the TeaLeaf mini-app is to explore the design space of new, scalable iterative sparse linear solvers which can target next generation architectures.
+What can be observed from this graph is:
+* The Lennard-Jones potential is a simplified model but still describes the essential aspects of particle dynamics
+* Particles repel each other at close distances, attract each other at medium distances and have close to zero interaction at large distances
+
+The main focus of this logbook is to describe the performance behavior of *force.c* where the force between atoms is actually calculated.
+Calculating the force means iterating over every pair of particle, which is done in the main-loop (pseudo-code):
+
+```python
+for atom in atoms:
+    neighbors = neighbor.neighbors[atom]
+    force = 0.0
+    for neighbor in neighbors:
+        radius = calc_radius(...)
+        if radius < close_enough:
+            force += calc_force(...)
+    forces[atom] += force
+```
 
 
 ### Testsystem
 
-* Host/Clustername: icx36
-* Cluster Info URL: <https://hpc.fau.de/systems-services/systems-documentation-instructions/clusters/test-cluster/>
-* CPU type: 2x Intel Xeon Platinum 8360Y @ 2.4 GHz
-* Memory capacity: 256 GB
-* Number of cores per node: 72/144
-* Interconnect: None
+* Host/Clustername: alex
+* Cluster Info URL: <https://hpc.fau.de/systems-services/systems-documentation-instructions/clusters/alex-cluster/>
+* Total GPU count: 304 Nvidia A40, 160 Nvidia A100/40GB, and 96 A100/80GB
+* 3 different setups [20 nodes | 12 nodes | 38 nodes]
+  * CPU: 2x AMD EPYC 7713 “Milan” (64 cores per chip) @ 2.0 GHz
+  * Memory capacity: [512 GB | 1024 GB | 512 GB]
+  * GPU: [8x A100/40GB | 8x A100/80GB | 8x A40/48GB]
+* Interconnect: [2x HDR200 Infiniband HCAs | 2x HDR200 Infiniband HCAs | ]
+* Storage: [14 TB local NVMe SSDs | 14 TB local NVMe SSDs | 7 TB local NVMe SSDs ]
+* Ethernet: [25 Gb | 25 Gb | 25 Gb]
+
+**Note**: each an A40 has about double the single precision processing power of an A100 despite being cheaper
+
 
 ### Software Environment
 
 **Compiler**:
 
-* Compiler: Intel Fortran 19.0.5.281
-* MPI: Intel MPI Library 2019 Update 5
+* Compiler: NVCC
 * Operating System: Ubuntu 20.04.3 LTS
 * Addition libraries:
   * LIKWID 5.2.0
 
 
-**Note:** Intel now provides two different compilers. The good-old `icc`/`icpc`/`ifort` compilers and the new `icx`/`icpx`/`ifx`. They are different in their capabilities and options. Select one here and stay with the same compiler.
-
 ### How to build software
 
 ```
-$ module load intel64/19.0up05
-$ module load likwid/5.2-dev
-$ git clone --recursive git@github.com:UK-MAC/TeaLeaf.git
-$ cd TeaLeaf
-$ cd TeaLeaf_ref
-$ make COMPILER=INTEL MPI_COMPILER=mpiifort C_MPI_COMPILER=mpiicc
+$ git clone https://github.com/RRZE-HPC/MD-Bench/tree/mucosim_cuda
+$ cd MD-Bench
+$ module load likwid cuda
+$ make
 ```
-
-Although selecting a valid compiler `INTEL`, the OpenMP flags need be added manually, otherwise there is no `-qopenmp` on the compile lines. This can be fixed by changing `OOMP_INTEL` to `OMP_INTEL`.
-
-**Note:** This logbook does not manipulate the optimization flags for the compilers. For your analysis, set some useful optimization options like `-O3`, `-march` and even more specific things:
-- `-Ox`: General optimization level. Activates a set of more specific options
-- `-march=`: Optimize code for a given architecture
-- `-xCORE-AVX2`: Enables AVX2 vectorization (Intel only)
-- `-qopt-zmm-usage=high`: Force usage of AVX512 instructions (Intel only)
 
 
 ### Testcase description
@@ -122,15 +148,11 @@ We keep the default `tl_use_ppcg` for this analysis
 ### How to run software
 
 ```
-$ module load intel64/19.0up05
-$ module load likwid/5.2-dev
-$ cd TeaLeaf
-$ cd TeaLeaf_ref
-$ likwid-mpirun -np X -t Y ./tea_leaf
+$ module load likwid cuda
+$ cd MD-Bench
+$ make
+$ ./MDBench-NVCC
 ```
-
-**Note**: Since system settings in the testcluster might change from time to time, it is beneficial to record the current state (OS, Kernel, Modules, ...). You can do that manually or use a tool like [`MachineState`](https://github.com/RRZE-HPC/MachineState): `./machinestate.py -o $(hostname -s).json`
-
 
 ## Task1: Scaling runs
 For scaling runs, we find a runtime/performance number in the output of TeaLeaf (file `tea.out`). The last line always look like this:
