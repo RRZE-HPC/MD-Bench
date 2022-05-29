@@ -30,7 +30,7 @@ Its code is written in sequential C with less than 1000 lines of code.
 MD-Bench on Cuda is aimed to port this code to Cuda to use the power of massive parallelism on GPGPUs.
 Even though many parts are already ported to Cuda, significant parts still remain in C and therefore on the CPU.
 
-Description of initial MD-Bench taken from Maximilian Gaul:
+*Note: The words particle and atom will be used interchangeably
 
 Performance analysis of MD-Bench, a molecular dynamics application which calculates the interactions among particles and how these affect their motion.
 The simulation system's constituents are
@@ -41,33 +41,31 @@ The force of each atom is based on its interaction with neighboring atoms. In MD
 pairs of particles, here: electronically neutral atoms. This potential models repulsive as well as attractive interactions:
 
 <p align="center">
-  <img src="https://github.com/RRZE-HPC/MD-Bench/blob/mucosim_cuda/log/MG/resources/d7cacc33b0cedf5b4aa171cd20e4af9931ed38e2.svg" />
+  <img src="https://github.com/RRZE-HPC/MD-Bench/blob/mucosim_cuda/log/MB/images/Lennard_Jones_potential_function.png" />
 </p>
 
 where ***r*** is the distance between the two interacting atoms, ***ε*** is the dispersion energy and ***σ*** the distance at which the
 particle-potential ***V*** is zero:
 
-<p align="center">
-  <img src="https://github.com/RRZE-HPC/MD-Bench/blob/mucosim_cuda/log/MG/resources/320px-Graph_of_Lenanrd-Jones_potential.png" />
-</p>
-
 What can be observed from this graph is:
 * The Lennard-Jones potential is a simplified model but still describes the essential aspects of particle dynamics
 * Particles repel each other at close distances, attract each other at medium distances and have close to zero interaction at large distances
 
-The main focus of this logbook is to describe the performance behavior of *force.c* where the force between atoms is actually calculated.
-Calculating the force means iterating over every pair of particle, which is done in the main-loop (pseudo-code):
+The simulation now runs similar to how it is sketched out below. Every timestep we iterate over all particles and compute interactions with their neighbors. Two particles/atoms are considered neighboring if the distance between them is below a certain threshold that has already been determined by earlier contributors. 
 
 ```python
-for atom in atoms:
-    neighbors = neighbor.neighbors[atom]
-    force = 0.0
-    for neighbor in neighbors:
-        radius = calc_radius(...)
-        if radius < close_enough:
-            force += calc_force(...)
-    forces[atom] += force
+for t in timesteps:
+  for atom in atoms:
+      neighbors = neighbor.neighbors[atom]
+      force = 0.0
+      for neighbor in neighbors:
+          radius = calc_radius(...)
+          if radius < close_enough:
+              force += calc_force(...)
+      forces[atom] += force
 ```
+
+Some parts already have been ported to GPU. More on that in a later chapter.
 
 
 ### Testsystem
@@ -76,13 +74,20 @@ for atom in atoms:
 * Cluster Info URL: <https://hpc.fau.de/systems-services/systems-documentation-instructions/clusters/alex-cluster/>
 * Total GPU count: 304 Nvidia A40, 160 Nvidia A100/40GB, and 96 A100/80GB
 * 3 different setups [20 nodes | 12 nodes | 38 nodes]
-  * CPU: 2x AMD EPYC 7713 “Milan” (64 cores per chip) @ 2.0 GHz
+* per node:
+  * CPU: 2x AMD EPYC 7713 “Milan” (64 cores per chip) @ 2.0 GHz - SMT disabled -> 1 Thread/CPU
   * Memory capacity: [512 GB | 1024 GB | 512 GB]
   * GPU: [8x A100/40GB | 8x A100/80GB | 8x A40/48GB]
-* Interconnect: [2x HDR200 Infiniband HCAs | 2x HDR200 Infiniband HCAs | ]
+* Interconnect: [2x HDR200 Infiniband HCAs | 2x HDR200 Infiniband HCAs | - ]
 * Storage: [14 TB local NVMe SSDs | 14 TB local NVMe SSDs | 7 TB local NVMe SSDs ]
 * Ethernet: [25 Gb | 25 Gb | 25 Gb]
 
+* Info on single node jobs: <https://hpc.fau.de/systems-services/systems-documentation-instructions/clusters/alex-cluster/#batch>
+  * [A40 | A100]
+  * CPU: [16 / GPU | 16 / GPU]
+  * Memory: [60GB / GPU | 120GB / GPU]
+  
+  
 **Note**: each an A40 has about double the single precision processing power of an A100 despite being cheaper
 
 
@@ -90,7 +95,7 @@ for atom in atoms:
 
 **Compiler**:
 
-* Compiler: NVCC
+* Compiler: NVCC (cuda/11.6.1)
 * Operating System: Ubuntu 20.04.3 LTS
 * Addition libraries:
   * LIKWID 5.2.0
