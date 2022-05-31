@@ -1,0 +1,143 @@
+### Starting TaskPrologue of job 329884 on a0601 at Tue May 31 18:44:41 CEST 2022
+Running on cores 112-127 with govenor ondemand
+Tue May 31 18:44:41 2022       
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 510.47.03    Driver Version: 510.47.03    CUDA Version: 11.6     |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|                               |                      |               MIG M. |
+|===============================+======================+======================|
+|   0  NVIDIA A100-SXM...  On   | 00000000:D1:00.0 Off |                    0 |
+| N/A   34C    P0    57W / 400W |      0MiB / 40960MiB |      0%      Default |
+|                               |                      |             Disabled |
++-------------------------------+----------------------+----------------------+
+                                                                               
++-----------------------------------------------------------------------------+
+| Processes:                                                                  |
+|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |
+|        ID   ID                                                   Usage      |
+|=============================================================================|
+|  No running processes found                                                 |
++-----------------------------------------------------------------------------+
+### Finished TaskPrologue
+
+NOTE: If and ONLY IF you want to use likwid-perfctr you have to add '--constraint=hwperf' to your batch jobs.
+      likwid-features and likwid-setFrequencies are not available. The frequency/governor can be set using SLURM features.
+Running without Marker API. Activate Marker API with -m on commandline.
+1,6.99e6
+Running without Marker API. Activate Marker API with -m on commandline.
+2,7.47e6
+Running without Marker API. Activate Marker API with -m on commandline.
+3,7.59e6
+Running without Marker API. Activate Marker API with -m on commandline.
+4,7.69e6
+Running without Marker API. Activate Marker API with -m on commandline.
+5,7.76e6
+Running without Marker API. Activate Marker API with -m on commandline.
+6,7.79e6
+Running without Marker API. Activate Marker API with -m on commandline.
+7,7.81e6
+Running without Marker API. Activate Marker API with -m on commandline.
+8,7.85e6
+Running without Marker API. Activate Marker API with -m on commandline.
+9,7.86e6
+Running without Marker API. Activate Marker API with -m on commandline.
+10,7.89e6
+Running without Marker API. Activate Marker API with -m on commandline.
+11,7.90e6
+Running without Marker API. Activate Marker API with -m on commandline.
+12,7.90e6
+Running without Marker API. Activate Marker API with -m on commandline.
+13,7.94e6
+Running without Marker API. Activate Marker API with -m on commandline.
+14,7.94e6
+Running without Marker API. Activate Marker API with -m on commandline.
+15,7.98e6
+Running without Marker API. Activate Marker API with -m on commandline.
+16,7.94e6
+Running without Marker API. Activate Marker API with -m on commandline.
+17,7.96e6
+Running without Marker API. Activate Marker API with -m on commandline.
+18,8.02e6
+Running without Marker API. Activate Marker API with -m on commandline.
+19,8.03e6
+Running without Marker API. Activate Marker API with -m on commandline.
+20,7.99e6
+Running without Marker API. Activate Marker API with -m on commandline.
+21,8.00e6
+Running without Marker API. Activate Marker API with -m on commandline.
+22,8.00e6
+Running without Marker API. Activate Marker API with -m on commandline.
+23,7.99e6
+Running without Marker API. Activate Marker API with -m on commandline.
+24,7.98e6
+Running without Marker API. Activate Marker API with -m on commandline.
+25,7.98e6
+Running without Marker API. Activate Marker API with -m on commandline.
+26,7.99e6
+Running without Marker API. Activate Marker API with -m on commandline.
+27,8.03e6
+Running without Marker API. Activate Marker API with -m on commandline.
+28,8.00e6
+Running without Marker API. Activate Marker API with -m on commandline.
+29,8.00e6
+Running without Marker API. Activate Marker API with -m on commandline.
+30,7.99e6
+Running without Marker API. Activate Marker API with -m on commandline.
+31,8.00e6
+Running without Marker API. Activate Marker API with -m on commandline.
+32,7.97e6
+=== JOB_STATISTICS ===
+=== current date     : Tue May 31 18:47:06 CEST 2022
+= Job-ID             : 329884 on alex
+= Job-Name           : a100_cpu_scaling.sh
+= Job-Command        : /home/hpc/ptfs/ptfs176h/training/a100_cpu_scaling.sh
+= Initial workdir    : /home/hpc/ptfs/ptfs176h/training
+= Queue/Partition    : a100
+= Slurm account      : ptfs with QOS=normal
+= Requested resources: cpu=16,mem=120000M,node=1,billing=16,gres/gpu=1,gres/gpu:a100=1 for 01:00:00
+= Elapsed runtime    : 00:02:28
+= Total RAM usage    : 0.0 GiB of assigned 117 GiB (0.0%)   
+= Node list          : a0601
+= Subm/Elig/Start/End: 2022-05-31T18:44:38 / 2022-05-31T18:44:38 / 2022-05-31T18:44:38 / 2022-05-31T18:47:06
+======================
+=== Quota infos ======
+    Path              Used     SoftQ    HardQ    Gracetime  Filec    FileQ    FiHaQ    FileGrace    
+    /home/woody          4.0K   500.0G   999.0G        N/A       1                           N/A    
+    /home/hpc           65.3M    52.4G   104.9G        N/A     681      500K   1,000K        N/A    
+======================
+=== GPU utilization ==
+gpu_name, gpu_bus_id, pid, gpu_utilization [%], mem_utilization [%], max_memory_usage [MiB], time [ms]
+NVIDIA A100-SXM4-40GB, 00000000:D1:00.0, 1540667, 9 %, 0 %, 471 MiB, 5003 ms
+NVIDIA A100-SXM4-40GB, 00000000:D1:00.0, 1540689, 8 %, 0 %, 471 MiB, 4631 ms
+NVIDIA A100-SXM4-40GB, 00000000:D1:00.0, 1540712, 5 %, 0 %, 471 MiB, 4582 ms
+NVIDIA A100-SXM4-40GB, 00000000:D1:00.0, 1540726, 5 %, 0 %, 471 MiB, 4551 ms
+NVIDIA A100-SXM4-40GB, 00000000:D1:00.0, 1540738, 3 %, 0 %, 471 MiB, 4709 ms
+NVIDIA A100-SXM4-40GB, 00000000:D1:00.0, 1540816, 3 %, 0 %, 471 MiB, 4491 ms
+NVIDIA A100-SXM4-40GB, 00000000:D1:00.0, 1540829, 3 %, 0 %, 471 MiB, 4489 ms
+NVIDIA A100-SXM4-40GB, 00000000:D1:00.0, 1540841, 3 %, 0 %, 471 MiB, 4473 ms
+NVIDIA A100-SXM4-40GB, 00000000:D1:00.0, 1540853, 3 %, 0 %, 471 MiB, 4464 ms
+NVIDIA A100-SXM4-40GB, 00000000:D1:00.0, 1540864, 2 %, 0 %, 471 MiB, 4451 ms
+NVIDIA A100-SXM4-40GB, 00000000:D1:00.0, 1540877, 2 %, 0 %, 471 MiB, 4436 ms
+NVIDIA A100-SXM4-40GB, 00000000:D1:00.0, 1540889, 3 %, 0 %, 471 MiB, 4421 ms
+NVIDIA A100-SXM4-40GB, 00000000:D1:00.0, 1540901, 2 %, 0 %, 471 MiB, 4426 ms
+NVIDIA A100-SXM4-40GB, 00000000:D1:00.0, 1540916, 2 %, 0 %, 471 MiB, 4429 ms
+NVIDIA A100-SXM4-40GB, 00000000:D1:00.0, 1540928, 2 %, 0 %, 471 MiB, 4412 ms
+NVIDIA A100-SXM4-40GB, 00000000:D1:00.0, 1540940, 2 %, 0 %, 471 MiB, 4440 ms
+NVIDIA A100-SXM4-40GB, 00000000:D1:00.0, 1540952, 1 %, 0 %, 471 MiB, 4393 ms
+NVIDIA A100-SXM4-40GB, 00000000:D1:00.0, 1540965, 2 %, 0 %, 471 MiB, 4355 ms
+NVIDIA A100-SXM4-40GB, 00000000:D1:00.0, 1540977, 2 %, 0 %, 471 MiB, 4403 ms
+NVIDIA A100-SXM4-40GB, 00000000:D1:00.0, 1540989, 2 %, 0 %, 471 MiB, 4396 ms
+NVIDIA A100-SXM4-40GB, 00000000:D1:00.0, 1541002, 2 %, 0 %, 471 MiB, 4390 ms
+NVIDIA A100-SXM4-40GB, 00000000:D1:00.0, 1541014, 2 %, 0 %, 471 MiB, 4479 ms
+NVIDIA A100-SXM4-40GB, 00000000:D1:00.0, 1541025, 2 %, 0 %, 471 MiB, 4408 ms
+NVIDIA A100-SXM4-40GB, 00000000:D1:00.0, 1541038, 1 %, 0 %, 471 MiB, 4425 ms
+NVIDIA A100-SXM4-40GB, 00000000:D1:00.0, 1541051, 2 %, 0 %, 471 MiB, 4429 ms
+NVIDIA A100-SXM4-40GB, 00000000:D1:00.0, 1541063, 2 %, 0 %, 471 MiB, 4408 ms
+NVIDIA A100-SXM4-40GB, 00000000:D1:00.0, 1541074, 2 %, 0 %, 471 MiB, 4393 ms
+NVIDIA A100-SXM4-40GB, 00000000:D1:00.0, 1541086, 2 %, 0 %, 471 MiB, 4393 ms
+NVIDIA A100-SXM4-40GB, 00000000:D1:00.0, 1541097, 2 %, 0 %, 471 MiB, 4397 ms
+NVIDIA A100-SXM4-40GB, 00000000:D1:00.0, 1541110, 2 %, 0 %, 471 MiB, 4380 ms
+NVIDIA A100-SXM4-40GB, 00000000:D1:00.0, 1541123, 2 %, 0 %, 471 MiB, 4389 ms
+NVIDIA A100-SXM4-40GB, 00000000:D1:00.0, 1541135, 1 %, 0 %, 471 MiB, 4554 ms
