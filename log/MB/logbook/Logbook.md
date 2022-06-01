@@ -113,6 +113,12 @@ $ make
 
 ### Testcase description
 
+If not stated otherwise these are the conditions for the simulation benchmarking.
+* the number of simulated atoms is 131072
+* floating numbers use double precision
+* force computation between atoms uses the lennard-jones model
+
+
 The testcase can be defined by the file `tea.in`. The default content is:
 ```
 *tea
@@ -158,6 +164,22 @@ $ cd MD-Bench
 $ make
 $ ./MDBench-NVCC
 ```
+
+## Initial: CPU Scaling runs
+We start with finding doing a small collection of runs scaling in number of CPU threads.
+The output of our programm always contains one line that displays the number of atom updates per second derived from the total number of atom updates simulated diveded by the program runtime.
+This line always looks like this:
+```
+Performance: 7.18 million atom updates per second
+```
+Now we plot the single- and double-precision performance for linearly increasing numbers of `NUM_THREADS` from 1 to 32:
+
+<p align="center">
+  <img src="https://github.com/RRZE-HPC/MD-Bench/blob/mucosim_cuda/log/MB/resources/initial_testing/linear_cpu-threads_scaling/SingleGPU_cpu_scaling.png" />
+</p>
+
+
+
 
 ## Task1: Scaling runs
 For scaling runs, we find a runtime/performance number in the output of TeaLeaf (file `tea.out`). The last line always look like this:
