@@ -1,0 +1,318 @@
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  ms/call  ms/call  name    
+ 97.70      3.35     3.35       11   304.65   306.47  buildNeighbor
+  0.87      3.38     0.03      201     0.15     0.15  updatePbc
+  0.58      3.40     0.02  2359296     0.00     0.00  myrandom
+  0.58      3.42     0.02       11     1.82     1.82  binatoms
+  0.29      3.43     0.01       11     0.91     0.91  setupPbc
+  0.00      3.43     0.00     1668     0.00     0.00  checkCUDAError
+  0.00      3.43     0.00      426     0.00     0.00  getTimeStamp
+  0.00      3.43     0.00      201     0.00     0.00  computeForce
+  0.00      3.43     0.00      200     0.00     0.00  cuda_final_integrate
+  0.00      3.43     0.00      200     0.00     0.00  cuda_initial_integrate
+  0.00      3.43     0.00       48     0.00     0.00  reallocate
+  0.00      3.43     0.00       10     0.00   307.53  reneighbour
+  0.00      3.43     0.00       10     0.00     0.00  updateAtomsPbc
+  0.00      3.43     0.00        9     0.00     0.00  growAtom
+  0.00      3.43     0.00        3     0.00     0.00  computeThermo
+  0.00      3.43     0.00        1     0.00     0.00  __sti____cudaRegisterAll()
+  0.00      3.43     0.00        1     0.00     0.00  adjustThermo
+  0.00      3.43     0.00        1     0.00    20.01  createAtom
+  0.00      3.43     0.00        1     0.00     0.00  ff2str
+  0.00      3.43     0.00        1     0.00     0.00  init
+  0.00      3.43     0.00        1     0.00     0.00  initAtom
+  0.00      3.43     0.00        1     0.00     0.00  initCudaAtom
+  0.00      3.43     0.00        1     0.00     0.00  initNeighbor
+  0.00      3.43     0.00        1     0.00     0.00  initPbc
+  0.00      3.43     0.00        1     0.00     0.00  initStats
+  0.00      3.43     0.00        1     0.00   327.54  setup
+  0.00      3.43     0.00        1     0.00     0.00  setupNeighbor
+  0.00      3.43     0.00        1     0.00     0.00  setupThermo
+
+ %         the percentage of the total running time of the
+time       program used by this function.
+
+cumulative a running sum of the number of seconds accounted
+ seconds   for by this function and those listed above it.
+
+ self      the number of seconds accounted for by this
+seconds    function alone.  This is the major sort for this
+           listing.
+
+calls      the number of times this function was invoked, if
+           this function is profiled, else blank.
+
+ self      the average number of milliseconds spent in this
+ms/call    function per call, if this function is profiled,
+	   else blank.
+
+ total     the average number of milliseconds spent in this
+ms/call    function and its descendents per call, if this
+	   function is profiled, else blank.
+
+name       the name of the function.  This is the minor sort
+           for this listing. The index shows the location of
+	   the function in the gprof listing. If the index is
+	   in parenthesis it shows where it would appear in
+	   the gprof listing if it were to be printed.
+
+Copyright (C) 2012-2020 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.
+
+		     Call graph (explanation follows)
+
+
+granularity: each sample hit covers 2 byte(s) for 0.29% of 3.43 seconds
+
+index % time    self  children    called     name
+                                                 <spontaneous>
+[1]    100.0    0.00    3.43                 main [1]
+                0.00    3.08      10/10          reneighbour [3]
+                0.00    0.33       1/1           setup [4]
+                0.03    0.00     190/201         updatePbc [5]
+                0.00    0.00     201/201         computeForce [12]
+                0.00    0.00     200/200         cuda_initial_integrate [14]
+                0.00    0.00     200/200         cuda_final_integrate [13]
+                0.00    0.00       3/3           computeThermo [18]
+                0.00    0.00       2/426         getTimeStamp [11]
+                0.00    0.00       1/1           init [21]
+                0.00    0.00       1/1           ff2str [20]
+-----------------------------------------------
+                0.30    0.00       1/11          setup [4]
+                3.05    0.02      10/11          reneighbour [3]
+[2]     98.3    3.35    0.02      11         buildNeighbor [2]
+                0.02    0.00      11/11          binatoms [7]
+                0.00    0.00       4/1668        checkCUDAError [10]
+-----------------------------------------------
+                0.00    3.08      10/10          main [1]
+[3]     89.6    0.00    3.08      10         reneighbour [3]
+                3.05    0.02      10/11          buildNeighbor [2]
+                0.01    0.00      10/11          setupPbc [9]
+                0.00    0.00      10/201         updatePbc [5]
+                0.00    0.00      20/426         getTimeStamp [11]
+                0.00    0.00      10/10          updateAtomsPbc [16]
+-----------------------------------------------
+                0.00    0.33       1/1           main [1]
+[4]      9.5    0.00    0.33       1         setup [4]
+                0.30    0.00       1/11          buildNeighbor [2]
+                0.00    0.02       1/1           createAtom [8]
+                0.00    0.00       1/11          setupPbc [9]
+                0.00    0.00       1/201         updatePbc [5]
+                0.00    0.00       2/426         getTimeStamp [11]
+                0.00    0.00       1/1           initAtom [22]
+                0.00    0.00       1/1           initNeighbor [24]
+                0.00    0.00       1/1           initPbc [25]
+                0.00    0.00       1/1           setupNeighbor [27]
+                0.00    0.00       1/1           initStats [26]
+                0.00    0.00       1/1           setupThermo [28]
+                0.00    0.00       1/1           adjustThermo [19]
+                0.00    0.00       1/1668        checkCUDAError [10]
+                0.00    0.00       1/1           initCudaAtom [23]
+-----------------------------------------------
+                0.00    0.00       1/201         setup [4]
+                0.00    0.00      10/201         reneighbour [3]
+                0.03    0.00     190/201         main [1]
+[5]      0.9    0.03    0.00     201         updatePbc [5]
+-----------------------------------------------
+                0.02    0.00 2359296/2359296     createAtom [8]
+[6]      0.6    0.02    0.00 2359296         myrandom [6]
+-----------------------------------------------
+                0.02    0.00      11/11          buildNeighbor [2]
+[7]      0.6    0.02    0.00      11         binatoms [7]
+-----------------------------------------------
+                0.00    0.02       1/1           setup [4]
+[8]      0.6    0.00    0.02       1         createAtom [8]
+                0.02    0.00 2359296/2359296     myrandom [6]
+                0.00    0.00       7/9           growAtom [17]
+                0.00    0.00       4/1668        checkCUDAError [10]
+-----------------------------------------------
+                0.00    0.00       1/11          setup [4]
+                0.01    0.00      10/11          reneighbour [3]
+[9]      0.3    0.01    0.00      11         setupPbc [9]
+                0.00    0.00      12/48          reallocate [15]
+                0.00    0.00       2/9           growAtom [17]
+-----------------------------------------------
+                0.00    0.00       1/1668        setup [4]
+                0.00    0.00       4/1668        buildNeighbor [2]
+                0.00    0.00       4/1668        createAtom [8]
+                0.00    0.00      14/1668        initCudaAtom [23]
+                0.00    0.00     410/1668        cuda_final_integrate [13]
+                0.00    0.00     610/1668        cuda_initial_integrate [14]
+                0.00    0.00     625/1668        computeForce [12]
+[10]     0.0    0.00    0.00    1668         checkCUDAError [10]
+-----------------------------------------------
+                0.00    0.00       2/426         setup [4]
+                0.00    0.00       2/426         main [1]
+                0.00    0.00      20/426         reneighbour [3]
+                0.00    0.00     402/426         computeForce [12]
+[11]     0.0    0.00    0.00     426         getTimeStamp [11]
+-----------------------------------------------
+                0.00    0.00     201/201         main [1]
+[12]     0.0    0.00    0.00     201         computeForce [12]
+                0.00    0.00     625/1668        checkCUDAError [10]
+                0.00    0.00     402/426         getTimeStamp [11]
+-----------------------------------------------
+                0.00    0.00     200/200         main [1]
+[13]     0.0    0.00    0.00     200         cuda_final_integrate [13]
+                0.00    0.00     410/1668        checkCUDAError [10]
+-----------------------------------------------
+                0.00    0.00     200/200         main [1]
+[14]     0.0    0.00    0.00     200         cuda_initial_integrate [14]
+                0.00    0.00     610/1668        checkCUDAError [10]
+-----------------------------------------------
+                0.00    0.00      12/48          setupPbc [9]
+                0.00    0.00      36/48          growAtom [17]
+[15]     0.0    0.00    0.00      48         reallocate [15]
+-----------------------------------------------
+                0.00    0.00      10/10          reneighbour [3]
+[16]     0.0    0.00    0.00      10         updateAtomsPbc [16]
+-----------------------------------------------
+                0.00    0.00       2/9           setupPbc [9]
+                0.00    0.00       7/9           createAtom [8]
+[17]     0.0    0.00    0.00       9         growAtom [17]
+                0.00    0.00      36/48          reallocate [15]
+-----------------------------------------------
+                0.00    0.00       3/3           main [1]
+[18]     0.0    0.00    0.00       3         computeThermo [18]
+-----------------------------------------------
+                0.00    0.00       1/1           setup [4]
+[19]     0.0    0.00    0.00       1         adjustThermo [19]
+-----------------------------------------------
+                0.00    0.00       1/1           main [1]
+[20]     0.0    0.00    0.00       1         ff2str [20]
+-----------------------------------------------
+                0.00    0.00       1/1           main [1]
+[21]     0.0    0.00    0.00       1         init [21]
+-----------------------------------------------
+                0.00    0.00       1/1           setup [4]
+[22]     0.0    0.00    0.00       1         initAtom [22]
+-----------------------------------------------
+                0.00    0.00       1/1           setup [4]
+[23]     0.0    0.00    0.00       1         initCudaAtom [23]
+                0.00    0.00      14/1668        checkCUDAError [10]
+-----------------------------------------------
+                0.00    0.00       1/1           setup [4]
+[24]     0.0    0.00    0.00       1         initNeighbor [24]
+-----------------------------------------------
+                0.00    0.00       1/1           setup [4]
+[25]     0.0    0.00    0.00       1         initPbc [25]
+-----------------------------------------------
+                0.00    0.00       1/1           setup [4]
+[26]     0.0    0.00    0.00       1         initStats [26]
+-----------------------------------------------
+                0.00    0.00       1/1           setup [4]
+[27]     0.0    0.00    0.00       1         setupNeighbor [27]
+-----------------------------------------------
+                0.00    0.00       1/1           setup [4]
+[28]     0.0    0.00    0.00       1         setupThermo [28]
+-----------------------------------------------
+                0.00    0.00       1/1           __libc_csu_init [68]
+[56]     0.0    0.00    0.00       1         __sti____cudaRegisterAll() [56]
+-----------------------------------------------
+
+ This table describes the call tree of the program, and was sorted by
+ the total amount of time spent in each function and its children.
+
+ Each entry in this table consists of several lines.  The line with the
+ index number at the left hand margin lists the current function.
+ The lines above it list the functions that called this function,
+ and the lines below it list the functions this one called.
+ This line lists:
+     index	A unique number given to each element of the table.
+		Index numbers are sorted numerically.
+		The index number is printed next to every function name so
+		it is easier to look up where the function is in the table.
+
+     % time	This is the percentage of the `total' time that was spent
+		in this function and its children.  Note that due to
+		different viewpoints, functions excluded by options, etc,
+		these numbers will NOT add up to 100%.
+
+     self	This is the total amount of time spent in this function.
+
+     children	This is the total amount of time propagated into this
+		function by its children.
+
+     called	This is the number of times the function was called.
+		If the function called itself recursively, the number
+		only includes non-recursive calls, and is followed by
+		a `+' and the number of recursive calls.
+
+     name	The name of the current function.  The index number is
+		printed after it.  If the function is a member of a
+		cycle, the cycle number is printed between the
+		function's name and the index number.
+
+
+ For the function's parents, the fields have the following meanings:
+
+     self	This is the amount of time that was propagated directly
+		from the function into this parent.
+
+     children	This is the amount of time that was propagated from
+		the function's children into this parent.
+
+     called	This is the number of times this parent called the
+		function `/' the total number of times the function
+		was called.  Recursive calls to the function are not
+		included in the number after the `/'.
+
+     name	This is the name of the parent.  The parent's index
+		number is printed after it.  If the parent is a
+		member of a cycle, the cycle number is printed between
+		the name and the index number.
+
+ If the parents of the function cannot be determined, the word
+ `<spontaneous>' is printed in the `name' field, and all the other
+ fields are blank.
+
+ For the function's children, the fields have the following meanings:
+
+     self	This is the amount of time that was propagated directly
+		from the child into the function.
+
+     children	This is the amount of time that was propagated from the
+		child's children to the function.
+
+     called	This is the number of times the function called
+		this child `/' the total number of times the child
+		was called.  Recursive calls by the child are not
+		listed in the number after the `/'.
+
+     name	This is the name of the child.  The child's index
+		number is printed after it.  If the child is a
+		member of a cycle, the cycle number is printed
+		between the name and the index number.
+
+ If there are any cycles (circles) in the call graph, there is an
+ entry for the cycle-as-a-whole.  This entry shows who called the
+ cycle (as parents) and the members of the cycle (as children.)
+ The `+' recursive calls entry shows the number of function calls that
+ were internal to the cycle, and the calls entry for each member shows,
+ for that member, how many times it was called from other members of
+ the cycle.
+
+Copyright (C) 2012-2020 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.
+
+Index by function name
+
+  [56] __sti____cudaRegisterAll() (tmpxft_0036b389_00000000-6_force.cudafe1.stub.c) [20] ff2str [15] reallocate
+  [19] adjustThermo           [11] getTimeStamp            [3] reneighbour
+   [7] binatoms               [17] growAtom                [4] setup
+   [2] buildNeighbor          [21] init                   [27] setupNeighbor
+  [10] checkCUDAError         [22] initAtom                [9] setupPbc
+  [12] computeForce           [23] initCudaAtom           [28] setupThermo
+  [18] computeThermo          [24] initNeighbor           [16] updateAtomsPbc
+   [8] createAtom             [25] initPbc                 [5] updatePbc
+  [13] cuda_final_integrate   [26] initStats
+  [14] cuda_initial_integrate  [6] myrandom
