@@ -1,0 +1,9 @@
+#!/bin/bash -l
+#SBATCH --nodes=1 --ntasks=1 --time=01:00:00
+#SBATCH --export=NONE
+#SBATCH --gres=gpu:a40 --partition=a40
+unset SLURM_EXPORT_ENV
+
+module load likwid cuda		#load modules necessary for GPU profiling
+
+NUM_THREADS=16 srun /home/hpc/ptfs/ptfs176h/MD-Bench/MDBench-NVCC #execute MDBench
