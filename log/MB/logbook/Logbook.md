@@ -55,14 +55,17 @@ The simulation now runs similar to how it is sketched out below. Every timestep 
 
 ```python
 for t in timesteps:
+  if t % 20:
+    neighbors = calculateNeighbors()
+
   for atom in atoms:
-      neighbors = neighbor.neighbors[atom]
-      force = 0.0
-      for neighbor in neighbors:
-          radius = calc_radius(...)
-          if radius < close_enough:
-              force += calc_force(...)
-      forces[atom] += force
+    neighbors = neighbors[atom]
+    force = 0.0
+    for neighbor in neighbors:
+        radius = calc_radius(...)
+        if radius < close_enough:
+            force += calc_force(...)
+    forces[atom] += force
 ```
 
 Some parts already have been ported to GPU. More on that in a later chapter.
@@ -119,43 +122,6 @@ If not stated otherwise these are the conditions for the simulation benchmarking
 * force computation between atoms uses the lennard-jones model
 
 
-The testcase can be defined by the file `tea.in`. The default content is:
-```
-*tea
-state 1 density=100.0 energy=0.0001
-state 2 density=0.1 energy=25.0 geometry=rectangle xmin=0.0 xmax=1.0 ymin=1.0 ymax=2.0
-state 3 density=0.1 energy=0.1 geometry=rectangle xmin=1.0 xmax=6.0 ymin=1.0 ymax=2.0
-state 4 density=0.1 energy=0.1 geometry=rectangle xmin=5.0 xmax=6.0 ymin=1.0 ymax=8.0
-state 5 density=0.1 energy=0.1 geometry=rectangle xmin=5.0 xmax=10.0 ymin=7.0 ymax=8.0
-
-x_cells=1000
-y_cells=1000
-
-xmin=0.0
-ymin=0.0
-xmax=10.0
-ymax=10.0
-
-initial_timestep=0.004
-end_step=10
-
-tl_max_iters=10000
-test_problem 4
-tl_use_ppcg
-tl_eps=1.0e-15
-tl_preconditioner_type=none
-halo_depth=2
-
-*endtea
-```
-
-The default test case uses `tl_use_ppcg` (Polynomially Preconditioned Conjugate Gradient method), thus the CG kernels internally. This can be changed to other type of kernels with:
-* `tl_use_chebyshev`: Chebyshev method to solve the linear system.
-* `tl_use_cg`: Conjugate Gradient method to solve the linear system.
-* `tl_use_jacobi`: Jacobi method to solve the linear system. Note that this a very slowly converging method compared to other options. This is the default method is no method is explicitly selected.
-
-We keep the default `tl_use_ppcg` for this analysis
-
 ### How to run software
 
 ```
@@ -177,6 +143,69 @@ Now we plot the single- and double-precision performance for linearly increasing
 <p align="center">
   <img src="https://github.com/RRZE-HPC/MD-Bench/blob/mucosim_cuda/log/MB/resources/initial_testing/linear_cpu-threads_scaling/SingleGPU_cpu_scaling.png" />
 </p>
+
+In low thread counts (1-8) the program runs slower on the A40 than the A100.
+For increasing threadcounts (9-32) the application performance in regards to simulation throughput seems to converge.
+Contrary to intuition the convergence points seem to be the same for the A40 in single precision and A100 in single and double precision.
+This may hint at performance bottlenecks independent of the selected gpu.
+
+## Profiling the application
+
+In order to find such a bottleneck the runtime behaviour of the application is monitored with the command line tool `nsys`:
+```
+srun nsys profile -o ./a40_profiling_run
+```
+
+Running this command in a job script or an interactive session yields a .nsys-rep file which can be opened with the Nvidia Nsight Systems tool.
+
+<p align="center">
+  <img src="https://github.com/RRZE-HPC/MD-Bench/blob/mucosim_cuda/log/MB/resources/initial_testing/finding_bottlenecks/using_nsys/A40_nsys_zoomed_in.png" />
+</p>
+
+Activity in the application is cyclic. In each cycle one of the CPUs runs for a majority of the cycle while the rest mostly idle. The rest of the time is spent in multiple kernels running on the GPU.
+This shows that most of the time is still spent on CPU.
+
+## Finding where the CPU time is spent
+
+Using the command line tool `gprof` we can see that most of the CPU time is in the buildNeighbor-function
+
+
+```
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  ms/call  ms/call  name    
+ 97.70      3.35     3.35       11   304.65   306.47  buildNeighbor
+  0.87      3.38     0.03      201     0.15     0.15  updatePbc
+  0.58      3.40     0.02  2359296     0.00     0.00  myrandom
+  0.58      3.42     0.02       11     1.82     1.82  binatoms
+  0.29      3.43     0.01       11     0.91     0.91  setupPbc
+  0.00      3.43     0.00     1668     0.00     0.00  checkCUDAError
+  0.00      3.43     0.00      426     0.00     0.00  getTimeStamp
+  0.00      3.43     0.00      201     0.00     0.00  computeForce
+  0.00      3.43     0.00      200     0.00     0.00  cuda_final_integrate
+  0.00      3.43     0.00      200     0.00     0.00  cuda_initial_integrate
+  0.00      3.43     0.00       48     0.00     0.00  reallocate
+  0.00      3.43     0.00       10     0.00   307.53  reneighbour
+  0.00      3.43     0.00       10     0.00     0.00  updateAtomsPbc
+...
+```
+
+The standard program output also tells us in how much time (in total for CPU and GPU) is used for neigbor selection and force computation. The numbers will probably not match perfectly since gprof only samples the CPU.
+
+```
+TOTAL 3.47s FORCE 0.21s NEIGH 3.15s REST 0.12s
+```
+
+Even when considering CPU and GPU time the neighbor calculation needs most of the time.
+
+## Analysing parallelization of the application
+
+The runtime behaviour can be explained with the control flow of the application:
+
+
+
 
 
 
