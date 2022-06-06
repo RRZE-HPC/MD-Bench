@@ -218,7 +218,7 @@ for t in timesteps:
     
 
   if t % 20 == 0:
-    neighbors = calculateNeighbors()
+    neighbors = calculate_neighbors()
 
   
   #GPU-parallel-for atom in atoms:
@@ -234,14 +234,15 @@ for t in timesteps:
 ## Parallelizing neighborhood calculation
 
 Being able to parallelize this neighborhood calculation requires to understand it first.
+The real application simulates a 3D space. For brevity all code examples written in pseudo-python assume a 2D simulated area.
 
 ```python
-def calculateNeighbors():
-  updateAccordingTo(atoms, PeriodicBoundaryCondition)
-  setupBoundaryCondition(atoms, PeriodicBoundaryCondition)
-  updateBondaryCondition(atoms, PeriodicBoundaryCondition)
-  neighborList = buildNeighbor(atoms)
-  return neighborList
+def calculate_neighbors():
+  update_according_to(atoms, periodic_boundary_condition)
+  setup_periodic_boundary_condition(atoms, periodic_boundary_condition)
+  update_periodic_boundary_condition(atoms, periodic_boundary_condition)
+  neighbor_list = build_neighbor(atoms)
+  return neighbor_list
 ``` 
 
 ## Perodic boundary condition
@@ -257,18 +258,18 @@ Right: periodic boundary condition emulated by ghost atoms (semi-transparent cir
 Atoms that leave the simulated area will enter the simulated area on the mirrored side. In code it looks like this:
 
 ```python
-def updateAccordingTo(atoms, PeriodicBoundaryCondition):
-  simulated_area = PeriodicBoundaryCondition.simulated_area
-  Xmax, Xmin, Ymax, Ymin = PeriodicBoundaryCondition.boundaries
+def update_according_to(atoms, periodic_boundary_condition):
+  sim_width, sim_height = periodic_boundary_condition.simulated_area.dims
+  x_max, x_min, y_max, y_min = periodic_boundary_condition.boundaries
   for atom in atoms:
-    if position[atom].x > Xmax:
-      position[atom].x -= simulated_area.width
-    if position[atom].x < Xmin:
-      position[atom].x += simulated_area.width
-    if position[atom].y > Ymax:
-      position[atom].y -= simulated_area.height
-    if position[atom].y < Ymin:
-      position[atom].y += simulated_area.height
+    if position[atom].x > x_max:
+      position[atom].x -= sim_width
+    if position[atom].x < x_min:
+      position[atom].x += sim_width
+    if position[atom].y > y_max:
+      position[atom].y -= sim_height
+    if position[atom].y < y_min:
+      position[atom].y += sim_height
 ```
 
 This part will be easy to parallelize as all iterations are independent. The idea here is to give every atom its own thread in which it can operate on the atoms data.
@@ -276,45 +277,100 @@ This part will be easy to parallelize as all iterations are independent. The ide
 Next we take a look at the setup of the periodic boundary condition. If an atom is closer to a boundary than a certain threshold, it will need a ghost atom on the opposite site to emulate the boundary condition.
 
 ```python
-def setupBoundaryCondition(atoms, PeriodicBoundaryCondition):
-  sim_width, sim_height = PeriodicBoundaryCondition.simulated_area.dims
-  Xmax, Xmin, Ymax, Ymin = PeriodicBoundaryCondition.boundaries
+def setup_periodic_boundary_condition(atoms, periodic_boundary_condition):
+  sim_width, sim_height = periodic_boundary_condition.simulated_area.dims
+  x_max, x_min, y_max, y_min = periodic_boundary_condition.boundaries
   n_ghosts = 0
-  n_ghost_allocations = someValue
-  ghosts = malloc(n_ghost_allocations)
+  n_ghost_allocations = some_value
+  ghosts = malloc(n_ghost_allocations * sizeof(ghost))
   
-  def createGhost(originalAtom, offsetX, offsetY):
+  def createGhost(original_atom, offset_x, offset_y):
     ghost = {}
-    ghost.original = originalAtom
-    ghost.offsetX = offsetX
-    ghost.offsetY
+    ghost.original = original_atom
+    ghost.offset_x = offset_x
+    ghost.offset_y = offset_y
     return ghost
   
   for atom in atoms:
     if n_ghost_allocations - n_ghosts < max_ghosts_created_per_iteration:
       ghosts = realloc(ghosts, n_ghost_allocations, n_ghost_allocations + some_more)
       n_ghost_allocations += some_more
-  
-    if position[atom].x > Xmax - threshold:
+    if position[atom].x > x_max - threshold:
       ghosts[n_ghosts++] = createGhost(atom, -sim_width, 0)
-    if position[atom].x < Xmin + threshold:
+    if position[atom].x < x_min + threshold:
       ghosts[n_ghosts++] = createGhost(atom, +sim_width, 0)
-    if position[atom].y > Ymax - threshold:
+    if position[atom].y > y_max - threshold:
       ghosts[n_ghosts++] = createGhost(atom, 0, -sim_height)
-    if position[atom].y < Ymin + threshold:
+    if position[atom].y < y_min + threshold:
       ghosts[n_ghosts++] = createGhost(atom, 0, +sim_height)
-    if position[atom].x > Xmax - threshold AND position[atom].y > Ymax - threshold:
+    if position[atom].x > x_max - threshold AND position[atom].y > y_max - threshold:
       ghosts[n_ghosts++] = createGhost(atom, -sim_width, -sim_height)
-    if position[atom].x > Xmax - threshold AND position[atom] < Ymin + threshold:
+    if position[atom].x > x_max - threshold AND position[atom] < y_min + threshold:
       ghosts[n_ghosts++] = createGhost(atom, -sim_width, +sim_height)
-    if position[atom].x < Xmin + threshold AND position[atom].y > Ymax - threshold:
+    if position[atom].x < x_min + threshold AND position[atom].y > y_max - threshold:
       ghosts[n_ghosts++] = createGhost(atom, +sim_width, -sim_height)
-    if position[atom].x < Xmin + threshold AND position[atom] < Ymin + threshold:
+    if position[atom].x < x_min + threshold AND position[atom] < y_min + threshold:
       ghosts[n_ghosts++] = createGhost(atom, +sim_width, +sim_height)
-
+  
+  if n_atoms + n_ghosts > len(atoms):
+    atoms = realloc(n_atoms + n_ghosts)
 ```
 
+This method poses a difficult challenge to parallelize as the different iterations depend on each other. This dependency stems from the n_ghosts variable and the possible allocation in the beginning of each iteration.
 
+Ideas to parallelize:
+allocate more space for ghosts than will be needed and give each atom a thread
+* each thread inserts its atoms ghosts into a predefined empty space -> no collisions but array will be sparsely occupied
+* each thread atomically increments a global counter (mimicing the nghosts variable) -> no collisions and dense array occupation but the atomicAdd will lead to lots of blocking
+
+The priority for parallelizing this code is low since it only scales with O(N) with N being the number of atoms.
+
+
+Updating the boundary condition happens by updating the position of all ghost atoms.
+```python
+def update_bondary_condition(atoms, periodic_boundary_condition):
+  for ghost in ghosts:
+    position[ghost].x = ghost.offset_x + position[ghost.original].x
+    position[ghost].y = ghost.offset_y + position[ghost.original].y
+```
+
+This part will be easy to parallelize as all iterations are independent. One thread per ghost atom will probably be the selected way to port this to GPU.
+
+## Building neighbor lists
+The majority of CPU time is spent the `buildNeighbor`-method. Parallelizing this on the GPU will have significant impact on the application's scalability.
+
+```python
+def buildNeighbor(atoms):
+  max_neighbors_per_atom = some_value
+  new_max_neighbors_per_atom = max_neighbors_per_atom
+  grid_cells = sort_into(atoms)
+  neighbor_list = malloc(n_atoms * max_neighbors * sizeof(int))
+  neighbor_counters = malloc(n_atoms * sizeof(int))
+  
+  resize_needed = true
+  while(resize_needed):
+    new_max_neighbors_per_atom = max_neighbors_per_atom
+    resize_needed = false
+    for atom in atoms:
+      neighbor_count = 0
+      grid_cell = grid_cell_of(position[atom])
+      for neighboring_cell in neighboring_cells(grid_cell):
+        for possible_neighbor in neighboring_cell.atoms:
+          if distance(atom, possible_neighbor) < threshold:
+            neighbor_list[atom * max_neighbors_per_atom + neighbor_count] = possible_neighbor
+            neighbor_count++
+      if neighbor_count > max_neighbors_per_atom:
+        resize_needed = true
+        if neighbor_count > new_max_neighbor_count_per_atom:
+          new_max_neighbor_count_per_atom = neighbor_count
+    if resize_needed:
+      max_neighbors_per_atom = new_max_neighbors_per_atom * 1.2
+      free(neighbor_list)
+      neihgbor_list = malloc(n_atoms * max_neighbors * sizeof(int))
+```
+
+Idea: give each atom one thread
+Challenge: when the limit for maximum neighbors is set too low in the CPU version a variable is set. On the GPU this needs to be wrapped with a CAS to ensure that the value contains the maximum amount of needed neighbors per atom.
 
 
 
