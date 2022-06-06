@@ -55,7 +55,11 @@ The simulation now runs similar to how it is sketched out below. Every timestep 
 
 ```python
 for t in timesteps:
-  if t % 20:
+  #GPU-parallel-for atom in atoms:
+    velocity[atom] += force[atom]
+    position[atom] += velocity[atom]
+
+  if t % 20 == 0:
     neighbors = calculateNeighbors()
 
   for atom in atoms:
@@ -200,10 +204,115 @@ TOTAL 3.47s FORCE 0.21s NEIGH 3.15s REST 0.12s
 
 Even when considering CPU and GPU time the neighbor calculation needs most of the time.
 
-## Analysing parallelization of the application
+## Reasons for this runtime profile
 
-The runtime behaviour can be explained with the control flow of the application:
+In order to understand the runtime profile of the code we can take a look at the control flow of the program:
 
+The force computation and the force integration are already running in parallel on the GPU. Those force computation and force integrations correspond to the short burst of GPU activity in the runtime profile shown by `nsys`. The neighborhood calculation on the other hand is still running sequentially on the CPU. This corresponds to the majority of the time spent on the CPU with only one core working and the rest idling.
+
+```python
+for t in timesteps:
+  #GPU-parallel-for atom in atoms:
+    velocity[atom] += force[atom]
+    position[atom] += velocity[atom]
+    
+
+  if t % 20 == 0:
+    neighbors = calculateNeighbors()
+
+  
+  #GPU-parallel-for atom in atoms:
+    neighbors = neighbors[atom]
+    force = 0.0
+    for neighbor in neighbors:
+        radius = calc_radius(...)
+        if radius < close_enough:
+            force += calc_force(...)
+    forces[atom] += force
+```
+
+## Parallelizing neighborhood calculation
+
+Being able to parallelize this neighborhood calculation requires to understand it first.
+
+```python
+def calculateNeighbors():
+  updateAccordingTo(atoms, PeriodicBoundaryCondition)
+  setupBoundaryCondition(atoms, PeriodicBoundaryCondition)
+  updateBondaryCondition(atoms, PeriodicBoundaryCondition)
+  neighborList = buildNeighbor(atoms)
+  return neighborList
+``` 
+
+## Perodic boundary condition
+
+>
+><media-tag title="Example of the periodic boundary condition. Red dotted lines indicate the interaction ranges of a single atom. Red semi-transparent lines show how this interaction range translates to the whole system. Semi-transparent circles are ghost atoms" src="https://files.cryptpad.fr/blob/b3/b3b533294a63e48e71d45f1a9f61561b2464ea3057594dec" data-crypto-key="cryptpad:wtcrtndJdgcCGtf1arX4g4P17voqchrCH8Cmh7copQs="></media-tag>
+Example of the periodic boundary condition.  
+Left: no boundary condition.  
+Middle left: periodic boundary condition.  
+Middle right: periodic boundary condition with maximum interaction range outside the boundary represented by the semi-transparent rectangular line.  
+Right: periodic boundary condition emulated by ghost atoms (semi-transparent circles outside boundary)
+
+Atoms that leave the simulated area will enter the simulated area on the mirrored side. In code it looks like this:
+
+```python
+def updateAccordingTo(atoms, PeriodicBoundaryCondition):
+  simulated_area = PeriodicBoundaryCondition.simulated_area
+  Xmax, Xmin, Ymax, Ymin = PeriodicBoundaryCondition.boundaries
+  for atom in atoms:
+    if position[atom].x > Xmax:
+      position[atom].x -= simulated_area.width
+    if position[atom].x < Xmin:
+      position[atom].x += simulated_area.width
+    if position[atom].y > Ymax:
+      position[atom].y -= simulated_area.height
+    if position[atom].y < Ymin:
+      position[atom].y += simulated_area.height
+```
+
+This part will be easy to parallelize as all iterations are independent. The idea here is to give every atom its own thread in which it can operate on the atoms data.
+
+Next we take a look at the setup of the periodic boundary condition. If an atom is closer to a boundary than a certain threshold, it will need a ghost atom on the opposite site to emulate the boundary condition.
+
+```python
+def setupBoundaryCondition(atoms, PeriodicBoundaryCondition):
+  sim_width, sim_height = PeriodicBoundaryCondition.simulated_area.dims
+  Xmax, Xmin, Ymax, Ymin = PeriodicBoundaryCondition.boundaries
+  n_ghosts = 0
+  n_ghost_allocations = someValue
+  ghosts = malloc(n_ghost_allocations)
+  
+  def createGhost(originalAtom, offsetX, offsetY):
+    ghost = {}
+    ghost.original = originalAtom
+    ghost.offsetX = offsetX
+    ghost.offsetY
+    return ghost
+  
+  for atom in atoms:
+    if n_ghost_allocations - n_ghosts < max_ghosts_created_per_iteration:
+      ghosts = realloc(ghosts, n_ghost_allocations, n_ghost_allocations + some_more)
+      n_ghost_allocations += some_more
+  
+    if position[atom].x > Xmax - threshold:
+      ghosts[n_ghosts++] = createGhost(atom, -sim_width, 0)
+    if position[atom].x < Xmin + threshold:
+      ghosts[n_ghosts++] = createGhost(atom, +sim_width, 0)
+    if position[atom].y > Ymax - threshold:
+      ghosts[n_ghosts++] = createGhost(atom, 0, -sim_height)
+    if position[atom].y < Ymin + threshold:
+      ghosts[n_ghosts++] = createGhost(atom, 0, +sim_height)
+    if position[atom].x > Xmax - threshold AND position[atom].y > Ymax - threshold:
+      ghosts[n_ghosts++] = createGhost(atom, -sim_width, -sim_height)
+    if position[atom].x > Xmax - threshold AND position[atom] < Ymin + threshold:
+      ghosts[n_ghosts++] = createGhost(atom, -sim_width, +sim_height)
+    if position[atom].x < Xmin + threshold AND position[atom].y > Ymax - threshold:
+      ghosts[n_ghosts++] = createGhost(atom, +sim_width, -sim_height)
+    if position[atom].x < Xmin + threshold AND position[atom] < Ymin + threshold:
+      ghosts[n_ghosts++] = createGhost(atom, +sim_width, +sim_height)
+
+```
 
 
 
