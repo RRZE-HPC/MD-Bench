@@ -48,7 +48,7 @@ TODO add figure for boundary condition and initial state
 The force of each atom is based on its interaction with neighboring atoms. In MD-Bench, the Lennard-Jones potential is used to model the potential among
 pairs of particles, here: electronically neutral atoms. This potential models repulsive as well as attractive interactions:
 
-![Lennard-Jones-Model](images/Lennard_Jones_potential_function.png)
+![Lennard-Jones-Model](../images/Lennard_Jones_potential_function.png)
 
 where ***r*** is the distance between the two interacting atoms, ***ε*** is the dispersion energy and ***σ*** the distance at which the
 particle-potential ***V*** is zero:
