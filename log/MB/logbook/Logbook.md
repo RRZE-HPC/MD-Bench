@@ -41,7 +41,7 @@ The simulation system's constituents are
 * Number of atoms with initial state (position & velocity)
 * Boundary conditions (periodic)
 
-TODO add figure for boundary condition and initial state
+![Periodic-Boundary-Condition](../images/Boundary_Condition_explained_without_ghosts.png)
 
 -----
 
@@ -90,16 +90,12 @@ Some parts already have been ported to GPU. More on that in a later chapter.
 * Host/Clustername: alex
 * Cluster Info URL: <https://hpc.fau.de/systems-services/systems-documentation-instructions/clusters/alex-cluster/>
 * Total GPU count: 304 Nvidia A40, 160 Nvidia A100/40GB, and 96 A100/80GB
-* 3 different setups [20 nodes | 12 nodes | 38 nodes]
 * per node:
   * CPU: 2x AMD EPYC 7713 “Milan” (64 cores per chip) @ 2.0 GHz - SMT disabled -> 1 Thread/CPU
   * Memory capacity: [512 GB | 1024 GB | 512 GB]
   * GPU: [8x A100/40GB | 8x A100/80GB | 8x A40/48GB]
-* Interconnect: [2x HDR200 Infiniband HCAs | 2x HDR200 Infiniband HCAs | - ]
-* Storage: [14 TB local NVMe SSDs | 14 TB local NVMe SSDs | 7 TB local NVMe SSDs ]
-* Ethernet: [25 Gb | 25 Gb | 25 Gb]
-
 * Info on single node jobs: <https://hpc.fau.de/systems-services/systems-documentation-instructions/clusters/alex-cluster/#batch>
+* resources per GPU:
   * [A40 | A100]
   * CPU: [16 / GPU | 16 / GPU]
   * Memory: [60GB / GPU | 120GB / GPU]
