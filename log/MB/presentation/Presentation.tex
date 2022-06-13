@@ -231,21 +231,6 @@ advised by: Rafael Ravedutti
     \end{itemize}
 \end{frame}
 
-\begin{frame}{Project Description}{Simulation Model}
-    \vspace{-4\baselineskip}
-    What can be observed from this graph is:
-    \begin{itemize}
-        \tightlist
-        \item
-          The Lennard-Jones potential is a simplified model but still describes
-          the essential aspects of particle dynamics
-        \item
-          Particles repel each other at close distances, attract each other at
-          medium distances and have close to zero interaction at large distances
-    \end{itemize}
-
-\end{frame}
-
 \begin{frame}[fragile]{Project Description}{Simulation Process}
     
     The simulation runs similar to the sketch code below:
@@ -291,7 +276,7 @@ advised by: Rafael Ravedutti
     \begin{itemize}
         \tightlist
         \item Host/Clustername: alex
-        \item multiple GPUs per node
+        \item multiple nodes with multiple GPUs per node
         \item
           resources per GPU:
         
@@ -333,8 +318,9 @@ advised by: Rafael Ravedutti
     
     \begin{block}{How to build software}
         \begin{verbatim}
-$ git clone https://github.com/RRZE-HPC/MD-Bench/tree/mucosim_cuda
+$ git clone https://github.com/RRZE-HPC/MD-Bench/
 $ cd MD-Bench
+$ git checkout mucosim_cuda
 $ module load likwid cuda
 $ make
         \end{verbatim}
@@ -613,7 +599,7 @@ Each sample counts as 0.01 seconds.
 \end{frame}
 
 \begin{frame}{Next goals}
-
+    \vspace{-3\baselineskip}
     \begin{itemize}
         \item port the buildNeighbor-function to Cuda
     \begin{itemize}
