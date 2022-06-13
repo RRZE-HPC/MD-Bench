@@ -16,6 +16,7 @@
   \usebeamerfont{part title}\insertpart\par
 \end{beamercolorbox}
 }
+\setbeamerfont{section title}{size=\Huge}
 \setbeamertemplate{section page}{
 \centering
 \begin{beamercolorbox}[sep=12pt,center]{part title}
@@ -131,14 +132,12 @@
 \makeatother
 
 
-\date{13.6.22}
-\author{Martin Bauernfeind}
-\institute{MuCoSim Seminar}
 
 \begin{document}
 
 
 \begin{frame}
+\color{blue}
 \begin{center}
     \begin{Huge}
         MD-Bench
@@ -148,6 +147,8 @@
     GPU port optimization
 \end{huge}
 
+\color{black}
+
 by: Martin Bauernfeind
 
 advised by: Rafael Ravedutti
@@ -156,6 +157,7 @@ advised by: Rafael Ravedutti
 \end{frame}
 
 \section{Project Description}
+
 
 \begin{frame}{Project description}{Application Info}
     \begin{itemize}
@@ -343,9 +345,9 @@ $ ./MDBench-NVCC
     \end{itemize}
 \end{frame}
 
-\section{Profiling}
+\section{First runtime tests}
 
-\begin{frame}[fragile]{Profiling}{Initial: CPU Scaling runs}
+\begin{frame}[fragile]{First runtime tests}{CPU Scaling runs}
     \vspace*{-6\baselineskip}
     \begin{itemize}
         \tightlist
@@ -359,7 +361,7 @@ $ ./MDBench-NVCC
     \end{verbatim}
 \end{frame}
 
-\begin{frame}[fragile]{Profiling}{Initial: CPU Scaling runs - continued}
+\begin{frame}[fragile]{First runtime tests}{CPU Scaling runs - continued}
     \begin{itemize}
         \item plot data for single- and double precision performance
     \end{itemize}
@@ -459,6 +461,8 @@ Each sample counts as 0.01 seconds.
         \end{Shaded}
     \end{scriptsize}
 \end{frame}
+
+\section{Parallelizing neighborhood calculation}
 
 \begin{frame}[fragile]{Parallelizing neighborhood calculation}{neighborhood calculation process}
     \begin{itemize}
@@ -615,6 +619,7 @@ Each sample counts as 0.01 seconds.
 
 \begin{frame}
     \begin{center}
+        \color{blue}
         \begin{Huge}
         Thank you 
         
@@ -622,6 +627,7 @@ Each sample counts as 0.01 seconds.
     \end{Huge}
     \vspace{\baselineskip}
 
+    \color{black}
     \begin{LARGE}
         Any questions?
     \end{LARGE}
