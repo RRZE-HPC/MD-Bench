@@ -1,7 +1,7 @@
 \PassOptionsToPackage{unicode=true}{hyperref} % options for packages loaded elsewhere
 \PassOptionsToPackage{hyphens}{url}
 %
-\documentclass[ignorenonframetext,]{beamer}
+\documentclass[ignorenonframetext,aspectratio=169]{beamer}
 \usepackage{pgfpages}
 \setbeamertemplate{caption}[numbered]
 \setbeamertemplate{caption label separator}{: }
@@ -131,7 +131,9 @@
 \makeatother
 
 
-\date{}
+\date{13.6.22}
+\author{Martin Bauernfeind}
+\institute{MuCoSim Seminar}
 
 \begin{document}
 
@@ -139,7 +141,7 @@
 \begin{frame}
 \begin{center}
     \begin{Huge}
-        MD-Bench on Cuda
+        MD-Bench
     \end{Huge}
 
 \begin{huge}
@@ -181,37 +183,33 @@ advised by: Rafael Ravedutti
 \begin{frame}{Project Description}{Simulation Model}
     Molecular dynamics emulated in MD-Bench by:
     \begin{itemize}
+        \vspace*{-0.5\baselineskip}
         \tightlist
         \item interaction among particles
         \item affects of these interactions on their motion
         \item constituents of simulation:
         \begin{itemize}
-            \item
-            Number of atoms with initial state (position \& velocity)
-            \item
-            Boundary conditions (periodic)
+            \item Number of atoms with initial state (position \& velocity)
+            \item Boundary conditions (periodic)
         \end{itemize}
     \end{itemize}
     \begin{center}
-        \includegraphics[width=0.7\linewidth]{../images/Boundary_Condition_explained_without_ghosts.png}
+        \includegraphics[width=0.6\linewidth]{../images/Boundary_Condition_explained_without_ghosts.png}
     \end{center}
-    
-    \textbf{Note:} The words particle and atom will be used interchangeably
 \end{frame}
 
 \begin{frame}{Project Description}{Particle interactions} 
     force computation of particle interactions:
     \begin{itemize}
         \tightlist
+        \vspace*{-0.3\baselineskip}
         \item
           based on the Lennard-Jones potential:
-        
           \begin{itemize}
+
               \tightlist
-              \item
-                pairs of particles, here: electronically neutral atoms
-              \item
-                models repulsive as well as attractive interactions
+              \item pairs of particles, here: electronically neutral atoms
+              \item models repulsive as well as attractive interactions
           \end{itemize}
     \end{itemize}
     \begin{center}
@@ -265,9 +263,6 @@ advised by: Rafael Ravedutti
     \end{Highlighting}
     \end{Shaded}
     \end{scriptsize}
-    
-    Some parts already have been ported to GPU - more on that later
-
 \end{frame}
 
 \section{Testsystem}
@@ -325,7 +320,7 @@ $ module load likwid cuda
 $ make
         \end{verbatim}
     \end{block}
-    
+    \vspace{-\baselineskip}
     \begin{block}{How to run software (e.g. in a batch job)}
         \begin{verbatim}
 $ module load likwid cuda
@@ -342,7 +337,7 @@ $ ./MDBench-NVCC
     \begin{itemize}
         \tightlist
         \item the number of simulated atoms is 131072
-        \item floating numbers use double precision
+        \item floating point numbers use double precision
         \item force computation between atoms uses the lennard-jones model
         \item one gpu with its associated cores are used for computation
     \end{itemize}
@@ -466,12 +461,11 @@ Each sample counts as 0.01 seconds.
 \end{frame}
 
 \begin{frame}[fragile]{Parallelizing neighborhood calculation}{neighborhood calculation process}
-    \vspace*{-5\baselineskip}
     \begin{itemize}
         \item real application simulates a 3D space
         \item examples written in pseudo-python assume a 2D space for simplicity and brevity
     \end{itemize}
-        \vspace*{+\baselineskip}
+        \vspace*{+.5\baselineskip}
     \begin{scriptsize}    
         \begin{Shaded}
             \begin{Highlighting}[]
@@ -484,6 +478,9 @@ Each sample counts as 0.01 seconds.
             \end{Highlighting}
         \end{Shaded}    
     \end{scriptsize}
+    \begin{center}
+        \includegraphics[width=0.4\linewidth]{../images/Boundary_Condition_explained_without_ghosts.png}
+    \end{center}
 \end{frame}
 
 \begin{frame}[fragile]{Parallelizing neighborhood calculation}{Atom update}

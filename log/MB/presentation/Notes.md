@@ -28,14 +28,58 @@
   * per node: 
     * 2x AMD Milan CPUs with 64 cores per CPU
     * 8 GPUs A40 or A100 
+  * we will use only one gpu -> only get part of the cpus of one node
 
-* Explanation for the runtime profile
-  * force integration and force calculation are already on the GPU
-    * short bursts of activity on the GPU
-  * neighborhood calculation is still sequential on the CPU
-    * long sequential part
+* Execution and default parameters
+  * Compiler: Nvidia Cuda compiler with Cuda 11.6.1
+  * Operating system: Ubuntu 20.04.3 LTS
+  * Additionaly LIKWID 5.2.0
+  
+  * building:
+    * clone repository
+    * go into repo
+    * switch to the mucosim-cuda branch
+    * load likwid and cuda
+    * compile
 
-  * parallelizing neighborhood calculation will probably speedup the application
+  * running (for example in a batch script):
+    * load likwid and cuda
+    * goto right folder
+    * start MDBench-NVCC executable
+
+* Testcase description:
+  * 131k atoms (determined by earlier contributor to be maxing out the throughput)
+  * DP for floating numbers
+  * lennard jones potential for force computation
+  * one gpu with its 16 cores is used
+    * one thread per CPU since SMT is disabled
+
+* Initial: CPU-Scaling Runs
+  * take one gpu with its cores
+  * scale the number of threads to see if that has an effect
+  * effect is only limitied
+  * performance converges quite quickly
+  * convergence points for A40 SP and A100 both cases may hint at bottlenecks unrelated to the gpu
+
+* Profiling the application
+  * with nsys - Nvidia Nsight Systems
+    * activity is cyclic: 
+      * long parts with one CPU
+      * then short burst of GPU activity
+      * repeat
+  * with gprof - to get a rough estimation where CPU runtime is spent (GPU time not recognized as such)
+    * most of the time is spent building neighbor lists
+  * with time readings taken inside the program
+    * both CPU and GPU time are accounted for
+    * same result: neighborhood calculation takes most time
+    * -> why is that? have look at code
+  * Explanation for the runtime profile
+    * force integration and force calculation are already on the GPU
+      * short bursts of activity on the GPU
+    * neighborhood calculation is still sequential on the CPU
+      * long sequential part
+
+    * parallelizing neighborhood calculation will probably speedup the application
 
 * Parallelizing neighborhood calculation:
   * neighborhood calculation process:
@@ -53,3 +97,8 @@
   * building neighbor lists:
     * iterations over atoms are output dependent on each other iff neighbor
           lists are longer than the individually allocated space
+      * atomic CAS operation to avoid race conditions on that variable
+
+* Thank you for your attention:
+  * any questions?
+  * any other ideas for parallelizing neighborhood calculation?
