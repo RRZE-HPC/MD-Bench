@@ -264,12 +264,12 @@ advised by: Rafael Ravedutti
     \begin{Shaded}
     \begin{Highlighting}[]
     \ControlFlowTok{for}\NormalTok{ t }\KeywordTok{in}\NormalTok{ timesteps:}
-      \CommentTok{#GPU-parallel-for atom in atoms:}
+      \ControlFlowTok{for}\NormalTok{ atom }\KeywordTok{in}\NormalTok{ atoms:}
     \NormalTok{    velocity[atom] }\OperatorTok{+=}\NormalTok{ force[atom]}
     \NormalTok{    position[atom] }\OperatorTok{+=}\NormalTok{ velocity[atom]}
       \ControlFlowTok{if}\NormalTok{ t }\OperatorTok{%} \DecValTok{20} \OperatorTok{==} \DecValTok{0}\NormalTok{:}
     \NormalTok{    neighbors }\OperatorTok{=}\NormalTok{ calculateNeighbors()}
-      \CommentTok{#GPU-parallel-for atom in atoms:}
+      \ControlFlowTok{for}\NormalTok{ atom }\KeywordTok{in}\NormalTok{ atoms:}
     \NormalTok{    neighbors }\OperatorTok{=}\NormalTok{ neighbors[atom]}
     \NormalTok{    force }\OperatorTok{=} \FloatTok{0.0}
         \ControlFlowTok{for}\NormalTok{ neighbor }\KeywordTok{in}\NormalTok{ neighbors:}
@@ -291,13 +291,7 @@ advised by: Rafael Ravedutti
     \begin{itemize}
         \tightlist
         \item Host/Clustername: alex
-        \item per node:
-            \begin{itemize}
-                \tightlist
-                \item CPU: 2x AMD EPYC 7713 ``Milan'' (64 cores per chip) @ 2.0 GHz - SMT disabled -\textgreater{} 1 Thread/CPU
-                \item GPU: {[}8x A100/40GB \textbar{} 8x A100/80GB \textbar{} 8x A40/48GB{]}
-                \item Memory capacity: {[}512 GB \textbar{} 1024 GB \textbar{} 512 GB{]}
-            \end{itemize}
+        \item multiple GPUs per node
         \item
           resources per GPU:
         
@@ -306,7 +300,7 @@ advised by: Rafael Ravedutti
           \item
             {[}A40 \textbar{} A100{]}
           \item
-            CPU: {[}16 / GPU \textbar{} 16 / GPU{]}
+            CPU: {[}16 cores / GPU \textbar{} 16 cores / GPU{]}
           \item
             Memory: {[}60GB / GPU \textbar{} 120GB / GPU{]}
           \end{itemize}
@@ -460,21 +454,19 @@ Each sample counts as 0.01 seconds.
     Even when considering CPU and GPU time the neighbor calculation needs most of the time.
 \end{frame}
 
-\section{Explanation for the runtime profile}
-
-\begin{frame}[fragile]{Explanation for the runtime profile}{Program structure}
+\begin{frame}[fragile]{Profiling the application}{Explanation of runtime profile with program structure}
 
     Recall code from earlier:
     \begin{scriptsize}
         \begin{Shaded}
             \begin{Highlighting}[]
 \ControlFlowTok{for}\NormalTok{ t }\KeywordTok{in}\NormalTok{ timesteps:}
-    \CommentTok{#GPU-parallel-for atom in atoms:}
+    \ControlFlowTok{GPU-parallel-for}\NormalTok{ atom }\KeywordTok{in}\NormalTok{ atoms:}
     \NormalTok{    velocity[atom] }\OperatorTok{+=}\NormalTok{ force[atom]}
     \NormalTok{    position[atom] }\OperatorTok{+=}\NormalTok{ velocity[atom]}
     \ControlFlowTok{if}\NormalTok{ t }\OperatorTok{%} \DecValTok{20} \OperatorTok{==} \DecValTok{0}\NormalTok{:}
     \NormalTok{    neighbors }\OperatorTok{=}\NormalTok{ calculateNeighbors()}
-    \CommentTok{#GPU-parallel-for atom in atoms:}
+    \ControlFlowTok{GPU-parallel-for}\NormalTok{ atom }\KeywordTok{in}\NormalTok{ atoms:}
     \NormalTok{    neighbors }\OperatorTok{=}\NormalTok{ neighbors[atom]}
     \NormalTok{    force }\OperatorTok{=} \FloatTok{0.0}
         \ControlFlowTok{for}\NormalTok{ neighbor }\KeywordTok{in}\NormalTok{ neighbors:}
@@ -569,6 +561,7 @@ Each sample counts as 0.01 seconds.
 \end{frame}
 
 \begin{frame}[fragile]{Parallelizing neighborhood calculation}{Updating the ghost atom positions}
+    \vspace{-5\baselineskip}
     \begin{scriptsize}
     \begin{Shaded}
         \begin{Highlighting}[]
@@ -584,8 +577,7 @@ Each sample counts as 0.01 seconds.
         \item iterations independent
         \begin{itemize}
             \tightlist
-            \item -\textgreater{} easy to parallelize
-            \item -\textgreater{} one thread per atom
+            \item easy to parallelize -\textgreater{} one thread per atom
         \end{itemize}
     \end{itemize}
 \end{frame}
@@ -603,28 +595,21 @@ Each sample counts as 0.01 seconds.
 \NormalTok{    resize_needed }\OperatorTok{=}\NormalTok{ false}
     \ControlFlowTok{for}\NormalTok{ atom }\KeywordTok{in}\NormalTok{ atoms:}
 \NormalTok{      neighbor_count }\OperatorTok{=} \DecValTok{0}\NormalTok{,    grid_cell }\OperatorTok{=}\NormalTok{ grid_cell_of(position[atom])}
-      \ControlFlowTok{for}\NormalTok{ neighboring_cell }\KeywordTok{in}\NormalTok{ (neighboring_cells(grid_cell) + grid_cell):}
-        \ControlFlowTok{for}\NormalTok{ other_atom }\KeywordTok{in}\NormalTok{ neighboring_cell.atoms:}
-          \ControlFlowTok{if}\NormalTok{ other_atom == atom: continue}
-          \ControlFlowTok{if}\NormalTok{ distance(atom, other_atom) }\OperatorTok{<}\NormalTok{ threshold:}
-\NormalTok{            neighbor_list[atom,}\NormalTok{ neighbor_count] }\OperatorTok{=}\NormalTok{ other_atom}
-\NormalTok{            neighbor_count}\OperatorTok{++}
+      \ControlFlowTok{for}\NormalTok{ other_atom }\KeywordTok{in}\NormalTok{ (neighboring_cells(grid_cell) + grid_cell).atoms:}
+        \ControlFlowTok{if}\NormalTok{ other_atom == atom: continue}
+        \ControlFlowTok{if}\NormalTok{ distance(atom, other_atom) }\OperatorTok{<}\NormalTok{ threshold:}
+\NormalTok{          neighbor_list[atom,}\NormalTok{ neighbor_count++] }\OperatorTok{=}\NormalTok{ other_atom}
       \ControlFlowTok{if}\NormalTok{ neighbor_count }\OperatorTok{>}\NormalTok{ max_neighbors_per_atom:}
 \NormalTok{        resize_needed }\OperatorTok{=}\NormalTok{ true}
         \ControlFlowTok{if}\NormalTok{ neighbor_count }\OperatorTok{>}\NormalTok{ new_max_neighbor_count_per_atom:}
 \NormalTok{          new_max_neighbor_count_per_atom }\OperatorTok{=}\NormalTok{ neighbor_count}
     \ControlFlowTok{if}\NormalTok{ resize_needed:}
 \NormalTok{      max_neighbors_per_atom }\OperatorTok{=}\NormalTok{ new_max_neighbors_per_atom }\OperatorTok{*} \FloatTok{1.2}
-\NormalTok{      free(neighbor_list)}
-\NormalTok{      neihgbor_list }\OperatorTok{=}\NormalTok{ malloc(n_atoms }\OperatorTok{*}\NormalTok{ max_neighbors }\OperatorTok{*}\NormalTok{ sizeof(}\BuiltInTok{int}\NormalTok{))}
+\NormalTok{      free(neighbor_list),}\NormalTok{      neighbor_list }\OperatorTok{=}\NormalTok{ malloc(...)}
   \ControlFlowTok{while}\NormalTok{(resize_needed)}
             \end{Highlighting}
         \end{Shaded}
     \end{scriptsize}
-    \begin{itemize}
-        \tightlist
-        \item 
-    \end{itemize}
 \end{frame}
 
 \begin{frame}{Next goals}
@@ -652,7 +637,7 @@ Each sample counts as 0.01 seconds.
     \end{Huge}
 
     \begin{large}
-        Any other parallelization ideas?
+        Any other ideas for parallelization?
     \end{large}
     \end{center}
 
