@@ -45,8 +45,6 @@
 
 #define HLINE "----------------------------------------------------------------------------\n"
 
-extern void initCudaAtom(Atom *atom, Neighbor *neighbor);
-
 extern void cuda_final_integrate(bool doReneighbour, Parameter *param, Atom *atom);
 extern void cuda_initial_integrate(bool doReneighbour, Parameter *param, Atom *atom);
 
@@ -78,11 +76,41 @@ void init(Parameter *param)
     param->proc_freq = 2.4;
 }
 
+void initCudaAtom(Atom *atom, Neighbor *neighbor, Atom *c_atom, Neighbor *c_neighbor) {
+
+    const int Nlocal = atom->Nlocal;
+
+    checkCUDAError( "c_atom.x malloc", cudaMalloc((void**)&(c_atom.x), sizeof(MD_FLOAT) * atom->Nmax * 3) );
+    checkCUDAError( "c_atom.x memcpy", cudaMemcpy(c_atom.x, atom->x, sizeof(MD_FLOAT) * atom->Nmax * 3, cudaMemcpyHostToDevice) );
+
+    checkCUDAError( "c_atom.fx malloc", cudaMalloc((void**)&(c_atom.fx), sizeof(MD_FLOAT) * Nlocal * 3) );
+
+    checkCUDAError( "c_atom.vx malloc", cudaMalloc((void**)&(c_atom.vx), sizeof(MD_FLOAT) * Nlocal * 3) );
+    checkCUDAError( "c_atom.vx memcpy", cudaMemcpy(c_atom.vx, atom->vx, sizeof(MD_FLOAT) * Nlocal * 3, cudaMemcpyHostToDevice) );
+
+    checkCUDAError( "c_atom.type malloc", cudaMalloc((void**)&(c_atom.type), sizeof(int) * atom->Nmax) );
+    checkCUDAError( "c_atom.epsilon malloc", cudaMalloc((void**)&(c_atom.epsilon), sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes) );
+    checkCUDAError( "c_atom.sigma6 malloc", cudaMalloc((void**)&(c_atom.sigma6), sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes) );
+    checkCUDAError( "c_atom.cutforcesq malloc", cudaMalloc((void**)&(c_atom.cutforcesq), sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes) );
+
+    checkCUDAError( "c_neighbor->neighbors malloc", cudaMalloc((void**)&c_neighbor->neighbors, sizeof(int) * Nlocal * neighbor->maxneighs) );
+    checkCUDAError( "c_neighbor->numneigh malloc", cudaMalloc((void**)&c_neighbor->numneigh, sizeof(int) * Nlocal) );
+
+    checkCUDAError( "c_atom.type memcpy", cudaMemcpy(c_atom.type, atom->type, sizeof(int) * atom->Nmax, cudaMemcpyHostToDevice) );
+    checkCUDAError( "c_atom.sigma6 memcpy", cudaMemcpy(c_atom.sigma6, atom->sigma6, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice) );
+    checkCUDAError( "c_atom.epsilon memcpy", cudaMemcpy(c_atom.epsilon, atom->epsilon, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice) );
+
+    checkCUDAError( "c_atom.cutforcesq memcpy", cudaMemcpy(c_atom.cutforcesq, atom->cutforcesq, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice) );
+}
+
+
 double setup(
         Parameter *param,
         Eam *eam,
         Atom *atom,
         Neighbor *neighbor,
+        Atom *c_atom,
+        Neighbor *c_neighbor,
         Stats *stats)
 {
     if(param->force_field == FF_EAM) { initEam(eam, param); }
@@ -106,7 +134,7 @@ double setup(
     buildNeighbor(atom, neighbor);
     E = getTimeStamp();
 
-    initCudaAtom(atom, neighbor);
+    initCudaAtom(atom, neighbor, c_atom, c_neighbor);
 
     return E-S;
 }
@@ -186,6 +214,8 @@ int main(int argc, char** argv)
     Neighbor neighbor;
     Stats stats;
     Parameter param;
+    Atom c_atom;
+    Neighbor c_neighbor;
 
     LIKWID_MARKER_INIT;
 #pragma omp parallel
@@ -256,7 +286,7 @@ int main(int argc, char** argv)
         }
     }
 
-    setup(&param, &eam, &atom, &neighbor, &stats);
+    setup(&param, &eam, &atom, &neighbor, &c_atom, &c_neighbor, &stats);
     computeThermo(0, &param, &atom);
     if(param.force_field == FF_EAM) {
         computeForceEam(&eam, &param, &atom, &neighbor, &stats, 1, 0);
