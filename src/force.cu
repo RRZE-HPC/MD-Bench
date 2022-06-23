@@ -153,7 +153,7 @@ void cuda_final_integrate(bool doReneighbour, Parameter *param, Atom *atom, Atom
     checkCUDAError( "DeviceSync FinalIntegrate", cudaDeviceSynchronize() );
 
     if(doReneighbour) {
-        checkCUDAError( "FinalIntegrate: velocity memcpy", cudaMemcpy(atom->vx, c_atom.vx, sizeof(MD_FLOAT) * atom->Nlocal * 3, cudaMemcpyDeviceToHost) );
+        checkCUDAError( "FinalIntegrate: velocity memcpy", cudaMemcpy(atom->vx, c_atom->vx, sizeof(MD_FLOAT) * atom->Nlocal * 3, cudaMemcpyDeviceToHost) );
     }
 }
 
@@ -171,9 +171,9 @@ void cuda_initial_integrate(bool doReneighbour, Parameter *param, Atom *atom, At
     checkCUDAError( "DeviceSync InitialIntegrate", cudaDeviceSynchronize() );
 
     if(doReneighbour) {
-        checkCUDAError( "InitialIntegrate: velocity memcpy", cudaMemcpy(atom->vx, c_atom.vx, sizeof(MD_FLOAT) * atom->Nlocal * 3, cudaMemcpyDeviceToHost) );
+        checkCUDAError( "InitialIntegrate: velocity memcpy", cudaMemcpy(atom->vx, c_atom->vx, sizeof(MD_FLOAT) * atom->Nlocal * 3, cudaMemcpyDeviceToHost) );
     }
-    checkCUDAError( "InitialIntegrate: position memcpy", cudaMemcpy(atom->x, c_atom.x, sizeof(MD_FLOAT) * atom->Nlocal * 3, cudaMemcpyDeviceToHost) );
+    checkCUDAError( "InitialIntegrate: position memcpy", cudaMemcpy(atom->x, c_atom->x, sizeof(MD_FLOAT) * atom->Nlocal * 3, cudaMemcpyDeviceToHost) );
 }
 
 double computeForce(
@@ -215,7 +215,7 @@ double computeForce(
 
     // HINT: Run with cuda-memcheck ./MDBench-NVCC in case of error
 
-    // checkCUDAError( "c_atom.fx memset", cudaMemset(c_atom.fx, 0, sizeof(MD_FLOAT) * Nlocal * 3) );
+    // checkCUDAError( "c_atom->fx memset", cudaMemset(c_atom->fx, 0, sizeof(MD_FLOAT) * Nlocal * 3) );
 
     cudaProfilerStart();
 
