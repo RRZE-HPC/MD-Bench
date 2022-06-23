@@ -40,7 +40,7 @@ extern "C" {
 
 // cuda kernel
 __global__ void calc_force(
-    Atom *a,
+    Atom a,
     MD_FLOAT cutforcesq, MD_FLOAT sigma6, MD_FLOAT epsilon,
     int Nlocal, int neigh_maxneighs, int *neigh_neighbors, int *neigh_numneigh) {
 
@@ -49,7 +49,7 @@ __global__ void calc_force(
         return;
     }
 
-    Atom *atom = a;
+    Atom *atom = &a;
 
     const int numneighs = neigh_numneigh[i];
 
@@ -91,14 +91,14 @@ __global__ void calc_force(
     atom_fz(i) = fiz;
 }
 
-__global__ void kernel_initial_integrate(MD_FLOAT dtforce, MD_FLOAT dt, int Nlocal, Atom *a) {
+__global__ void kernel_initial_integrate(MD_FLOAT dtforce, MD_FLOAT dt, int Nlocal, Atom a) {
 
     const int i = blockIdx.x * blockDim.x + threadIdx.x;
     if( i >= Nlocal ) {
         return;
     }
 
-    Atom *atom = a;
+    Atom *atom = &a;
 
     atom_vx(i) += dtforce * atom_fx(i);
     atom_vy(i) += dtforce * atom_fy(i);
@@ -108,14 +108,14 @@ __global__ void kernel_initial_integrate(MD_FLOAT dtforce, MD_FLOAT dt, int Nloc
     atom_z(i) = atom_z(i) + dt * atom_vz(i);
 }
 
-__global__ void kernel_final_integrate(MD_FLOAT dtforce, int Nlocal, Atom *a) {
+__global__ void kernel_final_integrate(MD_FLOAT dtforce, int Nlocal, Atom a) {
 
     const int i = blockIdx.x * blockDim.x + threadIdx.x;
     if( i >= Nlocal ) {
         return;
     }
 
-    Atom *atom = a;
+    Atom *atom = &a;
 
     atom_vx(i) += dtforce * atom_fx(i);
     atom_vy(i) += dtforce * atom_fy(i);
@@ -147,7 +147,7 @@ void cuda_final_integrate(bool doReneighbour, Parameter *param, Atom *atom, Atom
     const int num_threads_per_block = num_threads; // this should be multiple of 32 as operations are performed at the level of warps
     const int num_blocks = ceil((float)Nlocal / (float)num_threads_per_block);
 
-    kernel_final_integrate <<< num_blocks, num_threads_per_block >>> (param->dtforce, Nlocal, c_atom);
+    kernel_final_integrate <<< num_blocks, num_threads_per_block >>> (param->dtforce, Nlocal, *c_atom);
 
     checkCUDAError( "PeekAtLastError FinalIntegrate", cudaPeekAtLastError() );
     checkCUDAError( "DeviceSync FinalIntegrate", cudaDeviceSynchronize() );
@@ -165,7 +165,7 @@ void cuda_initial_integrate(bool doReneighbour, Parameter *param, Atom *atom, At
     const int num_threads_per_block = num_threads; // this should be multiple of 32 as operations are performed at the level of warps
     const int num_blocks = ceil((float)Nlocal / (float)num_threads_per_block);
 
-    kernel_initial_integrate <<< num_blocks, num_threads_per_block >>> (param->dtforce, param->dt, Nlocal, c_atom);
+    kernel_initial_integrate <<< num_blocks, num_threads_per_block >>> (param->dtforce, param->dt, Nlocal, *c_atom);
 
     checkCUDAError( "PeekAtLastError InitialIntegrate", cudaPeekAtLastError() );
     checkCUDAError( "DeviceSync InitialIntegrate", cudaDeviceSynchronize() );
@@ -232,7 +232,7 @@ double computeForce(
     double S = getTimeStamp();
     LIKWID_MARKER_START("force");
 
-    calc_force <<< num_blocks, num_threads_per_block >>> (c_atom, cutforcesq, sigma6, epsilon, Nlocal, neighbor->maxneighs, c_neighbor->neighbors, c_neighbor->numneigh);
+    calc_force <<< num_blocks, num_threads_per_block >>> (*c_atom, cutforcesq, sigma6, epsilon, Nlocal, neighbor->maxneighs, c_neighbor->neighbors, c_neighbor->numneigh);
 
     checkCUDAError( "PeekAtLastError ComputeForce", cudaPeekAtLastError() );
     checkCUDAError( "DeviceSync ComputeForce", cudaDeviceSynchronize() );
