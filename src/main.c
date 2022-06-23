@@ -294,7 +294,7 @@ int main(int argc, char** argv)
 #if defined(MEM_TRACER) || defined(INDEX_TRACER) || defined(COMPUTE_STATS)
         computeForceTracing(&param, &atom, &neighbor, &stats, 1, 0);
 #else
-        computeForce(true, &param, &atom, &neighbor);
+        computeForce(true, &param, &atom, &neighbor, &c_atom, &c_neighbor);
 #endif
     }
 
@@ -324,7 +324,7 @@ int main(int argc, char** argv)
 #if defined(MEM_TRACER) || defined(INDEX_TRACER) || defined(COMPUTE_STATS)
             timer[FORCE] += computeForceTracing(&param, &atom, &neighbor, &stats, 0, n + 1);
 #else
-            timer[FORCE] += computeForce(doReneighbour, &param, &atom, &neighbor);
+            timer[FORCE] += computeForce(doReneighbour, &param, &atom, &neighbor, &c_atom, &c_neighbor);
 #endif
         }
 
