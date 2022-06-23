@@ -45,10 +45,10 @@
 
 #define HLINE "----------------------------------------------------------------------------\n"
 
-extern void cuda_final_integrate(bool doReneighbour, Parameter *param, Atom *atom);
-extern void cuda_initial_integrate(bool doReneighbour, Parameter *param, Atom *atom);
+extern void cuda_final_integrate(bool doReneighbour, Parameter *param, Atom *atom, Atom *c_atom);
+extern void cuda_initial_integrate(bool doReneighbour, Parameter *param, Atom *atom, Atom *c_atom);
 
-extern double computeForce(bool, Parameter*, Atom*, Neighbor*);
+extern double computeForce(bool, Parameter*, Atom*, Neighbor*, Atom*, Neighbor*);
 extern double computeForceTracing(Parameter*, Atom*, Neighbor*, Stats*, int, int);
 extern double computeForceEam(Eam* eam, Parameter*, Atom *atom, Neighbor *neighbor, Stats *stats, int first_exec, int timestep);
 
