@@ -24,6 +24,8 @@
 #include <stdio.h>
 #include <math.h>
 
+extern "C" {
+
 #include <neighbor.h>
 #include <parameter.h>
 #include <allocate.h>
@@ -31,7 +33,100 @@
 
 #define SMALL 1.0e-6
 #define FACTOR 0.999
+}
 
+__device__ int coord2bin_device(MD_FLOAT xin, MD_FLOAT yin, MD_FLOAT zin, 
+                                Neighbor_params np)
+{
+    int ix, iy, iz;
+
+    if(xin >= np.xprd) {
+        ix = (int)((xin - np.xprd) * np.bininvx) + np.nbinx - np.mbinxlo;
+    } else if(xin >= 0.0) {
+        ix = (int)(xin * np.bininvx) - np.mbinxlo;
+    } else {
+        ix = (int)(xin * np.bininvx) - np.mbinxlo - 1;
+    }
+
+    if(yin >= np.yprd) {
+        iy = (int)((yin - np.yprd) * np.bininvy) + np.nbiny - np.mbinylo;
+    } else if(yin >= 0.0) {
+        iy = (int)(yin * np.bininvy) - np.mbinylo;
+    } else {
+        iy = (int)(yin * np.bininvy) - np.mbinylo - 1;
+    }
+
+    if(zin >= np.zprd) {
+        iz = (int)((zin - np.zprd) * np.bininvz) + np.nbinz - np.mbinzlo;
+    } else if(zin >= 0.0) {
+        iz = (int)(zin * np.bininvz) - np.mbinzlo;
+    } else {
+        iz = (int)(zin * np.bininvz) - np.mbinzlo - 1;
+    }
+
+    return (iz * np.mbiny * np.mbinx + iy * np.mbinx + ix + 1);
+}
+
+__global__ void compute_neighborhood(Atom a, Neighbor neigh, int Nlocal, Neighbor_params np, int nstencil, int* stencil,
+                                     int* bins, int atoms_per_bin, int *bincount, int *new_maxneighs){
+    const int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if( i >= Nlocal ) {
+        return;
+    }
+    
+    Atom *atom = &a;
+    Neighbor *neighbor = &neigh;
+    
+    int* neighptr = &(neighbor->neighbors[i]);
+    int n = 0;
+    MD_FLOAT xtmp = atom_x(i);
+    MD_FLOAT ytmp = atom_y(i);
+    MD_FLOAT ztmp = atom_z(i);
+    int ibin = coord2bin_device(xtmp, ytmp, ztmp, Neighbor_params np);
+#ifdef EXPLICIT_TYPES
+    int type_i = atom->type[i];
+#endif
+    for(int k = 0; k < nstencil; k++) {
+        int jbin = ibin + stencil[k];
+        int* loc_bin = &bins[jbin * atoms_per_bin];
+
+        for(int m = 0; m < bincount[jbin]; m++) {
+            int j = loc_bin[m];
+
+            if ( j == i ){
+                continue;
+            }
+
+            MD_FLOAT delx = xtmp - atom_x(j);
+            MD_FLOAT dely = ytmp - atom_y(j);
+            MD_FLOAT delz = ztmp - atom_z(j);
+            MD_FLOAT rsq = delx * delx + dely * dely + delz * delz;
+
+#ifdef EXPLICIT_TYPES
+            int type_j = atom->type[j];
+                    const MD_FLOAT cutoff = atom->cutneighsq[type_i * atom->ntypes + type_j];
+#else
+            const MD_FLOAT cutoff = cutneighsq;
+#endif
+
+            if( rsq <= cutoff ) {
+                int idx = atom->Nlocal * n;
+                neighptr[idx] = j;
+                n += 1;
+            }
+        }
+    }
+
+    neighbor->numneigh[i] = n;
+
+    if(n >= neighbor->maxneighs) {
+        atomicMax(new_maxneighs, n);
+    }
+}
+
+extern "C" {
+    
+    
 static MD_FLOAT xprd, yprd, zprd;
 static MD_FLOAT bininvx, bininvy, bininvz;
 static int mbinxlo, mbinylo, mbinzlo;
@@ -416,4 +511,43 @@ void sortAtom(Atom* atom) {
     free(atom->vy); free(atom->vz);
     atom->vy = new_vy; atom->vz = new_vz;
 #endif
+}
+
+void buildNeighbor_cuda(Atom *atom, Neighbor *neighbor, Atom *c_atom, Neighbor *c_neighbor)
+{
+    int nall = atom->Nlocal + atom->Nghost;
+
+    /* extend atom arrays if necessary */
+    if(nall > nmax) {
+        nmax = nall;
+        if(neighbor->numneigh) cudaFreeHost(neighbor->numneigh);
+        if(neighbor->neighbors) cudaFreeHost(neighbor->neighbors);
+        checkCUDAError( "buildNeighbor numneigh", cudaMallocHost((void**)&(neighbor->numneigh), nmax * sizeof(int)) );
+        checkCUDAError( "buildNeighbor neighbors", cudaMallocHost((void**)&(neighbor->neighbors), nmax * neighbor->maxneighs * sizeof(int)) );
+        // neighbor->numneigh = (int*) malloc(nmax * sizeof(int));
+        // neighbor->neighbors = (int*) malloc(nmax * neighbor->maxneighs * sizeof(int*));
+    }
+
+    /* bin local & ghost atoms */
+    binatoms(atom);
+    int resize = 1;
+
+    /* loop over each atom, storing neighbors */
+    while(resize) {
+        int new_maxneighs = neighbor->maxneighs;
+        resize = 0;
+
+        // TODO allocate space for and then copy all necessary components
+        // TODO dont forget to copy the atom positions over
+
+        // TODO call compute_neigborhood kernel here
+
+        if(resize) {
+            printf("RESIZE %d\n", neighbor->maxneighs);
+            neighbor->maxneighs = new_maxneighs * 1.2;
+            free(neighbor->neighbors);
+            neighbor->neighbors = (int*) malloc(atom->Nmax * neighbor->maxneighs * sizeof(int));
+        }
+    }
+}
 }

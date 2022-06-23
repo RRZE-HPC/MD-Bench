@@ -33,6 +33,14 @@ typedef struct {
     int* numneigh;
 } Neighbor;
 
+typedef struct {
+    MD_FLOAT xprd, MD_FLOAT yprd, MD_FLOAT zprd,
+    MD_FLOAT bininvx, MD_FLOAT bininvy, MD_FLOAT bininvz,
+    int mbinxlo, int mbinylo, int mbinzlo,
+    int nbinx, int nbiny, int nbinz,
+    int mbinx, int mbiny, int mbinz
+} Neighbor_params;
+
 extern void initNeighbor(Neighbor*, Parameter*);
 extern void setupNeighbor();
 extern void binatoms(Atom*);
