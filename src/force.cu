@@ -40,7 +40,7 @@ extern "C" {
 
 // cuda kernel
 __global__ void calc_force(
-    Atom a,
+    Atom *a,
     MD_FLOAT cutforcesq, MD_FLOAT sigma6, MD_FLOAT epsilon,
     int Nlocal, int neigh_maxneighs, int *neigh_neighbors, int *neigh_numneigh) {
 
@@ -49,7 +49,7 @@ __global__ void calc_force(
         return;
     }
 
-    Atom *atom = &a;
+    Atom *atom = a;
 
     const int numneighs = neigh_numneigh[i];
 
@@ -139,7 +139,7 @@ int get_num_threads() {
     return num_threads;
 }
 
-void cuda_final_integrate(bool doReneighbour, Parameter *param, Atom *atom) {
+void cuda_final_integrate(bool doReneighbour, Parameter *param, Atom *atom, Atom *c_atom) {
 
     const int Nlocal = atom->Nlocal;
     const int num_threads = get_num_threads();
@@ -157,7 +157,7 @@ void cuda_final_integrate(bool doReneighbour, Parameter *param, Atom *atom) {
     }
 }
 
-void cuda_initial_integrate(bool doReneighbour, Parameter *param, Atom *atom) {
+void cuda_initial_integrate(bool doReneighbour, Parameter *param, Atom *atom, Atom *c_atom) {
 
     const int Nlocal = atom->Nlocal;
     const int num_threads = get_num_threads();
@@ -194,11 +194,11 @@ double computeForce(
 
     const int num_threads = get_num_threads();
 
-    c_atom.Natoms = atom->Natoms;
-    c_atom.Nlocal = atom->Nlocal;
-    c_atom.Nghost = atom->Nghost;
-    c_atom.Nmax = atom->Nmax;
-    c_atom.ntypes = atom->ntypes;
+    c_atom->Natoms = atom->Natoms;
+    c_atom->Nlocal = atom->Nlocal;
+    c_atom->Nghost = atom->Nghost;
+    c_atom->Nmax = atom->Nmax;
+    c_atom->ntypes = atom->ntypes;
 
     /*
     int nDevices;
@@ -219,7 +219,7 @@ double computeForce(
 
     cudaProfilerStart();
 
-    checkCUDAError( "c_atom.x memcpy", cudaMemcpy(c_atom.x, atom->x, sizeof(MD_FLOAT) * atom->Nmax * 3, cudaMemcpyHostToDevice) );
+    checkCUDAError( "c_atom->x memcpy", cudaMemcpy(c_atom->x, atom->x, sizeof(MD_FLOAT) * atom->Nmax * 3, cudaMemcpyHostToDevice) );
 
     if(reneighbourHappenend) {
         checkCUDAError( "c_neighbor->numneigh memcpy", cudaMemcpy(c_neighbor->numneigh, neighbor->numneigh, sizeof(int) * Nlocal, cudaMemcpyHostToDevice) );

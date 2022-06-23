@@ -310,7 +310,7 @@ int main(int argc, char** argv)
 
         const bool doReneighbour = (n + 1) % param.every == 0;
 
-        cuda_initial_integrate(doReneighbour, &param, &atom);
+        cuda_initial_integrate(doReneighbour, &param, &atom, &c_atom);
 
         if(doReneighbour) {
             timer[NEIGH] += reneighbour(&param, &atom, &neighbor);
@@ -328,7 +328,7 @@ int main(int argc, char** argv)
 #endif
         }
 
-        cuda_final_integrate(doReneighbour, &param, &atom);
+        cuda_final_integrate(doReneighbour, &param, &atom, &c_atom);
 
         if(!((n + 1) % param.nstat) && (n+1) < param.ntimes) {
             computeThermo(n + 1, &param, &atom);
