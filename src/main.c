@@ -80,27 +80,27 @@ void initCudaAtom(Atom *atom, Neighbor *neighbor, Atom *c_atom, Neighbor *c_neig
 
     const int Nlocal = atom->Nlocal;
 
-    checkCUDAError( "c_atom.x malloc", cudaMalloc((void**)&(c_atom.x), sizeof(MD_FLOAT) * atom->Nmax * 3) );
-    checkCUDAError( "c_atom.x memcpy", cudaMemcpy(c_atom.x, atom->x, sizeof(MD_FLOAT) * atom->Nmax * 3, cudaMemcpyHostToDevice) );
+    checkCUDAError( "c_atom->x malloc", cudaMalloc((void**)&(c_atom->x), sizeof(MD_FLOAT) * atom->Nmax * 3) );
+    checkCUDAError( "c_atom->x memcpy", cudaMemcpy(c_atom->x, atom->x, sizeof(MD_FLOAT) * atom->Nmax * 3, cudaMemcpyHostToDevice) );
 
-    checkCUDAError( "c_atom.fx malloc", cudaMalloc((void**)&(c_atom.fx), sizeof(MD_FLOAT) * Nlocal * 3) );
+    checkCUDAError( "c_atom->fx malloc", cudaMalloc((void**)&(c_atom->fx), sizeof(MD_FLOAT) * Nlocal * 3) );
 
-    checkCUDAError( "c_atom.vx malloc", cudaMalloc((void**)&(c_atom.vx), sizeof(MD_FLOAT) * Nlocal * 3) );
-    checkCUDAError( "c_atom.vx memcpy", cudaMemcpy(c_atom.vx, atom->vx, sizeof(MD_FLOAT) * Nlocal * 3, cudaMemcpyHostToDevice) );
+    checkCUDAError( "c_atom->vx malloc", cudaMalloc((void**)&(c_atom->vx), sizeof(MD_FLOAT) * Nlocal * 3) );
+    checkCUDAError( "c_atom->vx memcpy", cudaMemcpy(c_atom->vx, atom->vx, sizeof(MD_FLOAT) * Nlocal * 3, cudaMemcpyHostToDevice) );
 
-    checkCUDAError( "c_atom.type malloc", cudaMalloc((void**)&(c_atom.type), sizeof(int) * atom->Nmax) );
-    checkCUDAError( "c_atom.epsilon malloc", cudaMalloc((void**)&(c_atom.epsilon), sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes) );
-    checkCUDAError( "c_atom.sigma6 malloc", cudaMalloc((void**)&(c_atom.sigma6), sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes) );
-    checkCUDAError( "c_atom.cutforcesq malloc", cudaMalloc((void**)&(c_atom.cutforcesq), sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes) );
+    checkCUDAError( "c_atom->type malloc", cudaMalloc((void**)&(c_atom->type), sizeof(int) * atom->Nmax) );
+    checkCUDAError( "c_atom->epsilon malloc", cudaMalloc((void**)&(c_atom->epsilon), sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes) );
+    checkCUDAError( "c_atom->sigma6 malloc", cudaMalloc((void**)&(c_atom->sigma6), sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes) );
+    checkCUDAError( "c_atom->cutforcesq malloc", cudaMalloc((void**)&(c_atom->cutforcesq), sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes) );
 
     checkCUDAError( "c_neighbor->neighbors malloc", cudaMalloc((void**)&c_neighbor->neighbors, sizeof(int) * Nlocal * neighbor->maxneighs) );
     checkCUDAError( "c_neighbor->numneigh malloc", cudaMalloc((void**)&c_neighbor->numneigh, sizeof(int) * Nlocal) );
 
-    checkCUDAError( "c_atom.type memcpy", cudaMemcpy(c_atom.type, atom->type, sizeof(int) * atom->Nmax, cudaMemcpyHostToDevice) );
-    checkCUDAError( "c_atom.sigma6 memcpy", cudaMemcpy(c_atom.sigma6, atom->sigma6, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice) );
-    checkCUDAError( "c_atom.epsilon memcpy", cudaMemcpy(c_atom.epsilon, atom->epsilon, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice) );
+    checkCUDAError( "c_atom->type memcpy", cudaMemcpy(c_atom->type, atom->type, sizeof(int) * atom->Nmax, cudaMemcpyHostToDevice) );
+    checkCUDAError( "c_atom->sigma6 memcpy", cudaMemcpy(c_atom->sigma6, atom->sigma6, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice) );
+    checkCUDAError( "c_atom->epsilon memcpy", cudaMemcpy(c_atom->epsilon, atom->epsilon, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice) );
 
-    checkCUDAError( "c_atom.cutforcesq memcpy", cudaMemcpy(c_atom.cutforcesq, atom->cutforcesq, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice) );
+    checkCUDAError( "c_atom->cutforcesq memcpy", cudaMemcpy(c_atom->cutforcesq, atom->cutforcesq, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice) );
 }
 
 
