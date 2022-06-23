@@ -91,14 +91,14 @@ __global__ void calc_force(
     atom_fz(i) = fiz;
 }
 
-__global__ void kernel_initial_integrate(MD_FLOAT dtforce, MD_FLOAT dt, int Nlocal, Atom a) {
+__global__ void kernel_initial_integrate(MD_FLOAT dtforce, MD_FLOAT dt, int Nlocal, Atom *a) {
 
     const int i = blockIdx.x * blockDim.x + threadIdx.x;
     if( i >= Nlocal ) {
         return;
     }
 
-    Atom *atom = &a;
+    Atom *atom = a;
 
     atom_vx(i) += dtforce * atom_fx(i);
     atom_vy(i) += dtforce * atom_fy(i);
@@ -108,14 +108,14 @@ __global__ void kernel_initial_integrate(MD_FLOAT dtforce, MD_FLOAT dt, int Nloc
     atom_z(i) = atom_z(i) + dt * atom_vz(i);
 }
 
-__global__ void kernel_final_integrate(MD_FLOAT dtforce, int Nlocal, Atom a) {
+__global__ void kernel_final_integrate(MD_FLOAT dtforce, int Nlocal, Atom *a) {
 
     const int i = blockIdx.x * blockDim.x + threadIdx.x;
     if( i >= Nlocal ) {
         return;
     }
 
-    Atom *atom = &a;
+    Atom *atom = a;
 
     atom_vx(i) += dtforce * atom_fx(i);
     atom_vy(i) += dtforce * atom_fy(i);
