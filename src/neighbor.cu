@@ -123,7 +123,7 @@ __global__ void compute_neighborhood(Atom a, Neighbor neigh, Neighbor_params np,
 
     neighbor->numneigh[i] = n;
 
-    if(n >= neighbor->maxneighs) {
+    if(n > neighbor->maxneighs) {
         atomicMax(new_maxneighs, n);
     }
 }
@@ -596,18 +596,19 @@ void buildNeighbor_cuda(Atom *atom, Neighbor *neighbor, Atom *c_atom, Neighbor *
                                                                     np, nstencil, c_stencil,
                                                                     c_bins, atoms_per_bin, c_bincount,
                                                                     c_new_maxneighs,
-								    cutneighsq);
+								                                    cutneighsq);
 
         // TODO copy the value of c_new_maxneighs back to host and check if it has been modified
         int new_maxneighs;
         checkCUDAError("c_new_maxneighs memcpy back", cudaMemcpy(&new_maxneighs, c_new_maxneighs, sizeof(int), cudaMemcpyDeviceToHost));
-        if (new_maxneighs > c_neighbor->maxneighs){
+        if (new_maxneighs >= c_neighbor->maxneighs){
             resize = 1;
         }
 
         if(resize) {
             printf("RESIZE %d\n", c_neighbor->maxneighs);
             c_neighbor->maxneighs = new_maxneighs * 1.2;
+            printf("NEW SIZE %d\n", c_neighbor->maxneighs);
             cudaFree(c_neighbor->neighbors);
             checkCUDAError("c_neighbor->neighbors resize malloc",
                            cudaMalloc((void**)(&c_neighbor->neighbors),
