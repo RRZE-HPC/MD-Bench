@@ -201,7 +201,7 @@ double computeForce(
 
 
     if(!reneighbourHappenend) {
-        checkCUDAError( "c_atom.x memcpy", cudaMemcpy(c_atom.x, atom->x, sizeof(MD_FLOAT) * atom->Nmax * 3, cudaMemcpyHostToDevice) );
+        checkCUDAError( "computeForce c_atom->x memcpy", cudaMemcpy(c_atom->x, atom->x, sizeof(MD_FLOAT) * atom->Nmax * 3, cudaMemcpyHostToDevice) );
     }
 
     const int num_blocks = ceil((float)Nlocal / (float)num_threads_per_block);

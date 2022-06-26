@@ -23,6 +23,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <cuda_profiler_api.h>
+#include <cuda_runtime.h>
+#include <device_launch_parameters.h>
 
 extern "C" {
 
@@ -68,7 +71,7 @@ __device__ int coord2bin_device(MD_FLOAT xin, MD_FLOAT yin, MD_FLOAT zin,
 }
 
 __global__ void compute_neighborhood(Atom a, Neighbor neigh, Neighbor_params np, int nstencil, int* stencil,
-                                     int* bins, int atoms_per_bin, int *bincount, int *new_maxneighs){
+                                     int* bins, int atoms_per_bin, int *bincount, int *new_maxneighs, MD_FLOAT cutneighsq){
     const int i = blockIdx.x * blockDim.x + threadIdx.x;
     const int Nlocal = a.Nlocal;
     if( i >= Nlocal ) {
@@ -83,7 +86,7 @@ __global__ void compute_neighborhood(Atom a, Neighbor neigh, Neighbor_params np,
     MD_FLOAT xtmp = atom_x(i);
     MD_FLOAT ytmp = atom_y(i);
     MD_FLOAT ztmp = atom_z(i);
-    int ibin = coord2bin_device(xtmp, ytmp, ztmp, Neighbor_params np);
+    int ibin = coord2bin_device(xtmp, ytmp, ztmp, np);
 #ifdef EXPLICIT_TYPES
     int type_i = atom->type[i];
 #endif
@@ -541,7 +544,7 @@ void buildNeighbor_cuda(Atom *atom, Neighbor *neighbor, Atom *c_atom, Neighbor *
 
     cudaProfilerStart();
 
-    checkCUDAError( "c_atom->x memcpy", cudaMemcpy(c_atom->x, atom->x, sizeof(MD_FLOAT) * atom->Nmax * 3, cudaMemcpyHostToDevice) );
+    checkCUDAError( "buildNeighbor c_atom->x memcpy", cudaMemcpy(c_atom->x, atom->x, sizeof(MD_FLOAT) * atom->Nmax * 3, cudaMemcpyHostToDevice) );
 
     /* upload stencil */
     int* c_stencil;
@@ -589,10 +592,11 @@ void buildNeighbor_cuda(Atom *atom, Neighbor *neighbor, Atom *c_atom, Neighbor *
         /*compute_neighborhood(Atom a, Neighbor neigh, Neighbor_params np, int nstencil, int* stencil,
                                      int* bins, int atoms_per_bin, int *bincount, int *new_maxneighs)
          * */
-        compute_neighborhood<<<num_blocks, num_threads_per_block>>>(*c_Atom, *c_neighbor,
+        compute_neighborhood<<<num_blocks, num_threads_per_block>>>(*c_atom, *c_neighbor,
                                                                     np, nstencil, c_stencil,
                                                                     c_bins, atoms_per_bin, c_bincount,
-                                                                    c_new_maxneighs);
+                                                                    c_new_maxneighs,
+								    cutneighsq);
 
         // TODO copy the value of c_new_maxneighs back to host and check if it has been modified
         int new_maxneighs;
@@ -616,7 +620,7 @@ void buildNeighbor_cuda(Atom *atom, Neighbor *neighbor, Atom *c_atom, Neighbor *
     cudaProfilerStop();
 
     cudaFree(c_new_maxneighs);
-    cudaFree(c_n_stencil);
+    cudaFree(c_stencil);
     cudaFree(c_bincount);
     cudaFree(c_bins);
 }

@@ -136,10 +136,10 @@ double setup(
     adjustThermo(param, atom);
     setupPbc(atom, param);
     updatePbc(atom, param);
+    initCudaAtom(atom, neighbor, c_atom, c_neighbor);
     buildNeighbor_cuda(atom, neighbor, c_atom, c_neighbor, num_threads_per_block);
     E = getTimeStamp();
 
-    initCudaAtom(atom, neighbor, c_atom, c_neighbor);
 
     return E-S;
 }
@@ -160,7 +160,7 @@ double reneighbour(
     setupPbc(atom, param);
     updatePbc(atom, param);
     //sortAtom(atom);
-    buildNeighbor(atom, neighbor, c_atom, c_neighbor, num_threads_per_block);
+    buildNeighbor_cuda(atom, neighbor, c_atom, c_neighbor, num_threads_per_block);
     LIKWID_MARKER_STOP("reneighbour");
     E = getTimeStamp();
 
@@ -218,7 +218,7 @@ int get_num_threads() {
 
     const char *num_threads_env = getenv("NUM_THREADS");
     int num_threads = 0;
-    if(num_threads_env == nullptr)
+    if(num_threads_env == 0)
         num_threads = 32;
     else {
         num_threads = atoi(num_threads_env);
