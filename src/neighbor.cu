@@ -585,7 +585,7 @@ void buildNeighbor_cuda(Atom *atom, Neighbor *neighbor, Atom *c_atom, Neighbor *
     while(resize) {
         resize = 0;
 
-        checkCUDAError("c_new_maxneighs memset", cudaMemset(c_new_maxneighs, c_neighbor->maxneighs, sizeof(int) ));
+        checkCUDAError("c_new_maxneighs memset", cudaMemset(c_new_maxneighs, 0, sizeof(int) ));
 
         // TODO call compute_neigborhood kernel here
         const int num_blocks = ceil((float)atom->Nlocal / (float)num_threads_per_block);
@@ -598,10 +598,13 @@ void buildNeighbor_cuda(Atom *atom, Neighbor *neighbor, Atom *c_atom, Neighbor *
                                                                     c_new_maxneighs,
 								                                    cutneighsq);
 
+	checkCUDAError( "PeekAtLastError ComputeNeighbor", cudaPeekAtLastError() );
+	checkCUDAError( "DeviceSync ComputeNeighbor", cudaDeviceSynchronize() );
+
         // TODO copy the value of c_new_maxneighs back to host and check if it has been modified
         int new_maxneighs;
         checkCUDAError("c_new_maxneighs memcpy back", cudaMemcpy(&new_maxneighs, c_new_maxneighs, sizeof(int), cudaMemcpyDeviceToHost));
-        if (new_maxneighs >= c_neighbor->maxneighs){
+        if (new_maxneighs > c_neighbor->maxneighs){
             resize = 1;
         }
 
