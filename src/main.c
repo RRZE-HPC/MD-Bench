@@ -45,10 +45,14 @@
 
 #define HLINE "----------------------------------------------------------------------------\n"
 
-extern void cuda_final_integrate(bool doReneighbour, Parameter *param, Atom *atom, Atom *c_atom);
-extern void cuda_initial_integrate(bool doReneighbour, Parameter *param, Atom *atom, Atom *c_atom);
+extern void cuda_final_integrate(bool doReneighbour, Parameter *param,
+                                 Atom *atom, Atom *c_atom,
+                                 const int num_threads_per_block);
+extern void cuda_initial_integrate(bool doReneighbour, Parameter *param,
+                                   Atom *atom, Atom *c_atom,
+                                   const int num_threads_per_block);
 
-extern double computeForce(bool, Parameter*, Atom*, Neighbor*, Atom*, Neighbor*);
+extern double computeForce(bool, Parameter*, Atom*, Neighbor*, Atom*, Neighbor*, const int);
 extern double computeForceTracing(Parameter*, Atom*, Neighbor*, Stats*, int, int);
 extern double computeForceEam(Eam* eam, Parameter*, Atom *atom, Neighbor *neighbor, Stats *stats, int first_exec, int timestep);
 
@@ -111,7 +115,8 @@ double setup(
         Neighbor *neighbor,
         Atom *c_atom,
         Neighbor *c_neighbor,
-        Stats *stats)
+        Stats *stats,
+        const int num_threads_per_block)
 {
     if(param->force_field == FF_EAM) { initEam(eam, param); }
     double S, E;
@@ -131,7 +136,7 @@ double setup(
     adjustThermo(param, atom);
     setupPbc(atom, param);
     updatePbc(atom, param);
-    buildNeighbor(atom, neighbor);
+    buildNeighbor_cuda(atom, neighbor, c_atom, c_neighbor, num_threads_per_block);
     E = getTimeStamp();
 
     initCudaAtom(atom, neighbor, c_atom, c_neighbor);
@@ -142,7 +147,10 @@ double setup(
 double reneighbour(
         Parameter *param,
         Atom *atom,
-        Neighbor *neighbor)
+        Neighbor *neighbor,
+        Atom *c_atom,
+        Neighbor *c_neighbor,
+        const int num_threads_per_block)
 {
     double S, E;
 
@@ -152,7 +160,7 @@ double reneighbour(
     setupPbc(atom, param);
     updatePbc(atom, param);
     //sortAtom(atom);
-    buildNeighbor(atom, neighbor);
+    buildNeighbor(atom, neighbor, c_atom, c_neighbor, num_threads_per_block);
     LIKWID_MARKER_STOP("reneighbour");
     E = getTimeStamp();
 
@@ -204,6 +212,19 @@ const char* ff2str(int ff)
     if(ff == FF_LJ) { return "lj"; }
     if(ff == FF_EAM) { return "eam"; }
     return "invalid";
+}
+
+int get_num_threads() {
+
+    const char *num_threads_env = getenv("NUM_THREADS");
+    int num_threads = 0;
+    if(num_threads_env == nullptr)
+        num_threads = 32;
+    else {
+        num_threads = atoi(num_threads_env);
+    }
+
+    return num_threads;
 }
 
 int main(int argc, char** argv)
@@ -286,7 +307,10 @@ int main(int argc, char** argv)
         }
     }
 
-    setup(&param, &eam, &atom, &neighbor, &c_atom, &c_neighbor, &stats);
+    // this should be multiple of 32 as operations are performed at the level of warps
+    const int num_threads_per_block = get_num_threads();
+
+    setup(&param, &eam, &atom, &neighbor, &c_atom, &c_neighbor, &stats, num_threads_per_block);
     computeThermo(0, &param, &atom);
     if(param.force_field == FF_EAM) {
         computeForceEam(&eam, &param, &atom, &neighbor, &stats, 1, 0);
@@ -294,7 +318,7 @@ int main(int argc, char** argv)
 #if defined(MEM_TRACER) || defined(INDEX_TRACER) || defined(COMPUTE_STATS)
         computeForceTracing(&param, &atom, &neighbor, &stats, 1, 0);
 #else
-        computeForce(true, &param, &atom, &neighbor, &c_atom, &c_neighbor);
+        computeForce(true, &param, &atom, &neighbor, &c_atom, &c_neighbor, num_threads_per_block);
 #endif
     }
 
@@ -310,10 +334,10 @@ int main(int argc, char** argv)
 
         const bool doReneighbour = (n + 1) % param.every == 0;
 
-        cuda_initial_integrate(doReneighbour, &param, &atom, &c_atom);
+        cuda_initial_integrate(doReneighbour, &param, &atom, &c_atom, num_threads_per_block);
 
         if(doReneighbour) {
-            timer[NEIGH] += reneighbour(&param, &atom, &neighbor);
+            timer[NEIGH] += reneighbour(&param, &atom, &neighbor, &c_atom, &c_neighbor, num_threads_per_block);
         } else {
             updatePbc(&atom, &param);
         }
@@ -324,11 +348,11 @@ int main(int argc, char** argv)
 #if defined(MEM_TRACER) || defined(INDEX_TRACER) || defined(COMPUTE_STATS)
             timer[FORCE] += computeForceTracing(&param, &atom, &neighbor, &stats, 0, n + 1);
 #else
-            timer[FORCE] += computeForce(doReneighbour, &param, &atom, &neighbor, &c_atom, &c_neighbor);
+            timer[FORCE] += computeForce(doReneighbour, &param, &atom, &neighbor, &c_atom, &c_neighbor, num_threads_per_block);
 #endif
         }
 
-        cuda_final_integrate(doReneighbour, &param, &atom, &c_atom);
+        cuda_final_integrate(doReneighbour, &param, &atom, &c_atom, num_threads_per_block);
 
         if(!((n + 1) % param.nstat) && (n+1) < param.ntimes) {
             computeThermo(n + 1, &param, &atom);

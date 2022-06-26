@@ -126,25 +126,9 @@ extern "C" {
 
 
 
-int get_num_threads() {
-
-    const char *num_threads_env = getenv("NUM_THREADS");
-    int num_threads = 0;
-    if(num_threads_env == nullptr)
-        num_threads = 32;
-    else {
-        num_threads = atoi(num_threads_env);
-    }
-
-    return num_threads;
-}
-
-void cuda_final_integrate(bool doReneighbour, Parameter *param, Atom *atom, Atom *c_atom) {
+void cuda_final_integrate(bool doReneighbour, Parameter *param, Atom *atom, Atom *c_atom, const int num_threads_per_block) {
 
     const int Nlocal = atom->Nlocal;
-    const int num_threads = get_num_threads();
-
-    const int num_threads_per_block = num_threads; // this should be multiple of 32 as operations are performed at the level of warps
     const int num_blocks = ceil((float)Nlocal / (float)num_threads_per_block);
 
     kernel_final_integrate <<< num_blocks, num_threads_per_block >>> (param->dtforce, Nlocal, *c_atom);
@@ -157,12 +141,9 @@ void cuda_final_integrate(bool doReneighbour, Parameter *param, Atom *atom, Atom
     }
 }
 
-void cuda_initial_integrate(bool doReneighbour, Parameter *param, Atom *atom, Atom *c_atom) {
+void cuda_initial_integrate(bool doReneighbour, Parameter *param, Atom *atom, Atom *c_atom, const int num_threads_per_block) {
 
     const int Nlocal = atom->Nlocal;
-    const int num_threads = get_num_threads();
-
-    const int num_threads_per_block = num_threads; // this should be multiple of 32 as operations are performed at the level of warps
     const int num_blocks = ceil((float)Nlocal / (float)num_threads_per_block);
 
     kernel_initial_integrate <<< num_blocks, num_threads_per_block >>> (param->dtforce, param->dt, Nlocal, *c_atom);
@@ -182,7 +163,8 @@ double computeForce(
         Atom *atom,
         Neighbor *neighbor,
         Atom *c_atom,
-        Neighbor *c_neighbor
+        Neighbor *c_neighbor,
+        int num_threads_per_block
         )
 {
     int Nlocal = atom->Nlocal;
@@ -191,8 +173,6 @@ double computeForce(
     MD_FLOAT sigma6 = param->sigma6;
     MD_FLOAT epsilon = param->epsilon;
 #endif
-
-    const int num_threads = get_num_threads();
 
     c_atom->Natoms = atom->Natoms;
     c_atom->Nlocal = atom->Nlocal;
@@ -219,14 +199,11 @@ double computeForce(
 
     cudaProfilerStart();
 
-    checkCUDAError( "c_atom->x memcpy", cudaMemcpy(c_atom->x, atom->x, sizeof(MD_FLOAT) * atom->Nmax * 3, cudaMemcpyHostToDevice) );
 
-    if(reneighbourHappenend) {
-        checkCUDAError( "c_neighbor->numneigh memcpy", cudaMemcpy(c_neighbor->numneigh, neighbor->numneigh, sizeof(int) * Nlocal, cudaMemcpyHostToDevice) );
-        checkCUDAError( "c_neighbor->neighbors memcpy", cudaMemcpy(c_neighbor->neighbors, neighbor->neighbors, sizeof(int) * Nlocal * neighbor->maxneighs, cudaMemcpyHostToDevice) );
+    if(!reneighbourHappenend) {
+        checkCUDAError( "c_atom.x memcpy", cudaMemcpy(c_atom.x, atom->x, sizeof(MD_FLOAT) * atom->Nmax * 3, cudaMemcpyHostToDevice) );
     }
 
-    const int num_threads_per_block = num_threads; // this should be multiple of 32 as operations are performed at the level of warps
     const int num_blocks = ceil((float)Nlocal / (float)num_threads_per_block);
 
     double S = getTimeStamp();
