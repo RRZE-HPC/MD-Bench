@@ -347,12 +347,12 @@ $ ./MDBench-NVCC
 
 \section{First runtime tests}
 
-\begin{frame}[fragile]{First runtime tests}{CPU Scaling runs}
+\begin{frame}[fragile]{First runtime tests}{Scaling GPU-Threads per thread block}
     \vspace*{-6\baselineskip}
     \begin{itemize}
         \tightlist
         \item fixed: one gpu with its associated 16 cores
-        \item scale the number of CPU-Threads
+        \item scale the number of GPU-Threads per thread block
         \item take output of our programm contains line displaying throughput in number of atom updates per second:
     \end{itemize}
     
@@ -361,12 +361,12 @@ $ ./MDBench-NVCC
     \end{verbatim}
 \end{frame}
 
-\begin{frame}[fragile]{First runtime tests}{CPU Scaling runs - continued}
+\begin{frame}[fragile]{First runtime tests}{Scaling GPU-Threads per thread block}
     \begin{itemize}
         \item plot data for single- and double precision performance
     \end{itemize}
     \begin{center}
-        \includegraphics[width=0.5\linewidth]{../resources/initial_testing/linear_cpu-threads_scaling/SingleGPU_cpu_scaling.png}
+        \includegraphics[width=0.5\linewidth]{../resources/initial_testing/linear_cpu-threads_scaling/SingleGPU_gpu_threads_per_block_scaling.png}
     \end{center}
 
 Similar convergence points in performance between the A40 and A100 hints at bottlenecks independent of the gpu.
