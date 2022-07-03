@@ -153,8 +153,8 @@ void cuda_initial_integrate(bool doReneighbour, Parameter *param, Atom *atom, At
 
     if(doReneighbour) {
         checkCUDAError( "InitialIntegrate: velocity memcpy", cudaMemcpy(atom->vx, c_atom->vx, sizeof(MD_FLOAT) * atom->Nlocal * 3, cudaMemcpyDeviceToHost) );
+        checkCUDAError( "InitialIntegrate: position memcpy", cudaMemcpy(atom->x, c_atom->x, sizeof(MD_FLOAT) * atom->Nlocal * 3, cudaMemcpyDeviceToHost) );
     }
-    checkCUDAError( "InitialIntegrate: position memcpy", cudaMemcpy(atom->x, c_atom->x, sizeof(MD_FLOAT) * atom->Nlocal * 3, cudaMemcpyDeviceToHost) );
 }
 
 double computeForce(
@@ -173,12 +173,6 @@ double computeForce(
     MD_FLOAT sigma6 = param->sigma6;
     MD_FLOAT epsilon = param->epsilon;
 #endif
-
-    c_atom->Natoms = atom->Natoms;
-    c_atom->Nlocal = atom->Nlocal;
-    c_atom->Nghost = atom->Nghost;
-    c_atom->Nmax = atom->Nmax;
-    c_atom->ntypes = atom->ntypes;
 
     /*
     int nDevices;

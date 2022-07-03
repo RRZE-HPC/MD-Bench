@@ -82,6 +82,14 @@ void init(Parameter *param)
 
 void initCudaAtom(Atom *atom, Neighbor *neighbor, Atom *c_atom, Neighbor *c_neighbor) {
 
+    c_atom->Natoms = atom->Natoms;
+    c_atom->Nlocal = atom->Nlocal;
+    c_atom->Nghost = atom->Nghost;
+    c_atom->Nmax = atom->Nmax;
+    c_atom->ntypes = atom->ntypes;
+
+    c_atom->border_map = NULL;
+
     const int Nlocal = atom->Nlocal;
 
     checkCUDAError( "c_atom->x malloc", cudaMalloc((void**)&(c_atom->x), sizeof(MD_FLOAT) * atom->Nmax * 3) );
@@ -135,8 +143,8 @@ double setup(
     setupThermo(param, atom->Natoms);
     adjustThermo(param, atom);
     setupPbc(atom, param);
-    updatePbc(atom, param);
     initCudaAtom(atom, neighbor, c_atom, c_neighbor);
+    updatePbc_cuda(atom, param, c_atom, true, num_threads_per_block);
     buildNeighbor_cuda(atom, neighbor, c_atom, c_neighbor, num_threads_per_block);
     E = getTimeStamp();
 
@@ -158,7 +166,7 @@ double reneighbour(
     LIKWID_MARKER_START("reneighbour");
     updateAtomsPbc(atom, param);
     setupPbc(atom, param);
-    updatePbc(atom, param);
+    updatePbc_cuda(atom, param, c_atom, true, num_threads_per_block);
     //sortAtom(atom);
     buildNeighbor_cuda(atom, neighbor, c_atom, c_neighbor, num_threads_per_block);
     LIKWID_MARKER_STOP("reneighbour");
@@ -339,7 +347,7 @@ int main(int argc, char** argv)
         if(doReneighbour) {
             timer[NEIGH] += reneighbour(&param, &atom, &neighbor, &c_atom, &c_neighbor, num_threads_per_block);
         } else {
-            updatePbc(&atom, &param);
+            updatePbc(&atom, &param, &c_atom, false, num_threads_per_block);
         }
 
         if(param.force_field == FF_EAM) {

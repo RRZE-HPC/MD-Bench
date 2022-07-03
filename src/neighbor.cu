@@ -521,12 +521,6 @@ void buildNeighbor_cuda(Atom *atom, Neighbor *neighbor, Atom *c_atom, Neighbor *
 {
     int nall = atom->Nlocal + atom->Nghost;
 
-    c_atom->Natoms = atom->Natoms;
-    c_atom->Nlocal = atom->Nlocal;
-    c_atom->Nghost = atom->Nghost;
-    c_atom->Nmax = atom->Nmax;
-    c_atom->ntypes = atom->ntypes;
-
     c_neighbor->maxneighs = neighbor->maxneighs;
 
     /* extend c_neighbor arrays if necessary */
@@ -538,13 +532,13 @@ void buildNeighbor_cuda(Atom *atom, Neighbor *neighbor, Atom *c_atom, Neighbor *
         checkCUDAError( "buildNeighbor c_neighbors malloc", cudaMalloc((void**)&(c_neighbor->neighbors), nmax * c_neighbor->maxneighs * sizeof(int)) );
     }
 
+    checkCUDAError( "buildNeighbor c_atom->x memcpy back", cudaMemcpy(atom->x, c_atom->x, sizeof(MD_FLOAT) * 3 * c_atom->Nmax, cudaMemcpyDeviceToHost) );
+
     /* bin local & ghost atoms */
     binatoms(atom);
     int resize = 1;
 
     cudaProfilerStart();
-
-    checkCUDAError( "buildNeighbor c_atom->x memcpy", cudaMemcpy(c_atom->x, atom->x, sizeof(MD_FLOAT) * atom->Nmax * 3, cudaMemcpyHostToDevice) );
 
     /* upload stencil */
     int* c_stencil;
