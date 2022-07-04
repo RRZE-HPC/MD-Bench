@@ -363,6 +363,7 @@ int main(int argc, char** argv)
         cuda_final_integrate(doReneighbour, &param, &atom, &c_atom, num_threads_per_block);
 
         if(!((n + 1) % param.nstat) && (n+1) < param.ntimes) {
+	    checkCUDAError("computeThermo atom->x memcpy back", cudaMemcpy(atom.x, c_atom.x, atom.Nmax * sizeof(MD_FLOAT) * 3, cudaMemcpyDeviceToHost) );
             computeThermo(n + 1, &param, &atom);
         }
 
