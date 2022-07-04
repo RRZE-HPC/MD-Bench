@@ -125,7 +125,7 @@ void updatePbc_cuda(Atom *atom, Parameter *param, Atom *c_atom, bool doReneighbo
     MD_FLOAT yprd = param->yprd;
     MD_FLOAT zprd = param->zprd;
 
-    const int num_blocks = ceil((float)atom->Nlocal / (float)num_threads_per_block);
+    const int num_blocks = ceil((float)atom->Nghost / (float)num_threads_per_block);
 
     /*__global__ void computePbcUpdate(Atom a, int* PBCx, int* PBCy, int* PBCz,
      *                                                          MD_FLOAT xprd, MD_FLOAT yprd, MD_FLOAT zprd)
