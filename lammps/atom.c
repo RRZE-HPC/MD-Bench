@@ -55,7 +55,7 @@ void initAtom(Atom *atom) {
     atom->sigma6 = NULL;
     atom->cutforcesq = NULL;
     atom->cutneighsq = NULL;
-    atom->radius = 1.0;
+    atom->radius = NULL;
     atom->av = NULL;
     atom->r = NULL;
 }
@@ -144,9 +144,9 @@ void createAtom(Atom *atom, Parameter *param) {
                 atom_x(atom->Nlocal) = xtmp;
                 atom_y(atom->Nlocal) = ytmp;
                 atom_z(atom->Nlocal) = ztmp;
-                atom->vx[atom->Nlocal] = vxtmp;
-                atom->vy[atom->Nlocal] = vytmp;
-                atom->vz[atom->Nlocal] = vztmp;
+                atom_vx(atom->Nlocal) = vxtmp;
+                atom_vy(atom->Nlocal) = vytmp;
+                atom_vz(atom->Nlocal) = vztmp;
                 atom->type[atom->Nlocal] = rand() % atom->ntypes;
                 atom->Nlocal++;
             }
@@ -220,9 +220,9 @@ int readAtom_pdb(Atom* atom, Parameter* param) {
             atom_x(atom_id) = atof(strtok(NULL, " "));
             atom_y(atom_id) = atof(strtok(NULL, " "));
             atom_z(atom_id) = atof(strtok(NULL, " "));
-            atom->vx[atom_id] = 0.0;
-            atom->vy[atom_id] = 0.0;
-            atom->vz[atom_id] = 0.0;
+            atom_vx(atom_id) = 0.0;
+            atom_vy(atom_id) = 0.0;
+            atom_vz(atom_id) = 0.0;
             occupancy = atof(strtok(NULL, " "));
             charge = atof(strtok(NULL, " "));
             atom->ntypes = MAX(atom->type[atom_id] + 1, atom->ntypes);
@@ -299,9 +299,9 @@ int readAtom_gro(Atom* atom, Parameter* param) {
         atom_x(atom_id) = atof(strtok(NULL, " "));
         atom_y(atom_id) = atof(strtok(NULL, " "));
         atom_z(atom_id) = atof(strtok(NULL, " "));
-        atom->vx[atom_id] = atof(strtok(NULL, " "));
-        atom->vy[atom_id] = atof(strtok(NULL, " "));
-        atom->vz[atom_id] = atof(strtok(NULL, " "));
+        atom_vx(atom_id) = atof(strtok(NULL, " "));
+        atom_vy(atom_id) = atof(strtok(NULL, " "));
+        atom_vz(atom_id) = atof(strtok(NULL, " "));
         atom->ntypes = MAX(atom->type[atom_id] + 1, atom->ntypes);
         atom->Natoms++;
         atom->Nlocal++;
@@ -396,9 +396,9 @@ int readAtom_dmp(Atom* atom, Parameter* param) {
                     atom_x(atom_id) = atof(strtok(NULL, " "));
                     atom_y(atom_id) = atof(strtok(NULL, " "));
                     atom_z(atom_id) = atof(strtok(NULL, " "));
-                    atom->vx[atom_id] = atof(strtok(NULL, " "));
-                    atom->vy[atom_id] = atof(strtok(NULL, " "));
-                    atom->vz[atom_id] = atof(strtok(NULL, " "));
+                    atom_vx(atom_id) = atof(strtok(NULL, " "));
+                    atom_vy(atom_id) = atof(strtok(NULL, " "));
+                    atom_vz(atom_id) = atof(strtok(NULL, " "));
                     atom->ntypes = MAX(atom->type[atom_id], atom->ntypes);
                     read_atoms++;
                 }
@@ -441,20 +441,22 @@ void growAtom(Atom *atom) {
 
     #ifdef AOS
     atom->x  = (MD_FLOAT*) reallocate(atom->x,  ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT) * 3, nold * sizeof(MD_FLOAT) * 3);
+    atom->vx = (MD_FLOAT*) reallocate(atom->vx, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT) * 3, nold * sizeof(MD_FLOAT) * 3);
     atom->fx = (MD_FLOAT*) reallocate(atom->fx, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT) * 3, nold * sizeof(MD_FLOAT) * 3);
     #else
     atom->x  = (MD_FLOAT*) reallocate(atom->x,  ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
     atom->y  = (MD_FLOAT*) reallocate(atom->y,  ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
     atom->z  = (MD_FLOAT*) reallocate(atom->z,  ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
+    atom->vx = (MD_FLOAT*) reallocate(atom->vx, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
+    atom->vy = (MD_FLOAT*) reallocate(atom->vy, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
+    atom->vz = (MD_FLOAT*) reallocate(atom->vz, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
     atom->fx = (MD_FLOAT*) reallocate(atom->fx, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
     atom->fy = (MD_FLOAT*) reallocate(atom->fy, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
     atom->fz = (MD_FLOAT*) reallocate(atom->fz, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
     #endif
-    atom->vx = (MD_FLOAT*) reallocate(atom->vx, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
-    atom->vy = (MD_FLOAT*) reallocate(atom->vy, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
-    atom->vz = (MD_FLOAT*) reallocate(atom->vz, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
     atom->type = (int *) reallocate(atom->type, ALIGNMENT, atom->Nmax * sizeof(int), nold * sizeof(int));
     #ifdef DEM
+    atom->radius = (int *) reallocate(atom->radius, ALIGNMENT, atom->Nmax * sizeof(int), nold * sizeof(int));
     atom->av = (MD_FLOAT*) reallocate(atom->av, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT) * 3, nold * sizeof(MD_FLOAT) * 3);
     atom->r  = (MD_FLOAT*) reallocate(atom->r,  ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT) * 4, nold * sizeof(MD_FLOAT) * 4);
     #endif

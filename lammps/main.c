@@ -102,26 +102,21 @@ double reneighbour(Parameter *param, Atom *atom, Neighbor *neighbor) {
 }
 
 void initialIntegrate(Parameter *param, Atom *atom) {
-    MD_FLOAT* vx = atom->vx; MD_FLOAT* vy = atom->vy; MD_FLOAT* vz = atom->vz;
-
     for(int i = 0; i < atom->Nlocal; i++) {
-        vx[i] += param->dtforce * atom_fx(i);
-        vy[i] += param->dtforce * atom_fy(i);
-        vz[i] += param->dtforce * atom_fz(i);
-        atom_x(i) = atom_x(i) + param->dt * vx[i];
-        atom_y(i) = atom_y(i) + param->dt * vy[i];
-        atom_z(i) = atom_z(i) + param->dt * vz[i];
+        atom_vx(i) += param->dtforce * atom_fx(i);
+        atom_vy(i) += param->dtforce * atom_fy(i);
+        atom_vz(i) += param->dtforce * atom_fz(i);
+        atom_x(i) = atom_x(i) + param->dt * atom_vx(i);
+        atom_y(i) = atom_y(i) + param->dt * atom_vy(i);
+        atom_z(i) = atom_z(i) + param->dt * atom_vz(i);
     }
 }
 
 void finalIntegrate(Parameter *param, Atom *atom) {
-    MD_FLOAT* fx = atom->fx; MD_FLOAT* fy = atom->fy; MD_FLOAT* fz = atom->fz;
-    MD_FLOAT* vx = atom->vx; MD_FLOAT* vy = atom->vy; MD_FLOAT* vz = atom->vz;
-
     for(int i = 0; i < atom->Nlocal; i++) {
-        vx[i] += param->dtforce * atom_fx(i);
-        vy[i] += param->dtforce * atom_fy(i);
-        vz[i] += param->dtforce * atom_fz(i);
+        atom_vx(i) += param->dtforce * atom_fx(i);
+        atom_vy(i) += param->dtforce * atom_fy(i);
+        atom_vz(i) += param->dtforce * atom_fz(i);
     }
 }
 

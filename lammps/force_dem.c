@@ -20,6 +20,7 @@
  *   with MD-Bench.  If not, see <https://www.gnu.org/licenses/>.
  * =======================================================================================
  */
+#include <math.h>
 #include <likwid-marker.h>
 
 #include <timing.h>
@@ -34,6 +35,8 @@
 double computeForceDEMFullNeigh_plain_c(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *stats) {
     int Nlocal = atom->Nlocal;
     int* neighs;
+    MD_FLOAT k_s = param->k_s;
+    MD_FLOAT k_dn = param->k_dn;
 #ifndef EXPLICIT_TYPES
     MD_FLOAT cutforcesq = param->cutforce * param->cutforce;
 #endif
@@ -81,54 +84,54 @@ double computeForceDEMFullNeigh_plain_c(Parameter *param, Atom *atom, Neighbor *
 #endif
 
             if(rsq < cutforcesq) {
-                MD_FLOAT sq = sqrt(rsq);
+                MD_FLOAT r = sqrt(rsq);
                 // penetration depth
-                MD_FLOAT p = irad + jrad - sq;
-                if(p < 0) { continue; }
+                MD_FLOAT p = irad + jrad - r;
+                if(p >= 0) {
+                    // contact position
+                    //MD_FLOAT cterm = jrad / (irad + jrad);
+                    //MD_FLOAT cx = xj + cterm * delx;
+                    //MD_FLOAT cy = yj + cterm * dely;
+                    //MD_FLOAT cz = zj + cterm * delz;
 
-                // contact position
-                MD_FLOAT cterm = jrad / (irad + jrad);
-                MD_FLOAT cx = xj + cterm * delx;
-                MD_FLOAT cy = yj + cterm * dely;
-                MD_FLOAT cz = zj + cterm * delz;
+                    // delta contact and particle position
+                    //MD_FLOAT delcx = cx - xtmp;
+                    //MD_FLOAT delcy = cy - ytmp;
+                    //MD_FLOAT delcz = cz - ztmp;
 
-                // delta contact and particle position
-                MD_FLOAT delcx = cx - xtmp;
-                MD_FLOAT delcy = cy - ytmp;
-                MD_FLOAT delcz = cz - ztmp;
+                    // contact velocity
+                    //MD_FLOAT cvx = (atom_vx(i) + atom_avx(i) * delcx) - (atom_vx(j) + atom_avx(j) * (cx - xj));
+                    //MD_FLOAT cvy = (atom_vy(i) + atom_avy(i) * delcy) - (atom_vy(j) + atom_avy(j) * (cy - yj));
+                    //MD_FLOAT cvz = (atom_vz(i) + atom_avz(i) * delcz) - (atom_vz(j) + atom_avz(j) * (cz - zj));
+                    MD_FLOAT delvx = atom_vx(i) - atom_vx(j);
+                    MD_FLOAT delvy = atom_vy(i) - atom_vy(j);
+                    MD_FLOAT delvz = atom_vz(i) - atom_vz(j);
+                    MD_FLOAT vr = sqrt(delvx * delvx + delvy * delvy + delvz * delvz);
 
-                // contact velocity
-                MD_FLOAT cvx = (atom_vx(i) + atom_avx(i) * delcx) - (atom_vx(j) + atom_avx(j) * (cx - xj));
-                MD_FLOAT cvy = (atom_vy(i) + atom_avy(i) * delcy) - (atom_vy(j) + atom_avy(j) * (cy - yj));
-                MD_FLOAT cvz = (atom_vz(i) + atom_avz(i) * delcz) - (atom_vz(j) + atom_avz(j) * (cz - zj));
-                MD_FLOAT vsq = sqrt(cvx * cvx + cvy * cvy + cvz * cvz);
+                    // normal distance
+                    MD_FLOAT nx = delx / r;
+                    MD_FLOAT ny = dely / r;
+                    MD_FLOAT nz = delz / r;
 
-                // normal distance
-                MD_FLOAT nx = delx / sq;
-                MD_FLOAT ny = dely / sq;
-                MD_FLOAT nz = delz / sq;
+                    // normal contact velocity
+                    MD_FLOAT nvx = delvx / vr;
+                    MD_FLOAT nvy = delvy / vr;
+                    MD_FLOAT nvz = delvz / vr;
 
-                // normal contact velocity
-                MD_FLOAT vnx = cvx / vsq;
-                MD_FLOAT vny = cvy / vsq;
-                MD_FLOAT vnz = cvz / vsq;
+                    // forces
+                    fix += k_s * p * nx - k_dn * nvx;
+                    fiy += k_s * p * ny - k_dn * nvy;
+                    fiz += k_s * p * nz - k_dn * nvz;
 
-                // forces
-                MD_FLOAT fnx = ks * p * nx - kdn * vn;
-                MD_FLOAT fny = ks * p * ny - kdn * vn;
-                MD_FLOAT fnz = ks * p * nz - kdn * vn;
-                MD_FLOAT ftx = MIN(kdt * vtsq, kf * fnx) * tx;
-                MD_FLOAT fty = MIN(kdt * vtsq, kf * fny) * ty;
-                MD_FLOAT ftz = MIN(kdt * vtsq, kf * fnz) * tz;
-                fix += fnx + ftx;
-                fiy += fny + fty;
-                fiz += fnz + ftz;
-
-                // torque
-                //MD_FLOAT taux = delcx * ftx;
-                //MD_FLOAT tauy = delcy * fty;
-                //MD_FLOAT tauz = delcz * ftz;
-
+                    // tangential force
+                    //fix += MIN(kdt * vtsq, kf * fnx) * tx;
+                    //fiy += MIN(kdt * vtsq, kf * fny) * ty;
+                    //fiz += MIN(kdt * vtsq, kf * fnz) * tz;
+                    // torque
+                    //MD_FLOAT taux = delcx * ftx;
+                    //MD_FLOAT tauy = delcy * fty;
+                    //MD_FLOAT tauz = delcz * ftz;
+                }
 #ifdef USE_REFERENCE_VERSION
                 addStat(stats->atoms_within_cutoff, 1);
             } else {
