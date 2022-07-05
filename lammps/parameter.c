@@ -54,6 +54,12 @@ void initParameter(Parameter *param) {
     param->v_out_every = 5;
     param->half_neigh = 0;
     param->proc_freq = 2.4;
+    // DEM
+    param->k_s = 1.0;
+    param->k_dn = 1.0;
+    param->gx = 0.0;
+    param->gy = 0.0;
+    param->gz = 0.0;
 }
 
 void readParameter(Parameter *param, const char *filename) {

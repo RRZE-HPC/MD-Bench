@@ -58,6 +58,10 @@ typedef struct {
     MD_FLOAT xprd, yprd, zprd;
     double proc_freq;
     char* eam_file;
+    // DEM
+    MD_FLOAT k_s;
+    MD_FLOAT k_dn;
+    MD_FLOAT gx, gy, gz;
 } Parameter;
 
 void initParameter(Parameter*);

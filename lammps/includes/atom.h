@@ -38,7 +38,7 @@ typedef struct {
     MD_FLOAT *cutforcesq;
     MD_FLOAT *cutneighsq;
     // DEM
-    MD_FLOAT radius;
+    MD_FLOAT *radius;
     MD_FLOAT *av;
     MD_FLOAT *r;
 } Atom;
@@ -56,6 +56,9 @@ extern void growAtom(Atom*);
 #define atom_x(i)           atom->x[(i) * 3 + 0]
 #define atom_y(i)           atom->x[(i) * 3 + 1]
 #define atom_z(i)           atom->x[(i) * 3 + 2]
+#define atom_vx(i)          atom->vx[(i) * 3 + 0]
+#define atom_vy(i)          atom->vx[(i) * 3 + 1]
+#define atom_vz(i)          atom->vx[(i) * 3 + 2]
 #define atom_fx(i)          atom->fx[(i) * 3 + 0]
 #define atom_fy(i)          atom->fx[(i) * 3 + 1]
 #define atom_fz(i)          atom->fx[(i) * 3 + 2]
@@ -64,6 +67,9 @@ extern void growAtom(Atom*);
 #define atom_x(i)           atom->x[i]
 #define atom_y(i)           atom->y[i]
 #define atom_z(i)           atom->z[i]
+#define atom_vx(i)          atom->vx[i]
+#define atom_vy(i)          atom->vy[i]
+#define atom_vz(i)          atom->vz[i]
 #define atom_fx(i)          atom->fx[i]
 #define atom_fy(i)          atom->fy[i]
 #define atom_fz(i)          atom->fz[i]
