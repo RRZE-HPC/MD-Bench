@@ -70,6 +70,28 @@ __device__ int coord2bin_device(MD_FLOAT xin, MD_FLOAT yin, MD_FLOAT zin,
     return (iz * np.mbiny * np.mbinx + iy * np.mbinx + ix + 1);
 }
 
+__global__ void binatoms_kernel(Atom a, int* bincount, int* bins, int atoms_per_bin, Neighbor_params np, int *resize_needed){
+    Atom* atom = &a;
+    const int i = blockIdx.x * blockDim.x + threadIdx.x;
+    int nall = atom->Nlocal + atom->Nghost;
+    if(i >= nall){
+        return;
+    }
+    
+    MD_FLOAT x = atom_x(i);
+    MD_FLOAT y = atom_y(i);
+    MD_FLOAT z = atom_z(i);
+    int ibin = coord2bin_device(x, y, z, np);
+
+    int ac = atomicIncrement(bincount[ibin]);
+            
+    if(ac < atoms_per_bin){
+        bins[ibin * atoms_per_bin + ac] = i;
+    } else {
+        atomicMax(resize_needed, ac);
+    }
+}
+
 __global__ void compute_neighborhood(Atom a, Neighbor neigh, Neighbor_params np, int nstencil, int* stencil,
                                      int* bins, int atoms_per_bin, int *bincount, int *new_maxneighs, MD_FLOAT cutneighsq){
     const int i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -515,6 +537,40 @@ void sortAtom(Atom* atom) {
     free(atom->vy); free(atom->vz);
     atom->vy = new_vy; atom->vz = new_vz;
 #endif
+}
+
+void binatoms_cuda(Atom *c_atom, int** c_bincount, int** c_bins, int** c_resize_needed, int mbins, NeighborParams *np, const int threads_per_block)
+{
+    int nall = c_atom->Nlocal + c_atom->Nghost;
+    int resize = 1;
+    if(*c_bincount == NULL){
+        checkCUDAError("binatoms_cuda c_bincount malloc", cudaMalloc(c_bincount, mbins * sizeof(int)) );
+    }
+    if(*c_bins == NULL){
+        checkCUDAError("binatoms_cuda c_bins malloc", cudaMalloc(c_bins, mbins * atoms_per_bin * sizeof(int)) );
+    }
+    if(*c_resize_needed == NULL){
+        checkCUDAError("binatoms_cuda c_resize_needed malloc", cudaMalloc(&c_resize_needed, sizeof(int)) );
+    }
+
+    const int num_blocks = ceil((float)nall-> / (float)num_threads_per_block);
+
+    while(resize > 0) {
+        resize = 0;
+        checkCUDAError("binatoms_cuda c_bincount memset", cudaMemset(*c_bincount, 0, mbins * sizeof(int)));
+        checkCUDAError("binatoms_cuda c_resize_needed memset", cudaMemset(*c_resize_needed, 0, sizeof(int)) );
+
+        /*binatoms_kernel(Atom a, int* bincount, int* bins, int atoms_per_bin, Neighbor_params np, int *resize_needed) */
+        binatoms_kernel<<<num_blocks, threads_per_block>>>(*c_atom, *c_bincount, *c_bins, atoms_per_bin, *np, *c_resize_needed);
+
+        checkCUDAError("binatoms_cuda c_resize_needed memcpy back", cudaMemcpy(&resize, *c_resize_needed, sizeof(int), cudaMemcpyDeviceToHost) );
+
+        if(resize) {
+            cudaFree(*c_bins);
+            atoms_per_bin *= 2;
+            checkCUDAError("binatoms_cuda c_bins resize malloc", cudaMalloc(c_bins, mbins * atoms_per_bin * sizeof(int)) );
+        }
+    }
 }
 
 void buildNeighbor_cuda(Atom *atom, Neighbor *neighbor, Atom *c_atom, Neighbor *c_neighbor, const int num_threads_per_block)
