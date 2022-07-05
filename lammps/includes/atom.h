@@ -37,6 +37,10 @@ typedef struct {
     MD_FLOAT *sigma6;
     MD_FLOAT *cutforcesq;
     MD_FLOAT *cutneighsq;
+    // DEM
+    MD_FLOAT radius;
+    MD_FLOAT *av;
+    MD_FLOAT *r;
 } Atom;
 
 extern void initAtom(Atom*);
