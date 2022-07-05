@@ -41,8 +41,7 @@
 #define MAX(a,b)    ((a) > (b) ? (a) : (b))
 #endif
 
-void initAtom(Atom *atom)
-{
+void initAtom(Atom *atom) {
     atom->x  = NULL; atom->y  = NULL; atom->z  = NULL;
     atom->vx = NULL; atom->vy = NULL; atom->vz = NULL;
     atom->fx = NULL; atom->fy = NULL; atom->fz = NULL;
@@ -56,10 +55,12 @@ void initAtom(Atom *atom)
     atom->sigma6 = NULL;
     atom->cutforcesq = NULL;
     atom->cutneighsq = NULL;
+    atom->radius = 1.0;
+    atom->av = NULL;
+    atom->r = NULL;
 }
 
-void createAtom(Atom *atom, Parameter *param)
-{
+void createAtom(Atom *atom, Parameter *param) {
     MD_FLOAT xlo = 0.0; MD_FLOAT xhi = param->xprd;
     MD_FLOAT ylo = 0.0; MD_FLOAT yhi = param->yprd;
     MD_FLOAT zlo = 0.0; MD_FLOAT zhi = param->zprd;
@@ -453,4 +454,8 @@ void growAtom(Atom *atom) {
     atom->vy = (MD_FLOAT*) reallocate(atom->vy, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
     atom->vz = (MD_FLOAT*) reallocate(atom->vz, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
     atom->type = (int *) reallocate(atom->type, ALIGNMENT, atom->Nmax * sizeof(int), nold * sizeof(int));
+    #ifdef DEM
+    atom->av = (MD_FLOAT*) reallocate(atom->av, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT) * 3, nold * sizeof(MD_FLOAT) * 3);
+    atom->r  = (MD_FLOAT*) reallocate(atom->r,  ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT) * 4, nold * sizeof(MD_FLOAT) * 4);
+    #endif
 }
