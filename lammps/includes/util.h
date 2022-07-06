@@ -44,6 +44,7 @@
 
 #define FF_LJ   0
 #define FF_EAM  1
+#define FF_DEM  2
 
 extern double myrandom(int*);
 extern void random_reset(int *seed, int ibase, double *coord);
