@@ -32,7 +32,7 @@
 // TODO: Joint common files for gromacs and lammps variants
 #include "../gromacs/includes/simd.h"
 
-double computeForceDEMFullNeigh_plain_c(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *stats) {
+double computeForceDemFullNeigh(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *stats) {
     int Nlocal = atom->Nlocal;
     int* neighs;
     MD_FLOAT k_s = param->k_s;
@@ -153,7 +153,7 @@ double computeForceDEMFullNeigh_plain_c(Parameter *param, Atom *atom, Neighbor *
     return E-S;
 }
 
-double computeForceDEMHalfNeigh(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *stats) {
+double computeForceDemHalfNeigh(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *stats) {
     int Nlocal = atom->Nlocal;
     int* neighs;
 #ifndef EXPLICIT_TYPES

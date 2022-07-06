@@ -49,6 +49,8 @@ extern double computeForceLJFullNeigh_plain_c(Parameter*, Atom*, Neighbor*, Stat
 extern double computeForceLJFullNeigh_simd(Parameter*, Atom*, Neighbor*, Stats*);
 extern double computeForceLJHalfNeigh(Parameter*, Atom*, Neighbor*, Stats*);
 extern double computeForceEam(Eam*, Parameter*, Atom*, Neighbor*, Stats*);
+extern double computeForceDemFullNeigh(Parameter*, Atom*, Neighbor*, Stats*);
+extern double computeForceDemHalfNeigh(Parameter*, Atom*, Neighbor*, Stats*);
 
 #ifdef USE_SIMD_KERNEL
 #   define KERNEL_NAME              "SIMD"
@@ -121,14 +123,29 @@ void finalIntegrate(Parameter *param, Atom *atom) {
 }
 
 void printAtomState(Atom *atom) {
-    printf("Atom counts: Natoms=%d Nlocal=%d Nghost=%d Nmax=%d\n",
-            atom->Natoms, atom->Nlocal, atom->Nghost, atom->Nmax);
+    printf("Atom counts: Natoms=%d Nlocal=%d Nghost=%d Nmax=%d\n", atom->Natoms, atom->Nlocal, atom->Nghost, atom->Nmax);
+    // int nall = atom->Nlocal + atom->Nghost;
+    // for (int i=0; i<nall; i++) {
+    //     printf("%d  %f %f %f\n", i, atom->x[i], atom->y[i], atom->z[i]);
+    // }
+}
 
-    /*     int nall = atom->Nlocal + atom->Nghost; */
+double computeForce(Eam *eam, Parameter *param, Atom *atom, Neighbor *neighbor, Stats *stats) {
+    if(param->force_field == FF_EAM) {
+        return computeForceEam(eam, param, atom, neighbor, stats);
+    } else if(param->force_field == FF_DEM) {
+        if(param->half_neigh) {
+            return computeForceDemHalfNeigh(param, atom, neighbor, stats);
+        } else {
+            return computeForceDemFullNeigh(param, atom, neighbor, stats);
+        }
+    }
 
-    /*     for (int i=0; i<nall; i++) { */
-    /*         printf("%d  %f %f %f\n", i, atom->x[i], atom->y[i], atom->z[i]); */
-    /*     } */
+    if(param->half_neigh) {
+        return computeForceLJHalfNeigh(param, atom, neighbor, stats);
+    }
+
+    return computeForceLJFullNeigh(param, atom, neighbor, stats);
 }
 
 int main(int argc, char** argv) {
@@ -208,7 +225,7 @@ int main(int argc, char** argv) {
             printf("MD Bench: A minimalistic re-implementation of miniMD\n");
             printf(HLINE);
             printf("-p <string>:          file to read parameters from (can be specified more than once)\n");
-            printf("-f <string>:          force field (lj or eam), default lj\n");
+            printf("-f <string>:          force field (lj, eam or dem), default lj\n");
             printf("-i <string>:          input file with atom positions (dump)\n");
             printf("-e <string>:          input file for EAM\n");
             printf("-n / --nsteps <int>:  set number of timesteps for simulation\n");
@@ -231,16 +248,8 @@ int main(int argc, char** argv) {
 #if defined(MEM_TRACER) || defined(INDEX_TRACER)
     traceAddresses(&param, &atom, &neighbor, n + 1);
 #endif
-    if(param.force_field == FF_EAM) {
-        timer[FORCE] = computeForceEam(&eam, &param, &atom, &neighbor, &stats);
-    } else {
-        if(param.half_neigh) {
-            timer[FORCE] = computeForceLJHalfNeigh(&param, &atom, &neighbor, &stats);
-        } else {
-            timer[FORCE] = computeForceLJFullNeigh(&param, &atom, &neighbor, &stats);
-        }
-    }
 
+    timer[FORCE] = computeForce(&eam, &param, &atom, &neighbor, &stats);
     timer[NEIGH] = 0.0;
     timer[TOTAL] = getTimeStamp();
 
@@ -250,7 +259,6 @@ int main(int argc, char** argv) {
 
     for(int n = 0; n < param.ntimes; n++) {
         initialIntegrate(&param, &atom);
-
         if((n + 1) % param.reneigh_every) {
             updatePbc(&atom, &param);
         } else {
@@ -261,16 +269,7 @@ int main(int argc, char** argv) {
         traceAddresses(&param, &atom, &neighbor, n + 1);
 #endif
 
-        if(param.force_field == FF_EAM) {
-            timer[FORCE] += computeForceEam(&eam, &param, &atom, &neighbor, &stats);
-        } else {
-            if(param.half_neigh) {
-                timer[FORCE] += computeForceLJHalfNeigh(&param, &atom, &neighbor, &stats);
-            } else {
-                timer[FORCE] += computeForceLJFullNeigh(&param, &atom, &neighbor, &stats);
-            }
-        }
-
+        timer[FORCE] += computeForce(&eam, &param, &atom, &neighbor, &stats);
         finalIntegrate(&param, &atom);
 
         if(!((n + 1) % param.nstat) && (n+1) < param.ntimes) {
