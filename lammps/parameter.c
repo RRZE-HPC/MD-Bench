@@ -60,6 +60,9 @@ void initParameter(Parameter *param) {
     param->gx = 0.0;
     param->gy = 0.0;
     param->gz = 0.0;
+    param->reflect_x = 0.0;
+    param->reflect_y = 0.0;
+    param->reflect_z = 0.0;
 }
 
 void readParameter(Parameter *param, const char *filename) {
@@ -93,6 +96,14 @@ void readParameter(Parameter *param, const char *filename) {
             PARSE_STRING(vtk_file);
             PARSE_REAL(epsilon);
             PARSE_REAL(sigma);
+            PARSE_REAL(k_s);
+            PARSE_REAL(k_dn);
+            PARSE_REAL(reflect_x);
+            PARSE_REAL(reflect_y);
+            PARSE_REAL(reflect_z);
+            PARSE_REAL(gx);
+            PARSE_REAL(gy);
+            PARSE_REAL(gz);
             PARSE_REAL(rho);
             PARSE_REAL(dt);
             PARSE_REAL(cutforce);
@@ -139,6 +150,8 @@ void printParameter(Parameter *param) {
     printf("\tLattice size: %e\n", param->lattice);
     printf("\tEpsilon: %e\n", param->epsilon);
     printf("\tSigma: %e\n", param->sigma);
+    printf("\tSpring constant: %e\n", param->k_s);
+    printf("\tDamping constant: %e\n", param->k_dn);
     printf("\tTemperature: %e\n", param->temp);
     printf("\tRHO: %e\n", param->rho);
     printf("\tMass: %e\n", param->mass);
