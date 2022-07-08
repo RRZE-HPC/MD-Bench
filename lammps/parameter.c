@@ -42,6 +42,9 @@ void initParameter(Parameter *param) {
     param->nx = 32;
     param->ny = 32;
     param->nz = 32;
+    param->pbc_x = 1;
+    param->pbc_y = 1;
+    param->pbc_z = 1;
     param->cutforce = 2.5;
     param->skin = 0.3;
     param->cutneigh = param->cutforce + param->skin;
@@ -116,6 +119,9 @@ void readParameter(Parameter *param, const char *filename) {
             PARSE_INT(nx);
             PARSE_INT(ny);
             PARSE_INT(nz);
+            PARSE_INT(pbc_x);
+            PARSE_INT(pbc_y);
+            PARSE_INT(pbc_z);
             PARSE_INT(nstat);
             PARSE_INT(reneigh_every);
             PARSE_INT(x_out_every);
@@ -147,6 +153,7 @@ void printParameter(Parameter *param) {
     printf("\tForce field: %s\n", ff2str(param->force_field));
     printf("\tUnit cells (nx, ny, nz): %d, %d, %d\n", param->nx, param->ny, param->nz);
     printf("\tDomain box sizes (x, y, z): %e, %e, %e\n", param->xprd, param->yprd, param->zprd);
+    printf("\tPeriodic (x, y, z): %d, %d, %d\n", param->pbc_x, param->pbc_y, param->pbc_z);
     printf("\tLattice size: %e\n", param->lattice);
     printf("\tEpsilon: %e\n", param->epsilon);
     printf("\tSigma: %e\n", param->sigma);

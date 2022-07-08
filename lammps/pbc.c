@@ -35,8 +35,7 @@ static int *PBCx, *PBCy, *PBCz;
 static void growPbc(Atom*);
 
 /* exported subroutines */
-void initPbc(Atom* atom)
-{
+void initPbc(Atom* atom) {
     NmaxGhost = 0;
     atom->border_map = NULL;
     PBCx = NULL; PBCy = NULL; PBCz = NULL;
@@ -44,8 +43,7 @@ void initPbc(Atom* atom)
 
 /* update coordinates of ghost atoms */
 /* uses mapping created in setupPbc */
-void updatePbc(Atom *atom, Parameter *param)
-{
+void updatePbc(Atom *atom, Parameter *param) {
     int *border_map = atom->border_map;
     int nlocal = atom->Nlocal;
     MD_FLOAT xprd = param->xprd;
@@ -61,8 +59,7 @@ void updatePbc(Atom *atom, Parameter *param)
 
 /* relocate atoms that have left domain according
  * to periodic boundary conditions */
-void updateAtomsPbc(Atom *atom, Parameter *param)
-{
+void updateAtomsPbc(Atom *atom, Parameter *param) {
     MD_FLOAT xprd = param->xprd;
     MD_FLOAT yprd = param->yprd;
     MD_FLOAT zprd = param->zprd;
@@ -101,8 +98,7 @@ void updateAtomsPbc(Atom *atom, Parameter *param)
     PBCz[Nghost] = dz;                                  \
     atom->type[atom->Nlocal + Nghost] = atom->type[i]
 
-void setupPbc(Atom *atom, Parameter *param)
-{
+void setupPbc(Atom *atom, Parameter *param) {
     int *border_map = atom->border_map;
     MD_FLOAT xprd = param->xprd;
     MD_FLOAT yprd = param->yprd;
@@ -111,10 +107,10 @@ void setupPbc(Atom *atom, Parameter *param)
     int Nghost = -1;
 
     for(int i = 0; i < atom->Nlocal; i++) {
-
         if (atom->Nlocal + Nghost + 7 >= atom->Nmax) {
             growAtom(atom);
         }
+
         if (Nghost + 7 >= NmaxGhost) {
             growPbc(atom);
             border_map = atom->border_map;
@@ -126,34 +122,54 @@ void setupPbc(Atom *atom, Parameter *param)
 
         /* Setup ghost atoms */
         /* 6 planes */
-        if (x < Cutneigh)         { ADDGHOST(+1,0,0); }
-        if (x >= (xprd-Cutneigh)) { ADDGHOST(-1,0,0); }
-        if (y < Cutneigh)         { ADDGHOST(0,+1,0); }
-        if (y >= (yprd-Cutneigh)) { ADDGHOST(0,-1,0); }
-        if (z < Cutneigh)         { ADDGHOST(0,0,+1); }
-        if (z >= (zprd-Cutneigh)) { ADDGHOST(0,0,-1); }
+        if(param->pbc_x != 0) {
+            if (x < Cutneigh)         { ADDGHOST(+1,0,0); }
+            if (x >= (xprd-Cutneigh)) { ADDGHOST(-1,0,0); }
+        }
+
+        if(param->pbc_y != 0) {
+            if (y < Cutneigh)         { ADDGHOST(0,+1,0); }
+            if (y >= (yprd-Cutneigh)) { ADDGHOST(0,-1,0); }
+        }
+
+        if(param->pbc_z != 0) {
+            if (z < Cutneigh)         { ADDGHOST(0,0,+1); }
+            if (z >= (zprd-Cutneigh)) { ADDGHOST(0,0,-1); }
+        }
+
         /* 8 corners */
-        if (x < Cutneigh         && y < Cutneigh         && z < Cutneigh)         { ADDGHOST(+1,+1,+1); }
-        if (x < Cutneigh         && y >= (yprd-Cutneigh) && z < Cutneigh)         { ADDGHOST(+1,-1,+1); }
-        if (x < Cutneigh         && y >= Cutneigh        && z >= (zprd-Cutneigh)) { ADDGHOST(+1,+1,-1); }
-        if (x < Cutneigh         && y >= (yprd-Cutneigh) && z >= (zprd-Cutneigh)) { ADDGHOST(+1,-1,-1); }
-        if (x >= (xprd-Cutneigh) && y < Cutneigh         && z < Cutneigh)         { ADDGHOST(-1,+1,+1); }
-        if (x >= (xprd-Cutneigh) && y >= (yprd-Cutneigh) && z < Cutneigh)         { ADDGHOST(-1,-1,+1); }
-        if (x >= (xprd-Cutneigh) && y < Cutneigh         && z >= (zprd-Cutneigh)) { ADDGHOST(-1,+1,-1); }
-        if (x >= (xprd-Cutneigh) && y >= (yprd-Cutneigh) && z >= (zprd-Cutneigh)) { ADDGHOST(-1,-1,-1); }
+        if(param->pbc_x != 0 && param->pbc_y != 0 && param->pbc_z != 0) {
+            if (x < Cutneigh         && y < Cutneigh         && z < Cutneigh)         { ADDGHOST(+1,+1,+1); }
+            if (x < Cutneigh         && y >= (yprd-Cutneigh) && z < Cutneigh)         { ADDGHOST(+1,-1,+1); }
+            if (x < Cutneigh         && y >= Cutneigh        && z >= (zprd-Cutneigh)) { ADDGHOST(+1,+1,-1); }
+            if (x < Cutneigh         && y >= (yprd-Cutneigh) && z >= (zprd-Cutneigh)) { ADDGHOST(+1,-1,-1); }
+            if (x >= (xprd-Cutneigh) && y < Cutneigh         && z < Cutneigh)         { ADDGHOST(-1,+1,+1); }
+            if (x >= (xprd-Cutneigh) && y >= (yprd-Cutneigh) && z < Cutneigh)         { ADDGHOST(-1,-1,+1); }
+            if (x >= (xprd-Cutneigh) && y < Cutneigh         && z >= (zprd-Cutneigh)) { ADDGHOST(-1,+1,-1); }
+            if (x >= (xprd-Cutneigh) && y >= (yprd-Cutneigh) && z >= (zprd-Cutneigh)) { ADDGHOST(-1,-1,-1); }
+        }
+
         /* 12 edges */
-        if (x < Cutneigh         && z < Cutneigh)         { ADDGHOST(+1,0,+1); }
-        if (x < Cutneigh         && z >= (zprd-Cutneigh)) { ADDGHOST(+1,0,-1); }
-        if (x >= (xprd-Cutneigh) && z < Cutneigh)         { ADDGHOST(-1,0,+1); }
-        if (x >= (xprd-Cutneigh) && z >= (zprd-Cutneigh)) { ADDGHOST(-1,0,-1); }
-        if (y < Cutneigh         && z < Cutneigh)         { ADDGHOST(0,+1,+1); }
-        if (y < Cutneigh         && z >= (zprd-Cutneigh)) { ADDGHOST(0,+1,-1); }
-        if (y >= (yprd-Cutneigh) && z < Cutneigh)         { ADDGHOST(0,-1,+1); }
-        if (y >= (yprd-Cutneigh) && z >= (zprd-Cutneigh)) { ADDGHOST(0,-1,-1); }
-        if (y < Cutneigh         && x < Cutneigh)         { ADDGHOST(+1,+1,0); }
-        if (y < Cutneigh         && x >= (xprd-Cutneigh)) { ADDGHOST(-1,+1,0); }
-        if (y >= (yprd-Cutneigh) && x < Cutneigh)         { ADDGHOST(+1,-1,0); }
-        if (y >= (yprd-Cutneigh) && x >= (xprd-Cutneigh)) { ADDGHOST(-1,-1,0); }
+        if(param->pbc_x != 0 && param->pbc_z != 0) {
+            if (x < Cutneigh         && z < Cutneigh)         { ADDGHOST(+1,0,+1); }
+            if (x < Cutneigh         && z >= (zprd-Cutneigh)) { ADDGHOST(+1,0,-1); }
+            if (x >= (xprd-Cutneigh) && z < Cutneigh)         { ADDGHOST(-1,0,+1); }
+            if (x >= (xprd-Cutneigh) && z >= (zprd-Cutneigh)) { ADDGHOST(-1,0,-1); }
+        }
+
+        if(param->pbc_y != 0 && param->pbc_z != 0) {
+            if (y < Cutneigh         && z < Cutneigh)         { ADDGHOST(0,+1,+1); }
+            if (y < Cutneigh         && z >= (zprd-Cutneigh)) { ADDGHOST(0,+1,-1); }
+            if (y >= (yprd-Cutneigh) && z < Cutneigh)         { ADDGHOST(0,-1,+1); }
+            if (y >= (yprd-Cutneigh) && z >= (zprd-Cutneigh)) { ADDGHOST(0,-1,-1); }
+        }
+
+        if(param->pbc_x != 0 && param->pbc_y != 0) {
+            if (y < Cutneigh         && x < Cutneigh)         { ADDGHOST(+1,+1,0); }
+            if (y < Cutneigh         && x >= (xprd-Cutneigh)) { ADDGHOST(-1,+1,0); }
+            if (y >= (yprd-Cutneigh) && x < Cutneigh)         { ADDGHOST(+1,-1,0); }
+            if (y >= (yprd-Cutneigh) && x >= (xprd-Cutneigh)) { ADDGHOST(-1,-1,0); }
+        }
     }
     // increase by one to make it the ghost atom count
     atom->Nghost = Nghost + 1;
