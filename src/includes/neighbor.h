@@ -41,10 +41,18 @@ typedef struct {
     int mbinx; int mbiny; int mbinz;
 } Neighbor_params;
 
+typedef struct {
+    int* bincount;
+    int* bins;
+    int mbins;
+    int atoms_per_bin;
+} Binning;
+
 extern void initNeighbor(Neighbor*, Parameter*);
 extern void setupNeighbor();
 extern void binatoms(Atom*);
 extern void buildNeighbor(Atom*, Neighbor*);
 extern void sortAtom(Atom*);
+extern void binatoms_cuda(Atom*, Binning*, int**, Neighbor_params*, const int);
 extern void buildNeighbor_cuda(Atom*, Neighbor*, Atom*, Neighbor*, const int);
 #endif

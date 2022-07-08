@@ -539,15 +539,15 @@ void sortAtom(Atom* atom) {
 #endif
 }
 
-void binatoms_cuda(Atom *c_atom, int** c_bincount, int** c_bins, int** c_resize_needed, int mbins, NeighborParams *np, const int threads_per_block)
+void binatoms_cuda(Atom* c_atom, Binning* c_binning, int** c_resize_needed, NeighborParams *np, const int threads_per_block)
 {
     int nall = c_atom->Nlocal + c_atom->Nghost;
     int resize = 1;
-    if(*c_bincount == NULL){
-        checkCUDAError("binatoms_cuda c_bincount malloc", cudaMalloc(c_bincount, mbins * sizeof(int)) );
+    if(c_binning->bincount == NULL){
+        checkCUDAError("binatoms_cuda c_binning->bincount malloc", cudaMalloc((void**)(&c_binning->bincount), c_binning->mbins * sizeof(int)) );
     }
-    if(*c_bins == NULL){
-        checkCUDAError("binatoms_cuda c_bins malloc", cudaMalloc(c_bins, mbins * atoms_per_bin * sizeof(int)) );
+    if(c_binning->bins == NULL){
+        checkCUDAError("binatoms_cuda c_binning->bins malloc", cudaMalloc((void**)(&c_binning->bins), c_binning->mbins * c_binning->atoms_per_bin * sizeof(int)) );
     }
     if(*c_resize_needed == NULL){
         checkCUDAError("binatoms_cuda c_resize_needed malloc", cudaMalloc(&c_resize_needed, sizeof(int)) );
@@ -557,18 +557,18 @@ void binatoms_cuda(Atom *c_atom, int** c_bincount, int** c_bins, int** c_resize_
 
     while(resize > 0) {
         resize = 0;
-        checkCUDAError("binatoms_cuda c_bincount memset", cudaMemset(*c_bincount, 0, mbins * sizeof(int)));
+        checkCUDAError("binatoms_cuda c_binning->bincount memset", cudaMemset(c_binning->bincount, 0, c_binning->mbins * sizeof(int)));
         checkCUDAError("binatoms_cuda c_resize_needed memset", cudaMemset(*c_resize_needed, 0, sizeof(int)) );
 
-        /*binatoms_kernel(Atom a, int* bincount, int* bins, int atoms_per_bin, Neighbor_params np, int *resize_needed) */
-        binatoms_kernel<<<num_blocks, threads_per_block>>>(*c_atom, *c_bincount, *c_bins, atoms_per_bin, *np, *c_resize_needed);
+        /*binatoms_kernel(Atom a, int* bincount, int* bins, int c_binning->atoms_per_bin, Neighbor_params np, int *resize_needed) */
+        binatoms_kernel<<<num_blocks, threads_per_block>>>(*c_atom, c_binning->bincount, c_binning->bins, c_binning->atoms_per_bin, *np, *c_resize_needed);
 
         checkCUDAError("binatoms_cuda c_resize_needed memcpy back", cudaMemcpy(&resize, *c_resize_needed, sizeof(int), cudaMemcpyDeviceToHost) );
 
         if(resize) {
-            cudaFree(*c_bins);
-            atoms_per_bin *= 2;
-            checkCUDAError("binatoms_cuda c_bins resize malloc", cudaMalloc(c_bins, mbins * atoms_per_bin * sizeof(int)) );
+            cudaFree(c_binning->bins);
+            c_binning->atoms_per_bin *= 2;
+            checkCUDAError("binatoms_cuda c_binning->bins resize malloc", cudaMalloc(&c_binning->bins, c_binning->mbins * c_binning->atoms_per_bin * sizeof(int)) );
         }
     }
 }
