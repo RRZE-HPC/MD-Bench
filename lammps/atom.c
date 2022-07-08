@@ -448,32 +448,37 @@ int readAtom_in(Atom* atom, Parameter* param) {
         return -1;
     }
 
+    fgets(line, MAXLINE, fp);
+    natoms = atoi(strtok(line, " "));
+    atom->Natoms = natoms;
+    atom->Nlocal = natoms;
     atom->ntypes = 1;
-    while(!feof(fp)) {
+
+    while(atom->Nlocal >= atom->Nmax) {
+        growAtom(atom);
+    }
+
+    for(int i = 0; i < natoms; i++) {
         fgets(line, MAXLINE, fp);
-        natoms = atoi(line);
-        for(int i = 0; i < natoms; i++) {
-            fgets(line, MAXLINE, fp);
 
-            // TODO: store mass per atom
-            char *s_mass = strtok(line, " ");
-            if(strncmp(s_mass, "inf", 3) == 0) {
-                // Set atom's mass to INFINITY
-            } else {
-                param->mass = atof(s_mass);
-            }
-
-            atom->radius[atom_id] = atof(strtok(NULL, " "));
-            atom_x(atom_id) = atof(strtok(NULL, " "));
-            atom_y(atom_id) = atof(strtok(NULL, " "));
-            atom_z(atom_id) = atof(strtok(NULL, " "));
-            atom_vx(atom_id) = atof(strtok(NULL, " "));
-            atom_vy(atom_id) = atof(strtok(NULL, " "));
-            atom_vz(atom_id) = atof(strtok(NULL, " "));
-            atom->type[atom_id] = 0;
-            atom->ntypes = MAX(atom->type[atom_id], atom->ntypes);
-            atom_id++;
+        // TODO: store mass per atom
+        char *s_mass = strtok(line, " ");
+        if(strncmp(s_mass, "inf", 3) == 0) {
+            // Set atom's mass to INFINITY
+        } else {
+            param->mass = atof(s_mass);
         }
+
+        atom->radius[atom_id] = atof(strtok(NULL, " "));
+        atom_x(atom_id) = atof(strtok(NULL, " "));
+        atom_y(atom_id) = atof(strtok(NULL, " "));
+        atom_z(atom_id) = atof(strtok(NULL, " "));
+        atom_vx(atom_id) = atof(strtok(NULL, " "));
+        atom_vy(atom_id) = atof(strtok(NULL, " "));
+        atom_vz(atom_id) = atof(strtok(NULL, " "));
+        atom->type[atom_id] = 0;
+        atom->ntypes = MAX(atom->type[atom_id], atom->ntypes);
+        atom_id++;
     }
 
     if(!natoms) {
@@ -517,9 +522,8 @@ void growAtom(Atom *atom) {
     atom->fz = (MD_FLOAT*) reallocate(atom->fz, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
     #endif
     atom->type = (int *) reallocate(atom->type, ALIGNMENT, atom->Nmax * sizeof(int), nold * sizeof(int));
-    #ifdef DEM
-    atom->radius = (int *) reallocate(atom->radius, ALIGNMENT, atom->Nmax * sizeof(int), nold * sizeof(int));
+    // DEM
+    atom->radius = (MD_FLOAT *) reallocate(atom->radius, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
     atom->av = (MD_FLOAT*) reallocate(atom->av, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT) * 3, nold * sizeof(MD_FLOAT) * 3);
     atom->r  = (MD_FLOAT*) reallocate(atom->r,  ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT) * 4, nold * sizeof(MD_FLOAT) * 4);
-    #endif
 }

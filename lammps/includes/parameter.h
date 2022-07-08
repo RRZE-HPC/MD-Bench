@@ -53,6 +53,7 @@ typedef struct {
     MD_FLOAT cutforce;
     MD_FLOAT cutneigh;
     int nx, ny, nz;
+    int pbc_x, pbc_y, pbc_z;
     MD_FLOAT lattice;
     MD_FLOAT xlo, xhi, ylo, yhi, zlo, zhi;
     MD_FLOAT xprd, yprd, zprd;
