@@ -450,6 +450,12 @@ int readAtom_in(Atom* atom, Parameter* param) {
 
     fgets(line, MAXLINE, fp);
     natoms = atoi(strtok(line, " "));
+    param->xlo = atof(strtok(NULL, " "));
+    param->xhi = atof(strtok(NULL, " "));
+    param->ylo = atof(strtok(NULL, " "));
+    param->yhi = atof(strtok(NULL, " "));
+    param->zlo = atof(strtok(NULL, " "));
+    param->zhi = atof(strtok(NULL, " "));
     atom->Natoms = natoms;
     atom->Nlocal = natoms;
     atom->ntypes = 1;
