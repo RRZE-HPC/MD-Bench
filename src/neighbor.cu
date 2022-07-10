@@ -539,7 +539,7 @@ void sortAtom(Atom* atom) {
 #endif
 }
 
-void binatoms_cuda(Atom* c_atom, Binning* c_binning, int** c_resize_needed, NeighborParams *np, const int threads_per_block)
+void binatoms_cuda(Atom* c_atom, Binning* c_binning, int* c_resize_needed, NeighborParams *np, const int threads_per_block)
 {
     int nall = c_atom->Nlocal + c_atom->Nghost;
     int resize = 1;
@@ -549,21 +549,18 @@ void binatoms_cuda(Atom* c_atom, Binning* c_binning, int** c_resize_needed, Neig
     if(c_binning->bins == NULL){
         checkCUDAError("binatoms_cuda c_binning->bins malloc", cudaMalloc((void**)(&c_binning->bins), c_binning->mbins * c_binning->atoms_per_bin * sizeof(int)) );
     }
-    if(*c_resize_needed == NULL){
-        checkCUDAError("binatoms_cuda c_resize_needed malloc", cudaMalloc(&c_resize_needed, sizeof(int)) );
-    }
 
     const int num_blocks = ceil((float)nall-> / (float)num_threads_per_block);
 
     while(resize > 0) {
         resize = 0;
         checkCUDAError("binatoms_cuda c_binning->bincount memset", cudaMemset(c_binning->bincount, 0, c_binning->mbins * sizeof(int)));
-        checkCUDAError("binatoms_cuda c_resize_needed memset", cudaMemset(*c_resize_needed, 0, sizeof(int)) );
+        checkCUDAError("binatoms_cuda c_resize_needed memset", cudaMemset(c_resize_needed, 0, sizeof(int)) );
 
         /*binatoms_kernel(Atom a, int* bincount, int* bins, int c_binning->atoms_per_bin, Neighbor_params np, int *resize_needed) */
-        binatoms_kernel<<<num_blocks, threads_per_block>>>(*c_atom, c_binning->bincount, c_binning->bins, c_binning->atoms_per_bin, *np, *c_resize_needed);
+        binatoms_kernel<<<num_blocks, threads_per_block>>>(*c_atom, c_binning->bincount, c_binning->bins, c_binning->atoms_per_bin, *np, c_resize_needed);
 
-        checkCUDAError("binatoms_cuda c_resize_needed memcpy back", cudaMemcpy(&resize, *c_resize_needed, sizeof(int), cudaMemcpyDeviceToHost) );
+        checkCUDAError("binatoms_cuda c_resize_needed memcpy back", cudaMemcpy(&resize, c_resize_needed, sizeof(int), cudaMemcpyDeviceToHost) );
 
         if(resize) {
             cudaFree(c_binning->bins);
@@ -576,9 +573,50 @@ void binatoms_cuda(Atom* c_atom, Binning* c_binning, int** c_resize_needed, Neig
 void buildNeighbor_cuda(Atom *atom, Neighbor *neighbor, Atom *c_atom, Neighbor *c_neighbor, const int num_threads_per_block)
 {
     int nall = atom->Nlocal + atom->Nghost;
-
     c_neighbor->maxneighs = neighbor->maxneighs;
 
+    cudaProfilerStart();
+    /* upload stencil */
+    int* c_stencil;
+    // TODO move this to be done once at the start
+    checkCUDAError( "buildNeighbor c_n_stencil malloc", cudaMalloc((void**)&c_stencil, nstencil * sizeof(int)) );
+    checkCUDAError( "buildNeighbor c_n_stencil memcpy", cudaMemcpy(c_stencil, stencil, nstencil * sizeof(int), cudaMemcpyHostToDevice ));
+
+    Binning c_binning;
+    c_binning->mbins = mbins;
+    c_binning->atoms_per_bin = atoms_per_bin;
+    checkCUDAError( "buildNeighbor c_binning->bincount malloc", cudaMalloc((void**)&(c_binning->bincount), mbins * sizeof(int)) );
+    checkCUDAError( "buidlNeighbor c_binning->bins malloc", cudaMalloc((void**)&(c_binning->bins), c_binning->mbins * c_binning->atoms_per_bin * sizeof(int)) );
+
+    Neighbor_params np{
+            .xprd = xprd,
+            .yprd = yprd,
+            .zprd = zprd,
+            .bininvx = bininvx,
+            .bininvy = bininvy,
+            .bininvz = bininvz,
+            .mbinxlo = mbinxlo,
+            .mbinylo = mbinylo,
+            .mbinzlo = mbinzlo,
+            .nbinx = nbinx,
+            .nbiny = nbiny,
+            .nbinz = nbinz,
+            .mbinx = mbinx,
+            .mbiny = mbiny,
+            .mbinz = mbinz
+    };
+
+    int* c_resize_needed;
+    checkCUDAError("buildNeighbor c_resize_needed malloc", cudaMalloc((void**)&c_resize_needed, sizeof(int)) );
+    
+    /* bin local & ghost atoms */
+    binatoms_cuda(c_atom, &c_binning, c_resize_needed, &np, num_threads_per_block);
+
+    int* c_new_maxneighs;
+    checkCUDAError("c_new_maxneighs malloc", cudaMalloc((void**)&c_new_maxneighs, sizeof(int) ));
+
+    int resize = 1;
+    
     /* extend c_neighbor arrays if necessary */
     if(nall > nmax) {
         nmax = nall;
@@ -587,49 +625,6 @@ void buildNeighbor_cuda(Atom *atom, Neighbor *neighbor, Atom *c_atom, Neighbor *
         checkCUDAError( "buildNeighbor c_numneigh malloc", cudaMalloc((void**)&(c_neighbor->numneigh), nmax * sizeof(int)) );
         checkCUDAError( "buildNeighbor c_neighbors malloc", cudaMalloc((void**)&(c_neighbor->neighbors), nmax * c_neighbor->maxneighs * sizeof(int)) );
     }
-
-    checkCUDAError( "buildNeighbor c_atom->x memcpy back", cudaMemcpy(atom->x, c_atom->x, sizeof(MD_FLOAT) * 3 * c_atom->Nmax, cudaMemcpyDeviceToHost) );
-
-    /* bin local & ghost atoms */
-    binatoms(atom);
-    int resize = 1;
-
-    cudaProfilerStart();
-
-    /* upload stencil */
-    int* c_stencil;
-    // TODO move this to be done once at the start
-    checkCUDAError( "buildNeighbor c_n_stencil malloc", cudaMalloc((void**)&c_stencil, nstencil * sizeof(int)) );
-    checkCUDAError( "buildNeighbor c_n_stencil memcpy", cudaMemcpy(c_stencil, stencil, nstencil * sizeof(int), cudaMemcpyHostToDevice ));
-
-    int *c_bincount;
-    checkCUDAError( "buildNeighbor c_bincount malloc", cudaMalloc((void**)&c_bincount, mbins * sizeof(int)) );
-    checkCUDAError( "buildNeighbor c_bincount memcpy", cudaMemcpy(c_bincount, bincount, mbins * sizeof(int), cudaMemcpyHostToDevice) );
-
-    int *c_bins;
-    checkCUDAError( "buidlNeighbor c_bins malloc", cudaMalloc((void**)&c_bins, mbins * atoms_per_bin * sizeof(int)) );
-    checkCUDAError( "buildNeighbor c_bins memcpy", cudaMemcpy(c_bins, bins, mbins * atoms_per_bin * sizeof(int), cudaMemcpyHostToDevice ) );
-
-    Neighbor_params np{
-        .xprd = xprd,
-        .yprd = yprd,
-        .zprd = zprd,
-        .bininvx = bininvx,
-        .bininvy = bininvy,
-        .bininvz = bininvz,
-        .mbinxlo = mbinxlo,
-        .mbinylo = mbinylo,
-        .mbinzlo = mbinzlo,
-        .nbinx = nbinx,
-        .nbiny = nbiny,
-        .nbinz = nbinz,
-        .mbinx = mbinx,
-        .mbiny = mbiny,
-        .mbinz = mbinz
-    };
-
-    int* c_new_maxneighs;
-    checkCUDAError("c_new_maxneighs malloc", cudaMalloc((void**)&c_new_maxneighs, sizeof(int) ));
 
     /* loop over each atom, storing neighbors */
     while(resize) {
@@ -644,7 +639,7 @@ void buildNeighbor_cuda(Atom *atom, Neighbor *neighbor, Atom *c_atom, Neighbor *
          * */
         compute_neighborhood<<<num_blocks, num_threads_per_block>>>(*c_atom, *c_neighbor,
                                                                     np, nstencil, c_stencil,
-                                                                    c_bins, atoms_per_bin, c_bincount,
+                                                                    c_binning->bins, atoms_per_bin, c_binning->bincount,
                                                                     c_new_maxneighs,
 								                                    cutneighsq);
 
@@ -675,7 +670,7 @@ void buildNeighbor_cuda(Atom *atom, Neighbor *neighbor, Atom *c_atom, Neighbor *
 
     cudaFree(c_new_maxneighs);
     cudaFree(c_stencil);
-    cudaFree(c_bincount);
-    cudaFree(c_bins);
+    cudaFree(c_binning->bincount);
+    cudaFree(c_binning->bins);
 }
 }

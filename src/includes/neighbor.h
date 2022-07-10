@@ -53,6 +53,6 @@ extern void setupNeighbor();
 extern void binatoms(Atom*);
 extern void buildNeighbor(Atom*, Neighbor*);
 extern void sortAtom(Atom*);
-extern void binatoms_cuda(Atom*, Binning*, int**, Neighbor_params*, const int);
+extern void binatoms_cuda(Atom*, Binning*, int*, Neighbor_params*, const int);
 extern void buildNeighbor_cuda(Atom*, Neighbor*, Atom*, Neighbor*, const int);
 #endif
