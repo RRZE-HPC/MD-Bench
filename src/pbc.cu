@@ -120,7 +120,6 @@ void updatePbc_cuda(Atom *atom, Parameter *param, Atom *c_atom, bool doReneighbo
         checkCUDAError( "updatePbc c_atom->border_map memcpy", cudaMemcpy(c_atom->border_map, atom->border_map, NmaxGhost * sizeof(int), cudaMemcpyHostToDevice) );
     }
 
-    int nlocal = atom->Nlocal;
     MD_FLOAT xprd = param->xprd;
     MD_FLOAT yprd = param->yprd;
     MD_FLOAT zprd = param->zprd;
@@ -133,9 +132,6 @@ void updatePbc_cuda(Atom *atom, Parameter *param, Atom *c_atom, bool doReneighbo
     computePbcUpdate<<<num_blocks, num_threads_per_block>>>(*c_atom, c_PBCx, c_PBCy, c_PBCz, xprd, yprd, zprd);
     checkCUDAError( "PeekAtLastError UpdatePbc", cudaPeekAtLastError() );
     checkCUDAError( "DeviceSync UpdatePbc", cudaDeviceSynchronize() );
-    if(doReneighbor){
-    	checkCUDAError( "updatePbc atom->x memcpy back", cudaMemcpy(atom->x, c_atom->x, atom->Nmax * sizeof(MD_FLOAT) * 3, cudaMemcpyDeviceToHost) );
-    }
 }
 
 /* relocate atoms that have left domain according

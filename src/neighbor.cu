@@ -92,7 +92,7 @@ __global__ void sort_bin_contents_kernel(int* bincount, int* bins, int mbins, in
                 sorted = 0;
             }
         }
-    } while (!sorted)
+    } while (!sorted);
 }
 
 __global__ void binatoms_kernel(Atom a, int* bincount, int* bins, int atoms_per_bin, Neighbor_params np, int *resize_needed){
