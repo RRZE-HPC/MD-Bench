@@ -50,7 +50,6 @@ extern double computeForceLJFullNeigh_simd(Parameter*, Atom*, Neighbor*, Stats*)
 extern double computeForceLJHalfNeigh(Parameter*, Atom*, Neighbor*, Stats*);
 extern double computeForceEam(Eam*, Parameter*, Atom*, Neighbor*, Stats*);
 extern double computeForceDemFullNeigh(Parameter*, Atom*, Neighbor*, Stats*);
-extern double computeForceDemHalfNeigh(Parameter*, Atom*, Neighbor*, Stats*);
 
 #ifdef USE_SIMD_KERNEL
 #   define KERNEL_NAME              "SIMD"
@@ -135,7 +134,8 @@ double computeForce(Eam *eam, Parameter *param, Atom *atom, Neighbor *neighbor, 
         return computeForceEam(eam, param, atom, neighbor, stats);
     } else if(param->force_field == FF_DEM) {
         if(param->half_neigh) {
-            return computeForceDemHalfNeigh(param, atom, neighbor, stats);
+            fprintf(stderr, "Error: DEM cannot use half neighbor-lists!\n");
+            return 0.0;
         } else {
             return computeForceDemFullNeigh(param, atom, neighbor, stats);
         }
