@@ -130,6 +130,9 @@ void readParameter(Parameter *param, const char *filename) {
         }
     }
 
+    // Update dtforce
+    param->dtforce = 0.5 * param->dt;
+
     // Update sigma6 parameter
     MD_FLOAT s2 = param->sigma * param->sigma;
     param->sigma6 = s2 * s2 * s2;
