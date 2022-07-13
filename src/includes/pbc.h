@@ -29,5 +29,6 @@ extern void initPbc(Atom*);
 extern void updatePbc(Atom*, Parameter*);
 extern void updatePbc_cuda(Atom*, Parameter*, Atom*, bool, const int);
 extern void updateAtomsPbc(Atom*, Parameter*);
+extern void updateAtomsPbc_cuda(Atom*, Parameter*, Atom*, const int);
 extern void setupPbc(Atom*, Parameter*);
 #endif

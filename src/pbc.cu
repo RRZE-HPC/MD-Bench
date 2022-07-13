@@ -33,6 +33,32 @@ extern "C" {
 
 }
 
+__global__ void computeAtomsPbcUpdate(Atom a, MD_FLOAT xprd, MD_FLOAT yprd, MD_FLOAT zprd){
+    const int i = blockIdx.x * blockDim.x + threadIdx.x;
+    Atom* atom = &a;
+    if( i >= atom->Nlocal ){
+        return;
+    }
+
+    if (atom_x(i) < 0.0) {
+        atom_x(i) += xprd;
+    } else if (atom_x(i) >= xprd) {
+        atom_x(i) -= xprd;
+    }
+
+    if (atom_y(i) < 0.0) {
+        atom_y(i) += yprd;
+    } else if (atom_y(i) >= yprd) {
+        atom_y(i) -= yprd;
+    }
+
+    if (atom_z(i) < 0.0) {
+        atom_z(i) += zprd;
+    } else if (atom_z(i) >= zprd) {
+        atom_z(i) -= zprd;
+    }
+}
+
 __global__ void computePbcUpdate(Atom a, int* PBCx, int* PBCy, int* PBCz, MD_FLOAT xprd, MD_FLOAT yprd, MD_FLOAT zprd){
     const int i = blockIdx.x * blockDim.x + threadIdx.x;
     const int Nghost = a.Nghost;
@@ -161,6 +187,21 @@ void updateAtomsPbc(Atom *atom, Parameter *param) {
             atom_z(i) -= zprd;
         }
     }
+}
+
+void updateAtomsPbc_cuda(Atom* atom, Parameter* param, Atom* c_atom, const int num_threads_per_block){
+    MD_FLOAT xprd = param->xprd;
+    MD_FLOAT yprd = param->yprd;
+    MD_FLOAT zprd = param->zprd;
+
+    const int num_blocks = ceil((float)atom->Nlocal / (float)num_threads_per_block);
+    /*void computeAtomsPbcUpdate(Atom a, MD_FLOAT xprd, MD_FLOAT yprd, MD_FLOAT zprd)*/
+    computeAtomsPbcUpdate<<<num_blocks, num_threads_per_block>>>(*c_atom, xprd, yprd, zprd);
+
+    checkCUDAError( "PeekAtLastError UpdateAtomsPbc", cudaPeekAtLastError() );
+    checkCUDAError( "DeviceSync UpdateAtomsPbc", cudaDeviceSynchronize() );
+
+    checkCUDAError( "updateAtomsPbc position memcpy back", cudaMemcpy(atom->x, c_atom->x, sizeof(MD_FLOAT) * atom->Nlocal * 3, cudaMemcpyDeviceToHost) );
 }
 
 /* setup periodic boundary conditions by

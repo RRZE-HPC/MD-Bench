@@ -153,7 +153,6 @@ void cuda_initial_integrate(bool doReneighbour, Parameter *param, Atom *atom, At
 
     if(doReneighbour) {
         checkCUDAError( "InitialIntegrate: velocity memcpy", cudaMemcpy(atom->vx, c_atom->vx, sizeof(MD_FLOAT) * atom->Nlocal * 3, cudaMemcpyDeviceToHost) );
-        checkCUDAError( "InitialIntegrate: position memcpy", cudaMemcpy(atom->x, c_atom->x, sizeof(MD_FLOAT) * atom->Nlocal * 3, cudaMemcpyDeviceToHost) );
     }
 }
 

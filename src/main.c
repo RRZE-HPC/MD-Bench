@@ -164,7 +164,7 @@ double reneighbour(
 
     S = getTimeStamp();
     LIKWID_MARKER_START("reneighbour");
-    updateAtomsPbc(atom, param);
+    updateAtomsPbc_cuda(atom, param, c_atom, num_threads_per_block);
     setupPbc(atom, param);
     updatePbc_cuda(atom, param, c_atom, true, num_threads_per_block);
     //sortAtom(atom);
