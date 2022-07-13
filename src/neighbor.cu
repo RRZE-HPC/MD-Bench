@@ -198,10 +198,10 @@ static int* c_stencil = NULL;
 static int* c_resize_needed = NULL;
 static int* c_new_maxneighs = NULL;
 static Binning c_binning{
-        .mbins = 0;
-        .atoms_per_bin = 0;
-        .bincount = NULL;
-        .bins = 0;
+        .bincount = NULL,
+        .bins = NULL,
+        .mbins = 0,
+        .atoms_per_bin = 0
 };
 
 
