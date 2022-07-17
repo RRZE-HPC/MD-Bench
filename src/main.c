@@ -158,19 +158,32 @@ double reneighbour(
         Neighbor *neighbor,
         Atom *c_atom,
         Neighbor *c_neighbor,
-        const int num_threads_per_block)
+        const int num_threads_per_block,
+	double* timers)
 {
-    double S, E;
+    double S, E, beforeEvent, afterEvent;
 
     S = getTimeStamp();
+    beforeEvent = S;
     LIKWID_MARKER_START("reneighbour");
     updateAtomsPbc_cuda(atom, param, c_atom, num_threads_per_block);
+    afterEvent = getTimeStamp();
+    timers[NEIGH_UPDATE_ATOMS_PBC] += afterEvent - beforeEvent;
+    beforeEvent = afterEvent;
     setupPbc(atom, param);
+    afterEvent = getTimeStamp();
+    timers[NEIGH_SETUP_PBC] += afterEvent - beforeEvent;
+    beforeEvent = afterEvent;
     updatePbc_cuda(atom, param, c_atom, true, num_threads_per_block);
+    afterEvent = getTimeStamp();
+    timers[NEIGH_UPDATE_PBC] += afterEvent - beforeEvent;
+    beforeEvent = afterEvent;
     //sortAtom(atom);
     buildNeighbor_cuda(atom, neighbor, c_atom, c_neighbor, num_threads_per_block);
     LIKWID_MARKER_STOP("reneighbour");
     E = getTimeStamp();
+    afterEvent = E;
+    timers[NEIGH_BUILD_NEIGHBOR] += afterEvent - beforeEvent;
 
     return E-S;
 }
@@ -333,6 +346,10 @@ int main(int argc, char** argv)
     timer[FORCE] = 0.0;
     timer[NEIGH] = 0.0;
     timer[TOTAL] = getTimeStamp();
+    timer[NEIGH_UPDATE_ATOMS_PBC] = 0.0;
+    timer[NEIGH_SETUP_PBC] = 0.0;
+    timer[NEIGH_UPDATE_PBC] = 0.0;
+    timer[NEIGH_BUILD_NEIGHBOR] = 0.0;
 
     if(param.vtk_file != NULL) {
         write_atoms_to_vtk_file(param.vtk_file, &atom, 0);
@@ -345,9 +362,12 @@ int main(int argc, char** argv)
         cuda_initial_integrate(doReneighbour, &param, &atom, &c_atom, num_threads_per_block);
 
         if(doReneighbour) {
-            timer[NEIGH] += reneighbour(&param, &atom, &neighbor, &c_atom, &c_neighbor, num_threads_per_block);
+            timer[NEIGH] += reneighbour(&param, &atom, &neighbor, &c_atom, &c_neighbor, num_threads_per_block, &timer);
         } else {
+	    double before = getTimeStamp();
             updatePbc_cuda(&atom, &param, &c_atom, false, num_threads_per_block);
+	    double after = getTimeStamp();
+	    timer[NEIGH_UPDATE_PBC] += after - before;
         }
 
         if(param.force_field == FF_EAM) {
@@ -385,8 +405,8 @@ int main(int argc, char** argv)
 #endif
     printf(HLINE);
     printf("System: %d atoms %d ghost atoms, Steps: %d\n", atom.Natoms, atom.Nghost, param.ntimes);
-    printf("TOTAL %.2fs FORCE %.2fs NEIGH %.2fs REST %.2fs\n",
-            timer[TOTAL], timer[FORCE], timer[NEIGH], timer[TOTAL]-timer[FORCE]-timer[NEIGH]);
+    printf("TOTAL %.2fs FORCE %.2fs NEIGH %.2fs REST %.2fs   NEIGH_TIMERS: UPD_AT: %.2fs SETUP_PBC %.2fs UPDATE_PBC %.2fs BUILD_NEIGHBOR %.2fs\n",
+            timer[TOTAL], timer[FORCE], timer[NEIGH], timer[TOTAL]-timer[FORCE]-timer[NEIGH], timer[NEIGH_UPDATE_ATOMS_PBC], timer[NEIGH_SETUP_PBC], timer[NEIGH_UPDATE_PBC], timer[NEIGH_BUILD_NEIGHBOR]);
     printf(HLINE);
     printf("Performance: %.2f million atom updates per second\n",
             1e-6 * (double) atom.Natoms * param.ntimes / timer[TOTAL]);
