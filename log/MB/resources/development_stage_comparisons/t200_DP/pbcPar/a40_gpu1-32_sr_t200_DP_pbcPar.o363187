@@ -1,0 +1,143 @@
+### Starting TaskPrologue of job 363187 on a0121 at Thu Jul 14 23:01:29 CEST 2022
+Running on cores 0-15 with govenor ondemand
+Thu Jul 14 23:01:29 2022       
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 510.47.03    Driver Version: 510.47.03    CUDA Version: 11.6     |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|                               |                      |               MIG M. |
+|===============================+======================+======================|
+|   0  NVIDIA A40          On   | 00000000:01:00.0 Off |                  Off |
+|  0%   34C    P8    32W / 300W |      0MiB / 49140MiB |      0%      Default |
+|                               |                      |                  N/A |
++-------------------------------+----------------------+----------------------+
+                                                                               
++-----------------------------------------------------------------------------+
+| Processes:                                                                  |
+|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |
+|        ID   ID                                                   Usage      |
+|=============================================================================|
+|  No running processes found                                                 |
++-----------------------------------------------------------------------------+
+### Finished TaskPrologue
+
+NOTE: If and ONLY IF you want to use likwid-perfctr you have to add '--constraint=hwperf' to your batch jobs.
+      likwid-features and likwid-setFrequencies are not available. The frequency/governor can be set using SLURM features.
+Running without Marker API. Activate Marker API with -m on commandline.
+1,4.82e6
+Running without Marker API. Activate Marker API with -m on commandline.
+2,8.29e6
+Running without Marker API. Activate Marker API with -m on commandline.
+3,11.68e6
+Running without Marker API. Activate Marker API with -m on commandline.
+4,15.21e6
+Running without Marker API. Activate Marker API with -m on commandline.
+5,18.48e6
+Running without Marker API. Activate Marker API with -m on commandline.
+6,21.83e6
+Running without Marker API. Activate Marker API with -m on commandline.
+7,25.14e6
+Running without Marker API. Activate Marker API with -m on commandline.
+8,28.40e6
+Running without Marker API. Activate Marker API with -m on commandline.
+9,31.47e6
+Running without Marker API. Activate Marker API with -m on commandline.
+10,34.41e6
+Running without Marker API. Activate Marker API with -m on commandline.
+11,37.62e6
+Running without Marker API. Activate Marker API with -m on commandline.
+12,40.48e6
+Running without Marker API. Activate Marker API with -m on commandline.
+13,43.44e6
+Running without Marker API. Activate Marker API with -m on commandline.
+14,46.80e6
+Running without Marker API. Activate Marker API with -m on commandline.
+15,49.14e6
+Running without Marker API. Activate Marker API with -m on commandline.
+16,52.04e6
+Running without Marker API. Activate Marker API with -m on commandline.
+17,54.88e6
+Running without Marker API. Activate Marker API with -m on commandline.
+18,57.34e6
+Running without Marker API. Activate Marker API with -m on commandline.
+19,59.55e6
+Running without Marker API. Activate Marker API with -m on commandline.
+20,63.19e6
+Running without Marker API. Activate Marker API with -m on commandline.
+21,65.60e6
+Running without Marker API. Activate Marker API with -m on commandline.
+22,67.52e6
+Running without Marker API. Activate Marker API with -m on commandline.
+23,70.08e6
+Running without Marker API. Activate Marker API with -m on commandline.
+24,72.41e6
+Running without Marker API. Activate Marker API with -m on commandline.
+25,75.90e6
+Running without Marker API. Activate Marker API with -m on commandline.
+26,77.87e6
+Running without Marker API. Activate Marker API with -m on commandline.
+27,79.85e6
+Running without Marker API. Activate Marker API with -m on commandline.
+28,82.04e6
+Running without Marker API. Activate Marker API with -m on commandline.
+29,83.72e6
+Running without Marker API. Activate Marker API with -m on commandline.
+30,85.57e6
+Running without Marker API. Activate Marker API with -m on commandline.
+31,88.00e6
+Running without Marker API. Activate Marker API with -m on commandline.
+32,90.82e6
+=== JOB_STATISTICS ===
+=== current date     : Thu Jul 14 23:02:08 CEST 2022
+= Job-ID             : 363187 on alex
+= Job-Name           : a40_gpu1-32_sr_t200.sh
+= Job-Command        : /home/hpc/ptfs/ptfs176h/training/second_presentation/a40_gpu1-32_sr_t200.sh
+= Initial workdir    : /home/hpc/ptfs/ptfs176h/training/second_presentation
+= Queue/Partition    : a40
+= Slurm account      : ptfs with QOS=normal
+= Requested resources: cpu=16,mem=60000M,node=1,billing=16,gres/gpu=1,gres/gpu:a40=1 for 01:00:00
+= Elapsed runtime    : 00:00:42
+= Total RAM usage    : 0.0 GiB of assigned 58 GiB (0.0%)   
+= Node list          : a0121
+= Subm/Elig/Start/End: 2022-07-14T23:01:26 / 2022-07-14T23:01:26 / 2022-07-14T23:01:26 / 2022-07-14T23:02:08
+======================
+=== Quota infos ======
+    Path              Used     SoftQ    HardQ    Gracetime  Filec    FileQ    FiHaQ    FileGrace    
+    /home/vault          0.0K   524.3G  1048.6G        N/A       1      200K     400K        N/A    
+    /home/woody          4.0K   500.0G   999.0G        N/A       1                           N/A    
+======================
+=== GPU utilization ==
+gpu_name, gpu_bus_id, pid, gpu_utilization [%], mem_utilization [%], max_memory_usage [MiB], time [ms]
+NVIDIA A40, 00000000:01:00.0, 1742258, 86 %, 0 %, 349 MiB, 5878 ms
+NVIDIA A40, 00000000:01:00.0, 1742269, 84 %, 0 %, 349 MiB, 3475 ms
+NVIDIA A40, 00000000:01:00.0, 1742279, 87 %, 1 %, 349 MiB, 2854 ms
+NVIDIA A40, 00000000:01:00.0, 1742289, 66 %, 1 %, 349 MiB, 2068 ms
+NVIDIA A40, 00000000:01:00.0, 1742299, 82 %, 1 %, 349 MiB, 1697 ms
+NVIDIA A40, 00000000:01:00.0, 1742309, 76 %, 1 %, 349 MiB, 1488 ms
+NVIDIA A40, 00000000:01:00.0, 1742320, 61 %, 1 %, 349 MiB, 1323 ms
+NVIDIA A40, 00000000:01:00.0, 1742330, 66 %, 2 %, 349 MiB, 1197 ms
+NVIDIA A40, 00000000:01:00.0, 1742340, 63 %, 2 %, 349 MiB, 1109 ms
+NVIDIA A40, 00000000:01:00.0, 1742350, 77 %, 2 %, 349 MiB, 1034 ms
+NVIDIA A40, 00000000:01:00.0, 1742360, 68 %, 2 %, 349 MiB, 970 ms
+NVIDIA A40, 00000000:01:00.0, 1742370, 62 %, 2 %, 349 MiB, 916 ms
+NVIDIA A40, 00000000:01:00.0, 1742380, 62 %, 2 %, 349 MiB, 870 ms
+NVIDIA A40, 00000000:01:00.0, 1742390, 49 %, 2 %, 349 MiB, 834 ms
+NVIDIA A40, 00000000:01:00.0, 1742400, 52 %, 2 %, 349 MiB, 808 ms
+NVIDIA A40, 00000000:01:00.0, 1742410, 66 %, 3 %, 349 MiB, 779 ms
+NVIDIA A40, 00000000:01:00.0, 1742420, 0 %, 0 %, 349 MiB, 748 ms
+NVIDIA A40, 00000000:01:00.0, 1742431, 0 %, 0 %, 349 MiB, 726 ms
+NVIDIA A40, 00000000:01:00.0, 1742442, 31 %, 2 %, 349 MiB, 716 ms
+NVIDIA A40, 00000000:01:00.0, 1742452, 53 %, 3 %, 349 MiB, 679 ms
+NVIDIA A40, 00000000:01:00.0, 1742462, 0 %, 0 %, 349 MiB, 676 ms
+NVIDIA A40, 00000000:01:00.0, 1742472, 47 %, 3 %, 349 MiB, 662 ms
+NVIDIA A40, 00000000:01:00.0, 1742482, 37 %, 2 %, 349 MiB, 763 ms
+NVIDIA A40, 00000000:01:00.0, 1742493, 0 %, 0 %, 349 MiB, 630 ms
+NVIDIA A40, 00000000:01:00.0, 1742503, 0 %, 0 %, 349 MiB, 640 ms
+NVIDIA A40, 00000000:01:00.0, 1742513, 23 %, 2 %, 349 MiB, 606 ms
+NVIDIA A40, 00000000:01:00.0, 1742523, 0 %, 0 %, 349 MiB, 588 ms
+NVIDIA A40, 00000000:01:00.0, 1742533, 33 %, 3 %, 349 MiB, 588 ms
+NVIDIA A40, 00000000:01:00.0, 1742543, 42 %, 4 %, 349 MiB, 583 ms
+NVIDIA A40, 00000000:01:00.0, 1742553, 0 %, 0 %, 349 MiB, 570 ms
+NVIDIA A40, 00000000:01:00.0, 1742563, 47 %, 4 %, 349 MiB, 723 ms
+NVIDIA A40, 00000000:01:00.0, 1742573, 29 %, 3 %, 349 MiB, 554 ms
