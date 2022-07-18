@@ -421,7 +421,7 @@ Total       Count   Avg         Min         Max         Operation
 ```
 
 With this the scaling behaviour also improves
-![Scaling GPU-threads per block before and after neighbor list porting](../resources/development_stage_comparisons/t200_DP_scaling_comparisons/buiNeiPar.png)
+![Scaling GPU-threads per block before and after neighbor list porting](../resources/development_stage_comparisons/t200_DP_scaling_comparisons/plot_upto_buiNeiPar.png)
 
 ## Parallelizing further components
 Next we parallelize the updatePbc method which updates the positions of all ghost atoms.
@@ -429,17 +429,17 @@ With the parallelization of this method the runtime drops even further.
 The reason for this is probably that the full loop except neighborhood computation now runs on the GPU.
 This further improves scaling with threads per block.
 
-![Scaling GPU-threads per block before and after pbcUpdate porting](../resources/development_stage_comparisons/t200_DP_scaling_comparisons/pbcPar.png)
+![Scaling GPU-threads per block before and after pbcUpdate porting](../resources/development_stage_comparisons/t200_DP_scaling_comparisons/plot_upto_pbcPar.png)
 
 As is visible there is a moderate increase in performance for the A40 and a massive one for the A100.
 After that the binning of the atoms is ported to the GPU with only a small increase in performance:
 
-![Scaling GPU-threads per block before and after atom binning being ported to GPU](../resources/development_stage_comparisons/t200_DP_scaling_comparisons/binAtPar.png)
+![Scaling GPU-threads per block before and after atom binning being ported to GPU](../resources/development_stage_comparisons/t200_DP_scaling_comparisons/plot_upto_binAtPar.png)
 
 After that the updateAtomsPbc method is ported. This method enforces the boundary condition on atoms that have left the simulation domain after the last reneighboring.
 
 
-![Scaling GPU-threads per block before and after updateAtomsPbc being ported to GPU](../resources/development_stage_comparisons/t200_DP_scaling_comparisons/upAtPar.png)
+![Scaling GPU-threads per block before and after updateAtomsPbc being ported to GPU](../resources/development_stage_comparisons/t200_DP_scaling_comparisons/plot_upto_upAtPar.png)
 
 
 
