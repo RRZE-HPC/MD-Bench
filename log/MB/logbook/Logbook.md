@@ -50,8 +50,10 @@ pairs of particles, here: electronically neutral atoms. This potential models re
 
 ![Lennard-Jones-Model](../images/Lennard_Jones_potential_function.png)
 
-where ***r*** is the distance between the two interacting atoms, ***ε*** is the dispersion energy and ***σ*** the distance at which the
-particle-potential ***V*** is zero:
+where
+* ***r*** is the distance between the two interacting atoms, 
+* ***ε*** is the dispersion energy and
+* ***σ*** the distance at which the particle-potential ***V*** is zero
 
 -----
 
@@ -100,7 +102,6 @@ Some parts already have been ported to GPU. More on that in a later chapter.
   * CPU: [16 / GPU | 16 / GPU]
   * Memory: [60GB / GPU | 120GB / GPU]
   
-  
 **Note**: each an A40 has about double the single precision processing power of an A100 despite being cheaper
 
 -----
@@ -129,7 +130,7 @@ If not stated otherwise these are the conditions for the simulation benchmarking
 * the number of simulated atoms is 131072
 * floating numbers use double precision
 * force computation between atoms uses the lennard-jones model
-
+* one gpu with its associated cores are used for computation
 
 ### How to run software
 
@@ -140,8 +141,8 @@ $ make
 $ ./MDBench-NVCC
 ```
 -----
-## Initial: CPU Scaling runs
-We start with finding doing a small collection of runs scaling in number of CPU threads.
+## Initial: GPU Thread Scaling runs
+We start with doing a small collection of runs scaling in number of GPU threads per block.
 The output of our programm always contains one line that displays the number of atom updates per second derived from the total number of atom updates simulated diveded by the program runtime.
 This line always looks like this:
 ```
@@ -150,14 +151,14 @@ Performance: 7.18 million atom updates per second
 -----
 Now we plot the single- and double-precision performance for linearly increasing numbers of `NUM_THREADS` from 1 to 32:
 
-<p align="center">
-  <img src="https://github.com/RRZE-HPC/MD-Bench/blob/mucosim_cuda/log/MB/resources/initial_testing/linear_cpu-threads_scaling/SingleGPU_cpu_scaling.png" />
-</p>
+
+![GPU-Threads per block scaling with a single gpu](../resources/initial_testing/linear_cpu-threads_scaling/SingleGPU_gpu_threads_per_block_scaling.png)
 
 In low thread counts (1-8) the program runs slower on the A40 than the A100.
 For increasing threadcounts (9-32) the application performance in regards to simulation throughput seems to converge.
 Contrary to intuition the convergence points seem to be the same for the A40 in single precision and A100 in single and double precision.
 This may hint at performance bottlenecks independent of the selected gpu.
+
 -----
 ## Profiling the application
 
@@ -168,14 +169,13 @@ srun nsys profile -o ./a40_profiling_run
 
 Running this command in a job script or an interactive session yields a .nsys-rep file which can be opened with the Nvidia Nsight Systems tool.
 
-<p align="center">
-  <img src="https://github.com/RRZE-HPC/MD-Bench/blob/mucosim_cuda/log/MB/resources/initial_testing/finding_bottlenecks/using_nsys/A40_nsys_zoomed_in.png" />
-</p>
+![Runtime profile gathered with nsys](../resources/initial_testing/finding_bottlenecks/using_nsys/A40_nsys_zoomed_in.png)
 
 Activity in the application is cyclic. In each cycle one of the CPUs runs for a majority of the cycle while the rest mostly idle. The rest of the time is spent in multiple kernels running on the GPU.
 This shows that most of the time is still spent on CPU.
+
 -----
-## Finding where the CPU time is spent
+### Finding where the CPU time is spent
 
 Using the command line tool `gprof` we can see that most of the CPU time is in the buildNeighbor-function
 
@@ -209,8 +209,9 @@ TOTAL 3.47s FORCE 0.21s NEIGH 3.15s REST 0.12s
 ```
 
 Even when considering CPU and GPU time the neighbor calculation needs most of the time.
+
 -----
-## Reasons for this runtime profile
+### Reasons for this runtime profile
 
 In order to understand the runtime profile of the code we can take a look at the control flow of the program:
 
@@ -251,15 +252,7 @@ def calculate_neighbors():
   return neighbor_list
 ``` 
 -----
-## Perodic boundary condition
-
->
-><media-tag title="Example of the periodic boundary condition. Red dotted lines indicate the interaction ranges of a single atom. Red semi-transparent lines show how this interaction range translates to the whole system. Semi-transparent circles are ghost atoms" src="https://files.cryptpad.fr/blob/b3/b3b533294a63e48e71d45f1a9f61561b2464ea3057594dec" data-crypto-key="cryptpad:wtcrtndJdgcCGtf1arX4g4P17voqchrCH8Cmh7copQs="></media-tag>
-Example of the periodic boundary condition.  
-Left: no boundary condition.  
-Middle left: periodic boundary condition.  
-Middle right: periodic boundary condition with maximum interaction range outside the boundary represented by the semi-transparent rectangular line.  
-Right: periodic boundary condition emulated by ghost atoms (semi-transparent circles outside boundary)
+### Perodic boundary condition
 
 Atoms that leave the simulated area will enter the simulated area on the mirrored side. In code it looks like this:
 
@@ -344,7 +337,7 @@ def update_bondary_condition(atoms, periodic_boundary_condition):
 
 This part will be easy to parallelize as all iterations are independent. One thread per ghost atom will probably be the selected way to port this to GPU.
 
-## Building neighbor lists
+### Building neighbor lists
 The majority of CPU time is spent the `buildNeighbor`-method. Parallelizing this on the GPU will have significant impact on the application's scalability.
 
 ```python
@@ -379,3 +372,77 @@ def buildNeighbor(atoms):
 
 Idea: give each atom one thread
 Challenge: when the limit for maximum neighbors is set too low in the CPU version a variable is set. On the GPU this needs to be wrapped with a CAS to ensure that the value contains the maximum amount of needed neighbors per atom.
+
+## Next goals
+ordered by priority
+* port the buildNeighbor-function to Cuda (reduced Host-To-Device traffic, reduced computation time)
+* port the function updating the ghost atoms to Cuda
+* port the creating the ghost atoms to Cuda
+
+* evaluate performance along the way
+
+## Parallelizing building neighbor lists
+* port loop body of building the neighbor list for each atom first
+* this also requires mapping function from coordinate to grid cell to be ported as well but can be just copied over from the CPU version and be declared a device function as it only relies on parameter data
+
+### Effects on runtime
+program output on runtimes of different parts
+* A40:
+  * Before:&nbsp;``` TOTAL 3.46s FORCE 0.21s NEIGH 3.14s REST 0.12s ```
+  * After:&nbsp;&nbsp;&nbsp;&nbsp;```TOTAL 0.37s FORCE 0.21s NEIGH 0.06s REST 0.09s```
+* A100:
+  * Before:&nbsp;``` TOTAL 3.01s FORCE 0.05s NEIGH 2.84s REST 0.12s ```
+  * After:&nbsp;&nbsp;&nbsp;&nbsp;```TOTAL 0.18s FORCE 0.05s NEIGH 0.04s REST 0.10s```
+  
+As expected we see the runtime spent in the neighborhood computation drop significantly
+
+  With such a reduction in runtime the performance has obviously increased:
+* A40:
+  * Before:&nbsp;```Performance: 7.59 million atom updates per second```
+  * After:&nbsp;&nbsp;&nbsp;&nbsp;```Performance: 71.79 million atom updates per second```
+* A100
+  * Before:&nbsp;```Performance: 7.93 million atom updates per second```
+  * After:&nbsp;&nbsp;&nbsp;&nbsp;```Performance: 143.60 million atom updates per secon```
+  
+Apart from the reduction in runtime we see also, that the traffic between device and host has decreased
+from:
+```
+Total       Count   Avg         Min         Max         Operation
+1,36 GiB    229     6,08 MiB    128 B       50,00 MiB   [CUDA memcpy HtoD]
+660,00 MiB  220     3,00 MiB    3,00 MiB    3,00 MiB    [CUDA memcpy DtoH]
+
+```
+to:
+```
+Total       Count   Avg         Min         Max         Operation
+881,28 MiB  240     3,67 MiB    128 B       4,12 MiB    [CUDA memcpy HtoD]
+660,00 MiB  231     2,86 MiB    4 B         3,00 MiB    [CUDA memcpy DtoH]
+44 B        11      4 B         4 B         4 B         [CUDA memset]
+```
+
+With this the scaling behaviour also improves
+![Scaling GPU-threads per block before and after neighbor list porting](../resources/development_stage_comparisons/t200_DP_scaling_comparisons/buiNeiPar.png)
+
+## Parallelizing further components
+Next we parallelize the updatePbc method which updates the positions of all ghost atoms.
+With the parallelization of this method the runtime drops even further.
+The reason for this is probably that the full loop except neighborhood computation now runs on the GPU.
+This further improves scaling with threads per block.
+
+![Scaling GPU-threads per block before and after pbcUpdate porting](../resources/development_stage_comparisons/t200_DP_scaling_comparisons/pbcPar.png)
+
+As is visible there is a moderate increase in performance for the A40 and a massive one for the A100.
+After that the binning of the atoms is ported to the GPU with only a small increase in performance:
+
+![Scaling GPU-threads per block before and after atom binning being ported to GPU](../resources/development_stage_comparisons/t200_DP_scaling_comparisons/binAtPar.png)
+
+After that the updateAtomsPbc method is ported. This method enforces the boundary condition on atoms that have left the simulation domain after the last reneighboring.
+
+
+![Scaling GPU-threads per block before and after updateAtomsPbc being ported to GPU](../resources/development_stage_comparisons/t200_DP_scaling_comparisons/upAtPar.png)
+
+
+
+
+
+
