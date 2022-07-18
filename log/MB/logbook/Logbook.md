@@ -420,7 +420,8 @@ Total       Count   Avg         Min         Max         Operation
 44 B        11      4 B         4 B         4 B         [CUDA memset]
 ```
 
-With this the scaling behaviour also improves
+With this the scaling behaviour also improves:
+
 ![Scaling GPU-threads per block before and after neighbor list porting](../resources/development_stage_comparisons/t200_DP_scaling_comparisons/plot_upto_buiNeiPar.png)
 
 ## Parallelizing further components
@@ -438,11 +439,37 @@ After that the binning of the atoms is ported to the GPU with only a small incre
 
 After that the updateAtomsPbc method is ported. This method enforces the boundary condition on atoms that have left the simulation domain after the last reneighboring.
 
-
 ![Scaling GPU-threads per block before and after updateAtomsPbc being ported to GPU](../resources/development_stage_comparisons/t200_DP_scaling_comparisons/plot_upto_upAtPar.png)
 
+The high variance exhibited in those scaling comparisons is due to the very low runtimes of the program:
 
+Runtimes with 131072 particles for 200 timesteps:
+* A40:
+```
+TOTAL 0.27s FORCE 0.21s NEIGH 0.05s REST 0.01s
+```
+* A100:
+```
+TOTAL 0.09s FORCE 0.05s NEIGH 0.03s REST 0.01s
+```
 
+## Whole application scaling behaviour after parallelizing
+
+Due to those very low runtimes the number of timesteps are now increased from 200 to 2000 in order to reduce unwanted fluctuations.
+Up to now only scaling until 32 GPU-threads per block have been examined.
+However the scaling trend might now continue further than before the porting.
+Therefore the next test does scale the amout of threads exponentially by a factor of 2 from 32 to 1024.
+Additionally a larger domain size with more atoms is tested.
+
+* A40:
+![Scaling GPU-threads per block exponentially from 32 to 1024 with different number of atoms](../resources/scaling/exponential_thread_scaling/gpu32-1024_t2000_p128K-1M/a40_gpu32-1024_t2000_pScaling.png)
+The A40 does not scale well beyond 32 threads per block with performance even reducing.
+Increasing the number of atoms in the domains yields only small performance/throughput gains.
+
+* A100
+![Scaling GPU-threads per block exponentially from 32 to 1024 with different number of atoms](../resources/scaling/exponential_thread_scaling/gpu32-1024_t2000_p128K-1M/a100_gpu32-1024_t2000_pScaling.png)
+The A100 scales much better both with more threads per block and more atoms in the domain.
+Around 256 threads per block the maximum seems to be reached.
 
 
 
