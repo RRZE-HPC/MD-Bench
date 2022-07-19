@@ -57,7 +57,7 @@ void setupThermo(Parameter *param, int natoms)
         t_scale = mvv2e / dof_boltz;
         p_scale = 1.0 / 3 / param->xprd / param->yprd / param->zprd;
         e_scale = 0.5;
-    } else {
+    } else if(param->force_field == FF_EAM) {
         mvv2e = 1.036427e-04;
         dof_boltz = (natoms * 3 - 3) * 8.617343e-05;
         t_scale = mvv2e / dof_boltz;
