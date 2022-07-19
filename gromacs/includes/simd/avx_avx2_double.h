@@ -24,9 +24,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <immintrin.h>
-#include <zmmintrin.h>
 
 #define MD_SIMD_FLOAT       __m256d
+#define MD_SIMD_INT         __m128i
 
 #ifdef NO_AVX2
 #   define MD_SIMD_MASK     __m256d
@@ -41,7 +41,6 @@ static inline MD_SIMD_FLOAT simd_sub(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b) { return 
 static inline MD_SIMD_FLOAT simd_mul(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b) { return _mm256_mul_pd(a, b); }
 static inline MD_SIMD_FLOAT simd_load(MD_FLOAT *p) { return _mm256_load_pd(p); }
 static inline void simd_store(MD_FLOAT *p, MD_SIMD_FLOAT a) { _mm256_store_pd(p, a); }
-static inline MD_SIMD_FLOAT select_by_mask(MD_SIMD_FLOAT a, MD_SIMD_MASK m) { return _mm256_mask_mov_pd(_mm256_setzero_pd(), m, a); }
 static inline MD_SIMD_FLOAT simd_load_h_duplicate(const MD_FLOAT *m) {
     MD_SIMD_FLOAT ret;
     fprintf(stderr, "simd_load_h_duplicate(): Not implemented for AVX/AVX2 with double precision!");
@@ -84,6 +83,7 @@ static inline MD_FLOAT simd_incr_reduced_sum(MD_FLOAT *m, MD_SIMD_FLOAT v0, MD_S
 
 #ifdef NO_AVX2
 
+static inline MD_SIMD_FLOAT select_by_mask(MD_SIMD_FLOAT a, MD_SIMD_MASK m) { return _mm256_and_pd(a, m); }
 static inline MD_SIMD_FLOAT simd_reciprocal(MD_SIMD_FLOAT a) { return _mm256_cvtps_pd(_mm_rcp_ps(_mm256_cvtpd_ps(a))); }
 static inline MD_SIMD_FLOAT simd_fma(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b, MD_SIMD_FLOAT c) { return simd_add(simd_mul(a, b), c); }
 static inline MD_SIMD_FLOAT simd_masked_add(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b, MD_SIMD_MASK m) { return simd_add(a, _mm256_and_pd(b, m)); }
@@ -108,6 +108,7 @@ static inline MD_FLOAT simd_h_reduce_sum(MD_SIMD_FLOAT a) {
 
 #else // AVX2
 
+static inline MD_SIMD_FLOAT select_by_mask(MD_SIMD_FLOAT a, MD_SIMD_MASK m) { return _mm256_mask_mov_pd(_mm256_setzero_pd(), m, a); }
 static inline MD_SIMD_FLOAT simd_reciprocal(MD_SIMD_FLOAT a) { return _mm256_rcp14_pd(a); }
 static inline MD_SIMD_FLOAT simd_fma(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b, MD_SIMD_FLOAT c) { return _mm256_fmadd_pd(a, b, c); }
 static inline MD_SIMD_FLOAT simd_masked_add(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b, MD_SIMD_MASK m) { return _mm256_mask_add_pd(a, m, a, b); }
@@ -131,3 +132,14 @@ static inline void simd_h_decr3(MD_FLOAT *m, MD_SIMD_FLOAT a0, MD_SIMD_FLOAT a1,
 }
 
 #endif
+
+// Functions used in LAMMPS kernel
+static inline MD_SIMD_FLOAT simd_gather(MD_SIMD_INT vidx, const MD_FLOAT *m, int s) { return _mm256_i32gather_pd(m, vidx, s); }
+static inline MD_SIMD_INT simd_int_broadcast(int scalar) { return _mm_set1_epi32(scalar); }
+static inline MD_SIMD_INT simd_int_zero() { return _mm_setzero_si128(); }
+static inline MD_SIMD_INT simd_int_seq() { return _mm_set_epi32(3, 2, 1, 0); }
+static inline MD_SIMD_INT simd_int_load(const int *m) { return _mm_load_si128((__m128i const *) m); }
+static inline MD_SIMD_INT simd_int_add(MD_SIMD_INT a, MD_SIMD_INT b) { return _mm_add_epi32(a, b); }
+static inline MD_SIMD_INT simd_int_mul(MD_SIMD_INT a, MD_SIMD_INT b) { return _mm_mul_epi32(a, b); }
+static inline MD_SIMD_INT simd_int_mask_load(const int *m, MD_SIMD_MASK k) { return simd_int_load(m) & _mm256_cvtpd_epi32(k); }
+static inline MD_SIMD_MASK simd_mask_int_cond_lt(MD_SIMD_INT a, MD_SIMD_INT b) { return _mm256_cvtepi32_pd(_mm_cmplt_epi32(a, b)); }

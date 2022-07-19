@@ -22,7 +22,9 @@
  */
 
 #include <immintrin.h>
-#include <zmmintrin.h>
+#ifndef NO_ZMM_INTRIN
+#   include <zmmintrin.h>
+#endif
 
 #define MD_SIMD_FLOAT   __m512d
 #define MD_SIMD_MASK    __mmask8

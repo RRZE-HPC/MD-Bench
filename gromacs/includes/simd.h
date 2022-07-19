@@ -25,7 +25,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <immintrin.h>
-#include <zmmintrin.h>
+#ifndef NO_ZMM_INTRIN
+#   include <zmmintrin.h>
+#endif
 
 #ifndef CLUSTER_M
 #   define CLUSTER_M 1

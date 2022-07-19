@@ -209,6 +209,10 @@ double computeForceLJFullNeigh_simd(Parameter *param, Atom *atom, Neighbor *neig
     double S = getTimeStamp();
     LIKWID_MARKER_START("force");
 
+    #ifdef NO_AVX2
+    fprintf(stderr, "Error: SIMD kernel implemented for AVX2 and AVX512 only!");
+    exit(-1);
+    #else
     #pragma omp parallel for
     for(int i = 0; i < Nlocal; i++) {
         neighs = &neighbor->neighbors[i * neighbor->maxneighs];
@@ -250,6 +254,7 @@ double computeForceLJFullNeigh_simd(Parameter *param, Atom *atom, Neighbor *neig
         atom_fy(i) += simd_h_reduce_sum(fiy);
         atom_fz(i) += simd_h_reduce_sum(fiz);
     }
+    #endif
 
     LIKWID_MARKER_STOP("force");
     double E = getTimeStamp();
