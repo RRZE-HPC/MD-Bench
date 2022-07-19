@@ -1,0 +1,80 @@
+### Starting TaskPrologue of job 364280 on a0534 at Tue Jul 19 15:44:28 CEST 2022
+Running on cores 32-47 with govenor ondemand
+Tue Jul 19 15:44:28 2022       
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 510.47.03    Driver Version: 510.47.03    CUDA Version: 11.6     |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|                               |                      |               MIG M. |
+|===============================+======================+======================|
+|   0  NVIDIA A100-SXM...  On   | 00000000:49:00.0 Off |                    0 |
+| N/A   31C    P0    66W / 400W |      0MiB / 81920MiB |      0%      Default |
+|                               |                      |             Disabled |
++-------------------------------+----------------------+----------------------+
+                                                                               
++-----------------------------------------------------------------------------+
+| Processes:                                                                  |
+|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |
+|        ID   ID                                                   Usage      |
+|=============================================================================|
+|  No running processes found                                                 |
++-----------------------------------------------------------------------------+
+### Finished TaskPrologue
+
+NOTE: If and ONLY IF you want to use likwid-perfctr you have to add '--constraint=hwperf' to your batch jobs.
+      likwid-features and likwid-setFrequencies are not available. The frequency/governor can be set using SLURM features.
+Running without Marker API. Activate Marker API with -m on commandline.
+1.Neighbor_perf in millions per sec: updateAtomsPbc: 569.22 setupPbc: 194.54 updatePbc: 4720.43 binAtoms: 935.54 buildNeighbor_wo_binning: 19.15
+Running without Marker API. Activate Marker API with -m on commandline.
+2.Neighbor_perf in millions per sec: updateAtomsPbc: 719.60 setupPbc: 193.65 updatePbc: 6650.36 binAtoms: 1712.83 buildNeighbor_wo_binning: 32.23
+Running without Marker API. Activate Marker API with -m on commandline.
+4.Neighbor_perf in millions per sec: updateAtomsPbc: 865.21 setupPbc: 193.75 updatePbc: 8397.89 binAtoms: 2890.32 buildNeighbor_wo_binning: 54.62
+Running without Marker API. Activate Marker API with -m on commandline.
+8.Neighbor_perf in millions per sec: updateAtomsPbc: 955.68 setupPbc: 195.11 updatePbc: 9405.27 binAtoms: 4593.95 buildNeighbor_wo_binning: 90.48
+Running without Marker API. Activate Marker API with -m on commandline.
+16.Neighbor_perf in millions per sec: updateAtomsPbc: 945.90 setupPbc: 200.87 updatePbc: 10325.05 binAtoms: 6192.71 buildNeighbor_wo_binning: 126.96
+Running without Marker API. Activate Marker API with -m on commandline.
+32.Neighbor_perf in millions per sec: updateAtomsPbc: 998.90 setupPbc: 202.99 updatePbc: 10815.30 binAtoms: 6929.29 buildNeighbor_wo_binning: 134.91
+Running without Marker API. Activate Marker API with -m on commandline.
+64.Neighbor_perf in millions per sec: updateAtomsPbc: 1009.55 setupPbc: 194.59 updatePbc: 10627.38 binAtoms: 6371.45 buildNeighbor_wo_binning: 128.03
+Running without Marker API. Activate Marker API with -m on commandline.
+128.Neighbor_perf in millions per sec: updateAtomsPbc: 1004.20 setupPbc: 182.55 updatePbc: 10591.82 binAtoms: 6268.93 buildNeighbor_wo_binning: 135.48
+Running without Marker API. Activate Marker API with -m on commandline.
+256.Neighbor_perf in millions per sec: updateAtomsPbc: 1011.98 setupPbc: 199.43 updatePbc: 10780.45 binAtoms: 6208.60 buildNeighbor_wo_binning: 142.99
+Running without Marker API. Activate Marker API with -m on commandline.
+512.Neighbor_perf in millions per sec: updateAtomsPbc: 1020.47 setupPbc: 214.69 updatePbc: 10357.86 binAtoms: 5682.22 buildNeighbor_wo_binning: 154.82
+Running without Marker API. Activate Marker API with -m on commandline.
+1024.Neighbor_perf in millions per sec: updateAtomsPbc: 1019.41 setupPbc: 190.90 updatePbc: 10713.42 binAtoms: 5423.92 buildNeighbor_wo_binning: 160.37
+=== JOB_STATISTICS ===
+=== current date     : Tue Jul 19 15:46:55 CEST 2022
+= Job-ID             : 364280 on alex
+= Job-Name           : a100_gpu1-1024_sr_t2000_p1M.sh
+= Job-Command        : /home/hpc/ptfs/ptfs176h/training/second_presentation/comparison/scaling/neigh_perf/a100_gpu1-1024_sr_t2000_p1M.sh
+= Initial workdir    : /home/hpc/ptfs/ptfs176h/training/second_presentation/comparison/scaling/neigh_perf
+= Queue/Partition    : a100
+= Slurm account      : ptfs with QOS=normal
+= Requested resources: cpu=16,mem=120000M,node=1,billing=16,gres/gpu=1,gres/gpu:a100=1 for 01:00:00
+= Elapsed runtime    : 00:02:29
+= Total RAM usage    : 0.0 GiB of assigned 117 GiB (0.0%)   
+= Node list          : a0534
+= Subm/Elig/Start/End: 2022-07-19T15:44:26 / 2022-07-19T15:44:26 / 2022-07-19T15:44:26 / 2022-07-19T15:46:55
+======================
+=== Quota infos ======
+    Path              Used     SoftQ    HardQ    Gracetime  Filec    FileQ    FiHaQ    FileGrace    
+    /home/hpc          215.0M    52.4G   104.9G        N/A   1,959      500K   1,000K        N/A    
+    /home/woody          4.0K   500.0G   999.0G        N/A       1                           N/A    
+======================
+=== GPU utilization ==
+gpu_name, gpu_bus_id, pid, gpu_utilization [%], mem_utilization [%], max_memory_usage [MiB], time [ms]
+NVIDIA A100-SXM4-80GB, 00000000:49:00.0, 1832943, 94 %, 1 %, 1003 MiB, 46697 ms
+NVIDIA A100-SXM4-80GB, 00000000:49:00.0, 1833213, 90 %, 3 %, 1003 MiB, 28312 ms
+NVIDIA A100-SXM4-80GB, 00000000:49:00.0, 1833360, 80 %, 4 %, 1003 MiB, 17470 ms
+NVIDIA A100-SXM4-80GB, 00000000:49:00.0, 1833458, 77 %, 7 %, 1003 MiB, 11082 ms
+NVIDIA A100-SXM4-80GB, 00000000:49:00.0, 1833527, 67 %, 10 %, 1003 MiB, 7737 ms
+NVIDIA A100-SXM4-80GB, 00000000:49:00.0, 1833583, 58 %, 13 %, 1003 MiB, 6124 ms
+NVIDIA A100-SXM4-80GB, 00000000:49:00.0, 1833623, 58 %, 15 %, 1003 MiB, 5829 ms
+NVIDIA A100-SXM4-80GB, 00000000:49:00.0, 1833644, 53 %, 14 %, 1003 MiB, 5674 ms
+NVIDIA A100-SXM4-80GB, 00000000:49:00.0, 1833693, 48 %, 13 %, 1003 MiB, 5501 ms
+NVIDIA A100-SXM4-80GB, 00000000:49:00.0, 1833739, 47 %, 12 %, 1003 MiB, 5633 ms
+NVIDIA A100-SXM4-80GB, 00000000:49:00.0, 1833750, 52 %, 13 %, 1003 MiB, 5958 ms
