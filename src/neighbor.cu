@@ -33,6 +33,8 @@ extern "C" {
 #include <parameter.h>
 #include <allocate.h>
 #include <atom.h>
+#include <timing.h>
+#include <timers.h>
 
 #define SMALL 1.0e-6
 #define FACTOR 0.999
@@ -609,7 +611,7 @@ void binatoms_cuda(Atom* c_atom, Binning* c_binning, int* c_resize_needed, Neigh
     checkCUDAError( "DeviceSync sort_bin_contents kernel", cudaDeviceSynchronize() );
 }
 
-void buildNeighbor_cuda(Atom *atom, Neighbor *neighbor, Atom *c_atom, Neighbor *c_neighbor, const int num_threads_per_block)
+void buildNeighbor_cuda(Atom *atom, Neighbor *neighbor, Atom *c_atom, Neighbor *c_neighbor, const int num_threads_per_block, double* timers)
 {
     int nall = atom->Nlocal + atom->Nghost;
     c_neighbor->maxneighs = neighbor->maxneighs;
@@ -652,7 +654,10 @@ void buildNeighbor_cuda(Atom *atom, Neighbor *neighbor, Atom *c_atom, Neighbor *
     }
 
     /* bin local & ghost atoms */
+    double beforeBinning = getTimeStamp();
     binatoms_cuda(c_atom, &c_binning, c_resize_needed, &np, num_threads_per_block);
+    double afterBinning = getTimeStamp();
+    timers[NEIGH_BINATOMS] += afterBinning - beforeBinning;
 
     if(c_new_maxneighs == NULL){
         checkCUDAError("c_new_maxneighs malloc", cudaMalloc((void**)&c_new_maxneighs, sizeof(int) ));
