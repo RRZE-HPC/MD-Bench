@@ -455,19 +455,78 @@ TOTAL 0.09s FORCE 0.05s NEIGH 0.03s REST 0.01s
 
 ## Whole application scaling behaviour after parallelizing
 
+
 Due to those very low runtimes the number of timesteps are now increased from 200 to 2000 in order to reduce unwanted fluctuations.
+Additionally a larger domain size with up to 1048576 atoms (instead of before 131072) is tested.
+
+The runtimes for default runs (32 threads per block) are now:
+* A40:
+```
+System: 1048576 atoms 173434 ghost atoms, Steps: 2000
+TOTAL 19.57s FORCE 15.49s NEIGH 3.15s REST 0.93s
+```
+* A100:
+```
+System: 1048576 atoms 173434 ghost atoms, Steps: 2000
+TOTAL 4.27s FORCE 2.14s NEIGH 1.54s REST 0.59s
+```
+
+With this the force computation is the main bottleneck.
+A look into the cuda profiler confirms this:
+
+![A look into the profiler: 2 cycles with each 1 neighborhood calculation and 20 timesteps with force calculation](../resources/profiling/nsys/a40_upAt_profile.png)
+
+However memory transfers still take some time:
+
+```
+Time	 Total Time	Count	Min	      Max          Operation
+67.0%	310,648 ms	523	1,344 μs	475,849 μs	[CUDA memcpy DtoH]
+32.0%	150,418 ms	613	1,023 μs	411,571 μs	[CUDA memcpy HtoD]
+0.0% 	519,530 μs	307	  991 ns  	898 ns	  [CUDA memset]
+```
+
+In the case of the A40 with a runtime of ~19.5 seconds this is not a significant portion.
+For the A100 with a total runtime of ~4.3 seconds this represents ~10.8% of the total program runtime.
+
+### Runtime spent in the neighbor computation
+
+In order to find hotspots in the neighborhood computation we instrument the neighborhood calculation with timestamps.
+The runtime spent is summed up over all timesteps for each section and then printed.
+For the A40 we get a result like this:
+
+```
+NEIGH_TIMERS: 
+UPD_AT: 0.10s 
+SETUP_PBC 0.57s 
+UPDATE_PBC 0.20s 
+BINATOMS 0.02s 
+BUILD_NEIGHBOR 2.31s
+```
+
+
+
+
+### Scaling beyond 32 threads per block
+
 Up to now only scaling until 32 GPU-threads per block have been examined.
 However the scaling trend might now continue further than before the porting.
 Therefore the next test does scale the amout of threads exponentially by a factor of 2 from 32 to 1024.
-Additionally a larger domain size with more atoms is tested.
+Additionally we take different sizes for the number of atoms to find out, whether the program with the new neighborhood calculation still operates at max capacity with the the initial of size of 131072 atoms.
+
+
 
 * A40:
+
 ![Scaling GPU-threads per block exponentially from 32 to 1024 with different number of atoms](../resources/scaling/exponential_thread_scaling/gpu32-1024_t2000_p128K-1M/a40_gpu32-1024_t2000_pScaling.png)
+
 The A40 does not scale well beyond 32 threads per block with performance even reducing.
 Increasing the number of atoms in the domains yields only small performance/throughput gains.
+The dropoff in performance with larger numbers of threads per block is less severe for a high number of atoms in the domain.
 
 * A100
+
 ![Scaling GPU-threads per block exponentially from 32 to 1024 with different number of atoms](../resources/scaling/exponential_thread_scaling/gpu32-1024_t2000_p128K-1M/a100_gpu32-1024_t2000_pScaling.png)
+
 The A100 scales much better both with more threads per block and more atoms in the domain.
 Around 256 threads per block the maximum seems to be reached.
 
