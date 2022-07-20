@@ -414,7 +414,7 @@ int main(int argc, char** argv)
     printf("Performance: %.2f million atom updates per second\n",
             1e-6 * (double) atom.Natoms * param.ntimes / timer[TOTAL]);
     double atomUpdatesTotal = (double) atom.Natoms * param.ntimes;
-    printf("Force_perf in millions per sec: %.2f", 1e-6 * atomUpdatesTotal / timer[FORCE]);
+    printf("Force_perf in millions per sec: %.2f\n", 1e-6 * atomUpdatesTotal / timer[FORCE]);
     double atomNeighUpdatesTotal = (double) atom.Natoms * param.ntimes / param.every;
     printf("Neighbor_perf in millions per sec: updateAtomsPbc: %.2f setupPbc: %.2f updatePbc: %.2f binAtoms: %.2f buildNeighbor_wo_binning: %.2f\n", 1e-6 * atomNeighUpdatesTotal / timer[NEIGH_UPDATE_ATOMS_PBC], 1e-6 * atomNeighUpdatesTotal / timer[NEIGH_SETUP_PBC], 1e-6 * atomUpdatesTotal / timer[NEIGH_UPDATE_PBC], 1e-6 * atomNeighUpdatesTotal / timer[NEIGH_BINATOMS], 1e-6 * atomNeighUpdatesTotal / timer[NEIGH_BUILD_LISTS]);
 #ifdef COMPUTE_STATS
