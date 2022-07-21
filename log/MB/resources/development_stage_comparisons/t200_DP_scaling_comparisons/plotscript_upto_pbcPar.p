@@ -1,6 +1,6 @@
 set terminal png
 set output 'plot_upto_pbcPar.png'
-set title 'GPU threads-per-block scaling for one single GPU and its assigned cores'
+set title '1 GPU & 16 CPU cores - scaling threads-per-block'
 set xlabel '#GPU-Threads per block'
 set xrange [1:32]
 set yrange [0:*]
