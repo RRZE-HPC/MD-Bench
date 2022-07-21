@@ -1,6 +1,6 @@
 set terminal png
 set output 'a40_gpu32-1024_t2000_pScaling.png'
-set title 'GPU threads-per-block scaling for one single GPU and its assigned cores'
+set title '1 A40-GPU \& 16 CPU cores; scaling threads/block; different #atoms'
 set xlabel '#GPU-Threads per block'
 set xrange [32:1024]
 set logscale x 2
