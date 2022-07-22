@@ -1,0 +1,58 @@
+### Starting TaskPrologue of job 365048 on a0224 at Fri Jul 22 22:02:12 CEST 2022
+Running on cores 64-79 with govenor ondemand
+Fri Jul 22 22:02:12 2022       
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 510.47.03    Driver Version: 510.47.03    CUDA Version: 11.6     |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|                               |                      |               MIG M. |
+|===============================+======================+======================|
+|   0  NVIDIA A40          On   | 00000000:81:00.0 Off |                  Off |
+|  0%   33C    P8    30W / 300W |      0MiB / 49140MiB |      0%      Default |
+|                               |                      |                  N/A |
++-------------------------------+----------------------+----------------------+
+                                                                               
++-----------------------------------------------------------------------------+
+| Processes:                                                                  |
+|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |
+|        ID   ID                                                   Usage      |
+|=============================================================================|
+|  No running processes found                                                 |
++-----------------------------------------------------------------------------+
+### Finished TaskPrologue
+
+NOTE: If and ONLY IF you want to use likwid-perfctr you have to add '--constraint=hwperf' to your batch jobs.
+      likwid-features and likwid-setFrequencies are not available. The frequency/governor can be set using SLURM features.
+Running without Marker API. Activate Marker API with -m on commandline.
+Running without Marker API. Activate Marker API with -m on commandline.
+Running without Marker API. Activate Marker API with -m on commandline.
+Running without Marker API. Activate Marker API with -m on commandline.
+Running without Marker API. Activate Marker API with -m on commandline.
+Running without Marker API. Activate Marker API with -m on commandline.
+=== JOB_STATISTICS ===
+=== current date     : Fri Jul 22 22:23:43 CEST 2022
+= Job-ID             : 365048 on alex
+= Job-Name           : a40_gpu32-1024_sr_t2000_p1M.sh
+= Job-Command        : /home/hpc/ptfs/ptfs176h/training/second_presentation/comparison/scaling/gpuScaling_t2000_p1M_DP/befPar/a40_gpu32-1024_sr_t2000_p1M.sh
+= Initial workdir    : /home/hpc/ptfs/ptfs176h/training/second_presentation/comparison/scaling/gpuScaling_t2000_p1M_DP/befPar
+= Queue/Partition    : a40
+= Slurm account      : ptfs with QOS=normal
+= Requested resources: cpu=16,mem=60000M,node=1,billing=16,gres/gpu=1,gres/gpu:a40=1 for 03:00:00
+= Elapsed runtime    : 00:21:32
+= Total RAM usage    : 0.0 GiB of assigned 58 GiB (0.0%)   
+= Node list          : a0224
+= Subm/Elig/Start/End: 2022-07-22T22:02:10 / 2022-07-22T22:02:10 / 2022-07-22T22:02:11 / 2022-07-22T22:23:43
+======================
+=== Quota infos ======
+    Path              Used     SoftQ    HardQ    Gracetime  Filec    FileQ    FiHaQ    FileGrace    
+    /home/hpc          510.3M    52.4G   104.9G        N/A   2,144      500K   1,000K        N/A    
+======================
+=== GPU utilization ==
+gpu_name, gpu_bus_id, pid, gpu_utilization [%], mem_utilization [%], max_memory_usage [MiB], time [ms]
+NVIDIA A40, 00000000:81:00.0, 221513, 4 %, 0 %, 709 MiB, 214781 ms
+NVIDIA A40, 00000000:81:00.0, 221544, 4 %, 0 %, 709 MiB, 215027 ms
+NVIDIA A40, 00000000:81:00.0, 221596, 4 %, 0 %, 709 MiB, 214945 ms
+NVIDIA A40, 00000000:81:00.0, 221627, 4 %, 0 %, 709 MiB, 214896 ms
+NVIDIA A40, 00000000:81:00.0, 221656, 4 %, 0 %, 709 MiB, 215276 ms
+NVIDIA A40, 00000000:81:00.0, 221678, 4 %, 0 %, 709 MiB, 215259 ms
