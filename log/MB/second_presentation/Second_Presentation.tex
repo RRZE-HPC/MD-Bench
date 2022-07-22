@@ -681,6 +681,28 @@ Time Total Time        Count   Min       Max         Operation
     \end{center}
 \end{frame}
 
+\section{Before $\longleftrightarrow$ After \newline Neighborhood calculation porting}
+
+\begin{frame}{Performance comparison}{Before $\longleftrightarrow$ After}
+    \begin{center}
+        \includegraphics[width=0.7\linewidth]{../resources/before_after_comparison/perf_comp_log_before_after.png}
+    \end{center}
+\end{frame}
+
+\section{Outlook}
+\begin{frame}{Outlook}
+    \begin{itemize}
+        \item setupPbc still on CPU
+        \begin{itemize}
+            \item runtime itself not negligible
+            \item requires costly memcpy from device to host and back
+            \item difficult to port
+        \end{itemize}
+        \item performance in most kernels probably limited by bandwidth
+        \item kernels mostly still not optimized
+    \end{itemize}
+\end{frame}
+
 \begin{frame}
     \begin{center}
         \color{blue}
