@@ -519,21 +519,21 @@ void sortAtom(Atom* atom) {
     }
 
 #ifdef AOS
-    double* new_x = (double*) malloc(Nmax * sizeof(MD_FLOAT) * 3);
+    MD_FLOAT* new_x = (MD_FLOAT*) malloc(Nmax * sizeof(MD_FLOAT) * 3);
 
-    double* new_vx = (double*) malloc(Nmax * sizeof(MD_FLOAT) * 3);
+    MD_FLOAT* new_vx = (MD_FLOAT*) malloc(Nmax * sizeof(MD_FLOAT) * 3);
 #else
-    double* new_x = (double*) malloc(Nmax * sizeof(MD_FLOAT));
-    double* new_y = (double*) malloc(Nmax * sizeof(MD_FLOAT));
-    double* new_z = (double*) malloc(Nmax * sizeof(MD_FLOAT));
+    MD_FLOAT* new_x = (MD_FLOAT*) malloc(Nmax * sizeof(MD_FLOAT));
+    MD_FLOAT* new_y = (MD_FLOAT*) malloc(Nmax * sizeof(MD_FLOAT));
+    MD_FLOAT* new_z = (MD_FLOAT*) malloc(Nmax * sizeof(MD_FLOAT));
 
-    double* new_vx = (double*) malloc(Nmax * sizeof(MD_FLOAT));
-    double* new_vy = (double*) malloc(Nmax * sizeof(MD_FLOAT));
-    double* new_vz = (double*) malloc(Nmax * sizeof(MD_FLOAT));
+    MD_FLOAT* new_vx = (MD_FLOAT*) malloc(Nmax * sizeof(MD_FLOAT));
+    MD_FLOAT* new_vy = (MD_FLOAT*) malloc(Nmax * sizeof(MD_FLOAT));
+    MD_FLOAT* new_vz = (MD_FLOAT*) malloc(Nmax * sizeof(MD_FLOAT));
 #endif
 
-    double* old_x = atom->x; double* old_y = atom->y; double* old_z = atom->z;
-    double* old_vx = atom->vx; double* old_vy = atom->vy; double* old_vz = atom->vz;
+    MD_FLOAT* old_x = atom->x; MD_FLOAT* old_y = atom->y; MD_FLOAT* old_z = atom->z;
+    MD_FLOAT* old_vx = atom->vx; MD_FLOAT* old_vy = atom->vy; MD_FLOAT* old_vz = atom->vz;
 
     for(int mybin = 0; mybin<mbins; mybin++) {
         int start = mybin>0?binpos[mybin-1]:0;
