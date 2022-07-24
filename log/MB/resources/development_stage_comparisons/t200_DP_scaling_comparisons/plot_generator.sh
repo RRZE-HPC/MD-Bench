@@ -8,7 +8,7 @@ unimp_files=${files%PLOT_CURRENT*}
 #only_important=${blueprint%ADDENDUM*}
 #only_unimportant=${blueprint#*ADDENDUM}
 unimportant_plot_commands=""
-for abbreviation_and_name in "baseline baseline" "buiNeiPar neighborList" "pbcPar updatePbc" "binAtPar binAtoms" "upAtPar updateAtomsPbc";
+for abbreviation_and_name in "baseline BL" "buiNeiPar NL" "pbcPar UP" "binAtPar BA" "upAtPar UAP";
 do
 	set -- $abbreviation_and_name
 	filenam=$1
