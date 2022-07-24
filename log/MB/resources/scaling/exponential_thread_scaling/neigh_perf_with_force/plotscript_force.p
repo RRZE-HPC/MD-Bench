@@ -1,10 +1,10 @@
 set terminal png
 set output 'force_perf.png'
-set title 'force performance, 1 GPU & 16 cores, exponentially scaling threads per block'
+set title 'force performance, 1 GPU \& 16 cores, exponentially scaling threads per block'
 set xlabel '#GPU-Threads per block'
 set xrange [1:1024]
 set yrange [0:*]
-set ylabel 'force throughput [1/s]'
+set ylabel 'force computation throughput [1*10^6/s]'
 set logscale x 2
 set datafile separator ","
 set key left top
