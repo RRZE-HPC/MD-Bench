@@ -529,29 +529,93 @@ Each sample counts as 0.01 seconds.
 \end{frame}
 
 \begin{frame}[fragile]{Effects on scaling}{Parallelizing building neighbor lists}
-\begin{center}
-    \includegraphics[width=0.7\linewidth]{../resources/development_stage_comparisons/t200_DP_scaling_comparisons/plot_upto_buiNeiPar.png}
-\end{center}
+    \begin{columns}[T] % align columns
+        \begin{column}{.36\linewidth}
+            \begin{itemize}
+                \item BL - baseline \newline 
+                (only force GPU-parallel) \newline
+                $\Downarrow$ port neighbor list constr.
+                \item NL
+            \end{itemize}
 
+            
+        \end{column}%
+        \hfill%
+        \begin{column}{.7\linewidth}
+            \includegraphics[width=\linewidth]{../resources/development_stage_comparisons/t200_DP_scaling_comparisons/plot_upto_buiNeiPar.png}
+        \end{column}%
+    \end{columns}
 \end{frame}
+
 
 \section{Parallelizing further components}
 \begin{frame}{Parallelizing updatePbc}{Parallelizing further components}
-    \begin{center}
-        \includegraphics[width=0.7\linewidth]{../resources/development_stage_comparisons/t200_DP_scaling_comparisons/plot_upto_pbcPar.png}
-    \end{center}
+    \begin{columns}[T] % align columns
+    \begin{column}{.36\linewidth}
+        \begin{itemize}
+            \item BL: baseline \newline 
+            (only force GPU-parallel) \newline
+            $\Downarrow$ port neighbor list constr.
+            \item NL \newline
+            $\Downarrow$ port updatePbc
+            \item UP \newline
+        \end{itemize}
+        
+        
+    \end{column}%
+    \hfill%
+    \begin{column}{.7\linewidth}
+        \includegraphics[width=\linewidth]{../resources/development_stage_comparisons/t200_DP_scaling_comparisons/plot_upto_PbcPar.png}
+    \end{column}%
+    \end{columns}
 \end{frame}
 
 \begin{frame}{Parallelizing binAtoms}{Parallelizing further components}
-    \begin{center}
-        \includegraphics[width=0.7\linewidth]{../resources/development_stage_comparisons/t200_DP_scaling_comparisons/plot_upto_binAtPar.png}
-    \end{center}
+    \begin{columns}[T] % align columns
+    \begin{column}{.36\linewidth}
+        \begin{itemize}
+            \item BL: baseline \newline 
+            (only force GPU-parallel) \newline
+            $\Downarrow$ port neighbor list constr.
+            \item NL \newline
+            $\Downarrow$ port updatePbc
+            \item UP \newline
+            $\Downarrow$ port binAtoms
+            \item BA \newline
+        \end{itemize}
+        
+        
+    \end{column}%
+    \hfill%
+    \begin{column}{.7\linewidth}
+        \includegraphics[width=\linewidth]{../resources/development_stage_comparisons/t200_DP_scaling_comparisons/plot_upto_binAtPar.png}
+    \end{column}%
+\end{columns}
 \end{frame}
 
 \begin{frame}{Parallelizing updateAtomsPbc}{Parallelizing further components}
-    \begin{center}
-        \includegraphics[width=0.7\linewidth]{../resources/development_stage_comparisons/t200_DP_scaling_comparisons/plot_upto_upAtPar.png}
-    \end{center}
+    \begin{columns}[T] % align columns
+    \begin{column}{.36\linewidth}
+        \begin{itemize}
+            \item BL: baseline \newline 
+            (only force GPU-parallel) \newline
+            $\Downarrow$ port neighbor list constr.
+            \item NL \newline
+            $\Downarrow$ port updatePbc
+            \item UP \newline
+            $\Downarrow$ port binAtoms
+            \item BA \newline
+            $\Downarrow$ port updateAtomsPbc
+            \item UAP
+        \end{itemize}
+        
+        
+    \end{column}%
+    \hfill%
+    \begin{column}{.7\linewidth}
+        \includegraphics[width=\linewidth]{../resources/development_stage_comparisons/t200_DP_scaling_comparisons/plot_upto_upAtPar.png}
+    \end{column}%
+\end{columns}
 \end{frame}
 
 \begin{frame}[fragile]{Very low runtimes after parallelization}{Parallelizing further components}
@@ -683,10 +747,50 @@ Time Total Time        Count   Min       Max         Operation
 
 \section{Before $\longleftrightarrow$ After \newline Neighborhood calculation porting}
 
-\begin{frame}{Performance comparison}{Before $\longleftrightarrow$ After}
-    \begin{center}
-        \includegraphics[width=0.7\linewidth]{../resources/before_after_comparison/perf_comp_log_before_after.png}
-    \end{center}
+\begin{frame}{Performance comparison}{A40 Before $\longleftrightarrow$ After}
+    \begin{columns}
+        \begin{column}{0.65\linewidth}
+            \includegraphics[width=\linewidth]{../resources/before_after_comparison/a40_perf_comp_log_before_after.png}
+        \end{column}
+        \begin{column}{0.35\linewidth}
+        Performance increase:
+        \vspace{\baselineskip}
+        \begin{itemize}
+            \item double precision (DP)
+            \begin{itemize}
+                \item factor 10 - 11
+            \end{itemize}
+            \vspace{0.5\baselineskip}
+            \item single precision (SP)
+            \begin{itemize}
+                \item factor 26 - 27
+            \end{itemize}
+        \end{itemize}
+    \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Performance comparison}{A100 Before $\longleftrightarrow$ After}
+    \begin{columns}
+        \begin{column}{0.65\linewidth}
+            \includegraphics[width=\linewidth]{../resources/before_after_comparison/a100_perf_comp_log_before_after.png}
+        \end{column}
+        \begin{column}{0.35\linewidth}
+            Performance increase:
+            \vspace{\baselineskip}
+            \begin{itemize}
+                \item double precision (DP)
+                \begin{itemize}
+                    \item factor 55
+                \end{itemize}
+                \vspace{0.5\baselineskip}
+                \item single precision (SP)
+                \begin{itemize}
+                    \item factor 80
+                \end{itemize}
+            \end{itemize}
+        \end{column}
+    \end{columns}
 \end{frame}
 
 \section{Outlook}
@@ -698,7 +802,6 @@ Time Total Time        Count   Min       Max         Operation
             \item requires costly memcpy from device to host and back
             \item difficult to port
         \end{itemize}
-        \item performance in most kernels probably limited by bandwidth
         \item kernels mostly still not optimized
     \end{itemize}
 \end{frame}
