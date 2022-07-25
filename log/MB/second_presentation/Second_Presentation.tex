@@ -472,6 +472,12 @@ Each sample counts as 0.01 seconds.
         \end{itemize}
     \end{itemize}
 \end{frame}
+\begin{frame}{Effects on runtime profile}{Parallelizing building neighbor lists}
+    \begin{center}
+        \includegraphics{../resources/profiling/nsys/a40_buiNei_profile.png}
+    \end{center}
+\end{frame}
+
 \begin{frame}{Effects on performance}{Parallelizing building neighbor lists}
     \begin{itemize}
         \tightlist
@@ -836,5 +842,54 @@ Time Total Time        Count   Min       Max         Operation
     
     
 \end{frame}
+
+\section{Appendix}
+\begin{frame}{Neighbor computation performance roofline}
+        \begin{tabular}{ c c c c }
+GPU  & Arith. Intensity 	& Througput   & Memory Throughput \\
+A40  & 6.6 - 10.5 FLOP/byte & 147 GFLOP/s & 17 GB/s \\
+A100 & 3.75 - 7.9 FLOP/byte & 707 GFLOP/s &	135 GB/s
+        \end{tabular}
+    \includegraphics[width=\linewidth]{../resources/profiling/ncu/a40_after_DP_gpu32_p1M_neigh_roofline.png}
+    \vspace{1\baselineskip}
+    \includegraphics[width=\linewidth]{../resources/profiling/ncu/a100_after_DP_gpu256_p1M_neigh_roofline.png}
+\end{frame}
+
+\begin{frame}{Force computation performance roofline}
+    \begin{tabular}{ c c c c }
+        GPU  & Arith. Intensity 	& Througput   & Memory Throughput \\
+        A40  & ~4.95 FLOP/byte		& 211 GFLOP/s & 40 GB/s\\
+        A100 & 5.1 - 5.5 FLOP/byte	& 2.2 TFLOP/s & 410 GB/s
+    \end{tabular}
+    \includegraphics[width=\linewidth]{../resources/profiling/ncu/a40_after_DP_gpu32_p1M_force_roofline.png}
+    \includegraphics[width=\linewidth]{../resources/profiling/ncu/a100_after_DP_gpu256_p1M_force_roofline.png}
+\end{frame}
+
+\begin{frame}[fragile]{Project Description}{Simulation Process}
+   
+    \begin{small}
+        \begin{Shaded}
+            \begin{Highlighting}[]
+                \ControlFlowTok{for}\NormalTok{ t }\KeywordTok{in}\NormalTok{ timesteps:}
+                \ControlFlowTok{for}\NormalTok{ atom }\KeywordTok{in}\NormalTok{ atoms:}
+                \NormalTok{    velocity[atom] }\OperatorTok{+=}\NormalTok{ force[atom]}
+                \NormalTok{    position[atom] }\OperatorTok{+=}\NormalTok{ velocity[atom]}
+                \ControlFlowTok{if}\NormalTok{ t }\OperatorTok{%} \DecValTok{20} \OperatorTok{==} \DecValTok{0}\NormalTok{:}
+                    \NormalTok{neighbors }\OperatorTok{=}\NormalTok{ calculateNeighbors()}
+                \ControlFlowTok{else:}
+\color{red}                    \NormalTok{computeUpdatePbc()}
+                \ControlFlowTok{for}\NormalTok{ atom }\KeywordTok{in}\NormalTok{ atoms:}
+                \NormalTok{    neighbors }\OperatorTok{=}\NormalTok{ neighbors[atom]}
+                \NormalTok{    force }\OperatorTok{=} \FloatTok{0.0}
+                    \ControlFlowTok{for}\NormalTok{ neighbor }\KeywordTok{in}\NormalTok{ neighbors:}
+                \NormalTok{        radius }\OperatorTok{=}\NormalTok{ calc_radius(...)}
+                        \ControlFlowTok{if}\NormalTok{ radius }\OperatorTok{<}\NormalTok{ close_enough:}
+                    \NormalTok{        force }\OperatorTok{+=}\NormalTok{ calc_force(...)}
+                \NormalTok{    forces[atom] }\OperatorTok{+=}\NormalTok{ force}
+                \end{Highlighting}
+            \end{Shaded}
+        \end{small}
+    \end{frame}
+
 
 \end{document}
