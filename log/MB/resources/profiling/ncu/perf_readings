@@ -1,0 +1,27 @@
+All readings come from the ncu reports:
+
+* Double precision is used for computation
+
+force kernel:
+Arith. Intensity: 5.11 FLOPS/byte
+A40: ~ 211 GFLOP/s (max is 438 GFLOP/s)
+ * Mem: ~ 40 GB/s
+ * very high FP64 pipeline utilization (87%)
+ * stalls mostly come from 'short stall scoreboard' (which is for MIO but also fr special math ops)
+	--> maybe limited by double-precision computation speed?
+
+A100: ~ 2.185 TFLOP/s (max is 7.9 TFLOP/s)
+ * Mem: ~ 411 GB/s
+ * most stalls come from 'stall long scoreboard' (which is for L1 cache waiting)
+ * L1 cache access pattern is very suboptimal
+
+
+neighborhood_computation kernel:
+A40: ~ 147 GFLOP/s (max is 438 GFLOP/s)
+ * arith. Intensity: 6.6 - 10.75 FLOP/byte
+ * Mem: ~17 GB/s
+ * very high FP64 pipeline utilization (86.5%)
+
+A100 ~ 707 GLOP/s (max is 7.9 TFLOP/s)
+ * arith. Intensity: 3.75 - 7.9 FLOP/byte
+ * Mem: 135 GB/s
