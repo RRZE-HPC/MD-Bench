@@ -32,8 +32,7 @@
 #define IR 2836
 #define MASK 123459876
 
-double myrandom(int* seed)
-{
+double myrandom(int* seed) {
     int k= (*seed) / IQ;
     double ans;
 
@@ -43,8 +42,7 @@ double myrandom(int* seed)
     return ans;
 }
 
-void random_reset(int *seed, int ibase, double *coord)
-{
+void random_reset(int *seed, int ibase, double *coord) {
   int i;
   char *str = (char *) &ibase;
   int n = sizeof(int);
@@ -80,18 +78,21 @@ void random_reset(int *seed, int ibase, double *coord)
   //save = 0;
 }
 
-int str2ff(const char *string)
-{
+int str2ff(const char *string) {
     if(strncmp(string, "lj", 2) == 0) return FF_LJ;
     if(strncmp(string, "eam", 3) == 0) return FF_EAM;
     if(strncmp(string, "dem", 3) == 0) return FF_DEM;
     return -1;
 }
 
-const char* ff2str(int ff)
-{
+const char* ff2str(int ff) {
     if(ff == FF_LJ) { return "lj"; }
     if(ff == FF_EAM) { return "eam"; }
     if(ff == FF_DEM) { return "dem"; }
     return "invalid";
+}
+
+int get_num_threads() {
+    const char *num_threads_env = getenv("NUM_THREADS");
+    return (num_threads_env == NULL) ? 32 : atoi(num_threads_env);
 }

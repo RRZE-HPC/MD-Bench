@@ -24,28 +24,24 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <util.h>
 
-void* allocate (int alignment, size_t bytesize)
-{
+void *allocate(int alignment, size_t bytesize) {
     int errorCode;
     void* ptr;
 
-    errorCode =  posix_memalign(&ptr, alignment, bytesize);
-
-    if (errorCode) {
-        if (errorCode == EINVAL) {
-            fprintf(stderr,
-                    "Error: Alignment parameter is not a power of two\n");
-            exit(EXIT_FAILURE);
-        }
-        if (errorCode == ENOMEM) {
-            fprintf(stderr,
-                    "Error: Insufficient memory to fulfill the request\n");
-            exit(EXIT_FAILURE);
-        }
+    errorCode = posix_memalign(&ptr, alignment, bytesize);
+    if(errorCode == EINVAL) {
+        fprintf(stderr, "Error: Alignment parameter is not a power of two\n");
+        exit(EXIT_FAILURE);
     }
 
-    if (ptr == NULL) {
+    if(errorCode == ENOMEM) {
+        fprintf(stderr, "Error: Insufficient memory to fulfill the request\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if(ptr == NULL) {
         fprintf(stderr, "Error: posix_memalign failed!\n");
         exit(EXIT_FAILURE);
     }
@@ -53,13 +49,8 @@ void* allocate (int alignment, size_t bytesize)
     return ptr;
 }
 
-void* reallocate (
-        void* ptr,
-        int alignment,
-        size_t newBytesize,
-        size_t oldBytesize)
-{
-    void* newarray =  allocate(alignment, newBytesize);
+void *reallocate(void* ptr, int alignment, size_t newBytesize, size_t oldBytesize) {
+    void *newarray = allocate(alignment, newBytesize);
 
     if(ptr != NULL) {
         memcpy(newarray, ptr, oldBytesize);
@@ -68,3 +59,25 @@ void* reallocate (
 
     return newarray;
 }
+
+#ifndef CUDA_TARGET
+void *allocate_gpu(int alignment, size_t bytesize) { return NULL; }
+void *reallocate_gpu(void *ptr, int alignment, size_t newBytesize, size_t oldBytesize) { return NULL; }
+#else
+void *allocate_gpu(int alignment, size_t bytesize) {
+    void *ptr;
+    checkCUDAError("allocate_gpu", cudaMallocHost((void **) &ptr, bytesize));
+    return ptr;
+}
+
+// Data is not preserved
+void *reallocate_gpu(void *ptr, int alignment, size_t newBytesize, size_t oldBytesize) {
+    void *newarray = allocate_gpu(alignment, newBytesize);
+
+    if(ptr != NULL) {
+        cudaFreeHost(ptr);
+    }
+
+    return newarray;
+}
+#endif

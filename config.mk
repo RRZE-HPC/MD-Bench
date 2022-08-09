@@ -1,4 +1,4 @@
-# Compiler tag (GCC/CLANG/ICC/ONEAPI)
+# Compiler tag (GCC/CLANG/ICC/ONEAPI/NVCC)
 TAG ?= ICC
 # Instruction set (SSE/AVX/AVX2/AVX512)
 ISA ?= AVX512

@@ -20,13 +20,21 @@
  *   with MD-Bench.  If not, see <https://www.gnu.org/licenses/>.
  * =======================================================================================
  */
+#include <stdbool.h>
+//---
 #include <atom.h>
 #include <parameter.h>
 
 #ifndef __PBC_H_
 #define __PBC_H_
 extern void initPbc();
-extern void updatePbc(Atom*, Parameter*);
-extern void updateAtomsPbc(Atom*, Parameter*);
+extern void updatePbc_cpu(Atom*, Atom*, Parameter*, bool);
+extern void updateAtomsPbc_cpu(Atom*, Atom*, Parameter*);
 extern void setupPbc(Atom*, Parameter*);
+
+#ifdef CUDA_TARGET
+extern void updatePbc_cuda(Atom*, Atom*, Parameter*, bool);
+extern void updateAtomsPbc_cuda(Atom*, Atom*, Parameter*);
+#endif
+
 #endif

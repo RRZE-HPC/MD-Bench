@@ -31,6 +31,10 @@
 #include <allocate.h>
 #include <util.h>
 
+#ifdef CUDA_TARGET
+#include <cuda_atom.h>
+#endif
+
 #define DELTA 20000
 
 #ifndef MAXLINE
@@ -67,6 +71,14 @@ void createAtom(Atom *atom, Parameter *param) {
     atom->Natoms = 4 * param->nx * param->ny * param->nz;
     atom->Nlocal = 0;
     atom->ntypes = param->ntypes;
+
+#ifdef CUDA_TARGET
+    checkCUDAError( "atom->epsilon cudaMallocHost", cudaMallocHost((void**)&(atom->epsilon), atom->ntypes * atom->ntypes * sizeof(MD_FLOAT)) ); // atom->epsilon = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
+    checkCUDAError( "atom->sigma6 cudaMallocHost", cudaMallocHost((void**)&(atom->sigma6), atom->ntypes * atom->ntypes * sizeof(MD_FLOAT)) ); // atom->sigma6 = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
+    checkCUDAError( "atom->cutforcesq cudaMallocHost", cudaMallocHost((void**)&(atom->cutforcesq), atom->ntypes * atom->ntypes * sizeof(MD_FLOAT)) ); // atom->cutforcesq = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
+    checkCUDAError( "atom->cutneighsq cudaMallocHost", cudaMallocHost((void**)&(atom->cutneighsq), atom->ntypes * atom->ntypes * sizeof(MD_FLOAT)) ); // atom->cutneighsq = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
+#endif
+
     atom->epsilon = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
     atom->sigma6 = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
     atom->cutforcesq = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
