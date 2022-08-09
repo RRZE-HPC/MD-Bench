@@ -3,6 +3,7 @@ TARGET	   = MDBench-$(TAG)-$(OPT_SCHEME)
 BUILD_DIR  = ./$(TAG)-$(OPT_SCHEME)
 SRC_DIR    = ./$(OPT_SCHEME)
 ASM_DIR    = ./asm
+CUDA_DIR   = ./$(SRC_DIR)/cuda
 MAKE_DIR   = ./
 Q         ?= @
 
@@ -15,12 +16,12 @@ include $(MAKE_DIR)/include_GROMACS.mk
 INCLUDES  += -I./$(SRC_DIR)/includes
 
 ifeq ($(strip $(DATA_LAYOUT)),AOS)
-DEFINES +=  -DAOS
+    DEFINES +=  -DAOS
 endif
 ifeq ($(strip $(DATA_TYPE)),SP)
-DEFINES +=  -DPRECISION=1
+    DEFINES +=  -DPRECISION=1
 else
-DEFINES +=  -DPRECISION=2
+    DEFINES +=  -DPRECISION=2
 endif
 
 ifneq ($(ASM_SYNTAX), ATT)
@@ -79,11 +80,14 @@ ifeq ($(strip $(USE_SIMD_KERNEL)),true)
     DEFINES += -DUSE_SIMD_KERNEL
 endif
 
-VPATH     = $(SRC_DIR) $(ASM_DIR)
+VPATH     = $(SRC_DIR) $(ASM_DIR) $(CUDA_DIR)
 ASM       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.s,$(wildcard $(SRC_DIR)/*.c))
 OVERWRITE:= $(patsubst $(ASM_DIR)/%-new.s, $(BUILD_DIR)/%.o,$(wildcard $(ASM_DIR)/*-new.s))
 OBJ       = $(filter-out $(BUILD_DIR)/main% $(OVERWRITE),$(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c)))
 OBJ      += $(patsubst $(ASM_DIR)/%.s, $(BUILD_DIR)/%.o,$(wildcard $(ASM_DIR)/*.s))
+ifeq ($(strip $(TAG)),NVCC)
+OBJ      += $(patsubst $(CUDA_DIR)/%.cu, $(BUILD_DIR)/%-cuda.o,$(wildcard $(CUDA_DIR)/*.cu))
+endif
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(OPTIONS) $(INCLUDES)
 
 # $(warning $(OBJ))
@@ -102,6 +106,11 @@ ${TARGET}-%: $(BUILD_DIR) $(OBJ) $(SRC_DIR)/main-%.c
 	$(Q)${LINKER} $(CPPFLAGS) ${LFLAGS} -o $(TARGET)-$* $(SRC_DIR)/main-$*.c $(OBJ) $(LIBS)
 
 $(BUILD_DIR)/%.o:  %.c
+	$(info ===>  COMPILE  $@)
+	$(Q)$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
+	$(Q)$(CC) $(CPPFLAGS) -MT $@ -MM  $< > $(BUILD_DIR)/$*.d
+
+$(BUILD_DIR)/%-cuda.o:  %.cu
 	$(info ===>  COMPILE  $@)
 	$(Q)$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
 	$(Q)$(CC) $(CPPFLAGS) -MT $@ -MM  $< > $(BUILD_DIR)/$*.d

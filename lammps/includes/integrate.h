@@ -20,36 +20,29 @@
  *   with MD-Bench.  If not, see <https://www.gnu.org/licenses/>.
  * =======================================================================================
  */
-#ifndef __UTIL_H_
-#define __UTIL_H_
+#include <parameter.h>
+#include <atom.h>
 
-#ifndef MIN
-#define MIN(x,y) ((x)<(y)?(x):(y))
-#endif
-#ifndef MAX
-#define MAX(x,y) ((x)>(y)?(x):(y))
-#endif
-#ifndef ABS
-#define ABS(a) ((a) >= 0 ? (a) : -(a))
-#endif
-#ifdef DEBUG
-#define DEBUG_MESSAGE   printf
-#else
-#define DEBUG_MESSAGE
-#endif
+void initialIntegrate_cpu(bool reneigh, Parameter *param, Atom *atom, Atom *c_atom) {
+    for(int i = 0; i < atom->Nlocal; i++) {
+        atom_vx(i) += param->dtforce * atom_fx(i);
+        atom_vy(i) += param->dtforce * atom_fy(i);
+        atom_vz(i) += param->dtforce * atom_fz(i);
+        atom_x(i) = atom_x(i) + param->dt * atom_vx(i);
+        atom_y(i) = atom_y(i) + param->dt * atom_vy(i);
+        atom_z(i) = atom_z(i) + param->dt * atom_vz(i);
+    }
+}
 
-#ifndef MAXLINE
-#define MAXLINE 4096
-#endif
+void finalIntegrate_cpu(bool reneigh, Parameter *param, Atom *atom, Atom *c_atom) {
+    for(int i = 0; i < atom->Nlocal; i++) {
+        atom_vx(i) += param->dtforce * atom_fx(i);
+        atom_vy(i) += param->dtforce * atom_fy(i);
+        atom_vz(i) += param->dtforce * atom_fz(i);
+    }
+}
 
-#define FF_LJ   0
-#define FF_EAM  1
-#define FF_DEM  2
-
-extern double myrandom(int*);
-extern void random_reset(int *seed, int ibase, double *coord);
-extern int str2ff(const char *string);
-extern const char* ff2str(int ff);
-extern int get_num_threads();
-
+#ifdef CUDA_TARGET
+void initialIntegrate_cuda(bool, Parameter*, Atom*, Atom*);
+void finalIntegrate_cuda(bool, Parameter*, Atom*, Atom*);
 #endif

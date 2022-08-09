@@ -34,9 +34,29 @@ typedef struct {
     int* numneigh;
 } Neighbor;
 
+typedef struct {
+    MD_FLOAT xprd; MD_FLOAT yprd; MD_FLOAT zprd;
+    MD_FLOAT bininvx; MD_FLOAT bininvy; MD_FLOAT bininvz;
+    int mbinxlo; int mbinylo; int mbinzlo;
+    int nbinx; int nbiny; int nbinz;
+    int mbinx; int mbiny; int mbinz;
+} Neighbor_params;
+
+typedef struct {
+    int* bincount;
+    int* bins;
+    int mbins;
+    int atoms_per_bin;
+} Binning;
+
 extern void initNeighbor(Neighbor*, Parameter*);
 extern void setupNeighbor(Parameter*);
 extern void binatoms(Atom*);
-extern void buildNeighbor(Atom*, Neighbor*);
+extern void buildNeighbor_cpu(Atom*, Neighbor*, Atom*, Neighbor*);
 extern void sortAtom(Atom*);
+
+#ifdef CUDA_TARGET
+extern void buildNeighbor_cuda(Atom*, Neighbor*, Atom*, Neighbor*);
+#endif
+
 #endif
