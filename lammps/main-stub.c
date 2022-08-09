@@ -22,14 +22,6 @@ extern double computeForceLJFullNeigh_simd(Parameter*, Atom*, Neighbor*, Stats*)
 extern double computeForceLJHalfNeigh(Parameter*, Atom*, Neighbor*, Stats*);
 extern double computeForceEam(Eam*, Parameter*, Atom*, Neighbor*, Stats*);
 
-#ifdef USE_SIMD_KERNEL
-#   define KERNEL_NAME              "SIMD"
-#   define computeForceLJFullNeigh  computeForceLJFullNeigh_simd
-#else
-#   define KERNEL_NAME              "plain-C"
-#   define computeForceLJFullNeigh  computeForceLJFullNeigh_plain_c
-#endif
-
 // Patterns
 #define P_SEQ   0
 #define P_FIX   1

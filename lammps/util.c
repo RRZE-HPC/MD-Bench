@@ -20,8 +20,8 @@
  *   with MD-Bench.  If not, see <https://www.gnu.org/licenses/>.
  * =======================================================================================
  */
+#include <stdlib.h>
 #include <string.h>
-
 #include <util.h>
 
 /* Park/Miller RNG w/out MASKING, so as to be like f90s version */
