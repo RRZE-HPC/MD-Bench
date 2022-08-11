@@ -325,17 +325,6 @@ allocate more space for ghosts than will be needed and give each atom a thread
 
 The priority for parallelizing this code is low since it only scales with O(N) with N being the number of atoms.
 
------
-
-Updating the boundary condition happens by updating the position of all ghost atoms.
-```python
-def update_bondary_condition(atoms, periodic_boundary_condition):
-  for ghost in ghosts:
-    position[ghost].x = ghost.offset_x + position[ghost.original].x
-    position[ghost].y = ghost.offset_y + position[ghost.original].y
-```
-
-This part will be easy to parallelize as all iterations are independent. One thread per ghost atom will probably be the selected way to port this to GPU.
 
 ### Building neighbor lists
 The majority of CPU time is spent the `buildNeighbor`-method. Parallelizing this on the GPU will have significant impact on the application's scalability.
@@ -370,23 +359,25 @@ def buildNeighbor(atoms):
       neihgbor_list = malloc(n_atoms * max_neighbors * sizeof(int))
 ```
 
-Idea: give each atom one thread
-Challenge: when the limit for maximum neighbors is set too low in the CPU version a variable is set. On the GPU this needs to be wrapped with a CAS to ensure that the value contains the maximum amount of needed neighbors per atom.
+### Parallelizing building neighbor lists
+* Parallelization idea: 
+  * give each atom one gpu-thread
+* Challenge:
+  * CPU version sets variable visible from outside of the loop if maximum length of neighbor list is too small to fit all neighbors
+  * &#8594; allocate memory for such a variable on the GPU 
+  * &#8594; wrap access to that memory address in a CAS in the kernel to avoid race conditions
+  * &#8594; access it only if neighbor list is to small to fit all neighbors
+  * &#8594; after kernel has finished copy it back to CPU
+  * &#8594; if neighbor list was to small to fit all neighbor lists increase maximum amount of neighbors for each atom and rerun the kernel
 
-## Next goals
-ordered by priority
-* port the buildNeighbor-function to Cuda (reduced Host-To-Device traffic, reduced computation time)
-* port the function updating the ghost atoms to Cuda
-* port the creating the ghost atoms to Cuda
+With this the building of the neighbor list can be done easily:
+* convert the used submethod of finding the right bin for a given position to a device funtion
+  * contains only read accesses to global variables  &#8594; pass values of needed global variables as extra function parameters and access these parameters instead
 
-* evaluate performance along the way
+For now only the loop body that actually builds the neighbor lists has been ported as it contains the majority of the workload. The portin of the rest of the buildNeighbor method (i.e. mostly the atom binning) is postponed as it most likely is not performance critical at this stage.
 
-## Parallelizing building neighbor lists
-* port loop body of building the neighbor list for each atom first
-* this also requires mapping function from coordinate to grid cell to be ported as well but can be just copied over from the CPU version and be declared a device function as it only relies on parameter data
-
-### Effects on runtime
-program output on runtimes of different parts
+#### Effects on runtime
+With the neighbor list building loop ported to cuda we see some improvements in program runtime.
 * A40:
   * Before:&nbsp;``` TOTAL 3.46s FORCE 0.21s NEIGH 3.14s REST 0.12s ```
   * After:&nbsp;&nbsp;&nbsp;&nbsp;```TOTAL 0.37s FORCE 0.21s NEIGH 0.06s REST 0.09s```
@@ -424,16 +415,76 @@ With this the scaling behaviour also improves:
 
 ![Scaling GPU-threads per block before and after neighbor list porting](../resources/development_stage_comparisons/t200_DP_scaling_comparisons/plot_upto_buiNeiPar.png)
 
+#### Effects on profile
+
+![Runtime profile in nsys after porting neighbor list construction loop](../resources/profiling/nsys/a100_buiNei_profile.png)
+
+Profiling the program now with nsys shows that the long periods where only one CPU was active (with the rest of the CPUs and the GPU idling) are now much shorter.
+Hence the GPU utilization is better with this change. The visible gaps where only CPU 2 is active are mostly due to the profiler flushing its buffers and do not contribute to runtime in a non-profiliing run.
+
 ## Parallelizing further components
-Next we parallelize the updatePbc method which updates the positions of all ghost atoms.
-With the parallelization of this method the runtime drops even further.
-The reason for this is probably that the full loop except neighborhood computation now runs on the GPU.
-This further improves scaling with threads per block.
+
+### Parallelizing updating the PBC
+Since the positions of the original atoms are updated every timestep, we need to update the position ghost atoms every timestep. This is done in the updatePBC method.
+
+```python
+def update_bondary_condition(atoms, periodic_boundary_condition):
+  for ghost in ghosts:
+    position[ghost].x = ghost.offset_x + position[ghost.original].x
+    position[ghost].y = ghost.offset_y + position[ghost.original].y
+```
+
+Idea:
+ * give each atoms its own gpu-thread
+ 
+Special Challenges:
+ * None (since each ghost atom only writes atom-local data and all reads are from atom local data or data not changed in this kernel (&#8594; can be considered static during kernel runtime) &#8594; no race conditions)
+
+With the parallelization of this method the runtime drops even further probably due to the whole loop except reneighboring running entirely on the GPU.
+Since the reneighboring happens only every 20 timesteps this means that the GPU can run for almost 20 timesteps uninterrupted (there are other small interruptions due to synchronous memcopies from device to host for computing stats (e.g. temperature and pressure) on the CPU, but these run only rarely (e.g. in the case of temperature and pressure every 100 timesteps))
+This can also be seen in ``nsys``:
+
+![Runtime profile in nsys after porting updatePbc method](../resources/profiling/nsys/a40_pbcPar_profile.png)
+
+***Note***: In the loop (the many small GPU acitivity bursts after the long kernel) there are no memory transfers between device and host.
+
+With this also the memory traffic between host and device has decreased both in total memory transferred as well as frequency:
+
+* From:
+```
+Total       Count  Avg        Min     Max       Operation
+881,28 MiB  240    3,67 MiB   128 B   4,12 MiB  [CUDA memcpy HtoD]
+660,00 MiB  231    2,86 MiB   4 B     3,00 MiB  [CUDA memcpy DtoH]
+44 B        11     4 B        4 B     4 B       [CUDA memset]
+```
+* To:
+```
+Total       Count  Avg        Min     Max       Operation
+184,76 MiB  64     2,89 MiB   4 B     4,12 MiB  [CUDA memcpy DtoH]
+116,13 MiB  105    1,11 MiB   128 B   4,12 MiB  [CUDA memcpy HtoD]
+44 B        11     4 B        4 B     4 B       [CUDA memset]
+```
+
+
 
 ![Scaling GPU-threads per block before and after pbcUpdate porting](../resources/development_stage_comparisons/t200_DP_scaling_comparisons/plot_upto_pbcPar.png)
 
 As is visible there is a moderate increase in performance for the A40 and a massive one for the A100.
+
+
+
+### Porting atom binning to cuda
+
+
+
 After that the binning of the atoms is ported to the GPU with only a small increase in performance:
+
+
+
+
+
+
+
 
 ![Scaling GPU-threads per block before and after atom binning being ported to GPU](../resources/development_stage_comparisons/t200_DP_scaling_comparisons/plot_upto_binAtPar.png)
 
@@ -494,7 +545,9 @@ In order to find hotspots in the neighborhood computation we instrument the neig
 The runtime spent is summed up over all timesteps for each section and then printed.
 For the A40 we get a result like this:
 
+* A40:
 ```
+NEIGH 3.15s
 NEIGH_TIMERS: 
 UPD_AT: 0.10s 
 SETUP_PBC 0.57s 
@@ -503,6 +556,16 @@ BINATOMS 0.02s
 BUILD_NEIGHBOR 2.31s
 ```
 
+* A100:
+```
+NEIGH 1.54s 
+NEIGH_TIMERS: 
+UPD_AT: 0.11s 
+SETUP_PBC 0.49s 
+UPDATE_PBC 0.19s 
+BINATOMS 0.02s 
+BUILD_NEIGHBOR 0.78s
+```
 
 
 
@@ -531,4 +594,7 @@ The A100 scales much better both with more threads per block and more atoms in t
 Around 256 threads per block the maximum seems to be reached.
 
 
+### Neighborhood computation performance
 
+
+![Neighbor List computation performance for different amount of threads per block](../resources/scaling/exponential_thread_scaling/neigh_perf_with_force/upPbc_perf.png)
