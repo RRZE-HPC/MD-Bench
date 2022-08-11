@@ -31,21 +31,21 @@
 #define SMALL 1.0e-6
 #define FACTOR 0.999
 
-static MD_FLOAT xprd, yprd, zprd;
-static MD_FLOAT bininvx, bininvy, bininvz;
-static int mbinxlo, mbinylo, mbinzlo;
-static int nbinx, nbiny, nbinz;
-static int mbinx, mbiny, mbinz; // n bins in x, y, z
-static int *bincount;
-static int *bins;
-static int mbins; //total number of bins
-static int atoms_per_bin;  // max atoms per bin
-static MD_FLOAT cutneigh;
-static MD_FLOAT cutneighsq;  // neighbor cutoff squared
-static int nmax;
-static int nstencil;      // # of bins in stencil
-static int* stencil;      // stencil list of bin offsets
-static MD_FLOAT binsizex, binsizey, binsizez;
+MD_FLOAT xprd, yprd, zprd;
+MD_FLOAT bininvx, bininvy, bininvz;
+int mbinxlo, mbinylo, mbinzlo;
+int nbinx, nbiny, nbinz;
+int mbinx, mbiny, mbinz; // n bins in x, y, z
+int *bincount;
+int *bins;
+int mbins; //total number of bins
+int atoms_per_bin;  // max atoms per bin
+MD_FLOAT cutneigh;
+MD_FLOAT cutneighsq;  // neighbor cutoff squared
+int nmax;
+int nstencil;      // # of bins in stencil
+int* stencil;      // stencil list of bin offsets
+MD_FLOAT binsizex, binsizey, binsizez;
 static int coord2bin(MD_FLOAT, MD_FLOAT , MD_FLOAT);
 static MD_FLOAT bindist(int, int, int);
 
