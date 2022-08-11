@@ -59,7 +59,7 @@ void *reallocate(void* ptr, int alignment, size_t newBytesize, size_t oldBytesiz
 
     return newarray;
 }
-#ifdef CUDA_TARGET
+#ifndef CUDA_TARGET
 void *allocate_gpu(int alignment, size_t bytesize) { return NULL; }
 void *reallocate_gpu(void *ptr, int alignment, size_t newBytesize, size_t oldBytesize) { return NULL; }
 #else
