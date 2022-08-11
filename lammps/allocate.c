@@ -59,14 +59,15 @@ void *reallocate(void* ptr, int alignment, size_t newBytesize, size_t oldBytesiz
 
     return newarray;
 }
-
-#ifndef CUDA_TARGET
+#ifdef CUDA_TARGET
 void *allocate_gpu(int alignment, size_t bytesize) { return NULL; }
 void *reallocate_gpu(void *ptr, int alignment, size_t newBytesize, size_t oldBytesize) { return NULL; }
 #else
+#include <cuda_runtime.h>
+#include <cuda_atom.h>
 void *allocate_gpu(int alignment, size_t bytesize) {
     void *ptr;
-    checkCUDAError("allocate_gpu", cudaMallocHost((void **) &ptr, bytesize));
+    checkCUDAError("allocate", cudaMallocHost((void **) &ptr, bytesize));
     return ptr;
 }
 

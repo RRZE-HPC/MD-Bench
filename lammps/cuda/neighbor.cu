@@ -38,17 +38,17 @@ extern "C" {
 
 }
 
-static MD_FLOAT xprd, yprd, zprd;
-static MD_FLOAT bininvx, bininvy, bininvz;
-static int mbinxlo, mbinylo, mbinzlo;
-static int nbinx, nbiny, nbinz;
-static int mbinx, mbiny, mbinz; // n bins in x, y, z
-static int mbins; //total number of bins
-static int atoms_per_bin;  // max atoms per bin
-static MD_FLOAT cutneighsq;  // neighbor cutoff squared
-static int nmax;
-static int nstencil;      // # of bins in stencil
-static int* stencil;      // stencil list of bin offsets
+extern MD_FLOAT xprd, yprd, zprd;
+extern MD_FLOAT bininvx, bininvy, bininvz;
+extern int mbinxlo, mbinylo, mbinzlo;
+extern int nbinx, nbiny, nbinz;
+extern int mbinx, mbiny, mbinz; // n bins in x, y, z
+extern int mbins; //total number of bins
+extern int atoms_per_bin;  // max atoms per bin
+extern MD_FLOAT cutneighsq;  // neighbor cutoff squared
+extern int nmax;
+extern int nstencil;      // # of bins in stencil
+extern int* stencil;      // stencil list of bin offsets
 static int* c_stencil = NULL;
 static int* c_resize_needed = NULL;
 static int* c_new_maxneighs = NULL;
@@ -58,7 +58,6 @@ static Binning c_binning {
     .mbins = 0,
     .atoms_per_bin = 0
 };
-
 
 __device__ int coord2bin_device(MD_FLOAT xin, MD_FLOAT yin, MD_FLOAT zin, Neighbor_params np) {
     int ix, iy, iz;
@@ -115,7 +114,7 @@ __global__ void sort_bin_contents_kernel(int* bincount, int* bins, int mbins, in
     } while (!sorted);
 }
 
-__global__ void binatoms_kernel(Atom a, int* bincount, int* bins, int atoms_per_bin, Neighbor_params np, int *resize_needed){
+__global__ void binatoms_kernel(Atom a, int* bincount, int* bins, int atoms_per_bin, Neighbor_params np, int *resize_needed) {
     Atom* atom = &a;
     const int i = blockIdx.x * blockDim.x + threadIdx.x;
     int nall = atom->Nlocal + atom->Nghost;
@@ -127,7 +126,6 @@ __global__ void binatoms_kernel(Atom a, int* bincount, int* bins, int atoms_per_
     MD_FLOAT y = atom_y(i);
     MD_FLOAT z = atom_z(i);
     int ibin = coord2bin_device(x, y, z, np);
-
     int ac = atomicAdd(&bincount[ibin], 1);
             
     if(ac < atoms_per_bin){
@@ -138,7 +136,7 @@ __global__ void binatoms_kernel(Atom a, int* bincount, int* bins, int atoms_per_
 }
 
 __global__ void compute_neighborhood(Atom a, Neighbor neigh, Neighbor_params np, int nstencil, int* stencil,
-                                     int* bins, int atoms_per_bin, int *bincount, int *new_maxneighs, MD_FLOAT cutneighsq){
+                                     int* bins, int atoms_per_bin, int *bincount, int *new_maxneighs, MD_FLOAT cutneighsq) {
     const int i = blockIdx.x * blockDim.x + threadIdx.x;
     const int Nlocal = a.Nlocal;
     if( i >= Nlocal ) {
@@ -189,7 +187,6 @@ __global__ void compute_neighborhood(Atom a, Neighbor neigh, Neighbor_params np,
     }
 
     neighbor->numneigh[i] = n;
-
     if(n > neighbor->maxneighs) {
         atomicMax(new_maxneighs, n);
     }
@@ -304,8 +301,8 @@ void buildNeighbor_cuda(Atom *atom, Neighbor *neighbor, Atom *c_atom, Neighbor *
                                                                     c_new_maxneighs,
 								                                    cutneighsq);
 
-	checkCUDAError( "PeekAtLastError ComputeNeighbor", cudaPeekAtLastError() );
-	checkCUDAError( "DeviceSync ComputeNeighbor", cudaDeviceSynchronize() );
+        checkCUDAError( "PeekAtLastError ComputeNeighbor", cudaPeekAtLastError() );
+        checkCUDAError( "DeviceSync ComputeNeighbor", cudaDeviceSynchronize() );
 
         // TODO copy the value of c_new_maxneighs back to host and check if it has been modified
         int new_maxneighs;
@@ -323,7 +320,7 @@ void buildNeighbor_cuda(Atom *atom, Neighbor *neighbor, Atom *c_atom, Neighbor *
         }
 
     }
-    neighbor->maxneighs = c_neighbor->maxneighs;
 
+    neighbor->maxneighs = c_neighbor->maxneighs;
     cudaProfilerStop();
 }

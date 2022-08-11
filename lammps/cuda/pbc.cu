@@ -34,16 +34,15 @@ extern "C" {
 
 }
 
-static int NmaxGhost;
-static int *PBCx, *PBCy, *PBCz;
-static int c_NmaxGhost = 0;
-static int *c_PBCx = NULL, *c_PBCy = NULL, *c_PBCz = NULL;
-
+extern int NmaxGhost;
+extern int *PBCx, *PBCy, *PBCz;
+static int c_NmaxGhost;
+static int *c_PBCx, *c_PBCy, *c_PBCz;
 
 __global__ void computeAtomsPbcUpdate(Atom a, MD_FLOAT xprd, MD_FLOAT yprd, MD_FLOAT zprd){
     const int i = blockIdx.x * blockDim.x + threadIdx.x;
     Atom* atom = &a;
-    if( i >= atom->Nlocal ){
+    if(i >= atom->Nlocal) {
         return;
     }
 
@@ -69,9 +68,10 @@ __global__ void computeAtomsPbcUpdate(Atom a, MD_FLOAT xprd, MD_FLOAT yprd, MD_F
 __global__ void computePbcUpdate(Atom a, int* PBCx, int* PBCy, int* PBCz, MD_FLOAT xprd, MD_FLOAT yprd, MD_FLOAT zprd){
     const int i = blockIdx.x * blockDim.x + threadIdx.x;
     const int Nghost = a.Nghost;
-    if( i >= Nghost ) {
+    if(i >= Nghost) {
         return;
     }
+
     Atom* atom = &a;
     int *border_map = atom->border_map;
     int nlocal = atom->Nlocal;
@@ -86,7 +86,7 @@ __global__ void computePbcUpdate(Atom a, int* PBCx, int* PBCy, int* PBCz, MD_FLO
 void updatePbc_cuda(Atom *atom, Atom *c_atom, Parameter *param, bool doReneighbor) {
     const int num_threads_per_block = get_num_threads();
 
-    if (doReneighbor){
+    if (doReneighbor) {
         c_atom->Natoms = atom->Natoms;
         c_atom->Nlocal = atom->Nlocal;
         c_atom->Nghost = atom->Nghost;
@@ -146,6 +146,5 @@ void updateAtomsPbc_cuda(Atom* atom, Atom *c_atom, Parameter *param){
 
     checkCUDAError( "PeekAtLastError UpdateAtomsPbc", cudaPeekAtLastError() );
     checkCUDAError( "DeviceSync UpdateAtomsPbc", cudaDeviceSynchronize() );
-
     checkCUDAError( "updateAtomsPbc position memcpy back", cudaMemcpy(atom->x, c_atom->x, sizeof(MD_FLOAT) * atom->Nlocal * 3, cudaMemcpyDeviceToHost) );
 }

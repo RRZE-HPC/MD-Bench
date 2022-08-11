@@ -30,8 +30,8 @@
 
 #define DELTA 20000
 
-static int NmaxGhost;
-static int *PBCx, *PBCy, *PBCz;
+int NmaxGhost;
+int *PBCx, *PBCy, *PBCz;
 
 static void growPbc(Atom*);
 
@@ -66,7 +66,6 @@ void updateAtomsPbc_cpu(Atom *atom, Atom *c_atom, Parameter *param) {
     MD_FLOAT zprd = param->zprd;
 
     for(int i = 0; i < atom->Nlocal; i++) {
-
         if(atom_x(i) < 0.0) {
             atom_x(i) += xprd;
         } else if(atom_x(i) >= xprd) {
@@ -177,8 +176,7 @@ void setupPbc(Atom *atom, Parameter *param) {
 }
 
 /* internal subroutines */
-void growPbc(Atom* atom)
-{
+void growPbc(Atom* atom) {
     int nold = NmaxGhost;
     NmaxGhost += DELTA;
 
