@@ -30,19 +30,20 @@
 
 #include <likwid-marker.h>
 
-#include <timing.h>
 #include <allocate.h>
+#include <atom.h>
+#include <device.h>
+#include <eam.h>
+#include <integrate.h>
+#include <thermo.h>
+#include <timing.h>
 #include <neighbor.h>
 #include <parameter.h>
-#include <atom.h>
-#include <stats.h>
-#include <thermo.h>
 #include <pbc.h>
+#include <stats.h>
 #include <timers.h>
-#include <eam.h>
-#include <vtk.h>
 #include <util.h>
-#include <integrate.h>
+#include <vtk.h>
 
 #define HLINE "----------------------------------------------------------------------------\n"
 
@@ -53,7 +54,6 @@ extern double computeForceEam(Eam*, Parameter*, Atom*, Neighbor*, Stats*);
 extern double computeForceDemFullNeigh(Parameter*, Atom*, Neighbor*, Stats*);
 
 #ifdef CUDA_TARGET
-#include <cuda_atom.h>
 extern double computeForceLJFullNeigh_cuda(Parameter*, Atom*, Neighbor*);
 #endif
 
@@ -80,9 +80,7 @@ double setup(Parameter *param, Eam *eam, Atom *atom, Neighbor *neighbor, Stats *
     setupThermo(param, atom->Natoms);
     if(param->input_file == NULL) { adjustThermo(param, atom); }
     setupPbc(atom, param);
-    #ifdef CUDA_TARGET
-    initCuda(atom, neighbor);
-    #endif
+    initDevice(atom, neighbor);
     updatePbc(atom, param, true);
     buildNeighbor(atom, neighbor);
     E = getTimeStamp();

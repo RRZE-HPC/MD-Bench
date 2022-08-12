@@ -31,7 +31,7 @@
 extern "C" {
 
 #include <atom.h>
-#include <cuda_atom.h>
+#include <device.h>
 #include <parameter.h>
 #include <neighbor.h>
 #include <util.h>

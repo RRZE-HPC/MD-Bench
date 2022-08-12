@@ -20,6 +20,8 @@
  *   with MD-Bench.  If not, see <https://www.gnu.org/licenses/>.
  * =======================================================================================
  */
+#include <stdbool.h>
+//---
 #include <parameter.h>
 #include <atom.h>
 
