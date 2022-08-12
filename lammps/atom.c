@@ -29,11 +29,8 @@
 
 #include <atom.h>
 #include <allocate.h>
+#include <device.h>
 #include <util.h>
-
-#ifdef CUDA_TARGET
-#include <cuda_atom.h>
-#endif
 
 #define DELTA 20000
 

@@ -35,8 +35,8 @@ extern "C" {
 
 #include <allocate.h>
 #include <atom.h>
-#include <cuda_atom.h>
 #include <allocate.h>
+#include <device.h>
 #include <neighbor.h>
 #include <parameter.h>
 #include <timing.h>

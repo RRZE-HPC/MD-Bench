@@ -28,7 +28,7 @@ extern "C" {
 
 #include <allocate.h>
 #include <atom.h>
-#include <cuda_atom.h>
+#include <device.h>
 #include <pbc.h>
 #include <util.h>
 
