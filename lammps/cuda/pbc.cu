@@ -39,7 +39,7 @@ extern int *PBCx, *PBCy, *PBCz;
 static int c_NmaxGhost;
 static int *c_PBCx, *c_PBCy, *c_PBCz;
 
-__global__ void computeAtomsPbcUpdate(Atom a, MD_FLOAT xprd, MD_FLOAT yprd, MD_FLOAT zprd){
+__global__ void computeAtomsPbcUpdate(Atom a, MD_FLOAT xprd, MD_FLOAT yprd, MD_FLOAT zprd) {
     const int i = blockIdx.x * blockDim.x + threadIdx.x;
     Atom* atom = &a;
     if(i >= atom->Nlocal) {
@@ -94,30 +94,25 @@ void updatePbc_cuda(Atom *atom, Atom *c_atom, Parameter *param, bool doReneighbo
 
         if (atom->Nmax > c_atom->Nmax){ // the number of ghost atoms has increased -> more space is needed
             c_atom->Nmax = atom->Nmax;
-            if(c_atom->x != NULL){ cudaFree(c_atom->x); }
-            if(c_atom->type != NULL){ cudaFree(c_atom->type); }
-            checkCUDAError( "updatePbc c_atom->x malloc", cudaMalloc((void**)&(c_atom->x), sizeof(MD_FLOAT) * atom->Nmax * 3) );
-            checkCUDAError( "updatePbc c_atom->type malloc", cudaMalloc((void**)&(c_atom->type), sizeof(int) * atom->Nmax) );
+            c_atom->x = (MD_FLOAT *) reallocateGPU(c_atom->x, sizeof(MD_FLOAT) * atom->Nmax * 3);
+            c_atom->type = (int *) reallocateGPU(c_atom->type, sizeof(int) * atom->Nmax);
         }
-        // TODO if the sort is reactivated the atom->vx needs to be copied to GPU as well
-        checkCUDAError( "updatePbc c_atom->x memcpy", cudaMemcpy(c_atom->x, atom->x, sizeof(MD_FLOAT) * atom->Nmax * 3, cudaMemcpyHostToDevice) );
-        checkCUDAError( "updatePbc c_atom->type memcpy", cudaMemcpy(c_atom->type, atom->type, sizeof(int) * atom->Nmax, cudaMemcpyHostToDevice) );
 
-        if(c_NmaxGhost < NmaxGhost){
+        memcpyToGPU(c_atom->x, atom->x, sizeof(MD_FLOAT) * atom->Nmax * 3);
+        memcpyToGPU(c_atom->type, atom->type, sizeof(int) * atom->Nmax);
+
+        if(c_NmaxGhost < NmaxGhost) {
             c_NmaxGhost = NmaxGhost;
-            if(c_PBCx != NULL){ cudaFree(c_PBCx); }
-            if(c_PBCy != NULL){ cudaFree(c_PBCy); }
-            if(c_PBCz != NULL){ cudaFree(c_PBCz); }
-            if(c_atom->border_map != NULL){ cudaFree(c_atom->border_map); }
-            checkCUDAError( "updatePbc c_PBCx malloc", cudaMalloc((void**)&c_PBCx, NmaxGhost * sizeof(int)) );
-            checkCUDAError( "updatePbc c_PBCy malloc", cudaMalloc((void**)&c_PBCy, NmaxGhost * sizeof(int)) );
-            checkCUDAError( "updatePbc c_PBCz malloc", cudaMalloc((void**)&c_PBCz, NmaxGhost * sizeof(int)) );
-            checkCUDAError( "updatePbc c_atom->border_map malloc", cudaMalloc((void**)&(c_atom->border_map), NmaxGhost * sizeof(int)) );
+            c_PBCx = (int *) reallocateGPU(c_PBCx, NmaxGhost * sizeof(int));
+            c_PBCy = (int *) reallocateGPU(c_PBCy, NmaxGhost * sizeof(int));
+            c_PBCz = (int *) reallocateGPU(c_PBCz, NmaxGhost * sizeof(int));
+            c_atom->border_map = (int *) reallocateGPU(c_atom->border_map, NmaxGhost * sizeof(int));
         }
-        checkCUDAError( "updatePbc c_PBCx memcpy", cudaMemcpy(c_PBCx, PBCx, NmaxGhost * sizeof(int), cudaMemcpyHostToDevice) );
-        checkCUDAError( "updatePbc c_PBCy memcpy", cudaMemcpy(c_PBCy, PBCy, NmaxGhost * sizeof(int), cudaMemcpyHostToDevice) );
-        checkCUDAError( "updatePbc c_PBCz memcpy", cudaMemcpy(c_PBCz, PBCz, NmaxGhost * sizeof(int), cudaMemcpyHostToDevice) );
-        checkCUDAError( "updatePbc c_atom->border_map memcpy", cudaMemcpy(c_atom->border_map, atom->border_map, NmaxGhost * sizeof(int), cudaMemcpyHostToDevice) );
+
+        memcpyToGPU(c_PBCx, PBCx, NmaxGhost * sizeof(int));
+        memcpyToGPU(c_PBCy, PBCy, NmaxGhost * sizeof(int));
+        memcpyToGPU(c_PBCz, PBCz, NmaxGhost * sizeof(int));
+        memcpyToGPU(c_atom->border_map, atom->border_map, NmaxGhost * sizeof(int));
     }
 
     MD_FLOAT xprd = param->xprd;
@@ -125,26 +120,20 @@ void updatePbc_cuda(Atom *atom, Atom *c_atom, Parameter *param, bool doReneighbo
     MD_FLOAT zprd = param->zprd;
 
     const int num_blocks = ceil((float)atom->Nghost / (float)num_threads_per_block);
-
-    /*__global__ void computePbcUpdate(Atom a, int* PBCx, int* PBCy, int* PBCz,
-     *                                                          MD_FLOAT xprd, MD_FLOAT yprd, MD_FLOAT zprd)
-     * */
     computePbcUpdate<<<num_blocks, num_threads_per_block>>>(*c_atom, c_PBCx, c_PBCy, c_PBCz, xprd, yprd, zprd);
-    checkCUDAError( "PeekAtLastError UpdatePbc", cudaPeekAtLastError() );
-    checkCUDAError( "DeviceSync UpdatePbc", cudaDeviceSynchronize() );
+    cuda_assert("computePbcUpdate", cudaPeekAtLastError());
+    cuda_assert("computePbcUpdate", cudaDeviceSynchronize());
 }
 
-void updateAtomsPbc_cuda(Atom* atom, Atom *c_atom, Parameter *param){
+void updateAtomsPbc_cuda(Atom* atom, Atom *c_atom, Parameter *param) {
     const int num_threads_per_block = get_num_threads();
     MD_FLOAT xprd = param->xprd;
     MD_FLOAT yprd = param->yprd;
     MD_FLOAT zprd = param->zprd;
 
     const int num_blocks = ceil((float)atom->Nlocal / (float)num_threads_per_block);
-    /*void computeAtomsPbcUpdate(Atom a, MD_FLOAT xprd, MD_FLOAT yprd, MD_FLOAT zprd)*/
     computeAtomsPbcUpdate<<<num_blocks, num_threads_per_block>>>(*c_atom, xprd, yprd, zprd);
-
-    checkCUDAError( "PeekAtLastError UpdateAtomsPbc", cudaPeekAtLastError() );
-    checkCUDAError( "DeviceSync UpdateAtomsPbc", cudaDeviceSynchronize() );
-    checkCUDAError( "updateAtomsPbc position memcpy back", cudaMemcpy(atom->x, c_atom->x, sizeof(MD_FLOAT) * atom->Nlocal * 3, cudaMemcpyDeviceToHost) );
+    cuda_assert("computeAtomsPbcUpdate", cudaPeekAtLastError());
+    cuda_assert("computeAtomsPbcUpdate", cudaDeviceSynchronize());
+    memcpyFromGPU(atom->x, c_atom->x, sizeof(MD_FLOAT) * atom->Nlocal * 3);
 }

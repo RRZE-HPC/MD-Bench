@@ -38,6 +38,10 @@ XTC_OUTPUT ?= false
 # Check if cj is local when decreasing reaction force
 HALF_NEIGHBOR_LISTS_CHECK_CJ ?= false
 
+# Configurations for CUDA
+# Use CUDA host memory to optimize transfers
+USE_CUDA_HOST_MEMORY ?= false
+
 #Feature options
 OPTIONS =  -DALIGNMENT=64
 #OPTIONS +=  More options
