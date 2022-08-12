@@ -45,14 +45,13 @@ extern "C" {
 }
 
 // cuda kernel
-__global__ void calc_force(Atom a, MD_FLOAT cutforcesq, MD_FLOAT sigma6, MD_FLOAT epsilon, int Nlocal, int neigh_maxneighs, int *neigh_neighbors, int *neigh_numneigh) { 
+__global__ void calc_force(DeviceAtom a, MD_FLOAT cutforcesq, MD_FLOAT sigma6, MD_FLOAT epsilon, int Nlocal, int neigh_maxneighs, int *neigh_neighbors, int *neigh_numneigh) {
     const int i = blockIdx.x * blockDim.x + threadIdx.x;
     if(i >= Nlocal) {
         return;
     }
 
-    Atom *atom = &a;
-
+    DeviceAtom *atom = &a;
     const int numneighs = neigh_numneigh[i];
 
     MD_FLOAT xtmp = atom_x(i);
@@ -64,7 +63,7 @@ __global__ void calc_force(Atom a, MD_FLOAT cutforcesq, MD_FLOAT sigma6, MD_FLOA
     MD_FLOAT fiz = 0;
 
     for(int k = 0; k < numneighs; k++) {
-        int j = neigh_neighbors[atom->Nlocal * k + i];
+        int j = neigh_neighbors[Nlocal * k + i];
         MD_FLOAT delx = xtmp - atom_x(j);
         MD_FLOAT dely = ytmp - atom_y(j);
         MD_FLOAT delz = ztmp - atom_z(j);
@@ -93,13 +92,13 @@ __global__ void calc_force(Atom a, MD_FLOAT cutforcesq, MD_FLOAT sigma6, MD_FLOA
     atom_fz(i) = fiz;
 }
 
-__global__ void kernel_initial_integrate(MD_FLOAT dtforce, MD_FLOAT dt, int Nlocal, Atom a) {
+__global__ void kernel_initial_integrate(MD_FLOAT dtforce, MD_FLOAT dt, int Nlocal, DeviceAtom a) {
     const int i = blockIdx.x * blockDim.x + threadIdx.x;
     if( i >= Nlocal ) {
         return;
     }
 
-    Atom *atom = &a;
+    DeviceAtom *atom = &a;
 
     atom_vx(i) += dtforce * atom_fx(i);
     atom_vy(i) += dtforce * atom_fy(i);
@@ -109,13 +108,13 @@ __global__ void kernel_initial_integrate(MD_FLOAT dtforce, MD_FLOAT dt, int Nloc
     atom_z(i) = atom_z(i) + dt * atom_vz(i);
 }
 
-__global__ void kernel_final_integrate(MD_FLOAT dtforce, int Nlocal, Atom a) {
+__global__ void kernel_final_integrate(MD_FLOAT dtforce, int Nlocal, DeviceAtom a) {
     const int i = blockIdx.x * blockDim.x + threadIdx.x;
     if( i >= Nlocal ) {
         return;
     }
 
-    Atom *atom = &a;
+    DeviceAtom *atom = &a;
 
     atom_vx(i) += dtforce * atom_fx(i);
     atom_vy(i) += dtforce * atom_fy(i);
@@ -124,35 +123,35 @@ __global__ void kernel_final_integrate(MD_FLOAT dtforce, int Nlocal, Atom a) {
 
 extern "C" {
 
-void finalIntegrate_cuda(bool reneigh, Parameter *param, Atom *atom, Atom *c_atom) {
+void finalIntegrate_cuda(bool reneigh, Parameter *param, Atom *atom) {
     const int Nlocal = atom->Nlocal;
     const int num_threads_per_block = get_num_threads();
     const int num_blocks = ceil((float)Nlocal / (float)num_threads_per_block);
 
-    kernel_final_integrate <<< num_blocks, num_threads_per_block >>> (param->dtforce, Nlocal, *c_atom);
+    kernel_final_integrate <<< num_blocks, num_threads_per_block >>> (param->dtforce, Nlocal, atom->d_atom);
     cuda_assert("kernel_final_integrate", cudaPeekAtLastError());
     cuda_assert("kernel_final_integrate", cudaDeviceSynchronize());
 
     if(reneigh) {
-        memcpyFromGPU(atom->vx, c_atom->vx, sizeof(MD_FLOAT) * atom->Nlocal * 3);
+        memcpyFromGPU(atom->vx, atom->d_atom.vx, sizeof(MD_FLOAT) * atom->Nlocal * 3);
     }
 }
 
-void initialIntegrate_cuda(bool reneigh, Parameter *param, Atom *atom, Atom *c_atom) {
+void initialIntegrate_cuda(bool reneigh, Parameter *param, Atom *atom) {
     const int Nlocal = atom->Nlocal;
     const int num_threads_per_block = get_num_threads();
     const int num_blocks = ceil((float)Nlocal / (float)num_threads_per_block);
 
-    kernel_initial_integrate <<< num_blocks, num_threads_per_block >>> (param->dtforce, param->dt, Nlocal, *c_atom);
+    kernel_initial_integrate <<< num_blocks, num_threads_per_block >>> (param->dtforce, param->dt, Nlocal, atom->d_atom);
     cuda_assert("kernel_initial_integrate", cudaPeekAtLastError());
     cuda_assert("kernel_initial_integrate", cudaDeviceSynchronize());
 
     if(reneigh) {
-        memcpyFromGPU(atom->vx, c_atom->vx, sizeof(MD_FLOAT) * atom->Nlocal * 3);
+        memcpyFromGPU(atom->vx, atom->d_atom.vx, sizeof(MD_FLOAT) * atom->Nlocal * 3);
     }
 }
 
-double computeForceLJFullNeigh_cuda(Parameter *param, Atom *atom, Neighbor *neighbor, Atom *c_atom, Neighbor *c_neighbor) {
+double computeForceLJFullNeigh_cuda(Parameter *param, Atom *atom, Neighbor *neighbor) {
     const int num_threads_per_block = get_num_threads();
     int Nlocal = atom->Nlocal;
 #ifndef EXPLICIT_TYPES
@@ -175,14 +174,14 @@ double computeForceLJFullNeigh_cuda(Parameter *param, Atom *atom, Neighbor *neig
 
 
     // HINT: Run with cuda-memcheck ./MDBench-NVCC in case of error
-    // checkCUDAError( "c_atom->fx memset", cudaMemset(c_atom->fx, 0, sizeof(MD_FLOAT) * Nlocal * 3) );
+    // memsetGPU(atom->d_atom.fx, 0, sizeof(MD_FLOAT) * Nlocal * 3);
 
     cudaProfilerStart();
     const int num_blocks = ceil((float)Nlocal / (float)num_threads_per_block);
     double S = getTimeStamp();
     LIKWID_MARKER_START("force");
 
-    calc_force <<< num_blocks, num_threads_per_block >>> (*c_atom, cutforcesq, sigma6, epsilon, Nlocal, neighbor->maxneighs, c_neighbor->neighbors, c_neighbor->numneigh);
+    calc_force <<< num_blocks, num_threads_per_block >>> (atom->d_atom, cutforcesq, sigma6, epsilon, Nlocal, neighbor->maxneighs, neighbor->d_neighbor.neighbors, neighbor->d_neighbor.numneigh);
     cuda_assert("calc_force", cudaPeekAtLastError());
     cuda_assert("calc_force", cudaDeviceSynchronize());
     cudaProfilerStop();

@@ -5,7 +5,7 @@
 
 #ifndef __CUDA_ATOM_H_
 #define __CUDA_ATOM_H_
-extern void initCuda(Atom*, Neighbor*, Atom*, Neighbor*);
+extern void initCuda(Atom*, Neighbor*);
 extern void cuda_assert(const char *msg, cudaError_t err);
 extern void *allocateGPU(size_t bytesize);
 extern void *reallocateGPU(void *ptr, size_t new_bytesize);

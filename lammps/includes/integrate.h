@@ -23,7 +23,7 @@
 #include <parameter.h>
 #include <atom.h>
 
-void initialIntegrate_cpu(bool reneigh, Parameter *param, Atom *atom, Atom *c_atom) {
+void initialIntegrate_cpu(bool reneigh, Parameter *param, Atom *atom) {
     for(int i = 0; i < atom->Nlocal; i++) {
         atom_vx(i) += param->dtforce * atom_fx(i);
         atom_vy(i) += param->dtforce * atom_fy(i);
@@ -34,7 +34,7 @@ void initialIntegrate_cpu(bool reneigh, Parameter *param, Atom *atom, Atom *c_at
     }
 }
 
-void finalIntegrate_cpu(bool reneigh, Parameter *param, Atom *atom, Atom *c_atom) {
+void finalIntegrate_cpu(bool reneigh, Parameter *param, Atom *atom) {
     for(int i = 0; i < atom->Nlocal; i++) {
         atom_vx(i) += param->dtforce * atom_fx(i);
         atom_vy(i) += param->dtforce * atom_fy(i);
@@ -43,6 +43,6 @@ void finalIntegrate_cpu(bool reneigh, Parameter *param, Atom *atom, Atom *c_atom
 }
 
 #ifdef CUDA_TARGET
-void initialIntegrate_cuda(bool, Parameter*, Atom*, Atom*);
-void finalIntegrate_cuda(bool, Parameter*, Atom*, Atom*);
+void initialIntegrate_cuda(bool, Parameter*, Atom*);
+void finalIntegrate_cuda(bool, Parameter*, Atom*);
 #endif

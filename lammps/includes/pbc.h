@@ -28,13 +28,13 @@
 #ifndef __PBC_H_
 #define __PBC_H_
 extern void initPbc();
-extern void updatePbc_cpu(Atom*, Atom*, Parameter*, bool);
-extern void updateAtomsPbc_cpu(Atom*, Atom*, Parameter*);
+extern void updatePbc_cpu(Atom*, Parameter*, bool);
+extern void updateAtomsPbc_cpu(Atom*, Parameter*);
 extern void setupPbc(Atom*, Parameter*);
 
 #ifdef CUDA_TARGET
-extern void updatePbc_cuda(Atom*, Atom*, Parameter*, bool);
-extern void updateAtomsPbc_cuda(Atom*, Atom*, Parameter*);
+extern void updatePbc_cuda(Atom*, Parameter*, bool);
+extern void updateAtomsPbc_cuda(Atom*, Parameter*);
 #endif
 
 #endif

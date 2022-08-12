@@ -25,13 +25,22 @@
 
 #ifndef __NEIGHBOR_H_
 #define __NEIGHBOR_H_
+
+typedef struct {
+    int *neighbors;
+    int *numneigh;
+} DeviceNeighbor;
+
 typedef struct {
     int every;
     int ncalls;
     int maxneighs;
     int half_neigh;
-    int* neighbors;
-    int* numneigh;
+    int *neighbors;
+    int *numneigh;
+
+    // Device data
+    DeviceNeighbor d_neighbor;
 } Neighbor;
 
 typedef struct {
@@ -52,11 +61,11 @@ typedef struct {
 extern void initNeighbor(Neighbor*, Parameter*);
 extern void setupNeighbor(Parameter*);
 extern void binatoms(Atom*);
-extern void buildNeighbor_cpu(Atom*, Neighbor*, Atom*, Neighbor*);
+extern void buildNeighbor_cpu(Atom*, Neighbor*);
 extern void sortAtom(Atom*);
 
 #ifdef CUDA_TARGET
-extern void buildNeighbor_cuda(Atom*, Neighbor*, Atom*, Neighbor*);
+extern void buildNeighbor_cuda(Atom*, Neighbor*);
 #endif
 
 #endif

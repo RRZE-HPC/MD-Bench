@@ -169,7 +169,7 @@ void setupNeighbor(Parameter* param) {
     bins = (int*) malloc(mbins * atoms_per_bin * sizeof(int));
 }
 
-void buildNeighbor_cpu(Atom *atom, Neighbor *neighbor, Atom *c_atom, Neighbor *c_neighbor) {
+void buildNeighbor_cpu(Atom *atom, Neighbor *neighbor) {
     int nall = atom->Nlocal + atom->Nghost;
 
     /* extend atom arrays if necessary */
@@ -228,7 +228,6 @@ void buildNeighbor_cpu(Atom *atom, Neighbor *neighbor, Atom *c_atom, Neighbor *c
             }
 
             neighbor->numneigh[i] = n;
-
             if(n >= neighbor->maxneighs) {
                 resize = 1;
 

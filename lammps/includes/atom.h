@@ -49,6 +49,18 @@
 #endif
 
 typedef struct {
+    MD_FLOAT *x, *y, *z;
+    MD_FLOAT *vx, *vy, *vz;
+    MD_FLOAT *fx, *fy, *fz;
+    int *border_map;
+    int *type;
+    MD_FLOAT *epsilon;
+    MD_FLOAT *sigma6;
+    MD_FLOAT *cutforcesq;
+    MD_FLOAT *cutneighsq;
+} DeviceAtom;
+
+typedef struct {
     int Natoms, Nlocal, Nghost, Nmax;
     MD_FLOAT *x, *y, *z;
     MD_FLOAT *vx, *vy, *vz;
@@ -60,10 +72,14 @@ typedef struct {
     MD_FLOAT *sigma6;
     MD_FLOAT *cutforcesq;
     MD_FLOAT *cutneighsq;
+
     // DEM
     MD_FLOAT *radius;
     MD_FLOAT *av;
     MD_FLOAT *r;
+
+    // Device data
+    DeviceAtom d_atom;
 } Atom;
 
 extern void initAtom(Atom*);

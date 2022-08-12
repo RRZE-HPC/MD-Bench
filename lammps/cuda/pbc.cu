@@ -36,13 +36,13 @@ extern "C" {
 
 extern int NmaxGhost;
 extern int *PBCx, *PBCy, *PBCz;
-static int c_NmaxGhost;
-static int *c_PBCx, *c_PBCy, *c_PBCz;
+static int c_NmaxGhost = 0;
+static int *c_PBCx = NULL, *c_PBCy = NULL, *c_PBCz = NULL;
 
-__global__ void computeAtomsPbcUpdate(Atom a, MD_FLOAT xprd, MD_FLOAT yprd, MD_FLOAT zprd) {
+__global__ void computeAtomsPbcUpdate(DeviceAtom a, int nlocal, MD_FLOAT xprd, MD_FLOAT yprd, MD_FLOAT zprd) {
     const int i = blockIdx.x * blockDim.x + threadIdx.x;
-    Atom* atom = &a;
-    if(i >= atom->Nlocal) {
+    DeviceAtom *atom = &a;
+    if(i >= nlocal) {
         return;
     }
 
@@ -65,17 +65,14 @@ __global__ void computeAtomsPbcUpdate(Atom a, MD_FLOAT xprd, MD_FLOAT yprd, MD_F
     }
 }
 
-__global__ void computePbcUpdate(Atom a, int* PBCx, int* PBCy, int* PBCz, MD_FLOAT xprd, MD_FLOAT yprd, MD_FLOAT zprd){
+__global__ void computePbcUpdate(DeviceAtom a, int nlocal, int nghost, int* PBCx, int* PBCy, int* PBCz, MD_FLOAT xprd, MD_FLOAT yprd, MD_FLOAT zprd){
     const int i = blockIdx.x * blockDim.x + threadIdx.x;
-    const int Nghost = a.Nghost;
-    if(i >= Nghost) {
+    if(i >= nghost) {
         return;
     }
 
-    Atom* atom = &a;
+    DeviceAtom* atom = &a;
     int *border_map = atom->border_map;
-    int nlocal = atom->Nlocal;
-
     atom_x(nlocal + i) = atom_x(border_map[i]) + PBCx[i] * xprd;
     atom_y(nlocal + i) = atom_y(border_map[i]) + PBCy[i] * yprd;
     atom_z(nlocal + i) = atom_z(border_map[i]) + PBCz[i] * zprd;
@@ -83,36 +80,27 @@ __global__ void computePbcUpdate(Atom a, int* PBCx, int* PBCy, int* PBCz, MD_FLO
 
 /* update coordinates of ghost atoms */
 /* uses mapping created in setupPbc */
-void updatePbc_cuda(Atom *atom, Atom *c_atom, Parameter *param, bool doReneighbor) {
+void updatePbc_cuda(Atom *atom, Parameter *param, bool reneigh) {
     const int num_threads_per_block = get_num_threads();
 
-    if (doReneighbor) {
-        c_atom->Natoms = atom->Natoms;
-        c_atom->Nlocal = atom->Nlocal;
-        c_atom->Nghost = atom->Nghost;
-        c_atom->ntypes = atom->ntypes;
-
-        if (atom->Nmax > c_atom->Nmax){ // the number of ghost atoms has increased -> more space is needed
-            c_atom->Nmax = atom->Nmax;
-            c_atom->x = (MD_FLOAT *) reallocateGPU(c_atom->x, sizeof(MD_FLOAT) * atom->Nmax * 3);
-            c_atom->type = (int *) reallocateGPU(c_atom->type, sizeof(int) * atom->Nmax);
-        }
-
-        memcpyToGPU(c_atom->x, atom->x, sizeof(MD_FLOAT) * atom->Nmax * 3);
-        memcpyToGPU(c_atom->type, atom->type, sizeof(int) * atom->Nmax);
+    if(reneigh) {
+        memcpyToGPU(atom->d_atom.x,     atom->x,    sizeof(MD_FLOAT) * atom->Nmax * 3);
+        memcpyToGPU(atom->d_atom.type,  atom->type, sizeof(int) * atom->Nmax);
 
         if(c_NmaxGhost < NmaxGhost) {
             c_NmaxGhost = NmaxGhost;
             c_PBCx = (int *) reallocateGPU(c_PBCx, NmaxGhost * sizeof(int));
             c_PBCy = (int *) reallocateGPU(c_PBCy, NmaxGhost * sizeof(int));
             c_PBCz = (int *) reallocateGPU(c_PBCz, NmaxGhost * sizeof(int));
-            c_atom->border_map = (int *) reallocateGPU(c_atom->border_map, NmaxGhost * sizeof(int));
+            atom->d_atom.border_map = (int *) reallocateGPU(atom->d_atom.border_map, NmaxGhost * sizeof(int));
         }
 
         memcpyToGPU(c_PBCx, PBCx, NmaxGhost * sizeof(int));
         memcpyToGPU(c_PBCy, PBCy, NmaxGhost * sizeof(int));
         memcpyToGPU(c_PBCz, PBCz, NmaxGhost * sizeof(int));
-        memcpyToGPU(c_atom->border_map, atom->border_map, NmaxGhost * sizeof(int));
+        memcpyToGPU(atom->d_atom.border_map, atom->border_map, NmaxGhost * sizeof(int));
+        cuda_assert("updatePbc.reneigh", cudaPeekAtLastError());
+        cuda_assert("updatePbc.reneigh", cudaDeviceSynchronize());
     }
 
     MD_FLOAT xprd = param->xprd;
@@ -120,20 +108,20 @@ void updatePbc_cuda(Atom *atom, Atom *c_atom, Parameter *param, bool doReneighbo
     MD_FLOAT zprd = param->zprd;
 
     const int num_blocks = ceil((float)atom->Nghost / (float)num_threads_per_block);
-    computePbcUpdate<<<num_blocks, num_threads_per_block>>>(*c_atom, c_PBCx, c_PBCy, c_PBCz, xprd, yprd, zprd);
-    cuda_assert("computePbcUpdate", cudaPeekAtLastError());
-    cuda_assert("computePbcUpdate", cudaDeviceSynchronize());
+    computePbcUpdate<<<num_blocks, num_threads_per_block>>>(atom->d_atom, atom->Nlocal, atom->Nghost, c_PBCx, c_PBCy, c_PBCz, xprd, yprd, zprd);
+    cuda_assert("updatePbc", cudaPeekAtLastError());
+    cuda_assert("updatePbc", cudaDeviceSynchronize());
 }
 
-void updateAtomsPbc_cuda(Atom* atom, Atom *c_atom, Parameter *param) {
+void updateAtomsPbc_cuda(Atom* atom, Parameter *param) {
     const int num_threads_per_block = get_num_threads();
     MD_FLOAT xprd = param->xprd;
     MD_FLOAT yprd = param->yprd;
     MD_FLOAT zprd = param->zprd;
 
     const int num_blocks = ceil((float)atom->Nlocal / (float)num_threads_per_block);
-    computeAtomsPbcUpdate<<<num_blocks, num_threads_per_block>>>(*c_atom, xprd, yprd, zprd);
+    computeAtomsPbcUpdate<<<num_blocks, num_threads_per_block>>>(atom->d_atom, atom->Nlocal, xprd, yprd, zprd);
     cuda_assert("computeAtomsPbcUpdate", cudaPeekAtLastError());
     cuda_assert("computeAtomsPbcUpdate", cudaDeviceSynchronize());
-    memcpyFromGPU(atom->x, c_atom->x, sizeof(MD_FLOAT) * atom->Nlocal * 3);
+    memcpyFromGPU(atom->x, atom->d_atom.x, sizeof(MD_FLOAT) * atom->Nlocal * 3);
 }

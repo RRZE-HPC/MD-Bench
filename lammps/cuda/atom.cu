@@ -31,30 +31,22 @@ extern "C" {
 #include <cuda_atom.h>
 #include <neighbor.h>
 
-void initCuda(Atom *atom, Neighbor *neighbor, Atom *c_atom, Neighbor *c_neighbor) {
-    c_atom->Natoms = atom->Natoms;
-    c_atom->Nlocal = atom->Nlocal;
-    c_atom->Nghost = atom->Nghost;
-    c_atom->Nmax = atom->Nmax;
-    c_atom->ntypes = atom->ntypes;
-    c_atom->border_map = NULL;
+void initCuda(Atom *atom, Neighbor *neighbor) {
+    DeviceAtom *d_atom = &(atom->d_atom);
+    DeviceNeighbor *d_neighbor = &(neighbor->d_neighbor);
 
-    c_atom->x               =   (MD_FLOAT *) allocateGPU(sizeof(MD_FLOAT) * atom->Nmax * 3);
-    c_atom->vx              =   (MD_FLOAT *) allocateGPU(sizeof(MD_FLOAT) * atom->Nmax * 3);
-    c_atom->fx              =   (MD_FLOAT *) allocateGPU(sizeof(MD_FLOAT) * atom->Nmax * 3);
-    c_atom->epsilon         =   (MD_FLOAT *) allocateGPU(sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes);
-    c_atom->sigma6          =   (MD_FLOAT *) allocateGPU(sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes);
-    c_atom->cutforcesq      =   (MD_FLOAT *) allocateGPU(sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes);
-    c_atom->type            =   (int *) allocateGPU(sizeof(int) * atom->Nmax * 3);
-    c_neighbor->neighbors   =   (int *) allocateGPU(sizeof(int) * atom->Nmax * neighbor->maxneighs);
-    c_neighbor->numneigh    =   (int *) allocateGPU(sizeof(int) * atom->Nmax);
+    d_atom->epsilon         =   (MD_FLOAT *) allocateGPU(sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes);
+    d_atom->sigma6          =   (MD_FLOAT *) allocateGPU(sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes);
+    d_atom->cutforcesq      =   (MD_FLOAT *) allocateGPU(sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes);
+    d_neighbor->neighbors   =   (int *) allocateGPU(sizeof(int) * atom->Nmax * neighbor->maxneighs);
+    d_neighbor->numneigh    =   (int *) allocateGPU(sizeof(int) * atom->Nmax);
 
-    memcpyToGPU(c_atom->x,              atom->x,          sizeof(MD_FLOAT) * atom->Nmax * 3);
-    memcpyToGPU(c_atom->vx,             atom->vx,         sizeof(MD_FLOAT) * atom->Nmax * 3);
-    memcpyToGPU(c_atom->sigma6,         atom->sigma6,     sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes);
-    memcpyToGPU(c_atom->epsilon,        atom->epsilon,    sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes);
-    memcpyToGPU(c_atom->cutforcesq,     atom->cutforcesq, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes);
-    memcpyToGPU(c_atom->type,           atom->type,       sizeof(int) * atom->Nmax);
+    memcpyToGPU(d_atom->x,              atom->x,          sizeof(MD_FLOAT) * atom->Nmax * 3);
+    memcpyToGPU(d_atom->vx,             atom->vx,         sizeof(MD_FLOAT) * atom->Nmax * 3);
+    memcpyToGPU(d_atom->sigma6,         atom->sigma6,     sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes);
+    memcpyToGPU(d_atom->epsilon,        atom->epsilon,    sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes);
+    memcpyToGPU(d_atom->cutforcesq,     atom->cutforcesq, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes);
+    memcpyToGPU(d_atom->type,           atom->type,       sizeof(int) * atom->Nmax);
 }
 
 void cuda_assert(const char *label, cudaError_t err) {
