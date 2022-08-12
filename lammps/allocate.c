@@ -49,36 +49,61 @@ void *allocate(int alignment, size_t bytesize) {
     return ptr;
 }
 
-void *reallocate(void* ptr, int alignment, size_t newBytesize, size_t oldBytesize) {
-    void *newarray = allocate(alignment, newBytesize);
-
+void *reallocate(void* ptr, int alignment, size_t new_bytesize, size_t old_bytesize) {
+    void *newarray = allocate(alignment, new_bytesize);
     if(ptr != NULL) {
-        memcpy(newarray, ptr, oldBytesize);
+        memcpy(newarray, ptr, old_bytesize);
         free(ptr);
     }
 
     return newarray;
 }
+
 #ifndef CUDA_TARGET
-void *allocate_gpu(int alignment, size_t bytesize) { return NULL; }
-void *reallocate_gpu(void *ptr, int alignment, size_t newBytesize, size_t oldBytesize) { return NULL; }
+void *allocateGPU(size_t bytesize) { return NULL; }
+void *reallocateGPU(void *ptr, size_t new_bytesize) { return NULL; }
+void memcpyToGPU(void *d_ptr, void *h_ptr, size_t bytesize) {}
+void memcpyFromGPU(void *h_ptr, void *d_ptr, size_t bytesize) {}
+void memsetGPU(void *d_ptr, int value, size_t bytesize) {}
 #else
 #include <cuda_runtime.h>
 #include <cuda_atom.h>
-void *allocate_gpu(int alignment, size_t bytesize) {
+void *allocateGPU(size_t bytesize) {
     void *ptr;
-    checkCUDAError("allocate", cudaMallocHost((void **) &ptr, bytesize));
+    #ifdef CUDA_HOST_MEMORY
+    cuda_assert("allocateGPU", cudaMallocHost((void **) &ptr, bytesize));
+    #else
+    cuda_assert("allocateGPU", cudaMalloc((void **) &ptr, bytesize));
+    #endif
     return ptr;
 }
 
 // Data is not preserved
-void *reallocate_gpu(void *ptr, int alignment, size_t newBytesize, size_t oldBytesize) {
-    void *newarray = allocate_gpu(alignment, newBytesize);
-
+void *reallocateGPU(void *ptr, size_t new_bytesize) {
     if(ptr != NULL) {
+        #ifdef CUDA_HOST_MEMORY
         cudaFreeHost(ptr);
+        #else
+        cudaFree(ptr);
+        #endif
     }
 
-    return newarray;
+    return allocateGPU(new_bytesize);
+}
+
+void memcpyToGPU(void *d_ptr, void *h_ptr, size_t bytesize) {
+    #ifndef CUDA_HOST_MEMORY
+    cuda_assert("memcpyToGPU", cudaMemcpy(d_ptr, h_ptr, bytesize, cudaMemcpyHostToDevice));
+    #endif
+}
+
+void memcpyFromGPU(void *h_ptr, void *d_ptr, size_t bytesize) {
+    #ifndef CUDA_HOST_MEMORY
+    cuda_assert("memcpyFromGPU", cudaMemcpy(h_ptr, d_ptr, bytesize, cudaMemcpyDeviceToHost));
+    #endif
+}
+
+void memsetGPU(void *d_ptr, int value, size_t bytesize) {
+    cuda_assert("memsetGPU", cudaMemset(d_ptr, value, bytesize));
 }
 #endif

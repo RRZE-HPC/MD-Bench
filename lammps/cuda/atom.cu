@@ -37,38 +37,29 @@ void initCuda(Atom *atom, Neighbor *neighbor, Atom *c_atom, Neighbor *c_neighbor
     c_atom->Nghost = atom->Nghost;
     c_atom->Nmax = atom->Nmax;
     c_atom->ntypes = atom->ntypes;
-
     c_atom->border_map = NULL;
 
-    const int Nlocal = atom->Nlocal;
+    c_atom->x               =   (MD_FLOAT *) allocateGPU(sizeof(MD_FLOAT) * atom->Nmax * 3);
+    c_atom->vx              =   (MD_FLOAT *) allocateGPU(sizeof(MD_FLOAT) * atom->Nmax * 3);
+    c_atom->fx              =   (MD_FLOAT *) allocateGPU(sizeof(MD_FLOAT) * atom->Nmax * 3);
+    c_atom->epsilon         =   (MD_FLOAT *) allocateGPU(sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes);
+    c_atom->sigma6          =   (MD_FLOAT *) allocateGPU(sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes);
+    c_atom->cutforcesq      =   (MD_FLOAT *) allocateGPU(sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes);
+    c_atom->type            =   (int *) allocateGPU(sizeof(int) * atom->Nmax * 3);
+    c_neighbor->neighbors   =   (int *) allocateGPU(sizeof(int) * atom->Nmax * neighbor->maxneighs);
+    c_neighbor->numneigh    =   (int *) allocateGPU(sizeof(int) * atom->Nmax);
 
-    checkCUDAError( "c_atom->x malloc", cudaMalloc((void**)&(c_atom->x), sizeof(MD_FLOAT) * atom->Nmax * 3) );
-    checkCUDAError( "c_atom->x memcpy", cudaMemcpy(c_atom->x, atom->x, sizeof(MD_FLOAT) * atom->Nmax * 3, cudaMemcpyHostToDevice) );
-
-    checkCUDAError( "c_atom->fx malloc", cudaMalloc((void**)&(c_atom->fx), sizeof(MD_FLOAT) * Nlocal * 3) );
-
-    checkCUDAError( "c_atom->vx malloc", cudaMalloc((void**)&(c_atom->vx), sizeof(MD_FLOAT) * Nlocal * 3) );
-    checkCUDAError( "c_atom->vx memcpy", cudaMemcpy(c_atom->vx, atom->vx, sizeof(MD_FLOAT) * Nlocal * 3, cudaMemcpyHostToDevice) );
-
-    checkCUDAError( "c_atom->type malloc", cudaMalloc((void**)&(c_atom->type), sizeof(int) * atom->Nmax) );
-    checkCUDAError( "c_atom->epsilon malloc", cudaMalloc((void**)&(c_atom->epsilon), sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes) );
-    checkCUDAError( "c_atom->sigma6 malloc", cudaMalloc((void**)&(c_atom->sigma6), sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes) );
-    checkCUDAError( "c_atom->cutforcesq malloc", cudaMalloc((void**)&(c_atom->cutforcesq), sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes) );
-
-    checkCUDAError( "c_neighbor->neighbors malloc", cudaMalloc((void**)&c_neighbor->neighbors, sizeof(int) * Nlocal * neighbor->maxneighs) );
-    checkCUDAError( "c_neighbor->numneigh malloc", cudaMalloc((void**)&c_neighbor->numneigh, sizeof(int) * Nlocal) );
-
-    checkCUDAError( "c_atom->type memcpy", cudaMemcpy(c_atom->type, atom->type, sizeof(int) * atom->Nmax, cudaMemcpyHostToDevice) );
-    checkCUDAError( "c_atom->sigma6 memcpy", cudaMemcpy(c_atom->sigma6, atom->sigma6, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice) );
-    checkCUDAError( "c_atom->epsilon memcpy", cudaMemcpy(c_atom->epsilon, atom->epsilon, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice) );
-
-    checkCUDAError( "c_atom->cutforcesq memcpy", cudaMemcpy(c_atom->cutforcesq, atom->cutforcesq, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes, cudaMemcpyHostToDevice) );
+    memcpyToGPU(c_atom->x,              atom->x,          sizeof(MD_FLOAT) * atom->Nmax * 3);
+    memcpyToGPU(c_atom->vx,             atom->vx,         sizeof(MD_FLOAT) * atom->Nmax * 3);
+    memcpyToGPU(c_atom->sigma6,         atom->sigma6,     sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes);
+    memcpyToGPU(c_atom->epsilon,        atom->epsilon,    sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes);
+    memcpyToGPU(c_atom->cutforcesq,     atom->cutforcesq, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes);
+    memcpyToGPU(c_atom->type,           atom->type,       sizeof(int) * atom->Nmax);
 }
 
-void checkCUDAError(const char *msg, cudaError_t err) {
+void cuda_assert(const char *label, cudaError_t err) {
     if (err != cudaSuccess) {
-        //print a human readable error message
-        printf("[CUDA ERROR %s]: %s\r\n", msg, cudaGetErrorString(err));
+        printf("[CUDA Error]: %s: %s\r\n", label, cudaGetErrorString(err));
         exit(-1);
     }
 }

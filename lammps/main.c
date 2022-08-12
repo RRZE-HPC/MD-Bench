@@ -261,9 +261,8 @@ int main(int argc, char** argv) {
 
         if(!((n + 1) % param.nstat) && (n+1) < param.ntimes) {
             #ifdef CUDA_TARGET
-            checkCUDAError("computeThermo atom->x memcpy back", cudaMemcpy(atom.x, c_atom.x, atom.Nmax * sizeof(MD_FLOAT) * 3, cudaMemcpyDeviceToHost));
+            memcpyFromGPU(atom.x, c_atom.x, atom.Nmax * sizeof(MD_FLOAT) * 3);
             #endif
-
             computeThermo(n + 1, &param, &atom);
         }
 
