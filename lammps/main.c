@@ -54,10 +54,10 @@ extern double computeForceDemFullNeigh(Parameter*, Atom*, Neighbor*, Stats*);
 
 #ifdef CUDA_TARGET
 #include <cuda_atom.h>
-extern double computeForceLJFullNeigh_cuda(Parameter*, Atom*, Neighbor*, Atom*, Neighbor*);
+extern double computeForceLJFullNeigh_cuda(Parameter*, Atom*, Neighbor*);
 #endif
 
-double setup(Parameter *param, Eam *eam, Atom *atom, Neighbor *neighbor, Atom *c_atom, Neighbor *c_neighbor, Stats *stats) {
+double setup(Parameter *param, Eam *eam, Atom *atom, Neighbor *neighbor, Stats *stats) {
     if(param->force_field == FF_EAM) { initEam(eam, param); }
     double S, E;
     param->lattice = pow((4.0 / param->rho), (1.0 / 3.0));
@@ -81,23 +81,23 @@ double setup(Parameter *param, Eam *eam, Atom *atom, Neighbor *neighbor, Atom *c
     if(param->input_file == NULL) { adjustThermo(param, atom); }
     setupPbc(atom, param);
     #ifdef CUDA_TARGET
-    initCuda(atom, neighbor, c_atom, c_neighbor);
+    initCuda(atom, neighbor);
     #endif
-    updatePbc(atom, c_atom, param, true);
-    buildNeighbor(atom, neighbor, c_atom, c_neighbor);
+    updatePbc(atom, param, true);
+    buildNeighbor(atom, neighbor);
     E = getTimeStamp();
     return E-S;
 }
 
-double reneighbour(Parameter *param, Atom *atom, Neighbor *neighbor, Atom *c_atom, Neighbor *c_neighbor) {
+double reneighbour(Parameter *param, Atom *atom, Neighbor *neighbor) {
     double S, E;
     S = getTimeStamp();
     LIKWID_MARKER_START("reneighbour");
-    updateAtomsPbc(atom, c_atom, param);
+    updateAtomsPbc(atom, param);
     setupPbc(atom, param);
-    updatePbc(atom, c_atom, param, true);
+    updatePbc(atom, param, true);
     //sortAtom(atom);
-    buildNeighbor(atom, neighbor, c_atom, c_neighbor);
+    buildNeighbor(atom, neighbor);
     LIKWID_MARKER_STOP("reneighbour");
     E = getTimeStamp();
     return E-S;
@@ -111,7 +111,7 @@ void printAtomState(Atom *atom) {
     // }
 }
 
-double computeForce(Eam *eam, Parameter *param, Atom *atom, Neighbor *neighbor, Atom *c_atom, Neighbor *c_neighbor, Stats *stats) {
+double computeForce(Eam *eam, Parameter *param, Atom *atom, Neighbor *neighbor, Stats *stats) {
     if(param->force_field == FF_EAM) {
         return computeForceEam(eam, param, atom, neighbor, stats);
     } else if(param->force_field == FF_DEM) {
@@ -128,7 +128,7 @@ double computeForce(Eam *eam, Parameter *param, Atom *atom, Neighbor *neighbor, 
     }
 
     #ifdef CUDA_TARGET
-    return computeForceLJFullNeigh(param, atom, neighbor, c_atom, c_neighbor);
+    return computeForceLJFullNeigh(param, atom, neighbor);
     #else
     return computeForceLJFullNeigh(param, atom, neighbor, stats);
     #endif
@@ -137,8 +137,8 @@ double computeForce(Eam *eam, Parameter *param, Atom *atom, Neighbor *neighbor, 
 int main(int argc, char** argv) {
     double timer[NUMTIMER];
     Eam eam;
-    Atom atom, c_atom;
-    Neighbor neighbor, c_neighbor;
+    Atom atom;
+    Neighbor neighbor;
     Stats stats;
     Parameter param;
 
@@ -226,7 +226,7 @@ int main(int argc, char** argv) {
     }
 
     param.cutneigh = param.cutforce + param.skin;
-    setup(&param, &eam, &atom, &neighbor, &c_atom, &c_neighbor, &stats);
+    setup(&param, &eam, &atom, &neighbor, &stats);
     printParameter(&param);
 
     printf("step\ttemp\t\tpressure\n");
@@ -235,7 +235,7 @@ int main(int argc, char** argv) {
     traceAddresses(&param, &atom, &neighbor, n + 1);
     #endif
 
-    timer[FORCE] = computeForce(&eam, &param, &atom, &neighbor, &c_atom, &c_neighbor, &stats);
+    timer[FORCE] = computeForce(&eam, &param, &atom, &neighbor, &stats);
     timer[NEIGH] = 0.0;
     timer[TOTAL] = getTimeStamp();
 
@@ -245,23 +245,23 @@ int main(int argc, char** argv) {
 
     for(int n = 0; n < param.ntimes; n++) {
         bool reneigh = (n + 1) % param.reneigh_every == 0;
-        initialIntegrate(reneigh, &param, &atom, &c_atom);
+        initialIntegrate(reneigh, &param, &atom);
         if((n + 1) % param.reneigh_every) {
-            updatePbc(&atom, &c_atom, &param, false);
+            updatePbc(&atom, &param, false);
         } else {
-            timer[NEIGH] += reneighbour(&param, &atom, &neighbor, &c_atom, &c_neighbor);
+            timer[NEIGH] += reneighbour(&param, &atom, &neighbor);
         }
 
         #if defined(MEM_TRACER) || defined(INDEX_TRACER)
         traceAddresses(&param, &atom, &neighbor, n + 1);
         #endif
 
-        timer[FORCE] += computeForce(&eam, &param, &atom, &neighbor, &c_atom, &c_neighbor, &stats);
-        finalIntegrate(reneigh, &param, &atom, &c_atom);
+        timer[FORCE] += computeForce(&eam, &param, &atom, &neighbor, &stats);
+        finalIntegrate(reneigh, &param, &atom);
 
         if(!((n + 1) % param.nstat) && (n+1) < param.ntimes) {
             #ifdef CUDA_TARGET
-            memcpyFromGPU(atom.x, c_atom.x, atom.Nmax * sizeof(MD_FLOAT) * 3);
+            memcpyFromGPU(atom.x, atom.d_atom.x, atom.Nmax * sizeof(MD_FLOAT) * 3);
             #endif
             computeThermo(n + 1, &param, &atom);
         }

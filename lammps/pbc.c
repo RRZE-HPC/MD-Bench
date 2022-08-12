@@ -44,7 +44,7 @@ void initPbc(Atom* atom) {
 
 /* update coordinates of ghost atoms */
 /* uses mapping created in setupPbc */
-void updatePbc_cpu(Atom *atom, Atom *c_atom, Parameter *param, bool doReneighbor) {
+void updatePbc_cpu(Atom *atom, Parameter *param, bool doReneighbor) {
     int *border_map = atom->border_map;
     int nlocal = atom->Nlocal;
     MD_FLOAT xprd = param->xprd;
@@ -60,7 +60,7 @@ void updatePbc_cpu(Atom *atom, Atom *c_atom, Parameter *param, bool doReneighbor
 
 /* relocate atoms that have left domain according
  * to periodic boundary conditions */
-void updateAtomsPbc_cpu(Atom *atom, Atom *c_atom, Parameter *param) {
+void updateAtomsPbc_cpu(Atom *atom, Parameter *param) {
     MD_FLOAT xprd = param->xprd;
     MD_FLOAT yprd = param->yprd;
     MD_FLOAT zprd = param->zprd;
