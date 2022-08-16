@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 //---
+#include <atom.h>
 #include <parameter.h>
 #include <util.h>
 
@@ -136,6 +137,9 @@ void printParameter(Parameter *param) {
     }
 
     printf("\tForce field: %s\n", ff2str(param->force_field));
+    printf("\tKernel: %s, MxN: %dx%d, Vector width: %d\n", KERNEL_NAME, CLUSTER_M, CLUSTER_N, VECTOR_WIDTH);
+    printf("\tData layout: %s\n", POS_DATA_LAYOUT);
+    printf("\tFloating-point precision: %s\n", PRECISION_STRING);
     printf("\tUnit cells (nx, ny, nz): %d, %d, %d\n", param->nx, param->ny, param->nz);
     printf("\tDomain box sizes (x, y, z): %e, %e, %e\n", param->xprd, param->yprd, param->zprd);
     printf("\tLattice size: %e\n", param->lattice);
@@ -155,5 +159,5 @@ void printParameter(Parameter *param) {
     printf("\tCutoff radius: %e\n", param->cutforce);
     printf("\tSkin: %e\n", param->skin);
     printf("\tHalf neighbor lists: %d\n", param->half_neigh);
-    printf("\tProcessor frequency (GHz): %.4f\n\n", param->proc_freq);
+    printf("\tProcessor frequency (GHz): %.4f\n", param->proc_freq);
 }
