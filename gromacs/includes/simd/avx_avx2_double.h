@@ -28,10 +28,10 @@
 #define MD_SIMD_FLOAT       __m256d
 #define MD_SIMD_INT         __m128i
 
-#ifdef NO_AVX2
-#   define MD_SIMD_MASK     __m256d
-#else
+#ifdef MASK_REGISTERS
 #   define MD_SIMD_MASK     __mmask8
+#else
+#   define MD_SIMD_MASK     __m256d
 #endif
 
 static inline MD_SIMD_FLOAT simd_broadcast(MD_FLOAT scalar) { return _mm256_set1_pd(scalar); }

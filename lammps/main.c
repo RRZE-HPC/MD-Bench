@@ -226,6 +226,7 @@ int main(int argc, char** argv) {
     param.cutneigh = param.cutforce + param.skin;
     setup(&param, &eam, &atom, &neighbor, &stats);
     printParameter(&param);
+    printf(HLINE);
 
     printf("step\ttemp\t\tpressure\n");
     computeThermo(0, &param, &atom);
@@ -272,14 +273,6 @@ int main(int argc, char** argv) {
     timer[TOTAL] = getTimeStamp() - timer[TOTAL];
     computeThermo(-1, &param, &atom);
 
-    printf(HLINE);
-    printf("Force field: %s\n", ff2str(param.force_field));
-    printf("Data layout for positions: %s\n", POS_DATA_LAYOUT);
-    #if PRECISION == 1
-    printf("Using single precision floating point.\n");
-    #else
-    printf("Using double precision floating point.\n");
-    #endif
     printf(HLINE);
     printf("System: %d atoms %d ghost atoms, Steps: %d\n", atom.Natoms, atom.Nghost, param.ntimes);
     printf("TOTAL %.2fs FORCE %.2fs NEIGH %.2fs REST %.2fs\n",
