@@ -253,12 +253,13 @@ int main(int argc, char** argv) {
     param.cutneigh = param.cutforce + param.skin;
     setup(&param, &eam, &atom, &neighbor, &stats);
     printParameter(&param);
+    printf(HLINE);
 
     printf("step\ttemp\t\tpressure\n");
     computeThermo(0, &param, &atom);
-#if defined(MEM_TRACER) || defined(INDEX_TRACER)
+    #if defined(MEM_TRACER) || defined(INDEX_TRACER)
     traceAddresses(&param, &atom, &neighbor, n + 1);
-#endif
+    #endif
     if(param.force_field == FF_EAM) {
         timer[FORCE] = computeForceEam(&eam, &param, &atom, &neighbor, &stats);
     } else {
@@ -289,9 +290,9 @@ int main(int argc, char** argv) {
             timer[NEIGH] += reneighbour(&param, &atom, &neighbor);
         }
 
-#if defined(MEM_TRACER) || defined(INDEX_TRACER)
+        #if defined(MEM_TRACER) || defined(INDEX_TRACER)
         traceAddresses(&param, &atom, &neighbor, n + 1);
-#endif
+        #endif
 
         if(param.force_field == FF_EAM) {
             timer[FORCE] += computeForceEam(&eam, &param, &atom, &neighbor, &stats);
@@ -327,23 +328,15 @@ int main(int argc, char** argv) {
     }
 
     printf(HLINE);
-    printf("Kernel: %s, MxN: %dx%d, Vector width: %d\n", KERNEL_NAME, CLUSTER_M, CLUSTER_N, VECTOR_WIDTH);
-    printf("Data layout for positions: %s\n", POS_DATA_LAYOUT);
-#if PRECISION == 1
-    printf("Using single precision floating point.\n");
-#else
-    printf("Using double precision floating point.\n");
-#endif
-    printf(HLINE);
     printf("System: %d atoms %d ghost atoms, Steps: %d\n", atom.Natoms, atom.Nghost, param.ntimes);
     printf("TOTAL %.2fs FORCE %.2fs NEIGH %.2fs REST %.2fs\n",
             timer[TOTAL], timer[FORCE], timer[NEIGH], timer[TOTAL]-timer[FORCE]-timer[NEIGH]);
     printf(HLINE);
     printf("Performance: %.2f million atom updates per second\n",
             1e-6 * (double) atom.Natoms * param.ntimes / timer[TOTAL]);
-#ifdef COMPUTE_STATS
+    #ifdef COMPUTE_STATS
     displayStatistics(&atom, &param, &stats, timer);
-#endif
+    #endif
     LIKWID_MARKER_CLOSE;
     return EXIT_SUCCESS;
 }
