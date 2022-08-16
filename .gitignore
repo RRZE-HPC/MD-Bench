@@ -55,6 +55,8 @@ dkms.conf
 GCC/
 ICC/
 CLANG/
+NVCC/
 MDBench-GCC*
 MDBench-ICC*
 MDBench-CLANG*
+MDBench-NVCC*
