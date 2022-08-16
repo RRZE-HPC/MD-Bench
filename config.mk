@@ -2,6 +2,9 @@
 TAG ?= ICC
 # Instruction set (SSE/AVX/AVX2/AVX512)
 ISA ?= AVX512
+# Use mask registers (AVX512 must be available in the target CPU)
+# This is always true when ISA is set to AVX512
+MASK_REGISTERS ?= true
 # Optimization scheme (lammps/gromacs/clusters_per_bin)
 OPT_SCHEME ?= lammps
 # Enable likwid (true or false)

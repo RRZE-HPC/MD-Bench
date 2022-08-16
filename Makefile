@@ -64,8 +64,12 @@ ifneq ($(VECTOR_WIDTH),)
     DEFINES += -DVECTOR_WIDTH=$(VECTOR_WIDTH)
 endif
 
-ifeq ($(strip $(NO_AVX2)),true)
-    DEFINES += -DNO_AVX2
+ifeq ($(strip $(MASK_REGISTERS)),true)
+    DEFINES += -DMASK_REGISTERS
+endif
+
+ifeq ($(strip $(SIMD_KERNEL_AVAILABLE)),true)
+    DEFINES += -DSIMD_KERNEL_AVAILABLE
 endif
 
 ifeq ($(strip $(AVX512)),true)

@@ -21,16 +21,14 @@
  * =======================================================================================
  */
 #include <math.h>
+//---
+#include <atom.h>
 #include <likwid-marker.h>
-
-#include <timing.h>
 #include <neighbor.h>
 #include <parameter.h>
-#include <atom.h>
 #include <stats.h>
+#include <timing.h>
 
-// TODO: Joint common files for gromacs and lammps variants
-#include "../gromacs/includes/simd.h"
 
 double computeForceDemFullNeigh(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *stats) {
     int Nlocal = atom->Nlocal;

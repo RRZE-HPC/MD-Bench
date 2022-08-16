@@ -20,25 +20,29 @@
  *   with MD-Bench.  If not, see <https://www.gnu.org/licenses/>.
  * =======================================================================================
  */
+#include <stdio.h>
+#include <stdlib.h>
+//---
+#include <atom.h>
 #include <likwid-marker.h>
-
-#include <timing.h>
 #include <neighbor.h>
 #include <parameter.h>
-#include <atom.h>
 #include <stats.h>
+#include <timing.h>
 
 // TODO: Joint common files for gromacs and lammps variants
+#ifdef SIMD_KERNEL_AVAILABLE
 #include "../gromacs/includes/simd.h"
+#endif
 
 double computeForceLJFullNeigh_plain_c(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *stats) {
     int Nlocal = atom->Nlocal;
     int* neighs;
-#ifndef EXPLICIT_TYPES
+    #ifndef EXPLICIT_TYPES
     MD_FLOAT cutforcesq = param->cutforce * param->cutforce;
     MD_FLOAT sigma6 = param->sigma6;
     MD_FLOAT epsilon = param->epsilon;
-#endif
+    #endif
 
     for(int i = 0; i < Nlocal; i++) {
         atom_fx(i) = 0.0;
@@ -49,7 +53,7 @@ double computeForceLJFullNeigh_plain_c(Parameter *param, Atom *atom, Neighbor *n
     double S = getTimeStamp();
     LIKWID_MARKER_START("force");
 
-#pragma omp parallel for
+    #pragma omp parallel for
     for(int i = 0; i < Nlocal; i++) {
         neighs = &neighbor->neighbors[i * neighbor->maxneighs];
         int numneighs = neighbor->numneigh[i];
@@ -60,9 +64,9 @@ double computeForceLJFullNeigh_plain_c(Parameter *param, Atom *atom, Neighbor *n
         MD_FLOAT fiy = 0;
         MD_FLOAT fiz = 0;
 
-#ifdef EXPLICIT_TYPES
+        #ifdef EXPLICIT_TYPES
         const int type_i = atom->type[i];
-#endif
+        #endif
 
         for(int k = 0; k < numneighs; k++) {
             int j = neighs[k];
@@ -71,13 +75,13 @@ double computeForceLJFullNeigh_plain_c(Parameter *param, Atom *atom, Neighbor *n
             MD_FLOAT delz = ztmp - atom_z(j);
             MD_FLOAT rsq = delx * delx + dely * dely + delz * delz;
 
-#ifdef EXPLICIT_TYPES
+            #ifdef EXPLICIT_TYPES
             const int type_j = atom->type[j];
             const int type_ij = type_i * atom->ntypes + type_j;
             const MD_FLOAT cutforcesq = atom->cutforcesq[type_ij];
             const MD_FLOAT sigma6 = atom->sigma6[type_ij];
             const MD_FLOAT epsilon = atom->epsilon[type_ij];
-#endif
+            #endif
 
             if(rsq < cutforcesq) {
                 MD_FLOAT sr2 = 1.0 / rsq;
@@ -86,11 +90,11 @@ double computeForceLJFullNeigh_plain_c(Parameter *param, Atom *atom, Neighbor *n
                 fix += delx * force;
                 fiy += dely * force;
                 fiz += delz * force;
-#ifdef USE_REFERENCE_VERSION
+            #ifdef USE_REFERENCE_VERSION
                 addStat(stats->atoms_within_cutoff, 1);
             } else {
                 addStat(stats->atoms_outside_cutoff, 1);
-#endif
+            #endif
             }
         }
 
@@ -110,11 +114,11 @@ double computeForceLJFullNeigh_plain_c(Parameter *param, Atom *atom, Neighbor *n
 double computeForceLJHalfNeigh(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *stats) {
     int Nlocal = atom->Nlocal;
     int* neighs;
-#ifndef EXPLICIT_TYPES
+    #ifndef EXPLICIT_TYPES
     MD_FLOAT cutforcesq = param->cutforce * param->cutforce;
     MD_FLOAT sigma6 = param->sigma6;
     MD_FLOAT epsilon = param->epsilon;
-#endif
+    #endif
 
     for(int i = 0; i < Nlocal; i++) {
         atom_fx(i) = 0.0;
@@ -135,14 +139,14 @@ double computeForceLJHalfNeigh(Parameter *param, Atom *atom, Neighbor *neighbor,
         MD_FLOAT fiy = 0;
         MD_FLOAT fiz = 0;
 
-#ifdef EXPLICIT_TYPES
+        #ifdef EXPLICIT_TYPES
         const int type_i = atom->type[i];
-#endif
+        #endif
 
         // Pragma required to vectorize the inner loop
-#ifdef ENABLE_OMP_SIMD
+        #ifdef ENABLE_OMP_SIMD
         #pragma omp simd reduction(+: fix,fiy,fiz)
-#endif
+        #endif
         for(int k = 0; k < numneighs; k++) {
             int j = neighs[k];
             MD_FLOAT delx = xtmp - atom_x(j);
@@ -150,13 +154,13 @@ double computeForceLJHalfNeigh(Parameter *param, Atom *atom, Neighbor *neighbor,
             MD_FLOAT delz = ztmp - atom_z(j);
             MD_FLOAT rsq = delx * delx + dely * dely + delz * delz;
 
-#ifdef EXPLICIT_TYPES
+            #ifdef EXPLICIT_TYPES
             const int type_j = atom->type[j];
             const int type_ij = type_i * atom->ntypes + type_j;
             const MD_FLOAT cutforcesq = atom->cutforcesq[type_ij];
             const MD_FLOAT sigma6 = atom->sigma6[type_ij];
             const MD_FLOAT epsilon = atom->epsilon[type_ij];
-#endif
+            #endif
 
             if(rsq < cutforcesq) {
                 MD_FLOAT sr2 = 1.0 / rsq;
@@ -194,11 +198,6 @@ double computeForceLJFullNeigh_simd(Parameter *param, Atom *atom, Neighbor *neig
     MD_FLOAT cutforcesq = param->cutforce * param->cutforce;
     MD_FLOAT sigma6 = param->sigma6;
     MD_FLOAT epsilon = param->epsilon;
-    MD_SIMD_FLOAT cutforcesq_vec = simd_broadcast(cutforcesq);
-    MD_SIMD_FLOAT sigma6_vec = simd_broadcast(sigma6);
-    MD_SIMD_FLOAT eps_vec = simd_broadcast(epsilon);
-    MD_SIMD_FLOAT c48_vec = simd_broadcast(48.0);
-    MD_SIMD_FLOAT c05_vec = simd_broadcast(0.5);
 
     for(int i = 0; i < Nlocal; i++) {
         atom_fx(i) = 0.0;
@@ -209,10 +208,16 @@ double computeForceLJFullNeigh_simd(Parameter *param, Atom *atom, Neighbor *neig
     double S = getTimeStamp();
     LIKWID_MARKER_START("force");
 
-    #ifdef NO_AVX2
-    fprintf(stderr, "Error: SIMD kernel implemented for AVX2 and AVX512 only!");
+    #ifndef SIMD_KERNEL_AVAILABLE
+    fprintf(stderr, "Error: SIMD kernel not implemented for specified instruction set!");
     exit(-1);
     #else
+    MD_SIMD_FLOAT cutforcesq_vec = simd_broadcast(cutforcesq);
+    MD_SIMD_FLOAT sigma6_vec = simd_broadcast(sigma6);
+    MD_SIMD_FLOAT eps_vec = simd_broadcast(epsilon);
+    MD_SIMD_FLOAT c48_vec = simd_broadcast(48.0);
+    MD_SIMD_FLOAT c05_vec = simd_broadcast(0.5);
+
     #pragma omp parallel for
     for(int i = 0; i < Nlocal; i++) {
         neighs = &neighbor->neighbors[i * neighbor->maxneighs];
