@@ -20,36 +20,56 @@
  *   with MD-Bench.  If not, see <https://www.gnu.org/licenses/>.
  * =======================================================================================
  */
-#include <stdio.h>
+#ifndef __PARAMETER_H_
+#define __PARAMETER_H_
 
-#include <atom.h>
-#include <parameter.h>
-
-#ifndef __EAM_H_
-#define __EAM_H_
-typedef struct {
-    int nrho, nr;
-    MD_FLOAT drho, dr, cut, mass;
-    MD_FLOAT *frho, *rhor, *zr;
-} Funcfl;
+#if PRECISION == 1
+#define MD_FLOAT float
+#else
+#define MD_FLOAT double
+#endif
 
 typedef struct {
-    MD_FLOAT* fp;
-    int nmax;
-    int nrho, nr;
-    int nrho_tot, nr_tot;
-    MD_FLOAT dr, rdr, drho, rdrho;
-    MD_FLOAT *frho, *rhor, *z2r;
-    MD_FLOAT *rhor_spline, *frho_spline, *z2r_spline;
-    Funcfl file;
-} Eam;
+    int force_field;
+    char* param_file;
+    char* input_file;
+    char* vtk_file;
+    char* xtc_file;
+    MD_FLOAT epsilon;
+    MD_FLOAT sigma;
+    MD_FLOAT sigma6;
+    MD_FLOAT temp;
+    MD_FLOAT rho;
+    MD_FLOAT mass;
+    int ntypes;
+    int ntimes;
+    int nstat;
+    int reneigh_every;
+    int prune_every;
+    int x_out_every;
+    int v_out_every;
+    int half_neigh;
+    MD_FLOAT dt;
+    MD_FLOAT dtforce;
+    MD_FLOAT skin;
+    MD_FLOAT cutforce;
+    MD_FLOAT cutneigh;
+    int nx, ny, nz;
+    int pbc_x, pbc_y, pbc_z;
+    MD_FLOAT lattice;
+    MD_FLOAT xlo, xhi, ylo, yhi, zlo, zhi;
+    MD_FLOAT xprd, yprd, zprd;
+    double proc_freq;
+    char* eam_file;
+    // DEM
+    MD_FLOAT k_s;
+    MD_FLOAT k_dn;
+    MD_FLOAT gx, gy, gz;
+    MD_FLOAT reflect_x, reflect_y, reflect_z;
+} Parameter;
 
-void initEam(Eam* eam, Parameter* param);
-void coeff(Eam* eam, Parameter* param);
-void init_style(Eam* eam, Parameter *param);
-void read_eam_file(Funcfl* file, const char* filename);
-void file2array(Eam* eam);
-void array2spline(Eam* eam, Parameter* param);
-void interpolate(int n, MD_FLOAT delta, MD_FLOAT* f, MD_FLOAT* spline);
-void grab(FILE* fptr, int n, MD_FLOAT* list);
+void initParameter(Parameter*);
+void readParameter(Parameter*, const char*);
+void printParameter(Parameter*);
+
 #endif
