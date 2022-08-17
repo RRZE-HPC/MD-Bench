@@ -3,6 +3,7 @@ TARGET	   = MDBench-$(TAG)-$(OPT_SCHEME)
 BUILD_DIR  = ./$(TAG)-$(OPT_SCHEME)
 SRC_DIR    = ./$(OPT_SCHEME)
 ASM_DIR    = ./asm
+COMMON_DIR = ./common
 CUDA_DIR   = ./$(SRC_DIR)/cuda
 MAKE_DIR   = ./
 Q         ?= @
@@ -13,7 +14,7 @@ include $(MAKE_DIR)/include_$(TAG).mk
 include $(MAKE_DIR)/include_LIKWID.mk
 include $(MAKE_DIR)/include_ISA.mk
 include $(MAKE_DIR)/include_GROMACS.mk
-INCLUDES  += -I./$(SRC_DIR)/includes
+INCLUDES  += -I./$(SRC_DIR)/includes -I./$(COMMON_DIR)/includes
 
 ifeq ($(strip $(DATA_LAYOUT)),AOS)
     DEFINES +=  -DAOS
@@ -89,6 +90,7 @@ ASM       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.s,$(wildcard $(SRC_DIR)/*.
 OVERWRITE:= $(patsubst $(ASM_DIR)/%-new.s, $(BUILD_DIR)/%.o,$(wildcard $(ASM_DIR)/*-new.s))
 OBJ       = $(filter-out $(BUILD_DIR)/main% $(OVERWRITE),$(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c)))
 OBJ      += $(patsubst $(ASM_DIR)/%.s, $(BUILD_DIR)/%.o,$(wildcard $(ASM_DIR)/*.s))
+OBJ      += $(patsubst $(COMMON_DIR)/%.c, $(BUILD_DIR)/%-common.o,$(wildcard $(COMMON_DIR)/*.c))
 ifeq ($(strip $(TAG)),NVCC)
 OBJ      += $(patsubst $(CUDA_DIR)/%.cu, $(BUILD_DIR)/%-cuda.o,$(wildcard $(CUDA_DIR)/*.cu))
 endif
@@ -110,6 +112,11 @@ ${TARGET}-%: $(BUILD_DIR) $(OBJ) $(SRC_DIR)/main-%.c
 	$(Q)${LINKER} $(CPPFLAGS) ${LFLAGS} -o $(TARGET)-$* $(SRC_DIR)/main-$*.c $(OBJ) $(LIBS)
 
 $(BUILD_DIR)/%.o:  %.c
+	$(info ===>  COMPILE  $@)
+	$(Q)$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
+	$(Q)$(CC) $(CPPFLAGS) -MT $@ -MM  $< > $(BUILD_DIR)/$*.d
+
+$(BUILD_DIR)/%-common.o:  $(COMMON_DIR)/%.c
 	$(info ===>  COMPILE  $@)
 	$(Q)$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
 	$(Q)$(CC) $(CPPFLAGS) -MT $@ -MM  $< > $(BUILD_DIR)/$*.d
