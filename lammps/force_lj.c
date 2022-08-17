@@ -30,9 +30,8 @@
 #include <stats.h>
 #include <timing.h>
 
-// TODO: Joint common files for gromacs and lammps variants
 #ifdef SIMD_KERNEL_AVAILABLE
-#include "../gromacs/includes/simd.h"
+#include <simd.h>
 #endif
 
 double computeForceLJFullNeigh_plain_c(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *stats) {

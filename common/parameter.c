@@ -44,7 +44,9 @@ void initParameter(Parameter *param) {
     param->nx = 32;
     param->ny = 32;
     param->nz = 32;
-    param->half_neigh = 0;
+    param->pbc_x = 1;
+    param->pbc_y = 1;
+    param->pbc_z = 1;
     param->cutforce = 2.5;
     param->skin = 0.3;
     param->cutneigh = param->cutforce + param->skin;
@@ -56,7 +58,17 @@ void initParameter(Parameter *param) {
     param->prune_every = 1000;
     param->x_out_every = 20;
     param->v_out_every = 5;
+    param->half_neigh = 0;
     param->proc_freq = 2.4;
+    // DEM
+    param->k_s = 1.0;
+    param->k_dn = 1.0;
+    param->gx = 0.0;
+    param->gy = 0.0;
+    param->gz = 0.0;
+    param->reflect_x = 0.0;
+    param->reflect_y = 0.0;
+    param->reflect_z = 0.0;
 }
 
 void readParameter(Parameter *param, const char *filename) {
@@ -91,6 +103,14 @@ void readParameter(Parameter *param, const char *filename) {
             PARSE_STRING(xtc_file);
             PARSE_REAL(epsilon);
             PARSE_REAL(sigma);
+            PARSE_REAL(k_s);
+            PARSE_REAL(k_dn);
+            PARSE_REAL(reflect_x);
+            PARSE_REAL(reflect_y);
+            PARSE_REAL(reflect_z);
+            PARSE_REAL(gx);
+            PARSE_REAL(gy);
+            PARSE_REAL(gz);
             PARSE_REAL(rho);
             PARSE_REAL(dt);
             PARSE_REAL(cutforce);
@@ -103,14 +123,20 @@ void readParameter(Parameter *param, const char *filename) {
             PARSE_INT(nx);
             PARSE_INT(ny);
             PARSE_INT(nz);
-            PARSE_INT(half_neigh);
+            PARSE_INT(pbc_x);
+            PARSE_INT(pbc_y);
+            PARSE_INT(pbc_z);
             PARSE_INT(nstat);
             PARSE_INT(reneigh_every);
             PARSE_INT(prune_every);
             PARSE_INT(x_out_every);
             PARSE_INT(v_out_every);
+            PARSE_INT(half_neigh);
         }
     }
+
+    // Update dtforce
+    param->dtforce = 0.5 * param->dt;
 
     // Update sigma6 parameter
     MD_FLOAT s2 = param->sigma * param->sigma;
@@ -137,14 +163,21 @@ void printParameter(Parameter *param) {
     }
 
     printf("\tForce field: %s\n", ff2str(param->force_field));
+    #ifdef CLUSTER_M
     printf("\tKernel: %s, MxN: %dx%d, Vector width: %d\n", KERNEL_NAME, CLUSTER_M, CLUSTER_N, VECTOR_WIDTH);
+    #else
+    printf("\tKernel: %s\n", KERNEL_NAME);
+    #endif
     printf("\tData layout: %s\n", POS_DATA_LAYOUT);
     printf("\tFloating-point precision: %s\n", PRECISION_STRING);
     printf("\tUnit cells (nx, ny, nz): %d, %d, %d\n", param->nx, param->ny, param->nz);
     printf("\tDomain box sizes (x, y, z): %e, %e, %e\n", param->xprd, param->yprd, param->zprd);
+    printf("\tPeriodic (x, y, z): %d, %d, %d\n", param->pbc_x, param->pbc_y, param->pbc_z);
     printf("\tLattice size: %e\n", param->lattice);
     printf("\tEpsilon: %e\n", param->epsilon);
     printf("\tSigma: %e\n", param->sigma);
+    printf("\tSpring constant: %e\n", param->k_s);
+    printf("\tDamping constant: %e\n", param->k_dn);
     printf("\tTemperature: %e\n", param->temp);
     printf("\tRHO: %e\n", param->rho);
     printf("\tMass: %e\n", param->mass);
