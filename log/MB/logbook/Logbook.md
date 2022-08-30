@@ -251,80 +251,12 @@ def calculate_neighbors():
   neighbor_list = build_neighbor(atoms)
   return neighbor_list
 ``` 
------
-### Perodic boundary condition
 
-Atoms that leave the simulated area will enter the simulated area on the mirrored side. In code it looks like this:
-
-```python
-def update_according_to(atoms, periodic_boundary_condition):
-  sim_width, sim_height = periodic_boundary_condition.simulated_area.dims
-  x_max, x_min, y_max, y_min = periodic_boundary_condition.boundaries
-  for atom in atoms:
-    if position[atom].x > x_max:
-      position[atom].x -= sim_width
-    if position[atom].x < x_min:
-      position[atom].x += sim_width
-    if position[atom].y > y_max:
-      position[atom].y -= sim_height
-    if position[atom].y < y_min:
-      position[atom].y += sim_height
-```
-
-This part will be easy to parallelize as all iterations are independent. The idea here is to give every atom its own thread in which it can operate on the atoms data.
-
------
-Next we take a look at the setup of the periodic boundary condition. If an atom is closer to a boundary than a certain threshold, it will need a ghost atom on the opposite site to emulate the boundary condition.
-
-```python
-def setup_periodic_boundary_condition(atoms, periodic_boundary_condition):
-  sim_width, sim_height = periodic_boundary_condition.simulated_area.dims
-  x_max, x_min, y_max, y_min = periodic_boundary_condition.boundaries
-  n_ghosts = 0
-  n_ghost_allocations = some_value
-  ghosts = malloc(n_ghost_allocations * sizeof(ghost))
-  
-  def createGhost(original_atom, offset_x, offset_y):
-    ghost = {}
-    ghost.original = original_atom
-    ghost.offset_x = offset_x
-    ghost.offset_y = offset_y
-    return ghost
-  
-  for atom in atoms:
-    if n_ghost_allocations - n_ghosts < max_ghosts_created_per_iteration:
-      ghosts = realloc(ghosts, n_ghost_allocations, n_ghost_allocations + some_more)
-      n_ghost_allocations += some_more
-    if position[atom].x > x_max - threshold:
-      ghosts[n_ghosts++] = createGhost(atom, -sim_width, 0)
-    if position[atom].x < x_min + threshold:
-      ghosts[n_ghosts++] = createGhost(atom, +sim_width, 0)
-    if position[atom].y > y_max - threshold:
-      ghosts[n_ghosts++] = createGhost(atom, 0, -sim_height)
-    if position[atom].y < y_min + threshold:
-      ghosts[n_ghosts++] = createGhost(atom, 0, +sim_height)
-    if position[atom].x > x_max - threshold AND position[atom].y > y_max - threshold:
-      ghosts[n_ghosts++] = createGhost(atom, -sim_width, -sim_height)
-    if position[atom].x > x_max - threshold AND position[atom] < y_min + threshold:
-      ghosts[n_ghosts++] = createGhost(atom, -sim_width, +sim_height)
-    if position[atom].x < x_min + threshold AND position[atom].y > y_max - threshold:
-      ghosts[n_ghosts++] = createGhost(atom, +sim_width, -sim_height)
-    if position[atom].x < x_min + threshold AND position[atom] < y_min + threshold:
-      ghosts[n_ghosts++] = createGhost(atom, +sim_width, +sim_height)
-  
-  if n_atoms + n_ghosts > len(atoms):
-    atoms = realloc(n_atoms + n_ghosts)
-```
-
-This method poses a difficult challenge to parallelize as the different iterations depend on each other. This dependency stems from the n_ghosts variable and the possible allocation in the beginning of each iteration.
-
-Ideas to parallelize:
-allocate more space for ghosts than will be needed and give each atom a thread
-* each thread inserts its atoms ghosts into a predefined empty space -> no collisions but array will be sparsely occupied
-* each thread atomically increments a global counter (mimicing the nghosts variable) -> no collisions and dense array occupation but the atomicAdd will lead to lots of blocking
-
-The priority for parallelizing this code is low since it only scales with O(N) with N being the number of atoms.
-
+A short explanation:
+* the `update_according_to` method sets the position of all atoms that have left the simulated area so they enter on the 'other' side
+* the `setup_periodic_boundary_condition` method creates ghost atoms that emulate force interaction of atoms through the periodic boundary
+* the `update_periodic_boundary_condition(...)` method sets the ghost atoms position so they have the right offset to their original atom
+* the `build_neighbor(...)` method then constructs the neighbor lists
 
 ### Building neighbor lists
 The majority of CPU time is spent the `buildNeighbor`-method. Parallelizing this on the GPU will have significant impact on the application's scalability.
@@ -440,7 +372,18 @@ Idea:
 Special Challenges:
  * None (since each ghost atom only writes atom-local data and all reads are from atom local data or data not changed in this kernel (&#8594; can be considered static during kernel runtime) &#8594; no race conditions)
 
-With the parallelization of this method the runtime drops even further probably due to the whole loop except reneighboring running entirely on the GPU.
+With the parallelization of this method the runtime drops even further probably due to the whole loop except reneighboring running entirely on the GPU:
+
+
+* A40:
+  * Before:&nbsp;```TOTAL 0.37s FORCE 0.21s NEIGH 0.06s REST 0.09s```
+  * After:&nbsp;&nbsp;&nbsp;&nbsp;```TOTAL 0.30s FORCE 0.21s NEIGH 0.08s REST 0.01s```
+* A100:
+  * Before:&nbsp;```TOTAL 0.18s FORCE 0.05s NEIGH 0.04s REST 0.10s```
+  * After:&nbsp;&nbsp;&nbsp;&nbsp;```TOTAL 0.11s FORCE 0.05s NEIGH 0.05s REST 0.01s```
+
+
+
 Since the reneighboring happens only every 20 timesteps this means that the GPU can run for almost 20 timesteps uninterrupted (there are other small interruptions due to synchronous memcopies from device to host for computing stats (e.g. temperature and pressure) on the CPU, but these run only rarely (e.g. in the case of temperature and pressure every 100 timesteps))
 This can also be seen in ``nsys``:
 
@@ -465,49 +408,307 @@ Total       Count  Avg        Min     Max       Operation
 44 B        11     4 B        4 B     4 B       [CUDA memset]
 ```
 
-
+Porting this method to cuda also improves scaling:
 
 ![Scaling GPU-threads per block before and after pbcUpdate porting](../resources/development_stage_comparisons/t200_DP_scaling_comparisons/plot_upto_pbcPar.png)
 
-As is visible there is a moderate increase in performance for the A40 and a massive one for the A100.
+There is a moderate increase in performance for the A40 and a massive performance increase for the A100.
 
 
 
 ### Porting atom binning to cuda
+The only part of the loop remaining partly on the CPU is the reneighboring phase.
+In order to complete porting the whole `buildNeighbor` method to cuda we port the atom binning, since the neighbor list construction has already been ported.
+
+***Note***: In pseudo-code the atom binning is called sort_into in the `buildNeighbor` function:
+```python
+grid_cells = sort_into(atoms)
+```
+
+in the code it looks similar to this:
+```python
+def sort_into(atoms):
+  ngrids = number_of_grid_cells
+  grid_cell_content_counters = malloc(ngrids * sizeof(int))
+  resize_needed = true
+  
+  do:
+    resize_needed = false
+    grid_cells = malloc(ngrids * max_atoms_per_grid_cell * sizeof(int))
+    for grid_cell_counter in grid_cell_counters:
+      grid_cell_counter = 0
+    for atom in atoms:
+      index = grid_cell_of(position[atom])
+      index_in_grid_cell = grid_cell_counter[index]++
+      if index_in_grid_cell < max_atoms_per_grid_cell:
+        grid_cells[index * max_atoms_per_grid_cell + index_in_grid_cell] = atom
+      else:
+        resize_needed = true
+    if resize_needed:
+      ngrids *= 2
+  while resize_needed
+  return grid_cells
+```
+
+For parallelizing:
+* Idea: convert the loop initializing all counters with 0 to a memset and give each atom one gpu-thread
+* Special Challenges:
+  * Signaling from inside the kernel to the launching method if not enough memory per atom is available to fit all atom indices contained in the grid cell/bin  
+&#8594; use same technique as for porting the neighbor list construction loop (i.e. in the kernel: write to special memory address initialized with 0 if not enough space - from launching method: check if memory address still contains initialization value (0 here))
+  * concurrent accesses to a grid cell content counter (counter of how many atoms a grid cell contains) possible  
+  &#8594; wrap with atomicAdd
+  * method taking an atom position and returning its correspondent grid cell/bin needed  
+  &#8594; reuse the method created for use the neighbor list construction kernel (see 'Parallelizing building neighbor lists')
+
+Porting this part reflects in a small runtime reduction:
+
+* A40:
+  * Before:&nbsp;```TOTAL 0.30s FORCE 0.21s NEIGH 0.08s REST 0.01s```
+  * After:&nbsp;&nbsp;&nbsp;&nbsp;```TOTAL 0.28s FORCE 0.21s NEIGH 0.05s REST 0.01s```
+* A100:
+  * Before:&nbsp;```TOTAL 0.11s FORCE 0.05s NEIGH 0.05s REST 0.01s```
+  * After:&nbsp;&nbsp;&nbsp;&nbsp;```TOTAL 0.09s FORCE 0.05s NEIGH 0.03s REST 0.02s```
 
 
-
-After that the binning of the atoms is ported to the GPU with only a small increase in performance:
-
-
-
-
-
-
-
+This leads to an increase in performance:
 
 ![Scaling GPU-threads per block before and after atom binning being ported to GPU](../resources/development_stage_comparisons/t200_DP_scaling_comparisons/plot_upto_binAtPar.png)
 
-After that the updateAtomsPbc method is ported. This method enforces the boundary condition on atoms that have left the simulation domain after the last reneighboring.
+
+### Porting updateAtomsPbc
+The last method ported here is the updateAtomsPbc method which enforces the boundary condition on atoms that have left the simulation domain between the last and this reneighboring.
+
+Atoms that have left the simulated area will enter the simulated area on the mirrored side. In code it looks like this:
+
+```python
+def update_according_to(atoms, periodic_boundary_condition):
+  sim_width, sim_height = periodic_boundary_condition.simulated_area.dims
+  x_max, x_min, y_max, y_min = periodic_boundary_condition.boundaries
+  for atom in atoms:
+    if position[atom].x > x_max:
+      position[atom].x -= sim_width
+    if position[atom].x < x_min:
+      position[atom].x += sim_width
+    if position[atom].y > y_max:
+      position[atom].y -= sim_height
+    if position[atom].y < y_min:
+      position[atom].y += sim_height
+```
+
+* Idea:
+  * give each atom one gpu-thread
+* Special Challenges:
+  * None: each atom works only atom local data and reads some data from global variables (e.g. size of the simulated area)
+    * pass values of needed global variables as parameters as done for other ported methods before
+
+This has an almost indistinguishable effect on runtime:
+
+* A40:
+  * Before:&nbsp;```TOTAL 0.28s FORCE 0.21s NEIGH 0.05s REST 0.01s```
+  * After:&nbsp;&nbsp;&nbsp;&nbsp;```TOTAL 0.27s FORCE 0.21s NEIGH 0.05s REST 0.01s```
+* A100:
+  * Before:&nbsp;```TOTAL 0.09s FORCE 0.05s NEIGH 0.03s REST 0.02s```
+  * After:&nbsp;&nbsp;&nbsp;&nbsp;```TOTAL 0.09s FORCE 0.05s NEIGH 0.03s REST 0.02s```
+
+The timers used for measurements do have finer resolution as the 10's of milliseconds portrayed here.
+However using this resolution would not yield better results in our case as only small random fluctuations can (due to the low runtimes) result in large differences/high variance in atom throughput.
+This variance is also shown in the scaling behaviour plot:
 
 ![Scaling GPU-threads per block before and after updateAtomsPbc being ported to GPU](../resources/development_stage_comparisons/t200_DP_scaling_comparisons/plot_upto_upAtPar.png)
 
-The high variance exhibited in those scaling comparisons is due to the very low runtimes of the program:
+### Analysis of setupPbc
 
-Runtimes with 131072 particles for 200 timesteps:
-* A40:
+The last method in the reneighboring step remaining unported is the setupPbc method.
+This method creates the ghost atoms that are to emulate the interactions of two atoms via the periodic boundary.
+A ghost atom for a certain combination of all cardinal directions ('up', 'down', 'left', 'right', 'front', 'back') only needs to be created if the original atom is close enough to the periodic boundary in all of the directions in the combination.
+In the code it looks similar to this pseudo-code:
+
+```python
+def setup_periodic_boundary_condition(atoms, periodic_boundary_condition):
+  sim_width, sim_height = periodic_boundary_condition.simulated_area.dims
+  x_max, x_min, y_max, y_min = periodic_boundary_condition.boundaries
+  n_ghosts = 0
+  n_ghost_allocations = some_value
+  ghosts = malloc(n_ghost_allocations * sizeof(ghost))
+  
+  def createGhost(original_atom, offset_x, offset_y):
+    ghost = {}
+    ghost.original = original_atom
+    ghost.offset_x = offset_x
+    ghost.offset_y = offset_y
+    return ghost
+  
+  for atom in atoms:
+    if n_ghost_allocations - n_ghosts < max_ghosts_created_per_iteration:
+      ghosts = realloc(ghosts, n_ghost_allocations, n_ghost_allocations + some_more)
+      n_ghost_allocations += some_more
+    if position[atom].x > x_max - threshold:
+      ghosts[n_ghosts++] = createGhost(atom, -sim_width, 0)
+    if position[atom].x < x_min + threshold:
+      ghosts[n_ghosts++] = createGhost(atom, +sim_width, 0)
+    if position[atom].y > y_max - threshold:
+      ghosts[n_ghosts++] = createGhost(atom, 0, -sim_height)
+    if position[atom].y < y_min + threshold:
+      ghosts[n_ghosts++] = createGhost(atom, 0, +sim_height)
+    if position[atom].x > x_max - threshold AND position[atom].y > y_max - threshold:
+      ghosts[n_ghosts++] = createGhost(atom, -sim_width, -sim_height)
+    if position[atom].x > x_max - threshold AND position[atom].y < y_min + threshold:
+      ghosts[n_ghosts++] = createGhost(atom, -sim_width, +sim_height)
+    if position[atom].x < x_min + threshold AND position[atom].y > y_max - threshold:
+      ghosts[n_ghosts++] = createGhost(atom, +sim_width, -sim_height)
+    if position[atom].x < x_min + threshold AND position[atom].y < y_min + threshold:
+      ghosts[n_ghosts++] = createGhost(atom, +sim_width, +sim_height)
+  
+  if n_atoms + n_ghosts > len(atoms):
+    atoms = realloc(n_atoms + n_ghosts)
 ```
-TOTAL 0.27s FORCE 0.21s NEIGH 0.05s REST 0.01s
+
+Due to time constraints this method will not be ported, but the challenges to port this method to CUDA will be analyzed.
+
+* Idea:
+  * give each atom on gpu-thread
+* Special challenges: lots of dependencies between loop iterations
+  * conditional allocation of more memory to store all ghost atoms possibly generated in this loop iteration
+    * &#8594; take upper limit of ghost count for allocation
+      * &#8594; very large unused memory (27 possible ghosts per atom)
+
+     OR
+    * &#8594; allocate memory in batches and run several iterations together in one kernel
+      * max parallism of the GPU might not be reached
+  * conditional increment of the `n_ghosts` variable &#8594; data race condition
+    * wrap in CAS or atomicAdd
+      * many threads (possibly all at once) competing for changing one memory address (where `n_ghosts` variable is stored)
+      
+Due to all of these challenges porting this method to CUDA in the conventional way will most likely yield poor performance.
+Hence we outline a change in control flow that does the ghost creation that allows the ghosts to be stored densely with at most one memory allocation for ghost atoms per timestep:
+
+0. Update all atom positions according to the periodic boundary condition
+1. Bin all normal atoms (i.e. without the ghost atoms)
+2. For all bins determine how many ghost atoms are needed for all atoms contained in each bin &#8594; store this value in an array we will call `ghostcount` (i.e. similar to bincount)
+3. Compute exclusive prefix sum over the `ghostcount` array &#8594; now we now the memory area where the ghosts from atoms contained in a particular grid cell are stored
+4. Create ghost atoms with this knowledge
+5. Run the ghost position update to initialize the ghost positions
+6. Bin ghost atoms according to their position
+7. Build neighbor lists as without binning the atoms (since this has been done already)
+
 ```
-* A100:
+def calculate_neighbors():
+  update_according_to(atoms, periodic_boundary_condition) # from earlier chapters
+  grid_cells = sort_into(atoms) # only sort normal atoms into bins
+  count_ghosts(atoms)
+  grid_cells.ghost_index_areas, num_ghosts = exlcusive_scan(grid_cells.ghost_count)
+  # now we know how many ghosts there are in this timestep
+  # so we can allocate memory accordingly
+  ghosts = malloc(num_ghosts * sizeof(ghost))
+  create_ghost_atoms(atoms, ghosts)
+  update_bondary_condition(atoms, periodic_boundary_condition) # from earlier chapters
+  grid_cells += sort_into(ghosts) # also bin the ghost atoms
+  buildNeighbor_withoutBinning(atoms) # similar to the one from an earlier chapter just without binning
+  
+
+def count_ghosts(atoms):
+  #gpu-paralellel
+  for atom in atoms:
+    count_ghosts_kernel(atom)
+  
+def count_ghosts_kernel(atom):
+  grid_cell = grid_cell_of(atom)
+  loc_ghost_count = 0
+  if position[atom].x > x_max - threshold: loc_ghost_count++
+  if position[atom].x < x_min + threshold: loc_ghost_count++
+  if position[atom].y > y_max - threshold: loc_ghost_count++
+  if position[atom].y < y_min + threshold: loc_ghost_count++
+  if position[atom].x > x_max - threshold AND position[atom].y > y_max - threshold: loc_ghost_count++
+  if position[atom].x > x_max - threshold AND position[atom].y < y_min + threshold: loc_ghost_count++
+  if position[atom].x < x_min + threshold AND position[atom].y > y_max - threshold: loc_ghost_count++
+  if position[atom].x < x_min + threshold AND position[atom].y < y_min + threshold: loc_ghost_count++
+  atomicAdd(grid_cell.ghost_count, loc_ghost_count) # this can even be wrapped into an if to happen only when loc_ghost_count != 0
+  
+def exclusive_scan(array):
+  scanned_array, sum_of_array = inclusive_scan(array) # to perform an exclusive scan we have to first do an inclusive scan if want to have it parallelized
+  sum_of_array = scanned_array[len(array) - 1]
+  #gpu-parallel
+  for i in range(0, len(array)):
+    scanned_array[i] = scanned_array[i] - array[i]
+  return scanned_array, sum_of_array
+  
+def inclusive_scan(array)
+  working_copy = array.copy()
+  for skip = 1; skip < len(array); skip *= 2
+    read_working_copy = working_copy.copy()
+    #gpu-parallel
+    for i in range(0, len(array)):
+      index_to_add_from = i - skip
+      if index_to_add_from >= 0:
+        working_copy[i] = read_working_copy[i] + read_working_copy[index_to_add_from]
+  return working_copy, sum_of_array
+  
+def create_ghost_atoms(atoms, ghosts):
+  #gpu-parallel
+  for atom in atoms:
+    grid_cell = grid_cell_of(atom)
+    # by wrapping the access of grid_cell.ghost_index_area we do avoid the data race condition
+    # and since we increment the grid_cell/bin local memory address we can reduce the number of threads
+    # competing for adding onto a memory address
+    if position[atom].x > x_max - threshold:
+      ghosts[atomicAdd(grid_cell.ghost_index_area, 1)] = createGhost(atom, -sim_width, 0)
+    if position[atom].x < x_min + threshold:
+      ghosts[atomicAdd(grid_cell.ghost_index_area, 1)] = createGhost(atom, +sim_width, 0)
+    if position[atom].y > y_max - threshold:
+      ghosts[atomicAdd(grid_cell.ghost_index_area, 1)] = createGhost(atom, 0, -sim_height)
+    if position[atom].y < y_min + threshold:
+      ghosts[atomicAdd(grid_cell.ghost_index_area, 1)] = createGhost(atom, 0, +sim_height)
+    if position[atom].x > x_max - threshold AND position[atom].y > y_max - threshold:
+      ghosts[atomicAdd(grid_cell.ghost_index_area, 1)] = createGhost(atom, -sim_width, -sim_height)
+    if position[atom].x > x_max - threshold AND position[atom].y < y_min + threshold:
+      ghosts[atomicAdd(grid_cell.ghost_index_area, 1)] = createGhost(atom, -sim_width, +sim_height)
+    if position[atom].x < x_min + threshold AND position[atom].y > y_max - threshold:
+      ghosts[atomicAdd(grid_cell.ghost_index_area, 1)] = createGhost(atom, +sim_width, -sim_height)
+    if position[atom].x < x_min + threshold AND position[atom].y < y_min + threshold:
+      ghosts[atomicAdd(grid_cell.ghost_index_area, 1)] = createGhost(atom, +sim_width, +sim_height)
+
+def createGhost(original_atom, offset_x, offset_y, ):
+  ghost = {}
+  ghost.original = original_atom
+  ghost.offset_x = offset_x
+  ghost.offset_y = offset_y
+  return ghost
+  
+def buildNeighbor_withoutBinning(atoms):
+  max_neighbors_per_atom = some_value
+  new_max_neighbors_per_atom = max_neighbors_per_atom
+  neighbor_list = malloc(n_atoms * max_neighbors * sizeof(int))
+  neighbor_counters = malloc(n_atoms * sizeof(int))
+  
+  resize_needed = true
+  while(resize_needed):
+    new_max_neighbors_per_atom = max_neighbors_per_atom
+    resize_needed = false
+    for atom in atoms:
+      neighbor_count = 0
+      grid_cell = grid_cell_of(position[atom])
+      for neighboring_cell in neighboring_cells(grid_cell):
+        for possible_neighbor in neighboring_cell.atoms:
+          if distance(atom, possible_neighbor) < threshold:
+            neighbor_list[atom * max_neighbors_per_atom + neighbor_count] = possible_neighbor
+            neighbor_count++
+      if neighbor_count > max_neighbors_per_atom:
+        resize_needed = true
+        if neighbor_count > new_max_neighbor_count_per_atom:
+          new_max_neighbor_count_per_atom = neighbor_count
+    if resize_needed:
+      max_neighbors_per_atom = new_max_neighbors_per_atom * 1.2
+      free(neighbor_list)
+      neihgbor_list = malloc(n_atoms * max_neighbors * sizeof(int))
 ```
-TOTAL 0.09s FORCE 0.05s NEIGH 0.03s REST 0.01s
-```
+
+
+
+
 
 ## Whole application scaling behaviour after parallelizing
 
-
-Due to those very low runtimes the number of timesteps are now increased from 200 to 2000 in order to reduce unwanted fluctuations.
+In order to extend runtimes (and therefore dampen the effects of random fluctuations) we increase the workload by increasing the length of our simulation from 200 to 2000 timesteps.
 Additionally a larger domain size with up to 1048576 atoms (instead of before 131072) is tested.
 
 The runtimes for default runs (32 threads per block) are now:
