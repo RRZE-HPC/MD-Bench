@@ -1,25 +1,9 @@
 /*
- * =======================================================================================
- *
- *      Filename:  likwid-marker.h
- *
- *      Description:  Header File of likwid Marker API
- *
- *      Version:   <VERSION>
- *      Released:  <DATE>
- *
- *      Authors:  Thomas Gruber (tg), thomas.roehl@googlemail.com
- *
- *      Project:  likwid
- *
- *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
- *
- *      This program is free software: you can redistribute it and/or modify it under
- *      the terms of the GNU General Public License as published by the Free Software
- *      Foundation, either version 3 of the License, or (at your option) any later
- *      version.
- *
- *      This program is distributed in the hope that it will be useful, but WITHOUT ANY
+ * Copyright (C) 2022 NHR@FAU, University Erlangen-Nuremberg.
+ * All rights reserved. This file is part of MD-Bench.
+ * Use of this source code is governed by a LGPL-3.0
+ * license that can be found in the LICENSE file.
+ */
  *      WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
  *      PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  *

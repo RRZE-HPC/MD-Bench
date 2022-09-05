@@ -1,24 +1,8 @@
 /*
- * =======================================================================================
- *
- *   Author:   Jan Eitzinger (je), jan.eitzinger@fau.de
- *   Copyright (c) 2021 RRZE, University Erlangen-Nuremberg
- *
- *   This file is part of MD-Bench.
- *
- *   MD-Bench is free software: you can redistribute it and/or modify it
- *   under the terms of the GNU Lesser General Public License as published
- *   by the Free Software Foundation, either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   MD-Bench is distributed in the hope that it will be useful, but WITHOUT ANY
- *   WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
- *   PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more
- *   details.
- *
- *   You should have received a copy of the GNU Lesser General Public License along
- *   with MD-Bench.  If not, see <https://www.gnu.org/licenses/>.
- * =======================================================================================
+ * Copyright (C) 2022 NHR@FAU, University Erlangen-Nuremberg.
+ * All rights reserved. This file is part of MD-Bench.
+ * Use of this source code is governed by a LGPL-3.0
+ * license that can be found in the LICENSE file.
  */
 #include <stdlib.h>
 #include <stdio.h>
@@ -120,13 +104,13 @@ __global__ void binatoms_kernel(DeviceAtom a, int nall, int* bincount, int* bins
     if(i >= nall) {
         return;
     }
-    
+
     MD_FLOAT x = atom_x(i);
     MD_FLOAT y = atom_y(i);
     MD_FLOAT z = atom_z(i);
     int ibin = coord2bin_device(x, y, z, np);
     int ac = atomicAdd(&bincount[ibin], 1);
-            
+
     if(ac < atoms_per_bin){
         bins[ibin * atoms_per_bin + ac] = i;
     } else {
@@ -142,10 +126,10 @@ __global__ void compute_neighborhood(
     if(i >= nlocal) {
         return;
     }
-    
+
     DeviceAtom *atom = &a;
     DeviceNeighbor *neighbor = &neigh;
-    
+
     int* neighptr = &(neighbor->neighbors[i]);
     int n = 0;
     MD_FLOAT xtmp = atom_x(i);
@@ -269,7 +253,7 @@ void buildNeighbor_cuda(Atom *atom, Neighbor *neighbor) {
     }
 
     int resize = 1;
-    
+
     if(nall > nmax) {
         nmax = nall;
         d_neighbor->neighbors = (int *) reallocateGPU(d_neighbor->neighbors, nmax * neighbor->maxneighs * sizeof(int));
