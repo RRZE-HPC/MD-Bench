@@ -1,8 +1,8 @@
 # MD-Bench
 
-A simple, sequential  C implementation of the [Mantevo miniMD](https://github.com/Mantevo/miniMD) benchmark in less than 1000 LOC.
+A simple, sequential  C implementation short range MD algorithms.
 
-## Build
+## Build instructions for the lammps variant
 
 1. Open `config.mk` and edit the `TAG` value according to the tool chain used. Currently supported is GCC, CLANG (LLVM), and ICC (Intel).
 2. Change `DATA_LAYOUT` and `DATA_TYPE` if desired in config.mk.
