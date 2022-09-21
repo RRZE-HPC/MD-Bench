@@ -580,131 +580,6 @@ Due to time constraints this method will not be ported, but the challenges to po
       * many threads (possibly all at once) competing for changing one memory address (where `n_ghosts` variable is stored)
       
 Due to all of these challenges porting this method to CUDA in the conventional way will most likely yield poor performance.
-Hence we outline a change in control flow that does the ghost creation that allows the ghosts to be stored densely with at most one memory allocation for ghost atoms per timestep:
-
-0. Update all atom positions according to the periodic boundary condition
-1. Bin all normal atoms (i.e. without the ghost atoms)
-2. For all bins determine how many ghost atoms are needed for all atoms contained in each bin &#8594; store this value in an array we will call `ghostcount` (i.e. similar to bincount)
-3. Compute exclusive prefix sum over the `ghostcount` array &#8594; now we now the memory area where the ghosts from atoms contained in a particular grid cell are stored
-4. Create ghost atoms with this knowledge
-5. Run the ghost position update to initialize the ghost positions
-6. Bin ghost atoms according to their position
-7. Build neighbor lists as without binning the atoms (since this has been done already)
-
-```
-def calculate_neighbors():
-  update_according_to(atoms, periodic_boundary_condition) # from earlier chapters
-  grid_cells = sort_into(atoms) # only sort normal atoms into bins
-  count_ghosts(atoms)
-  grid_cells.ghost_index_areas, num_ghosts = exlcusive_scan(grid_cells.ghost_count)
-  # now we know how many ghosts there are in this timestep
-  # so we can allocate memory accordingly
-  ghosts = malloc(num_ghosts * sizeof(ghost))
-  create_ghost_atoms(atoms, ghosts)
-  update_bondary_condition(atoms, periodic_boundary_condition) # from earlier chapters
-  grid_cells += sort_into(ghosts) # also bin the ghost atoms
-  buildNeighbor_withoutBinning(atoms) # similar to the one from an earlier chapter just without binning
-  
-
-def count_ghosts(atoms):
-  #gpu-paralellel
-  for atom in atoms:
-    count_ghosts_kernel(atom)
-  
-def count_ghosts_kernel(atom):
-  grid_cell = grid_cell_of(atom)
-  loc_ghost_count = 0
-  if position[atom].x > x_max - threshold: loc_ghost_count++
-  if position[atom].x < x_min + threshold: loc_ghost_count++
-  if position[atom].y > y_max - threshold: loc_ghost_count++
-  if position[atom].y < y_min + threshold: loc_ghost_count++
-  if position[atom].x > x_max - threshold AND position[atom].y > y_max - threshold: loc_ghost_count++
-  if position[atom].x > x_max - threshold AND position[atom].y < y_min + threshold: loc_ghost_count++
-  if position[atom].x < x_min + threshold AND position[atom].y > y_max - threshold: loc_ghost_count++
-  if position[atom].x < x_min + threshold AND position[atom].y < y_min + threshold: loc_ghost_count++
-  atomicAdd(grid_cell.ghost_count, loc_ghost_count) # this can even be wrapped into an if to happen only when loc_ghost_count != 0
-  
-def exclusive_scan(array):
-  scanned_array, sum_of_array = inclusive_scan(array) # to perform an exclusive scan we have to first do an inclusive scan if want to have it parallelized
-  sum_of_array = scanned_array[len(array) - 1]
-  #gpu-parallel
-  for i in range(0, len(array)):
-    scanned_array[i] = scanned_array[i] - array[i]
-  return scanned_array, sum_of_array
-  
-def inclusive_scan(array)
-  working_copy = array.copy()
-  for skip = 1; skip < len(array); skip *= 2
-    read_working_copy = working_copy.copy()
-    #gpu-parallel
-    for i in range(0, len(array)):
-      index_to_add_from = i - skip
-      if index_to_add_from >= 0:
-        working_copy[i] = read_working_copy[i] + read_working_copy[index_to_add_from]
-  return working_copy, sum_of_array
-  
-def create_ghost_atoms(atoms, ghosts):
-  #gpu-parallel
-  for atom in atoms:
-    grid_cell = grid_cell_of(atom)
-    # by wrapping the access of grid_cell.ghost_index_area we do avoid the data race condition
-    # and since we increment the grid_cell/bin local memory address we can reduce the number of threads
-    # competing for adding onto a memory address
-    if position[atom].x > x_max - threshold:
-      ghosts[atomicAdd(grid_cell.ghost_index_area, 1)] = createGhost(atom, -sim_width, 0)
-    if position[atom].x < x_min + threshold:
-      ghosts[atomicAdd(grid_cell.ghost_index_area, 1)] = createGhost(atom, +sim_width, 0)
-    if position[atom].y > y_max - threshold:
-      ghosts[atomicAdd(grid_cell.ghost_index_area, 1)] = createGhost(atom, 0, -sim_height)
-    if position[atom].y < y_min + threshold:
-      ghosts[atomicAdd(grid_cell.ghost_index_area, 1)] = createGhost(atom, 0, +sim_height)
-    if position[atom].x > x_max - threshold AND position[atom].y > y_max - threshold:
-      ghosts[atomicAdd(grid_cell.ghost_index_area, 1)] = createGhost(atom, -sim_width, -sim_height)
-    if position[atom].x > x_max - threshold AND position[atom].y < y_min + threshold:
-      ghosts[atomicAdd(grid_cell.ghost_index_area, 1)] = createGhost(atom, -sim_width, +sim_height)
-    if position[atom].x < x_min + threshold AND position[atom].y > y_max - threshold:
-      ghosts[atomicAdd(grid_cell.ghost_index_area, 1)] = createGhost(atom, +sim_width, -sim_height)
-    if position[atom].x < x_min + threshold AND position[atom].y < y_min + threshold:
-      ghosts[atomicAdd(grid_cell.ghost_index_area, 1)] = createGhost(atom, +sim_width, +sim_height)
-
-def createGhost(original_atom, offset_x, offset_y, ):
-  ghost = {}
-  ghost.original = original_atom
-  ghost.offset_x = offset_x
-  ghost.offset_y = offset_y
-  return ghost
-  
-def buildNeighbor_withoutBinning(atoms):
-  max_neighbors_per_atom = some_value
-  new_max_neighbors_per_atom = max_neighbors_per_atom
-  neighbor_list = malloc(n_atoms * max_neighbors * sizeof(int))
-  neighbor_counters = malloc(n_atoms * sizeof(int))
-  
-  resize_needed = true
-  while(resize_needed):
-    new_max_neighbors_per_atom = max_neighbors_per_atom
-    resize_needed = false
-    for atom in atoms:
-      neighbor_count = 0
-      grid_cell = grid_cell_of(position[atom])
-      for neighboring_cell in neighboring_cells(grid_cell):
-        for possible_neighbor in neighboring_cell.atoms:
-          if distance(atom, possible_neighbor) < threshold:
-            neighbor_list[atom * max_neighbors_per_atom + neighbor_count] = possible_neighbor
-            neighbor_count++
-      if neighbor_count > max_neighbors_per_atom:
-        resize_needed = true
-        if neighbor_count > new_max_neighbor_count_per_atom:
-          new_max_neighbor_count_per_atom = neighbor_count
-    if resize_needed:
-      max_neighbors_per_atom = new_max_neighbors_per_atom * 1.2
-      free(neighbor_list)
-      neihgbor_list = malloc(n_atoms * max_neighbors * sizeof(int))
-```
-
-
-
-
 
 ## Whole application scaling behaviour after parallelizing
 
@@ -795,7 +670,222 @@ The A100 scales much better both with more threads per block and more atoms in t
 Around 256 threads per block the maximum seems to be reached.
 
 
-### Neighborhood computation performance
+### Neighborhood and force computation performance
+
+Since earlier chapters mostly only focused on the whole application, this section will briefly examine the major time contributing parts, which are the force computation and the neighbor list construction.
+Here we scale the number of threads per block exponentially and measure the runtimes needed by the respective methods.
 
 
-![Neighbor List computation performance for different amount of threads per block](../resources/scaling/exponential_thread_scaling/neigh_perf_with_force/upPbc_perf.png)
+![Neighbor List computation performance for different amount of threads per block](../resources/scaling/exponential_thread_scaling/neigh_perf_with_force/buiNei_perf.png)
+
+
+![Force computation performance for different amount of threads per block](../resources/scaling/exponential_thread_scaling/neigh_perf_with_force/force_perf.png)
+
+On the A40 both force computation and neighbor list construction gain performance until about 32 threads per block.
+In contrast to that on the A100 the force computation reaches its peak performance around 256 threads per block while the performance of neighbor list construction keeps increasing until 1024 threads per block which is the upper limit in this test.
+
+The reason that the A100 can benefit from more threads per block in this case is probably due to the larger L1 caches (A40: 128 KiB/SM vs A100: 192 KiB/SM) and the much larger L2 cache (A40: 6 MiB vs A100: 40 MiB) enabling better latency hiding.
+
+***For chache sizes see:***
+ * A40:  https://www.nvidia.com/content/PDF/nvidia-ampere-ga-102-gpu-architecture-whitepaper-v2.pdf
+ * A100: https://images.nvidia.com/aem-dam/en-zz/Solutions/data-center/nvidia-ampere-architecture-whitepaper.pdf
+
+
+Using the tool `ncu` we obtain a roofline model for the respective kernels:
+
+***Note:*** For the A40 we choose 32 threads per block and for the A100 256 threads per block as this are roughly the numbers of threads where these GPUs stop scaling well with threads per block. This is done to find hints on the performance bottlenecks for those kernels.
+
+* neighbor list construction
+```
+GPU   Arith. Intensity        Througput     Memory Throughput
+A40   6.6 - 10.5 FLOP/byte    147 GFLOP/s   17 GB/s
+A100  3.75 - 7.9 FLOP/byte    707 GFLOP/s   135 GB/s
+```
+  * A40 roofline:
+![Neighbor List computation performance roofline plot for 32 threads per block](../resources/profiling/ncu/a40_after_DP_gpu32_p1M_neigh_roofline.png)
+  * A100 roofline:
+![Neighbor List computation performance roofline plot for 256 threads per block](../resources/profiling/ncu/a100_after_DP_gpu256_p1M_neigh_roofline.png)
+
+* force computation
+```
+GPU   Arith. Intensity        Througput     Memory Throughput
+A40   ~4.95 FLOP/byte         211 GFLOP/s   40 GB/s
+A100   5.1 - 5.5 FLOP/byte    2.2 TFLOP/s   410 GB/s
+```
+  * A40 roofline:
+![Force computation performance roofline plot for 32 threads per block](../resources/profiling/ncu/a40_after_DP_gpu32_p1M_force_roofline.png)
+  * A100 roofline:
+![Force computation performance roofline plot for 256 threads per block](../resources/profiling/ncu/a100_after_DP_gpu256_p1M_force_roofline.png)
+
+From this we can see that in neither configuration and kernel the GPUs are at their computational or memory transfer limit.
+In order to work out the real bottlenecks for both of those kernels more research is needed.
+
+***Observation:***  
+The computational intensity decreases over the runtime of the program.  
+This is due to the memory location of each atom remaining the same while its position in the simulation will change. Hence the atoms belonging together into a grid cell / bin scatter more the longer the program runs making more loads per neighbor computation necessary.
+
+## Summary
+
+At the start we discovered that the neighborhood computation was using the majority of the program runtime.
+We could speed up the neighborhood computation by porting it from sequential C code to Cuda.
+Hence the runtime of the whole program has decreased significantly increasing its throughput many times over.
+This speedup could be achieved by a higher GPU utilization.
+
+* Speedup:
+  * A40:
+    * single precision (SP): speedup of factor 26 - 27
+    * double precision (DP): speedup of factor 10 - 11
+    
+  ![A40 Before vs. after comparison in performance scaling with gpu-threads per block](../resources/before_after_comparison/a40_perf_comp_log_before_after.png)
+
+  * A100:
+    * single precision (SP): speedup of factor ~ 55
+    * double precision (DP): speedup of factor ~ 80
+    
+  ![A100 Before vs. after comparison in performance scaling with gpu-threads per block](../resources/before_after_comparison/a100_perf_comp_log_before_after.png)
+
+
+## Future work
+In this section we will outline important starting points for future research:
+
+* finding the bottlenecks of the neighbor construction and the force kernel
+  * will probably also reveal the true reason for the discrepancy between only a moderate factor in program performance (factor of ~ 5x between A40 and A100) despite a large factor (~ 19x between A40 and A100 in double precision) in computational performance
+* parallelizing the creation of ghost atoms
+* sorting the atoms with their grid cell / bin as key so atoms of the same grid cell are near in memory
+
+# Outline for possible parallelization of setupPbc
+
+Due to the challenges for porting setupPbc with keeping the same control flow, we outline a different solution.
+Our solution adjusts the control flow so that the ghost creation does not need many small memory allocations in a loop and allows the ghost atoms to be stored densely.
+
+Steps with descriptions:
+
+0. Update all atom positions according to the periodic boundary condition
+1. Bin all normal atoms (i.e. without the ghost atoms)
+2. For all bins determine how many ghost atoms are needed for all atoms contained in each bin &#8594; store this value in an array we will call `ghostcount` (i.e. similar to bincount)
+3. Compute exclusive prefix sum over the `ghostcount` array &#8594; now we now the memory area where the ghosts from atoms contained in a particular grid cell are stored
+4. Create ghost atoms with this knowledge
+5. Run the ghost position update to initialize the ghost positions
+6. Bin ghost atoms according to their position
+7. Build neighbor lists as without binning the atoms (since this has been done already)
+
+How it would look in our python-pseudo-code:
+
+```python
+def calculate_neighbors():
+  update_according_to(atoms, periodic_boundary_condition) # from earlier chapters
+  grid_cells = sort_into(atoms) # only sort normal atoms into bins
+  count_ghosts(atoms)
+  grid_cells.ghost_index_areas, num_ghosts = exlcusive_scan(grid_cells.ghost_count)
+  # now we know how many ghosts there are in this timestep
+  # so we can allocate memory accordingly
+  ghosts = malloc(num_ghosts * sizeof(ghost))
+  create_ghost_atoms(atoms, ghosts)
+  update_bondary_condition(atoms, periodic_boundary_condition) # from earlier chapters
+  grid_cells += sort_into(ghosts) # also bin the ghost atoms
+  buildNeighbor_withoutBinning(atoms) # similar to the one from an earlier chapter just without binning
+  
+  
+def count_ghosts(atoms):
+  #gpu-paralellel
+  for atom in atoms:
+    count_ghosts_kernel(atom)
+  
+def count_ghosts_kernel(atom):
+  grid_cell = grid_cell_of(atom)
+  loc_ghost_count = 0
+  if position[atom].x > x_max - threshold: loc_ghost_count++
+  if position[atom].x < x_min + threshold: loc_ghost_count++
+  if position[atom].y > y_max - threshold: loc_ghost_count++
+  if position[atom].y < y_min + threshold: loc_ghost_count++
+  if position[atom].x > x_max - threshold AND position[atom].y > y_max - threshold: loc_ghost_count++
+  if position[atom].x > x_max - threshold AND position[atom].y < y_min + threshold: loc_ghost_count++
+  if position[atom].x < x_min + threshold AND position[atom].y > y_max - threshold: loc_ghost_count++
+  if position[atom].x < x_min + threshold AND position[atom].y < y_min + threshold: loc_ghost_count++
+  atomicAdd(grid_cell.ghost_count, loc_ghost_count) # this can even be wrapped into an if to happen only when loc_ghost_count != 0
+  
+def exclusive_scan(array):
+  scanned_array, sum_of_array = inclusive_scan(array) # to perform an exclusive scan we have to first do an inclusive scan if want to have it parallelized
+  sum_of_array = scanned_array[len(array) - 1]
+  #gpu-parallel
+  for i in range(0, len(array)):
+    scanned_array[i] = scanned_array[i] - array[i]
+  return scanned_array, sum_of_array
+
+def inclusive_scan(array):
+  working_copy = array.copy()
+  skip = 1
+  while skip < len(array):
+    read_working_copy = working_copy.copy()
+    #gpu-parallel
+    for i in range(0, len(array)):
+      index_to_add_from = i - skip
+      if index_to_add_from >= 0:
+        working_copy[i] = read_working_copy[i] + read_working_copy[index_to_add_from]
+    skip *= 2
+  return working_copy, sum_of_array
+
+def create_ghost_atoms(atoms, ghosts):
+  #gpu-parallel
+  for atom in atoms:
+    grid_cell = grid_cell_of(atom)
+    # wrapping access of grid_cell.ghost_index_area avoids race condition
+    # using grid_cell/bin local memory address reduces number of threads
+    # competing for changing a memory address
+    if position[atom].x > x_max - threshold:
+      ghosts[atomicAdd(grid_cell.ghost_index_area, 1)] = createGhost(atom, -sim_width, 0)
+    if position[atom].x < x_min + threshold:
+      ghosts[atomicAdd(grid_cell.ghost_index_area, 1)] = createGhost(atom, +sim_width, 0)
+    if position[atom].y > y_max - threshold:
+      ghosts[atomicAdd(grid_cell.ghost_index_area, 1)] = createGhost(atom, 0, -sim_height)
+    if position[atom].y < y_min + threshold:
+      ghosts[atomicAdd(grid_cell.ghost_index_area, 1)] = createGhost(atom, 0, +sim_height)
+    if position[atom].x > x_max - threshold AND position[atom].y > y_max - threshold:
+      ghosts[atomicAdd(grid_cell.ghost_index_area, 1)] = createGhost(atom, -sim_width, -sim_height)
+    if position[atom].x > x_max - threshold AND position[atom].y < y_min + threshold:
+      ghosts[atomicAdd(grid_cell.ghost_index_area, 1)] = createGhost(atom, -sim_width, +sim_height)
+    if position[atom].x < x_min + threshold AND position[atom].y > y_max - threshold:
+      ghosts[atomicAdd(grid_cell.ghost_index_area, 1)] = createGhost(atom, +sim_width, -sim_height)
+    if position[atom].x < x_min + threshold AND position[atom].y < y_min + threshold:
+      ghosts[atomicAdd(grid_cell.ghost_index_area, 1)] = createGhost(atom, +sim_width, +sim_height)
+
+def createGhost(original_atom, offset_x, offset_y, ):
+  ghost = {}
+  ghost.original = original_atom
+  ghost.offset_x = offset_x
+  ghost.offset_y = offset_y
+  return ghost
+  
+def buildNeighbor_withoutBinning(atoms):
+  max_neighbors_per_atom = some_value
+  new_max_neighbors_per_atom = max_neighbors_per_atom
+  neighbor_list = malloc(n_atoms * max_neighbors * sizeof(int))
+  neighbor_counters = malloc(n_atoms * sizeof(int))
+  
+  resize_needed = true
+  while(resize_needed):
+    new_max_neighbors_per_atom = max_neighbors_per_atom
+    resize_needed = false
+    for atom in atoms:
+      neighbor_count = 0
+      grid_cell = grid_cell_of(position[atom])
+      for neighboring_cell in neighboring_cells(grid_cell):
+        for possible_neighbor in neighboring_cell.atoms:
+          if distance(atom, possible_neighbor) < threshold:
+            neighbor_list[atom * max_neighbors_per_atom + neighbor_count] = possible_neighbor
+            neighbor_count++
+      if neighbor_count > max_neighbors_per_atom:
+        resize_needed = true
+        if neighbor_count > new_max_neighbor_count_per_atom:
+          new_max_neighbor_count_per_atom = neighbor_count
+    if resize_needed:
+      max_neighbors_per_atom = new_max_neighbors_per_atom * 1.2
+      free(neighbor_list)
+      neihgbor_list = malloc(n_atoms * max_neighbors * sizeof(int))
+```
+
+
+
+
+
+
