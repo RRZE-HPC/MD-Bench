@@ -720,7 +720,6 @@ This is due to the memory location of each atom remaining the same while its pos
 At the start we discovered that the neighborhood computation was using the majority of the program runtime.
 We could speed up the neighborhood computation by porting it from sequential C code to Cuda.
 Hence the runtime of the whole program has decreased significantly increasing its throughput many times over.
-This speedup could be achieved by a higher GPU utilization.
 
 * Speedup:
   * A40:
@@ -735,16 +734,15 @@ This speedup could be achieved by a higher GPU utilization.
     
   ![A100 Before vs. after comparison in performance scaling with gpu-threads per block](../resources/before_after_comparison/a100_perf_comp_log_before_after.png)
 
-
 ## Future work
-In this section we will outline important starting points for future research:
+Although performance could be increased many times over due to speeding up the neighbor computation, many key points for further reasearch still remain. Some of these points have been listed here:
 
 * finding the bottlenecks of the neighbor construction and the force kernel
   * this will probably also reveal the true reason for the discrepancy between only a moderate factor in program performance (factor of ~ 5x between A40 and A100) despite a large factor (~ 19x between A40 and A100 in double precision) in computational performance
 * parallelizing the creation of ghost atoms
 * sorting the atoms with their grid cell / bin as key so atoms of the same grid cell are near in memory
 
-# Outline for possible parallelization of setupPbc
+### Outline for possible parallelization of setupPbc
 
 Due to the challenges for porting setupPbc with keeping the same control flow, we outline a different solution.
 Our solution adjusts the control flow so that the ghost creation does not need many small memory allocations in a loop and allows the ghost atoms to be stored densely.
