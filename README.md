@@ -2,7 +2,7 @@
 
 A generic proxy-app toolbox for state-of-the-art molecular dynamics algorithms
 
-## Build instructions for the lammps variant
+## Build instructions
 
 Properly configure your building by changing `config.mk` file. The following options are available:
 
@@ -32,19 +32,32 @@ Configurations for GROMACS MxN optimization scheme:
 Configurations for CUDA:
 - **USE\_CUDA\_HOST\_MEMORY:** Use CUDA host memory to optimize host-device transfers.
 
+When done, just use `make` to compile the code.
 You can clean intermediate build results with `make clean`, and all build results with `make distclean`.
 You have to call `make clean` before `make` if you changed the build settings.
 
-## Configuration
+## Usage
 
-Currently all settings apart from the options described below are hard-coded in `main.c`.
+Use the following command to run a simulation:
 
-## Run the benchmark
-
-Without any options 200 steps with system size 32x32x32 is used.
-
-The default can be changed using the following options:
+```bash
+./MD-Bench-<TAG>-<OPT_SCHEME> [OPTION]...
 ```
+
+Where `TAG` and `OPT_SCHEME` correspond to the building options with the same name.
+Without any options, a Copper FCC lattice system with size 32x32x32 (131072 atoms) over 200 time-steps using the Lennard-Jones potential (sigma=1.0, epsilon=1.0) is simulated.
+
+The default behavior and other options can be changed using the following parameters:
+```
+-p <string>:          file to read parameters from (can be specified more than once)
+-f <string>:          force field (lj or eam), default lj
+-i <string>:          input file with atom positions (dump)
+-e <string>:          input file for EAM
 -n / --nsteps <int>:  set number of timesteps for simulation
 -nx/-ny/-nz <int>:    set linear dimension of systembox in x/y/z direction
+-r / --radius <real>: set cutoff radius
+-s / --skin <real>:   set skin (verlet buffer)
+--freq <real>:        processor frequency (GHz)
+--vtk <string>:       VTK file for visualization
+--xtc <string>:       XTC file for visualization
 ```
