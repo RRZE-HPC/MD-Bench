@@ -5,11 +5,13 @@
 MD-Bench is a toolbox for the performance engineering of short-range force calculation kernels on molecular-dynamics applications.
 It aims at covering all available state-of-the-art algorithms from different community codes such as LAMMPS and GROMACS.
 
-Besides, many tools to study and evaluate the in-depth performance of such kernels on distinct hardware are made available like the gather-bench which is a benchmark to mimic the data movement from such kernels and the stubbed force calculation cases used to isolate the impacts caused by memory latencies and control flow divergence.
+Apart from that, many tools to study and evaluate the in-depth performance of such kernels on distinct hardware are offered, like the gather-bench which is a benchmark to mimic the data movement from such kernels and the stubbed force calculation cases used to isolate the impacts caused by memory latencies and control flow divergence.
 
-| Verlet Lists                                   | GROMACS MxN                                        | Stubbed case |
+| Verlet Lists                                   | GROMACS MxN                                        | Stubbed cases |
 | ---------------------------------------------- | -------------------------------------------------- | ------------------------------------------------- |
 | ![Image](figures/verlet_v2.png "Verlet Lists") | ![Image](figures/gromacs_mxn_v2.png "GROMACS MxN") | ![Image](figures/stub_new_v3.png "Stubbed cases") |
+
+![Image](figures/gather_bench.svg "gather-bench")
 
 ## Build instructions
 
