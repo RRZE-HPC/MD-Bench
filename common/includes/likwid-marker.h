@@ -4,14 +4,6 @@
  * Use of this source code is governed by a LGPL-3.0
  * license that can be found in the LICENSE file.
  */
- *      WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
- *      PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- *      You should have received a copy of the GNU General Public License along with
- *      this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * =======================================================================================
- */
 #ifndef LIKWID_MARKER_H
 #define LIKWID_MARKER_H
 
