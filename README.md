@@ -2,7 +2,15 @@
 
 ![Image](figures/features-v3.png "MD-Bench Features")
 
-A generic proxy-app toolbox for state-of-the-art molecular dynamics algorithms
+MD-Bench is a toolbox for the performance engineering of short-range force calculation kernels on molecular-dynamics applications.
+It aims at covering all available state-of-the-art algorithms from different community codes such as LAMMPS and GROMACS.
+
+Besides, many tools to study and evaluate the in-depth performance of such kernels on distinct hardware are made available like the gather-bench which is a benchmark to mimic the data movement from such kernels and the stubbed force calculation cases used to isolate the impacts caused by memory latencies and control flow divergence.
+
+![Image](figures/verlet_v2.pdf "Verlet Lists")
+![Image](figures/gromacs_mxn_v2.pdf "GROMACS MxN")
+
+![Image](figures/stub_new_v3.pdf "Stubbed cases")
 
 ## Build instructions
 
@@ -68,7 +76,7 @@ The default behavior and other options can be changed using the following parame
 
 ## Citations
 
-R. Ravedutti Lucio Machado, J. Eitzinger, H. Köstler, and G. Wellein: MD-Bench: A generic proxy-app toolbox for state-of-the-art molcular dynamics algorithms. Accepted for [PPAM](https://ppam.edu.pl/) 2022, the 14th International Conference on Parallel Processing and Applied Mathematics, Gdansk, Poland, September 11-14, 2022. PPAM 2022 Best Paper Award. Preprint: [arXiv:2207.13094](https://arxiv.org/abs/2207.13094)
+R. Ravedutti Lucio Machado, J. Eitzinger, H. Köstler, and G. Wellein: MD-Bench A generic proxy-app toolbox for state-of-the-art molecular dynamics algorithms. Accepted for [PPAM](https://ppam.edu.pl/) 2022, the 14th International Conference on Parallel Processing and Applied Mathematics, Gdansk, Poland, September 11-14, 2022. PPAM 2022 Best Paper Award. Preprint: [arXiv:2207.13094](https://arxiv.org/abs/2207.13094)
 
 ## Credits
 
