@@ -5,7 +5,7 @@
 MD-Bench is a toolbox for the performance engineering of short-range force calculation kernels on molecular-dynamics applications.
 It aims at covering all available state-of-the-art algorithms from different community codes such as LAMMPS and GROMACS.
 
-Apart from that, many tools to study and evaluate the in-depth performance of such kernels on distinct hardware are offered, like the gather-bench which is a benchmark to mimic the data movement from such kernels and the stubbed force calculation cases used to isolate the impacts caused by memory latencies and control flow divergence.
+Apart from that, many tools to study and evaluate the in-depth performance of such kernels on distinct hardware are offered, like gather-bench, a standalone benchmark that mimics the data movement from MD kernels and the stubbed force calculation cases that focus on isolating the impacts caused by memory latencies and control flow divergence contributions in the overall performance.
 
 | Verlet Lists                                 | GROMACS MxN                                  | Stubbed cases |
 |----------------------------------------------|----------------------------------------------|----------------------------------------------|
@@ -79,7 +79,7 @@ TBD
 
 ## Citations
 
-R. Ravedutti Lucio Machado, J. Eitzinger, H. Köstler, and G. Wellein: MD-Bench: A generic proxy-app toolbox for state-of-the-art molecular dynamics algorithms. Accepted for [PPAM](https://ppam.edu.pl/) 2022, the 14th International Conference on Parallel Processing and Applied Mathematics, Gdansk, Poland, September 11-14, 2022. PPAM 2022 Best Paper Award. Preprint: [arXiv:2207.13094](https://arxiv.org/abs/2207.13094)
+Rafael Ravedutti Lucio Machado, Jan Eitzinger, Harald Köstler, and Gerhard Wellein: MD-Bench: A generic proxy-app toolbox for state-of-the-art molecular dynamics algorithms. Accepted for [PPAM](https://ppam.edu.pl/) 2022, the 14th International Conference on Parallel Processing and Applied Mathematics, Gdansk, Poland, September 11-14, 2022. PPAM 2022 Best Paper Award. Preprint: [arXiv:2207.13094](https://arxiv.org/abs/2207.13094)
 
 ## Credits
 
