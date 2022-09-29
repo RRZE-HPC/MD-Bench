@@ -1,5 +1,7 @@
 # MD-Bench
 
+![Image](figures/features-v3.png "MD-Bench Features")
+
 A generic proxy-app toolbox for state-of-the-art molecular dynamics algorithms
 
 ## Build instructions
@@ -66,12 +68,12 @@ The default behavior and other options can be changed using the following parame
 
 ## Citations
 
-R. Ravedutti Lucio Machado, J. Eitzinger, H. Köstler, and G. Wellein: MD-Bench: A generic proxy-app toolbox for state-of-the-art molecular dynamics algorithms. Accepted for PPAM 2022, the 14th International Conference on Parallel Processing and Applied Mathematics, Gdansk, Poland, September 11-14, 2022. PPAM 2022 Best Paper Award. Preprint: arXiv:2207.13094
+R. Ravedutti Lucio Machado, J. Eitzinger, H. Köstler, and G. Wellein: MD-Bench: A generic proxy-app toolbox for state-of-the-art molcular dynamics algorithms. Accepted for [PPAM](https://ppam.edu.pl/) 2022, the 14th International Conference on Parallel Processing and Applied Mathematics, Gdansk, Poland, September 11-14, 2022. PPAM 2022 Best Paper Award. Preprint: [arXiv:2207.13094](https://arxiv.org/abs/2207.13094)
 
 ## Credits
 
-MD-Bench is developed by the Erlangen National High Performance Computing Center (NHR@FAU) at the University of Erlangen-N�rnberg.
+MD-Bench is developed by the Erlangen National High Performance Computing Center ([NHR@FAU](https://hpc.fau.de/)) at the University of Erlangen-Nürnberg.
 
 ## License
 
-LGPL-3.0
+[LGPL-3.0](https://github.com/RRZE-HPC/MD-Bench/blob/master/LICENSE)
