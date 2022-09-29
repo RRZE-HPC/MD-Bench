@@ -11,7 +11,7 @@ Apart from that, many tools to study and evaluate the in-depth performance of su
 | ---------------------------------------------- | -------------------------------------------------- | ------------------------------------------------- |
 | ![Image](figures/verlet_v2.png "Verlet Lists") | ![Image](figures/gromacs_mxn_v2.png "GROMACS MxN") | ![Image](figures/stub_new_v3.png "Stubbed cases") |
 
-![Image](figures/gather_bench.svg "gather-bench")
+![Image](figures/gather_bench.png "gather-bench")
 
 ## Build instructions
 
