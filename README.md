@@ -7,9 +7,22 @@ It aims at covering all available state-of-the-art algorithms from different com
 
 Apart from that, many tools to study and evaluate the in-depth performance of such kernels on distinct hardware are offered, like gather-bench, a standalone benchmark that mimics the data movement from MD kernels and the stubbed force calculation cases that focus on isolating the impacts caused by memory latencies and control flow divergence contributions in the overall performance.
 
-| Verlet Lists                                 | GROMACS MxN                                  | Stubbed cases |
-|----------------------------------------------|----------------------------------------------|----------------------------------------------|
-|![Image](figures/verlet_v2.png "Verlet Lists")|![Image](figures/gromacs_mxn_v2.png "GROMACS MxN")|![Image](figures/stub_new_v3.png "Stubbed cases")|
+<table>
+    <thead>
+        <tr>
+            <th>Verlet Lists</th>
+            <th>GROMACS MxN</th>
+            <th>Stubbed cases</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><a target="_blank" rel="noopener noreferrer" href="figures/verlet_v2.png"><img src="/RRZE-HPC/MD-Bench/raw/master/figures/verlet_v2.png" alt="Image" title="Verlet Lists" style="max-width: 100%;"></a></td>
+            <td><a target="_blank" rel="noopener noreferrer" href="figures/gromacs_mxn_v2.png"><img src="figures/gromacs_mxn_v2.png" alt="Image" title="GROMACS MxN" style="max-width: 100%;"></a></td>
+            <td><a target="_blank" rel="noopener noreferrer" href="figures/stub_new_v3.png"><img src="figures/stub_new_v3.png" alt="Image" title="Stubbed cases" style="max-width: 100%;"></a></td>
+        </tr>
+    </tbody>
+</table>
 
 <!-- ![Image](figures/gather_bench.png "gather-bench") -->
 
