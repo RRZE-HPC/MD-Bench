@@ -61,3 +61,17 @@ The default behavior and other options can be changed using the following parame
 --vtk <string>:       VTK file for visualization
 --xtc <string>:       XTC file for visualization
 ```
+
+## Examples
+
+## Citations
+
+R. Ravedutti Lucio Machado, J. Eitzinger, H. KÃ¶stler, and G. Wellein: MD-Bench: A generic proxy-app toolbox for state-of-the-art molecular dynamics algorithms. Accepted for PPAM 2022, the 14th International Conference on Parallel Processing and Applied Mathematics, Gdansk, Poland, September 11-14, 2022. PPAM 2022 Best Paper Award. Preprint: arXiv:2207.13094
+
+## Credits
+
+MD-Bench is developed by the Erlangen National High Performance Computing Center (NHR@FAU) at the University of Erlangen-NÃrnberg.
+
+## License
+
+LGPL-3.0
