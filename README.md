@@ -17,7 +17,7 @@ Apart from that, many tools to study and evaluate the in-depth performance of su
     </thead>
     <tbody>
         <tr>
-            <td><a target="_blank" rel="noopener noreferrer" href="figures/verlet_v2.png"><img src="/RRZE-HPC/MD-Bench/raw/master/figures/verlet_v2.png" alt="Image" title="Verlet Lists" style="max-width: 100%;"></a></td>
+            <td><a target="_blank" rel="noopener noreferrer" href="figures/verlet_v2.png"><img src="figures/verlet_v2.png" alt="Image" title="Verlet Lists" style="max-width: 100%;"></a></td>
             <td><a target="_blank" rel="noopener noreferrer" href="figures/gromacs_mxn_v2.png"><img src="figures/gromacs_mxn_v2.png" alt="Image" title="GROMACS MxN" style="max-width: 100%;"></a></td>
             <td><a target="_blank" rel="noopener noreferrer" href="figures/stub_new_v3.png"><img src="figures/stub_new_v3.png" alt="Image" title="Stubbed cases" style="max-width: 100%;"></a></td>
         </tr>
