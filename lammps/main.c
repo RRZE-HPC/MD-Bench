@@ -116,6 +116,17 @@ double computeForce(Eam *eam, Parameter *param, Atom *atom, Neighbor *neighbor, 
     #endif
 }
 
+void writeInput(Parameter *param, Atom *atom) {
+    FILE *fpin = fopen("input.in", "w");
+    fprintf(fpin, "0,%f,0,%f,0,%f\n", param->xprd, param->yprd, param->zprd);
+
+    for(int i = 0; i < atom->Nlocal; i++) {
+        fprintf(fpin, "1,%f,%f,%f,%f,%f,%f\n", atom_x(i), atom_y(i), atom_z(i), atom_vx(i), atom_vy(i), atom_vz(i));
+    }
+
+    fclose(fpin);
+}
+
 int main(int argc, char** argv) {
     double timer[NUMTIMER];
     Eam eam;
@@ -217,6 +228,8 @@ int main(int argc, char** argv) {
     #if defined(MEM_TRACER) || defined(INDEX_TRACER)
     traceAddresses(&param, &atom, &neighbor, n + 1);
     #endif
+
+    //writeInput(&param, &atom);
 
     timer[FORCE] = computeForce(&eam, &param, &atom, &neighbor, &stats);
     timer[NEIGH] = 0.0;

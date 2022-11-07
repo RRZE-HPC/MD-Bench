@@ -102,7 +102,8 @@ static inline MD_SIMD_FLOAT simd_gather(MD_SIMD_INT vidx, const MD_FLOAT *m, int
 static inline MD_SIMD_INT simd_int_broadcast(int scalar) { return _mm256_set1_epi32(scalar); }
 static inline MD_SIMD_INT simd_int_zero() { return _mm256_setzero_si256(); }
 static inline MD_SIMD_INT simd_int_seq() { return _mm256_set_epi32(7, 6, 5, 4, 3, 2, 1, 0); }
-static inline MD_SIMD_INT simd_int_load(const int *m) { return _mm256_load_epi32(m); }
+static inline MD_SIMD_INT simd_int_load(const int *m) { return _mm256_load_si256((const MD_SIMD_INT *) m); }
+//static inline MD_SIMD_INT simd_int_load(const int *m) { return _mm256_load_epi32(m); }
 static inline MD_SIMD_INT simd_int_add(MD_SIMD_INT a, MD_SIMD_INT b) { return _mm256_add_epi32(a, b); }
 static inline MD_SIMD_INT simd_int_mul(MD_SIMD_INT a, MD_SIMD_INT b) { return _mm256_mul_epi32(a, b); }
 static inline MD_SIMD_INT simd_int_mask_load(const int *m, MD_SIMD_MASK k) { return _mm256_mask_load_epi32(simd_int_zero(), k, m); }
