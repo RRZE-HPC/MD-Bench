@@ -54,10 +54,10 @@ void read_eam_file(Funcfl* file, const char* filename) {
     }
 
     int tmp;
-    fgets(line, MAXLINE, fptr);
-    fgets(line, MAXLINE, fptr);
+    readline(line, fptr);
+    readline(line, fptr);
     sscanf(line, "%d %lg", &tmp, &(file->mass));
-    fgets(line, MAXLINE, fptr);
+    readline(line, fptr);
     sscanf(line, "%d %lg %d %lg %lg", &file->nrho, &file->drho, &file->nr, &file->dr, &file->cut);
 
     //printf("Read: %lf %i %lf %i %lf %lf\n",file->mass,file->nrho,file->drho,file->nr,file->dr,file->cut);
@@ -261,7 +261,7 @@ void grab(FILE* fptr, int n, MD_FLOAT* list) {
     int i = 0;
 
     while(i < n) {
-        fgets(line, MAXLINE, fptr);
+        readline(line, fptr);
         ptr = strtok(line, " \t\n\r\f");
         list[i++] = atof(ptr);
         while(ptr = strtok(NULL, " \t\n\r\f")) list[i++] = atof(ptr);

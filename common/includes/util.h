@@ -44,5 +44,6 @@ extern void random_reset(int *seed, int ibase, double *coord);
 extern int str2ff(const char *string);
 extern const char* ff2str(int ff);
 extern int get_num_threads();
+extern void readline(char *line, FILE *fp);
 
 #endif

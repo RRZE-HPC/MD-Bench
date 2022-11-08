@@ -6,7 +6,7 @@ ANSI_CFLAGS += -std=c99
 ANSI_CFLAGS += -pedantic
 ANSI_CFLAGS += -Wextra
 
-CFLAGS   = -O3 -march=native  -ffast-math -funroll-loops --forward-unknown-to-host-compiler # -fopenmp
+CFLAGS   = -O3 -march=native -ffast-math -funroll-loops --forward-unknown-to-host-compiler # -fopenmp
 #CFLAGS   = -O3 -march=cascadelake  -ffast-math -funroll-loops --forward-unknown-to-host-compiler # -fopenmp
 #CFLAGS   = -O3 -g # -fopenmp
 #CFLAGS   = -O0 -g  -std=c99 -fargument-noalias
