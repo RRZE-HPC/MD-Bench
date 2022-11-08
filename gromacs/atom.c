@@ -147,7 +147,7 @@ int readAtom_pdb(Atom* atom, Parameter* param) {
     }
 
     while(!feof(fp)) {
-        fgets(line, MAXLINE, fp);
+        readline(line, fp);
         char *item = strtok(line, " ");
         if(strncmp(item, "CRYST1", 6) == 0) {
             param->xlo = 0.0;
@@ -234,15 +234,15 @@ int readAtom_gro(Atom* atom, Parameter* param) {
         return -1;
     }
 
-    fgets(desc, MAXLINE, fp);
+    readline(desc, fp);
     for(i = 0; desc[i] != '\n'; i++);
     desc[i] = '\0';
-    fgets(line, MAXLINE, fp);
+    readline(line, fp);
     atoms_to_read = atoi(strtok(line, " "));
     fprintf(stdout, "System: %s with %d atoms\n", desc, atoms_to_read);
 
     while(!feof(fp) && read_atoms < atoms_to_read) {
-        fgets(line, MAXLINE, fp);
+        readline(line, fp);
         char *label = strtok(line, " ");
         int type = type_str2int(strtok(NULL, " "));
         int atom_id = atoi(strtok(NULL, " ")) - 1;
@@ -265,7 +265,7 @@ int readAtom_gro(Atom* atom, Parameter* param) {
     }
 
     if(!feof(fp)) {
-        fgets(line, MAXLINE, fp);
+        readline(line, fp);
         param->xlo = 0.0;
         param->xhi = atof(strtok(line, " "));
         param->ylo = 0.0;
@@ -314,15 +314,15 @@ int readAtom_dmp(Atom* atom, Parameter* param) {
     }
 
     while(!feof(fp) && ts < 1 && !read_atoms) {
-        fgets(line, MAXLINE, fp);
+        readline(line, fp);
         if(strncmp(line, "ITEM: ", 6) == 0) {
             char *item = &line[6];
 
             if(strncmp(item, "TIMESTEP", 8) == 0) {
-                fgets(line, MAXLINE, fp);
+                readline(line, fp);
                 ts = atoi(line);
             } else if(strncmp(item, "NUMBER OF ATOMS", 15) == 0) {
-                fgets(line, MAXLINE, fp);
+                readline(line, fp);
                 natoms = atoi(line);
                 atom->Natoms = natoms;
                 atom->Nlocal = natoms;
@@ -330,23 +330,23 @@ int readAtom_dmp(Atom* atom, Parameter* param) {
                     growAtom(atom);
                 }
             } else if(strncmp(item, "BOX BOUNDS pp pp pp", 19) == 0) {
-                fgets(line, MAXLINE, fp);
+                readline(line, fp);
                 param->xlo = atof(strtok(line, " "));
                 param->xhi = atof(strtok(NULL, " "));
                 param->xprd = param->xhi - param->xlo;
 
-                fgets(line, MAXLINE, fp);
+                readline(line, fp);
                 param->ylo = atof(strtok(line, " "));
                 param->yhi = atof(strtok(NULL, " "));
                 param->yprd = param->yhi - param->ylo;
 
-                fgets(line, MAXLINE, fp);
+                readline(line, fp);
                 param->zlo = atof(strtok(line, " "));
                 param->zhi = atof(strtok(NULL, " "));
                 param->zprd = param->zhi - param->zlo;
             } else if(strncmp(item, "ATOMS id type x y z vx vy vz", 28) == 0) {
                 for(int i = 0; i < natoms; i++) {
-                    fgets(line, MAXLINE, fp);
+                    readline(line, fp);
                     atom_id = atoi(strtok(line, " ")) - 1;
                     atom->type[atom_id] = atoi(strtok(NULL, " "));
                     atom_x(atom_id) = atof(strtok(NULL, " "));

@@ -73,6 +73,10 @@ ifeq ($(strip $(SIMD_KERNEL_AVAILABLE)),true)
     DEFINES += -DSIMD_KERNEL_AVAILABLE
 endif
 
+ifeq ($(strip $(NO_AVX2)),true)
+    DEFINES += -DNO_AVX2
+endif
+
 ifeq ($(strip $(AVX512)),true)
     DEFINES += -DAVX512
 endif

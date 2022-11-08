@@ -4,6 +4,7 @@
  * Use of this source code is governed by a LGPL-3.0
  * license that can be found in the LICENSE file.
  */
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <util.h>
@@ -79,4 +80,11 @@ const char* ff2str(int ff) {
 int get_num_threads() {
     const char *num_threads_env = getenv("NUM_THREADS");
     return (num_threads_env == NULL) ? 32 : atoi(num_threads_env);
+}
+
+void readline(char *line, FILE *fp) {
+    if(fgets(line, MAXLINE, fp) == NULL) {
+        fprintf(stderr, "readline(): Error: could not read line!\n");
+        exit(-1);
+    }
 }
