@@ -9,19 +9,21 @@
 //--
 #include <likwid-marker.h>
 //--
-#include <timing.h>
+#include <atom.h>
 #include <allocate.h>
+#include <device.h>
+#include <eam.h>
+#include <integrate.h>
 #include <neighbor.h>
 #include <parameter.h>
-#include <atom.h>
+#include <pbc.h>
 #include <stats.h>
 #include <thermo.h>
-#include <pbc.h>
 #include <timers.h>
-#include <eam.h>
+#include <timing.h>
+#include <util.h>
 #include <vtk.h>
 #include <xtc.h>
-#include <util.h>
 
 #define HLINE "----------------------------------------------------------------------------\n"
 
@@ -29,6 +31,14 @@ extern double computeForceLJ_ref(Parameter*, Atom*, Neighbor*, Stats*);
 extern double computeForceLJ_4xn(Parameter*, Atom*, Neighbor*, Stats*);
 extern double computeForceLJ_2xnn(Parameter*, Atom*, Neighbor*, Stats*);
 extern double computeForceEam(Eam*, Parameter*, Atom*, Neighbor*, Stats*);
+
+#ifdef CUDA_TARGET
+extern int isReneighboured;
+extern double computeForceLJ_cuda(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *stats);
+extern void copyDataToCUDADevice(Atom *atom);
+extern void copyDataFromCUDADevice(Atom *atom);
+extern void cudaDeviceFree();
+#endif
 
 double setup(Parameter *param, Eam *eam, Atom *atom, Neighbor *neighbor, Stats *stats) {
     if(param->force_field == FF_EAM) { initEam(eam, param); }
@@ -43,7 +53,6 @@ double setup(Parameter *param, Eam *eam, Atom *atom, Neighbor *neighbor, Stats *
     initPbc(atom);
     initStats(stats);
     initNeighbor(neighbor, param);
-
     if(param->input_file == NULL) {
         createAtom(atom, param);
     } else {
@@ -56,6 +65,7 @@ double setup(Parameter *param, Eam *eam, Atom *atom, Neighbor *neighbor, Stats *
     buildClusters(atom);
     defineJClusters(atom);
     setupPbc(atom, param);
+    initDevice(atom, neighbor);
     binClusters(atom);
     buildNeighbor(atom, neighbor);
     E = getTimeStamp();
@@ -76,46 +86,6 @@ double reneighbour(Parameter *param, Atom *atom, Neighbor *neighbor) {
     LIKWID_MARKER_STOP("reneighbour");
     E = getTimeStamp();
     return E-S;
-}
-
-void initialIntegrate(Parameter *param, Atom *atom) {
-    DEBUG_MESSAGE("initialIntegrate start\n");
-
-    for(int ci = 0; ci < atom->Nclusters_local; ci++) {
-        int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
-        MD_FLOAT *ci_x = &atom->cl_x[ci_vec_base];
-        MD_FLOAT *ci_v = &atom->cl_v[ci_vec_base];
-        MD_FLOAT *ci_f = &atom->cl_f[ci_vec_base];
-
-        for(int cii = 0; cii < atom->iclusters[ci].natoms; cii++) {
-            ci_v[CL_X_OFFSET + cii] += param->dtforce * ci_f[CL_X_OFFSET + cii];
-            ci_v[CL_Y_OFFSET + cii] += param->dtforce * ci_f[CL_Y_OFFSET + cii];
-            ci_v[CL_Z_OFFSET + cii] += param->dtforce * ci_f[CL_Z_OFFSET + cii];
-            ci_x[CL_X_OFFSET + cii] += param->dt * ci_v[CL_X_OFFSET + cii];
-            ci_x[CL_Y_OFFSET + cii] += param->dt * ci_v[CL_Y_OFFSET + cii];
-            ci_x[CL_Z_OFFSET + cii] += param->dt * ci_v[CL_Z_OFFSET + cii];
-        }
-    }
-
-    DEBUG_MESSAGE("initialIntegrate end\n");
-}
-
-void finalIntegrate(Parameter *param, Atom *atom) {
-    DEBUG_MESSAGE("finalIntegrate start\n");
-
-    for(int ci = 0; ci < atom->Nclusters_local; ci++) {
-        int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
-        MD_FLOAT *ci_v = &atom->cl_v[ci_vec_base];
-        MD_FLOAT *ci_f = &atom->cl_f[ci_vec_base];
-
-        for(int cii = 0; cii < atom->iclusters[ci].natoms; cii++) {
-            ci_v[CL_X_OFFSET + cii] += param->dtforce * ci_f[CL_X_OFFSET + cii];
-            ci_v[CL_Y_OFFSET + cii] += param->dtforce * ci_f[CL_Y_OFFSET + cii];
-            ci_v[CL_Z_OFFSET + cii] += param->dtforce * ci_f[CL_Z_OFFSET + cii];
-        }
-    }
-
-    DEBUG_MESSAGE("finalIntegrate end\n");
 }
 
 void printAtomState(Atom *atom) {
@@ -244,6 +214,11 @@ int main(int argc, char** argv) {
     #if defined(MEM_TRACER) || defined(INDEX_TRACER)
     traceAddresses(&param, &atom, &neighbor, n + 1);
     #endif
+
+    #ifdef CUDA_TARGET
+    copyDataToCUDADevice(&atom);
+    #endif
+
     if(param.force_field == FF_EAM) {
         timer[FORCE] = computeForceEam(&eam, &param, &atom, &neighbor, &stats);
     } else {
@@ -271,7 +246,16 @@ int main(int argc, char** argv) {
 
             updatePbc(&atom, &param, 0);
         } else {
+            #ifdef CUDA_TARGET
+            copyDataFromCUDADevice(&atom);
+            #endif
+
             timer[NEIGH] += reneighbour(&param, &atom, &neighbor);
+
+            #ifdef CUDA_TARGET
+            copyDataToCUDADevice(&atom);
+            isReneighboured = 1;
+            #endif
         }
 
         #if defined(MEM_TRACER) || defined(INDEX_TRACER)
@@ -303,6 +287,10 @@ int main(int argc, char** argv) {
         }
     }
 
+    #ifdef CUDA_TARGET
+    copyDataFromCUDADevice(&atom);
+    #endif
+
     timer[TOTAL] = getTimeStamp() - timer[TOTAL];
     updateSingleAtoms(&atom);
     computeThermo(-1, &param, &atom);
@@ -310,6 +298,10 @@ int main(int argc, char** argv) {
     if(param.xtc_file != NULL) {
         xtc_end();
     }
+
+    #ifdef CUDA_TARGET
+    cudaDeviceFree();
+    #endif
 
     printf(HLINE);
     printf("System: %d atoms %d ghost atoms, Steps: %d\n", atom.Natoms, atom.Nghost, param.ntimes);

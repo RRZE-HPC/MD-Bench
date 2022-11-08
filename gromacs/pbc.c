@@ -29,7 +29,7 @@ void initPbc(Atom* atom) {
 
 /* update coordinates of ghost atoms */
 /* uses mapping created in setupPbc */
-void updatePbc(Atom *atom, Parameter *param, int firstUpdate) {
+void cpuUpdatePbc(Atom *atom, Parameter *param, int firstUpdate) {
     DEBUG_MESSAGE("updatePbc start\n");
     int jfac = MAX(1, CLUSTER_N / CLUSTER_M);
     int ncj = atom->Nclusters_local / jfac;
