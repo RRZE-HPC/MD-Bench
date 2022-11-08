@@ -11,29 +11,43 @@
 
 #define DELTA 20000
 
-#define CLUSTER_M 4
-
 // Nbnxn layouts (as of GROMACS):
 // Simd4xN: M=4, N=VECTOR_WIDTH
 // Simd2xNN: M=4, N=(VECTOR_WIDTH/2)
+// Cuda: M=8, N=VECTOR_WIDTH
 
-// Simd2xNN (here used for single-precision)
-#if VECTOR_WIDTH > CLUSTER_M * 2
-#   define KERNEL_NAME              "Simd2xNN"
-#   define CLUSTER_N                (VECTOR_WIDTH / 2)
-#   define computeForceLJ           computeForceLJ_2xnn
-// Simd4xN
-#else
-#   define KERNEL_NAME              "Simd4xN"
+#ifdef CUDA_TARGET
+#   undef VECTOR_WIDTH
+#   define VECTOR_WIDTH             8
+#   define KERNEL_NAME              "CUDA"
+#   define CLUSTER_M                8
 #   define CLUSTER_N                VECTOR_WIDTH
-#   define computeForceLJ           computeForceLJ_4xn
-#endif
-
-#ifdef USE_REFERENCE_VERSION
-#   undef KERNEL_NAME
-#   undef computeForceLJ
-#   define KERNEL_NAME              "Reference"
-#   define computeForceLJ           computeForceLJ_ref
+#   define computeForceLJ           computeForceLJ_cuda
+#   define initialIntegrate         cudaInitialIntegrate
+#   define finalIntegrate           cudaFinalIntegrate
+#   define updatePbc                cudaUpdatePbc
+#else
+#   define CLUSTER_M                4
+// Simd2xNN (here used for single-precision)
+#   if VECTOR_WIDTH > CLUSTER_M * 2
+#       define KERNEL_NAME          "Simd2xNN"
+#       define CLUSTER_N            (VECTOR_WIDTH / 2)
+#       define computeForceLJ       computeForceLJ_2xnn
+// Simd4xN
+#   else
+#       define KERNEL_NAME          "Simd4xN"
+#       define CLUSTER_N            VECTOR_WIDTH
+#       define computeForceLJ       computeForceLJ_4xn
+#   endif
+#   ifdef USE_REFERENCE_VERSION
+#       undef KERNEL_NAME
+#       undef computeForceLJ
+#       define KERNEL_NAME          "Reference"
+#       define computeForceLJ       computeForceLJ_ref
+#   endif
+#   define initialIntegrate         cpuInitialIntegrate
+#   define finalIntegrate           cpuFinalIntegrate
+#   define updatePbc                cpuUpdatePbc
 #endif
 
 #if CLUSTER_M == CLUSTER_N
