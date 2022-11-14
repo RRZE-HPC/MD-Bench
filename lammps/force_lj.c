@@ -14,7 +14,7 @@
 #include <stats.h>
 #include <timing.h>
 
-#ifdef SIMD_KERNEL_AVAILABLE
+#ifdef __SIMD_KERNEL__
 #include <simd.h>
 #endif
 
@@ -191,7 +191,7 @@ double computeForceLJFullNeigh_simd(Parameter *param, Atom *atom, Neighbor *neig
     double S = getTimeStamp();
     LIKWID_MARKER_START("force");
 
-    #ifndef SIMD_KERNEL_AVAILABLE
+    #ifndef __SIMD_KERNEL__
     fprintf(stderr, "Error: SIMD kernel not implemented for specified instruction set!");
     exit(-1);
     #else

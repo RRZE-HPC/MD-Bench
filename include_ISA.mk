@@ -1,20 +1,23 @@
 ifeq ($(strip $(ISA)), SSE)
-_VECTOR_WIDTH=2
+    __ISA_SSE__=true
+    __SIMD_WIDTH_DBL__=2
 else ifeq ($(strip $(ISA)), AVX)
-# Vector width is 4 but AVX2 instruction set is not supported
-NO_AVX2=true
-_VECTOR_WIDTH=4
+    __ISA_AVX__=true
+    __SIMD_WIDTH_DBL__=4
 else ifeq ($(strip $(ISA)), AVX2)
-#SIMD_KERNEL_AVAILABLE=true
-_VECTOR_WIDTH=4
+    __ISA_AVX2__=true
+    #__SIMD_KERNEL__=true
+    __SIMD_WIDTH_DBL__=4
 else ifeq ($(strip $(ISA)), AVX512)
-AVX512=true
-SIMD_KERNEL_AVAILABLE=true
-_VECTOR_WIDTH=8
+    __ISA_AVX512__=true
+    __SIMD_KERNEL__=true
+    __SIMD_WIDTH_DBL__=8
 endif
 
+# SIMD width is specified in double-precision, hence it may
+# need to be adjusted for single-precision
 ifeq ($(strip $(DATA_TYPE)), SP)
-VECTOR_WIDTH=$(shell echo $$(( $(_VECTOR_WIDTH) * 2 )))
+    VECTOR_WIDTH=$(shell echo $$(( $(__SIMD_WIDTH_DBL__) * 2 )))
 else
-VECTOR_WIDTH=$(_VECTOR_WIDTH)
+    VECTOR_WIDTH=$(__SIMD_WIDTH_DBL__)
 endif
