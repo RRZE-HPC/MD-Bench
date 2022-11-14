@@ -65,9 +65,9 @@ double setup(Parameter *param, Eam *eam, Atom *atom, Neighbor *neighbor, Stats *
     buildClusters(atom);
     defineJClusters(atom);
     setupPbc(atom, param);
-    initDevice(atom, neighbor);
     binClusters(atom);
     buildNeighbor(atom, neighbor);
+    initDevice(atom, neighbor);
     E = getTimeStamp();
     return E-S;
 }
