@@ -226,6 +226,6 @@ void setupPbc(Atom *atom, Parameter *param) {
     atom->Nclusters = atom->Nclusters_local + Nghost + 1;
 
     // Update created ghost clusters positions
-    updatePbc(atom, param, 1);
+    cpuUpdatePbc(atom, param, 1);
     DEBUG_MESSAGE("setupPbc end\n");
 }
