@@ -56,8 +56,8 @@ void initDevice(Atom *atom, Neighbor *neighbor) {
     cuda_PBCz               =   (int *) allocateGPU(atom->Nclusters_max * sizeof(int));
     cuda_numneigh           =   (int *) allocateGPU(atom->Nclusters_max * sizeof(int));
     cuda_neighbors          =   (int *) allocateGPU(atom->Nclusters_max * neighbor->maxneighs * sizeof(int));
-    natoms = (int *) malloc(atom->Nclusters_max);
-    ngatoms = (int *) malloc(atom->Nclusters_max);
+    natoms                  =   (int *) malloc(atom->Nclusters_max * sizeof(int));
+    ngatoms                 =   (int *) malloc(atom->Nclusters_max * sizeof(int));
     isReneighboured = 1;
 }
 
