@@ -196,10 +196,10 @@ __global__ void computeForceLJ_cuda_warp(MD_FLOAT *cuda_cl_x, MD_FLOAT *cuda_cl_
         int cond;
 #if CLUSTER_M == CLUSTER_N
         cond = half_neigh ? (ci_cj0 != cj || cii_pos < cjj_pos) :
-               (ci_cj0 != cj || cii_pos != cjj_pos);
+                            (ci_cj0 != cj || cii_pos != cjj_pos);
 #elif CLUSTER_M < CLUSTER_N
         cond = half_neigh ? (ci_cj0 != cj || cii_pos + CLUSTER_M * (ci_pos & 0x1) < cjj_pos) :
-                                            (ci_cj0 != cj || cii_pos + CLUSTER_M * (ci_pos & 0x1) != cjj_pos);
+                            (ci_cj0 != cj || cii_pos + CLUSTER_M * (ci_pos & 0x1) != cjj_pos);
 #endif
         if(cond) {
             MD_FLOAT delx = xtmp - cj_x[CL_X_OFFSET + cjj_pos];
