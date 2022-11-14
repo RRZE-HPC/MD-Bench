@@ -65,20 +65,24 @@ ifneq ($(VECTOR_WIDTH),)
     DEFINES += -DVECTOR_WIDTH=$(VECTOR_WIDTH)
 endif
 
-ifeq ($(strip $(MASK_REGISTERS)),true)
-    DEFINES += -DMASK_REGISTERS
+ifeq ($(strip $(__SIMD_KERNEL__)),true)
+    DEFINES += -D__SIMD_KERNEL__
 endif
 
-ifeq ($(strip $(SIMD_KERNEL_AVAILABLE)),true)
-    DEFINES += -DSIMD_KERNEL_AVAILABLE
+ifeq ($(strip $(__SSE__)),true)
+    DEFINES += -D__ISA_SSE__
 endif
 
-ifeq ($(strip $(NO_AVX2)),true)
-    DEFINES += -DNO_AVX2
+ifeq ($(strip $(__ISA_AVX__)),true)
+    DEFINES += -D__ISA_AVX__
 endif
 
-ifeq ($(strip $(AVX512)),true)
-    DEFINES += -DAVX512
+ifeq ($(strip $(__ISA_AVX2__)),true)
+    DEFINES += -D__ISA_AVX2__
+endif
+
+ifeq ($(strip $(__ISA_AVX512__)),true)
+    DEFINES += -D__ISA_AVX512__
 endif
 
 ifeq ($(strip $(ENABLE_OMP_SIMD)),true)

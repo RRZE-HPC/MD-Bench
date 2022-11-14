@@ -4,10 +4,14 @@
  * Use of this source code is governed by a LGPL-3.0
  * license that can be found in the LICENSE file.
  */
+#ifndef __SIMD_H__
+#define __SIMD_H__
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <immintrin.h>
+
 #ifndef NO_ZMM_INTRIN
 #   include <zmmintrin.h>
 #endif
@@ -20,17 +24,27 @@
 #   define CLUSTER_N 1
 #endif
 
-#ifdef AVX512
+#if defined(__ISA_AVX512__)
 #   if PRECISION == 2
 #       include "simd/avx512_double.h"
 #   else
 #       include "simd/avx512_float.h"
 #   endif
-#else
+#endif
+
+#if defined(__ISA_AVX2__)
 #   if PRECISION == 2
-#       include "simd/avx_avx2_double.h"
+#       include "simd/avx2_double.h"
 #   else
-#       include "simd/avx_avx2_float.h"
+#       include "simd/avx2_float.h"
+#   endif
+#endif
+
+#if defined(__ISA_AVX__)
+#   if PRECISION == 2
+#       include "simd/avx_double.h"
+#   else
+#       include "simd/avx_float.h"
 #   endif
 #endif
 
@@ -50,3 +64,5 @@ static inline void simd_print_real(const char *ref, MD_SIMD_FLOAT a) {
 }
 
 static inline void simd_print_mask(const char *ref, MD_SIMD_MASK a) { fprintf(stdout, "%s: %x\n", ref, simd_mask_to_u32(a)); }
+
+#endif // __SIMD_H__
