@@ -77,6 +77,10 @@ ifeq ($(strip $(__ISA_AVX__)),true)
     DEFINES += -D__ISA_AVX__
 endif
 
+ifeq ($(strip $(__ISA_AVX_FMA__)),true)
+    DEFINES += -D__ISA_AVX_FMA__
+endif
+
 ifeq ($(strip $(__ISA_AVX2__)),true)
     DEFINES += -D__ISA_AVX2__
 endif

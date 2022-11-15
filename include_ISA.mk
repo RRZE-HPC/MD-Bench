@@ -4,6 +4,10 @@ ifeq ($(strip $(ISA)), SSE)
 else ifeq ($(strip $(ISA)), AVX)
     __ISA_AVX__=true
     __SIMD_WIDTH_DBL__=4
+else ifeq ($(strip $(ISA)), AVX_FMA)
+    __ISA_AVX__=true
+    __ISA_AVX_FMA__=true
+    __SIMD_WIDTH_DBL__=4
 else ifeq ($(strip $(ISA)), AVX2)
     __ISA_AVX2__=true
     #__SIMD_KERNEL__=true
