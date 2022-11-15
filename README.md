@@ -31,7 +31,7 @@ Apart from that, many tools to study and evaluate the in-depth performance of su
 Properly configure your building by changing `config.mk` file. The following options are available:
 
 - **TAG:** Compiler tag (available options: GCC, CLANG, ICC, ONEAPI, NVCC).
-- **ISA:** Instruction set (available options: SSE, AVX, AVX2, AVX512).
+- **ISA:** Instruction set (available options: SSE, AVX, AVX\_FMA, AVX2, AVX512).
 - **MASK\_REGISTERS:** Use AVX512 mask registers (always true when ISA is set to AVX512).
 - **OPT\_SCHEME:** Optimization algorithm (available options: lammps, gromacs).
 - **ENABLE\_LIKWID:** Enable likwid to make use of HPM counters.
