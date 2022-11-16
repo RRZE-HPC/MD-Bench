@@ -267,6 +267,8 @@ int main(int argc, const char *argv[]) {
     const double estim_volume = (double)(atom->Nlocal * 6 * sizeof(MD_FLOAT) + estim_neighbors_volume);
 
     if(!csv) {
+        printf("Kernel: %s, MxN: %dx%d, Vector width: %d\n", KERNEL_NAME, CLUSTER_M, CLUSTER_N, VECTOR_WIDTH);
+        printf("Floating-point precision: %s\n", PRECISION_STRING);
         printf("Pattern: %s\n", pattern_str);
         printf("Number of timesteps: %d\n", param.ntimes);
         printf("Number of i-clusters: %d\n", niclusters);
