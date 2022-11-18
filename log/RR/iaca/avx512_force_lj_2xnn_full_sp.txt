@@ -1,0 +1,120 @@
+iwia021h@testfront1:~/repo/MD-Bench$ iaca -arch SKX force_lj_2xnn_full_sp_iaca.o 
+Intel(R) Architecture Code Analyzer Version -  v3.0-28-g1ba2cbb build date: 2017-10-23;16:42:45
+Analyzed File -  force_lj_2xnn_full_sp_iaca.o
+Binary Format - 64Bit
+Architecture  -  SKX
+Analysis Type - Throughput
+
+Throughput Analysis Report
+--------------------------
+Block Throughput: 27.42 Cycles       Throughput Bottleneck: Backend
+Loop Count:  22
+Port Binding In Cycles Per Iteration:
+--------------------------------------------------------------------------------------------------
+|  Port  |   0   -  DV   |   1   |   2   -  D    |   3   -  D    |   4   |   5   |   6   |   7   |
+--------------------------------------------------------------------------------------------------
+| Cycles | 23.0     0.0  | 16.5  |  2.0     2.0  |  2.0     2.0  |  0.0  | 23.0  | 16.5  |  0.0  |
+--------------------------------------------------------------------------------------------------
+
+DV - Divider pipe (on port 0)
+D - Data fetch pipe (on ports 2 and 3)
+F - Macro Fusion with the previous instruction occurred
+* - instruction micro-ops not bound to a port
+^ - Micro Fusion occurred
+# - ESP Tracking sync uop was issued
+@ - SSE instruction followed an AVX256/AVX512 instruction, dozens of cycles penalty is expected
+X - instruction not supported, was not accounted in Analysis
+
+| Num Of   |                    Ports pressure in cycles                         |      |
+|  Uops    |  0  - DV    |  1   |  2  -  D    |  3  -  D    |  4   |  5   |  6   |  7   |
+-----------------------------------------------------------------------------------------
+|   1      |             |      | 1.0     1.0 |             |      |      |      |      | mov r13d, dword ptr [rdx+r9*4]
+|   1      |             | 0.5  |             |             |      |      | 0.5  |      | inc r9
+|   1      |             | 1.0  |             |             |      |      |      |      | lea r14d, ptr [r13+r13*2]
+|   1      |             |      |             |             |      |      | 1.0  |      | shl r14d, 0x3
+|   1      |             | 1.0  |             |             |      |      |      |      | lea r15d, ptr [r13+r13*1]
+|   1      |             |      |             |             |      |      | 1.0  |      | movsxd r14, r14d
+|   1      |             | 0.5  |             |             |      |      | 0.5  |      | cmp r15d, r11d
+|   1      |             | 1.0  |             |             |      |      |      |      | lea ebx, ptr [r13+r13*1+0x1]
+|   1*     |             |      |             |             |      |      |      |      | mov r13d, r8d
+|   1      |             |      |             |             |      |      | 1.0  |      | setz r13b
+|   1      |             | 0.5  |             |             |      |      | 0.5  |      | cmp ebx, r11d
+|   1*     |             |      |             |             |      |      |      |      | mov ebx, r8d
+|   1      |             |      |             | 1.0     1.0 |      |      |      |      | vbroadcastf64x4 zmm7, ymmword ptr [rsi+r14*4+0x40]
+|   1      |             |      |             |             |      |      | 1.0  |      | setz bl
+|   1      |             |      | 1.0     1.0 |             |      |      |      |      | vbroadcastf64x4 zmm8, ymmword ptr [rsi+r14*4+0x20]
+|   1      |             |      |             | 1.0     1.0 |      |      |      |      | vbroadcastf64x4 zmm9, ymmword ptr [rsi+r14*4]
+|   1      |             |      |             |             |      | 1.0  |      |      | vsubps zmm31, zmm17, zmm7
+|   1      | 1.0         |      |             |             |      |      |      |      | vsubps zmm30, zmm19, zmm8
+|   1      |             |      |             |             |      | 1.0  |      |      | vsubps zmm7, zmm23, zmm7
+|   1      | 1.0         |      |             |             |      |      |      |      | vsubps zmm29, zmm21, zmm9
+|   1      |             |      |             |             |      | 1.0  |      |      | vsubps zmm8, zmm18, zmm8
+|   1      | 1.0         |      |             |             |      |      |      |      | vsubps zmm9, zmm20, zmm9
+|   1      |             |      |             |             |      | 1.0  |      |      | vmulps zmm0, zmm31, zmm31
+|   1      | 1.0         |      |             |             |      |      |      |      | vmulps zmm3, zmm7, zmm7
+|   1      |             |      |             |             |      | 1.0  |      |      | vfmadd231ps zmm0, zmm30, zmm30
+|   1      | 1.0         |      |             |             |      |      |      |      | vfmadd231ps zmm3, zmm8, zmm8
+|   1      |             |      |             |             |      | 1.0  |      |      | vfmadd231ps zmm0, zmm29, zmm29
+|   1      | 1.0         |      |             |             |      |      |      |      | vfmadd231ps zmm3, zmm9, zmm9
+|   3      | 2.0         |      |             |             |      | 1.0  |      |      | vrcp14ps zmm6, zmm0
+|   3      | 2.0         |      |             |             |      | 1.0  |      |      | vrcp14ps zmm5, zmm3
+|   1      |             |      |             |             |      | 1.0  |      |      | vcmpps k2, zmm0, zmm27, 0x11
+|   1      |             |      |             |             |      | 1.0  |      |      | vcmpps k5, zmm3, zmm27, 0x11
+|   1      |             |      |             |             |      | 1.0  |      |      | vmulps zmm4, zmm6, zmm26
+|   1      | 1.0         |      |             |             |      |      |      |      | vmulps zmm0, zmm5, zmm26
+|   1      |             |      |             |             |      | 1.0  |      |      | vmulps zmm1, zmm6, zmm4
+|   1      | 1.0         |      |             |             |      |      |      |      | vmulps zmm4, zmm5, zmm0
+|   1      |             |      |             |             |      | 1.0  |      |      | vmulps zmm2, zmm6, zmm1
+|   1      | 1.0         |      |             |             |      |      |      |      | vmulps zmm3, zmm5, zmm4
+|   1      |             |      |             |             |      | 1.0  |      |      | vfmsub213ps zmm1, zmm6, zmm28
+|   1      | 1.0         |      |             |             |      |      |      |      | vfmsub213ps zmm4, zmm5, zmm28
+|   1      |             |      |             |             |      | 1.0  |      |      | vmulps zmm6, zmm6, zmm25
+|   1      | 1.0         |      |             |             |      |      |      |      | vmulps zmm5, zmm5, zmm25
+|   1      |             |      |             |             |      | 1.0  |      |      | vmulps zmm1, zmm1, zmm6
+|   1      | 1.0         |      |             |             |      |      |      |      | vmulps zmm2, zmm2, zmm1
+|   1      |             | 1.0  |             |             |      |      |      |      | lea r12d, ptr [r13+r13*1]
+|   1      |             |      |             |             |      | 1.0  |      |      | vmulps zmm1, zmm4, zmm5
+|   1      | 1.0         |      |             |             |      |      |      |      | vmulps zmm0, zmm24, zmm2
+|   1      |             |      |             |             |      | 1.0  |      |      | vmulps zmm2, zmm3, zmm1
+|   1*     |             |      |             |             |      |      |      |      | mov r14d, ebx
+|   1      |             | 0.5  |             |             |      |      | 0.5  |      | neg r12d
+|   1      |             |      |             |             |      |      | 1.0  |      | shl r14d, 0x5
+|   1*     |             |      |             |             |      |      |      |      | mov r15d, ebx
+|   1      |             | 1.0  |             |             |      |      |      |      | sub r12d, r14d
+|   1*     |             |      |             |             |      |      |      |      | mov r14d, r13d
+|   1      |             |      |             |             |      |      | 1.0  |      | shl r15d, 0x4
+|   1      |             | 1.0  |             |             |      |      |      |      | neg r14d
+|   1      |             |      |             |             |      |      | 1.0  |      | shl r12d, 0x8
+|   1      |             | 1.0  |             |             |      |      |      |      | sub r14d, r15d
+|   1      |             | 0.5  |             |             |      |      | 0.5  |      | add r12d, 0xffffff00
+|   1      |             | 0.5  |             |             |      |      | 0.5  |      | add r14d, 0xff
+|   1      |             | 0.5  |             |             |      |      | 0.5  |      | or r12d, r14d
+|   1      |             | 1.0  |             |             |      |      |      |      | lea r14d, ptr [r13*8]
+|   1      | 1.0         |      |             |             |      |      |      |      | vmulps zmm3, zmm24, zmm2
+|   1      |             |      |             |             |      |      | 1.0  |      | neg r14d
+|   1      |             |      |             |             |      | 1.0  |      |      | kmovw k0, r12d
+|   1*     |             |      |             |             |      |      |      |      | mov r12d, ebx
+|   1      |             |      |             |             |      |      | 1.0  |      | shl r13d, 0x2
+|   1      |             |      |             |             |      |      | 1.0  |      | shl r12d, 0x7
+|   1      |             | 1.0  |             |             |      |      |      |      | neg r13d
+|   1      |             |      |             |             |      |      | 1.0  |      | shl ebx, 0x6
+|   1      |             | 1.0  |             |             |      |      |      |      | sub r14d, r12d
+|   1      |             |      |             |             |      |      | 1.0  |      | shl r14d, 0x8
+|   1      |             | 1.0  |             |             |      |      |      |      | sub r13d, ebx
+|   1      |             | 1.0  |             |             |      |      |      |      | add r14d, 0xffffff00
+|   1      |             | 0.5  |             |             |      |      | 0.5  |      | add r13d, 0xff
+|   1      |             | 0.5  |             |             |      |      | 0.5  |      | or r14d, r13d
+|   1      |             |      |             |             |      | 1.0  |      |      | kmovw k4, r14d
+|   1      | 1.0         |      |             |             |      |      |      |      | kandw k3, k0, k2
+|   1      | 1.0         |      |             |             |      |      |      |      | kandw k6, k4, k5
+|   1      |             |      |             |             |      | 1.0  |      |      | vfmadd231ps zmm16{k3}, zmm0, zmm29
+|   1      | 1.0         |      |             |             |      |      |      |      | vfmadd231ps zmm15{k3}, zmm0, zmm30
+|   1      |             |      |             |             |      | 1.0  |      |      | vfmadd231ps zmm14{k3}, zmm0, zmm31
+|   1      | 1.0         |      |             |             |      |      |      |      | vfmadd231ps zmm13{k6}, zmm3, zmm9
+|   1      |             |      |             |             |      | 1.0  |      |      | vfmadd231ps zmm12{k6}, zmm3, zmm8
+|   1      | 1.0         |      |             |             |      |      |      |      | vfmadd231ps zmm22{k6}, zmm3, zmm7
+|   1*     |             |      |             |             |      |      |      |      | cmp r9, rdi
+|   0*F    |             |      |             |             |      |      |      |      | jl 0xfffffffffffffe48
+Total Num Of Uops: 90
+Analysis Notes:
+Backend allocation was stalled due to unavailable allocation resources.
