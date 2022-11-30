@@ -4,6 +4,7 @@
  * Use of this source code is governed by a LGPL-3.0
  * license that can be found in the LICENSE file.
  */
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -28,39 +29,39 @@ double myrandom(int* seed) {
 }
 
 void random_reset(int *seed, int ibase, double *coord) {
-  int i;
-  char *str = (char *) &ibase;
-  int n = sizeof(int);
-  unsigned int hash = 0;
+    int i;
+    char *str = (char *) &ibase;
+    int n = sizeof(int);
+    unsigned int hash = 0;
 
-  for (i = 0; i < n; i++) {
-    hash += str[i];
-    hash += (hash << 10);
-    hash ^= (hash >> 6);
-  }
+    for (i = 0; i < n; i++) {
+        hash += str[i];
+        hash += (hash << 10);
+        hash ^= (hash >> 6);
+    }
 
-  str = (char *) coord;
-  n = 3 * sizeof(double);
-  for (i = 0; i < n; i++) {
-    hash += str[i];
-    hash += (hash << 10);
-    hash ^= (hash >> 6);
-  }
+    str = (char *) coord;
+    n = 3 * sizeof(double);
+    for (i = 0; i < n; i++) {
+        hash += str[i];
+        hash += (hash << 10);
+        hash ^= (hash >> 6);
+    }
 
-  hash += (hash << 3);
-  hash ^= (hash >> 11);
-  hash += (hash << 15);
+    hash += (hash << 3);
+    hash ^= (hash >> 11);
+    hash += (hash << 15);
 
-  // keep 31 bits of unsigned int as new seed
-  // do not allow seed = 0, since will cause hang in gaussian()
+    // keep 31 bits of unsigned int as new seed
+    // do not allow seed = 0, since will cause hang in gaussian()
 
-  *seed = hash & 0x7ffffff;
-  if (!(*seed)) *seed = 1;
+    *seed = hash & 0x7ffffff;
+    if (!(*seed)) *seed = 1;
 
-  // warm up the RNG
+    // warm up the RNG
 
-  for (i = 0; i < 5; i++) myrandom(seed);
-  //save = 0;
+    for (i = 0; i < 5; i++) myrandom(seed);
+    //save = 0;
 }
 
 int str2ff(const char *string) {
@@ -84,7 +85,9 @@ int get_num_threads() {
 
 void readline(char *line, FILE *fp) {
     if(fgets(line, MAXLINE, fp) == NULL) {
-        fprintf(stderr, "readline(): Error: could not read line!\n");
-        exit(-1);
+        if(errno != 0) {
+            perror("readline()");
+            exit(-1);
+        }
     }
 }
