@@ -83,7 +83,7 @@ static inline MD_FLOAT simd_h_dual_incr_reduced_sum(MD_FLOAT *m, MD_SIMD_FLOAT v
     return _mm_cvtsd_f64(_mm512_castpd512_pd128(t0));
 }
 
-inline void simd_h_decr(MD_FLOAT *m, MD_SIMD_FLOAT a) {
+static inline void simd_h_decr(MD_FLOAT *m, MD_SIMD_FLOAT a) {
     __m256d t;
     a = _mm512_add_pd(a, _mm512_shuffle_f64x2(a, a, 0xee));
     t = _mm256_load_pd(m);
@@ -98,7 +98,8 @@ static inline void simd_h_decr3(MD_FLOAT *m, MD_SIMD_FLOAT a0, MD_SIMD_FLOAT a1,
 }
 
 // Functions used in LAMMPS kernel
-static inline MD_SIMD_FLOAT simd_gather(MD_SIMD_INT vidx, const MD_FLOAT *m, int s) { return _mm512_i32gather_pd(vidx, m, s); }
+//static inline MD_SIMD_FLOAT simd_gather(MD_SIMD_INT vidx, const MD_FLOAT *m, int s) { return _mm512_i32gather_pd(vidx, m, s); }
+#define simd_gather(vidx,m,s) (_mm512_i32gather_pd(vidx, m, s))
 static inline MD_SIMD_INT simd_int_broadcast(int scalar) { return _mm256_set1_epi32(scalar); }
 static inline MD_SIMD_INT simd_int_zero() { return _mm256_setzero_si256(); }
 static inline MD_SIMD_INT simd_int_seq() { return _mm256_set_epi32(7, 6, 5, 4, 3, 2, 1, 0); }
