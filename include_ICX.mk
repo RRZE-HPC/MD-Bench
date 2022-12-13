@@ -10,7 +10,7 @@ PROFILE  = #-profile-functions -g  -pg
 #OPTS     = -Ofast -xSSE4.2 $(PROFILE)
 #OPTS     = -Ofast -no-vec $(PROFILE)
 OPTS     = -Ofast -xHost $(PROFILE)
-CFLAGS   = $(PROFILE) -restrict $(OPENMP) $(OPTS)
+CFLAGS   = $(PROFILE) $(OPENMP) $(OPTS)
 ASFLAGS  = #-masm=intel
 LFLAGS   = $(PROFILE) $(OPTS) $(OPENMP)
 DEFINES  = -std=c11 -pedantic-errors -D_GNU_SOURCE -DNO_ZMM_INTRIN
