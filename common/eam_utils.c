@@ -264,6 +264,6 @@ void grab(FILE* fptr, int n, MD_FLOAT* list) {
         readline(line, fptr);
         ptr = strtok(line, " \t\n\r\f");
         list[i++] = atof(ptr);
-        while(ptr = strtok(NULL, " \t\n\r\f")) list[i++] = atof(ptr);
+        while((ptr = strtok(NULL, " \t\n\r\f"))) list[i++] = atof(ptr);
     }
 }
