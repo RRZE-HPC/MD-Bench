@@ -1,6 +1,6 @@
 #!/bin/bash
 
-MDBENCH_BIN="MDBench-ICC-lammps"
+MDBENCH_BIN="MDBench-ICX-lammps"
 FREQ=2.1
 NRUNS=3
 FIXED_PARAMS="--freq $FREQ"
@@ -10,6 +10,13 @@ function run_benchmark() {
         likwid-pin -c 0 "$* $FIXED_PARAMS" 2>&1 | grep "Cycles/SIMD iteration" | cut -d ' ' -f3
     done
 }
+
+echo "Binary: $MDBENCH_BIN(-stub)"
+echo "Frequency: $FREQ"
+echo "Number of runs: $NRUNS"
+
+echo "Fixing frequencies..."
+likwid-setFrequencies -f $FREQ -t 0
 
 echo "Standard"
 run_benchmark ./MDBench-ICC-lammps
