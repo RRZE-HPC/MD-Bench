@@ -1,9 +1,9 @@
-# Compiler tag (GCC/CLANG/ICC/ONEAPI/NVCC)
+# Compiler tag (GCC/CLANG/ICC/ICX/ONEAPI/NVCC)
 TAG ?= ICC
 # Instruction set (SSE/AVX/AVX_FMA/AVX2/AVX512)
 ISA ?= AVX512
 # Optimization scheme (lammps/gromacs/clusters_per_bin)
-OPT_SCHEME ?= lammps
+OPT_SCHEME ?= gromacs
 # Enable likwid (true or false)
 ENABLE_LIKWID ?= true
 # SP or DP
@@ -22,7 +22,7 @@ MEM_TRACER ?= false
 # Trace indexes and distances for gather-md (true or false)
 INDEX_TRACER ?= false
 # Compute statistics
-COMPUTE_STATS ?= false
+COMPUTE_STATS ?= true
 
 # Configurations for lammps optimization scheme
 # Use omp simd pragma when running with half neighbor-lists
