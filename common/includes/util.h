@@ -19,11 +19,7 @@
 #   define ABS(a) ((a) >= 0 ? (a) : -(a))
 #endif
 
-#ifdef DEBUG
-#   define DEBUG_MESSAGE   printf
-#else
-#   define DEBUG_MESSAGE
-#endif
+#define DEBUG_MESSAGE debug_printf
 
 #ifndef MAXLINE
 #   define MAXLINE 4096
@@ -45,5 +41,6 @@ extern int str2ff(const char *string);
 extern const char* ff2str(int ff);
 extern int get_num_threads();
 extern void readline(char *line, FILE *fp);
+extern void debug_printf(const char *format, ...);
 
 #endif
