@@ -48,6 +48,7 @@ void init(Parameter *param) {
     param->cutforce = 1000000.0;
     param->cutneigh = param->cutforce;
     param->mass = 1.0;
+    param->half_neigh = 0;
     // Unused
     param->dt = 0.005;
     param->dtforce = 0.5 * param->dt;
