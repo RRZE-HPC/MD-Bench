@@ -8,7 +8,8 @@ ANSI_CFLAGS += -Wextra
 
 #
 # A100 + Native
-CFLAGS   = -O3 -arch=sm_80 -march=native -ffast-math -funroll-loops --forward-unknown-to-host-compiler # -fopenmp
+#CFLAGS   = -O3 -arch=sm_80 -march=native -ffast-math -funroll-loops --forward-unknown-to-host-compiler # -fopenmp
+CFLAGS   = -O3 -arch=compute_61 -code=sm_61,sm_80,sm_86 -march=native -ffast-math -funroll-loops --forward-unknown-to-host-compiler # -fopenmp
 # A40 + Native
 #CFLAGS   = -O3 -arch=sm_86 -march=native -ffast-math -funroll-loops --forward-unknown-to-host-compiler # -fopenmp
 # Cascade Lake

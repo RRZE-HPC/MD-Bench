@@ -15,7 +15,60 @@ void write_data_to_vtk_file(const char *filename, Atom* atom, int timestep) {
     write_ghost_atoms_to_vtk_file(filename, atom, timestep);
     write_local_cluster_edges_to_vtk_file(filename, atom, timestep);
     write_ghost_cluster_edges_to_vtk_file(filename, atom, timestep);
+#ifdef USE_SUPER_CLUSTERS
+    write_super_clusters_to_vtk_file(filename, atom, timestep);
+#endif //#ifdef USE_SUPER_CLUSTERS
 }
+
+#ifdef USE_SUPER_CLUSTERS
+int write_super_clusters_to_vtk_file(const char* filename, Atom* atom, int timestep) {
+    char timestep_filename[128];
+    snprintf(timestep_filename, sizeof timestep_filename, "%s_sup_%d.vtk", filename, timestep);
+    FILE* fp = fopen(timestep_filename, "wb");
+
+    if(fp == NULL) {
+        fprintf(stderr, "Could not open VTK file for writing!\n");
+        return -1;
+    }
+
+    fprintf(fp, "# vtk DataFile Version 2.0\n");
+    fprintf(fp, "Particle data\n");
+    fprintf(fp, "ASCII\n");
+    fprintf(fp, "DATASET UNSTRUCTURED_GRID\n");
+    fprintf(fp, "POINTS %d double\n", atom->Nsclusters_local * SCLUSTER_M);
+    for(int ci = 0; ci < atom->Nsclusters_local; ++ci) {
+
+        int factor = (rand() % 1000) + 1;
+        //double factor = ci * 10;
+
+        int ci_vec_base = SCI_VECTOR_BASE_INDEX(ci);
+        MD_FLOAT *ci_x = &atom->scl_x[ci_vec_base];
+        for(int cii = 0; cii < SCLUSTER_M; ++cii) {
+            fprintf(fp, "%.4f %.4f %.4f\n", ci_x[SCL_X_OFFSET + cii] * factor, ci_x[SCL_Y_OFFSET + cii] * factor, ci_x[SCL_Z_OFFSET + cii] * factor);
+        }
+    }
+    fprintf(fp, "\n\n");
+    fprintf(fp, "CELLS %d %d\n", atom->Nlocal, atom->Nlocal * 2);
+    for(int i = 0; i < atom->Nlocal; ++i) {
+        fprintf(fp, "1 %d\n", i);
+    }
+    fprintf(fp, "\n\n");
+    fprintf(fp, "CELL_TYPES %d\n", atom->Nlocal);
+    for(int i = 0; i < atom->Nlocal; ++i) {
+        fprintf(fp, "1\n");
+    }
+    fprintf(fp, "\n\n");
+    fprintf(fp, "POINT_DATA %d\n", atom->Nlocal);
+    fprintf(fp, "SCALARS mass double\n");
+    fprintf(fp, "LOOKUP_TABLE default\n");
+    for(int i = 0; i < atom->Nlocal; i++) {
+        fprintf(fp, "1.0\n");
+    }
+    fprintf(fp, "\n\n");
+    fclose(fp);
+    return 0;
+}
+#endif //USE_SUPER_CLUSTERS
 
 int write_local_atoms_to_vtk_file(const char* filename, Atom* atom, int timestep) {
     char timestep_filename[128];

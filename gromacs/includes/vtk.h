@@ -9,6 +9,7 @@
 #ifndef __VTK_H_
 #define __VTK_H_
 extern void write_data_to_vtk_file(const char *filename, Atom* atom, int timestep);
+extern int write_super_clusters_to_vtk_file(const char* filename, Atom* atom, int timestep);
 extern int write_local_atoms_to_vtk_file(const char* filename, Atom* atom, int timestep);
 extern int write_ghost_atoms_to_vtk_file(const char* filename, Atom* atom, int timestep);
 extern int write_local_cluster_edges_to_vtk_file(const char* filename, Atom* atom, int timestep);

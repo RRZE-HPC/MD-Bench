@@ -22,7 +22,25 @@
 #   define KERNEL_NAME              "CUDA"
 #   define CLUSTER_M                8
 #   define CLUSTER_N                VECTOR_WIDTH
+
+#ifdef USE_SUPER_CLUSTERS
+#   define XX                       0
+#   define YY                       1
+#   define ZZ                       2
+#   define SCLUSTER_SIZE_X          2
+#   define SCLUSTER_SIZE_Y          2
+#   define SCLUSTER_SIZE_Z          2
+#   define SCLUSTER_SIZE            (SCLUSTER_SIZE_X * SCLUSTER_SIZE_Y * SCLUSTER_SIZE_Z)
+#   define DIM_COORD(dim,coord)     ((dim == XX) ? atom_x(coord) : ((dim == YY) ? atom_y(coord) : atom_z(coord)))
+#   define MIN(a,b)                 ({int _a = (a), _b = (b); _a < _b ? _a : _b; })
+#   define SCLUSTER_M               CLUSTER_M * SCLUSTER_SIZE
+
+#   define computeForceLJ           computeForceLJSup_cuda
+#else
 #   define computeForceLJ           computeForceLJ_cuda
+
+#endif //USE_SUPER_CLUSTERS
+
 #   define initialIntegrate         cudaInitialIntegrate
 #   define finalIntegrate           cudaFinalIntegrate
 #   define updatePbc                cudaUpdatePbc
@@ -55,16 +73,28 @@
 #   define CJ1_FROM_CI(a)           (a)
 #   define CI_BASE_INDEX(a,b)       ((a) * CLUSTER_N * (b))
 #   define CJ_BASE_INDEX(a,b)       ((a) * CLUSTER_N * (b))
+#ifdef USE_SUPER_CLUSTERS
+#   define SCI_BASE_INDEX(a,b)      ((a) * CLUSTER_N * SCLUSTER_SIZE * (b))
+#   define SCJ_BASE_INDEX(a,b)      ((a) * CLUSTER_N * SCLUSTER_SIZE * (b))
+#endif //USE_SUPER_CLUSTERS
 #elif CLUSTER_M == CLUSTER_N * 2 // M > N
 #   define CJ0_FROM_CI(a)           ((a) << 1)
 #   define CJ1_FROM_CI(a)           (((a) << 1) | 0x1)
 #   define CI_BASE_INDEX(a,b)       ((a) * CLUSTER_M * (b))
 #   define CJ_BASE_INDEX(a,b)       (((a) >> 1) * CLUSTER_M * (b) + ((a) & 0x1) * (CLUSTER_M >> 1))
+#ifdef USE_SUPER_CLUSTERS
+#   define SCI_BASE_INDEX(a,b)      ((a) * CLUSTER_M * SCLUSTER_SIZE * (b))
+#   define SCJ_BASE_INDEX(a,b)      (((a) >> 1) * CLUSTER_M * SCLUSTER_SIZE * (b) + ((a) & 0x1) * (SCLUSTER_SIZE * CLUSTER_M >> 1))
+#endif //USE_SUPER_CLUSTERS
 #elif CLUSTER_M == CLUSTER_N / 2 // M < N
 #   define CJ0_FROM_CI(a)           ((a) >> 1)
 #   define CJ1_FROM_CI(a)           ((a) >> 1)
 #   define CI_BASE_INDEX(a,b)       (((a) >> 1) * CLUSTER_N * (b) + ((a) & 0x1) * (CLUSTER_N >> 1))
 #   define CJ_BASE_INDEX(a,b)       ((a) * CLUSTER_N * (b))
+#ifdef USE_SUPER_CLUSTERS
+#   define SCI_BASE_INDEX(a,b)      (((a) >> 1) * CLUSTER_N * SCLUSTER_SIZE * (b) + ((a) & 0x1) * (CLUSTER_N * SCLUSTER_SIZE >> 1))
+#   define SCJ_BASE_INDEX(a,b)      ((a) * CLUSTER_N * SCLUSTER_SIZE * (b))
+#endif //USE_SUPER_CLUSTERS
 #else
 #   error "Invalid cluster configuration!"
 #endif
@@ -78,14 +108,37 @@
 #define CJ_SCALAR_BASE_INDEX(a)     (CJ_BASE_INDEX(a, 1))
 #define CJ_VECTOR_BASE_INDEX(a)     (CJ_BASE_INDEX(a, 3))
 
+#ifdef USE_SUPER_CLUSTERS
+#define SCI_SCALAR_BASE_INDEX(a)    (SCI_BASE_INDEX(a, 1))
+#define SCI_VECTOR_BASE_INDEX(a)    (SCI_BASE_INDEX(a, 3))
+#define SCJ_SCALAR_BASE_INDEX(a)    (SCJ_BASE_INDEX(a, 1))
+#define SCJ_VECTOR_BASE_INDEX(a)    (SCJ_BASE_INDEX(a, 3))
+#endif //USE_SUPER_CLUSTERS
+
 #if CLUSTER_M >= CLUSTER_N
 #   define CL_X_OFFSET              (0 * CLUSTER_M)
 #   define CL_Y_OFFSET              (1 * CLUSTER_M)
 #   define CL_Z_OFFSET              (2 * CLUSTER_M)
+
+#ifdef USE_SUPER_CLUSTERS
+#   define SCL_CL_X_OFFSET(ci)      (ci * CLUSTER_M + 0 * SCLUSTER_M)
+#   define SCL_CL_Y_OFFSET(ci)      (ci * CLUSTER_M + 1 * SCLUSTER_M)
+#   define SCL_CL_Z_OFFSET(ci)      (ci * CLUSTER_M + 2 * SCLUSTER_M)
+
+#   define SCL_X_OFFSET             (0 * SCLUSTER_M)
+#   define SCL_Y_OFFSET             (1 * SCLUSTER_M)
+#   define SCL_Z_OFFSET             (2 * SCLUSTER_M)
+#endif //USE_SUPER_CLUSTERS
 #else
 #   define CL_X_OFFSET              (0 * CLUSTER_N)
 #   define CL_Y_OFFSET              (1 * CLUSTER_N)
 #   define CL_Z_OFFSET              (2 * CLUSTER_N)
+
+#ifdef USE_SUPER_CLUSTERS
+#   define SCL_X_OFFSET             (0 * SCLUSTER_SIZE * CLUSTER_N)
+#   define SCL_Y_OFFSET             (1 * SCLUSTER_SIZE * CLUSTER_N)
+#   define SCL_Z_OFFSET             (2 * SCLUSTER_SIZE * CLUSTER_N)
+#endif //USE_SUPER_CLUSTERS
 #endif
 
 typedef struct {
@@ -94,6 +147,14 @@ typedef struct {
     MD_FLOAT bbminy, bbmaxy;
     MD_FLOAT bbminz, bbmaxz;
 } Cluster;
+
+typedef struct {
+    //int *iclusters;
+    int nclusters;
+    MD_FLOAT bbminx, bbmaxx;
+    MD_FLOAT bbminy, bbmaxy;
+    MD_FLOAT bbminz, bbmaxz;
+} SuperCluster;
 
 typedef struct {
     int Natoms, Nlocal, Nghost, Nmax;
@@ -116,6 +177,17 @@ typedef struct {
     Cluster *iclusters, *jclusters;
     int *icluster_bin;
     int dummy_cj;
+
+#ifdef USE_SUPER_CLUSTERS
+    int Nsclusters, Nsclusters_local, Nsclusters_ghost, Nsclusters_max;
+    MD_FLOAT *scl_x;
+    MD_FLOAT *scl_v;
+    MD_FLOAT *scl_f;
+    int *scl_type;
+    int *icluster_idx;
+    SuperCluster *siclusters;
+    int *sicluster_bin;
+#endif //USE_SUPER_CLUSTERS
 } Atom;
 
 extern void initAtom(Atom*);
@@ -126,6 +198,7 @@ extern int readAtom_gro(Atom*, Parameter*);
 extern int readAtom_dmp(Atom*, Parameter*);
 extern void growAtom(Atom*);
 extern void growClusters(Atom*);
+extern void growSuperClusters(Atom*);
 
 #ifdef AOS
 #   define POS_DATA_LAYOUT     "AoS"
