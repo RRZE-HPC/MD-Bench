@@ -38,7 +38,16 @@ extern double computeForceLJ_cuda(Parameter *param, Atom *atom, Neighbor *neighb
 extern void copyDataToCUDADevice(Atom *atom);
 extern void copyDataFromCUDADevice(Atom *atom);
 extern void cudaDeviceFree();
-#endif
+
+#ifdef USE_SUPER_CLUSTERS
+#include <utils.h>
+extern void buildNeighborGPU(Atom *atom, Neighbor *neighbor);
+extern void pruneNeighborGPU(Parameter *param, Atom *atom, Neighbor *neighbor);
+extern void alignDataToSuperclusters(Atom *atom);
+extern void alignDataFromSuperclusters(Atom *atom);
+extern double computeForceLJSup_cuda(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *stats);
+#endif //USE_SUPER_CLUSTERS
+#endif //CUDA_TARGET
 
 double setup(Parameter *param, Eam *eam, Atom *atom, Neighbor *neighbor, Stats *stats) {
     if(param->force_field == FF_EAM) { initEam(eam, param); }
@@ -62,11 +71,19 @@ double setup(Parameter *param, Eam *eam, Atom *atom, Neighbor *neighbor, Stats *
     setupNeighbor(param, atom);
     setupThermo(param, atom->Natoms);
     if(param->input_file == NULL) { adjustThermo(param, atom); }
+    #if defined(CUDA_TARGET) && defined(USE_SUPER_CLUSTERS)
+    buildClustersGPU(atom);
+    #else
     buildClusters(atom);
+    #endif //defined(CUDA_TARGET) && defined(USE_SUPER_CLUSTERS)
     defineJClusters(atom);
     setupPbc(atom, param);
     binClusters(atom);
+    #if defined(CUDA_TARGET) && defined(USE_SUPER_CLUSTERS)
+    buildNeighborGPU(atom, neighbor);
+    #else
     buildNeighbor(atom, neighbor);
+    #endif //defined(CUDA_TARGET) && defined(USE_SUPER_CLUSTERS)
     initDevice(atom, neighbor);
     E = getTimeStamp();
     return E-S;
@@ -78,11 +95,19 @@ double reneighbour(Parameter *param, Atom *atom, Neighbor *neighbor) {
     LIKWID_MARKER_START("reneighbour");
     updateSingleAtoms(atom);
     updateAtomsPbc(atom, param);
+    #if defined(CUDA_TARGET) && defined(USE_SUPER_CLUSTERS)
+    buildClustersGPU(atom);
+    #else
     buildClusters(atom);
+    #endif //defined(CUDA_TARGET) && defined(USE_SUPER_CLUSTERS)
     defineJClusters(atom);
     setupPbc(atom, param);
     binClusters(atom);
+    #if defined(CUDA_TARGET) && defined(USE_SUPER_CLUSTERS)
+    buildNeighborGPU(atom, neighbor);
+    #else
     buildNeighbor(atom, neighbor);
+    #endif //defined(CUDA_TARGET) && defined(USE_SUPER_CLUSTERS)
     LIKWID_MARKER_STOP("reneighbour");
     E = getTimeStamp();
     return E-S;
@@ -237,11 +262,18 @@ int main(int argc, char** argv) {
     }
 
     for(int n = 0; n < param.ntimes; n++) {
+
+        //printf("Step:\t%d\r\n", n);
+
         initialIntegrate(&param, &atom);
 
         if((n + 1) % param.reneigh_every) {
             if(!((n + 1) % param.prune_every)) {
+                #if defined(CUDA_TARGET) && defined(USE_SUPER_CLUSTERS)
+                pruneNeighborGPU(&param, &atom, &neighbor);
+                #else
                 pruneNeighbor(&param, &atom, &neighbor);
+                #endif //defined(CUDA_TARGET) && defined(USE_SUPER_CLUSTERS)
             }
 
             updatePbc(&atom, &param, 0);

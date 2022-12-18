@@ -1,5 +1,5 @@
 # Compiler tag (GCC/CLANG/ICC/ICX/ONEAPI/NVCC)
-TAG ?= ICC
+TAG ?= NVCC
 # Instruction set (SSE/AVX/AVX_FMA/AVX2/AVX512)
 ISA ?= AVX512
 # Optimization scheme (lammps/gromacs/clusters_per_bin)
@@ -41,6 +41,7 @@ HALF_NEIGHBOR_LISTS_CHECK_CJ ?= false
 # Configurations for CUDA
 # Use CUDA host memory to optimize transfers
 USE_CUDA_HOST_MEMORY ?= false
+USE_SUPER_CLUSTERS ?= true
 
 #Feature options
 OPTIONS =  -DALIGNMENT=64
