@@ -1,14 +1,18 @@
 #!/bin/bash
 
-TAG=ICC
-OPT_SCHEME=lammps
+# Adjustable variables
+TAG="${TAG:-ICX}"
+OPT_SCHEME="${OPT_SCHEME:-gromacs}"
+CORE="${CORE:-0}"
+FREQ="${FREQ:-2.4}"
+NRUNS="${NRUNS:-3}"
+LOG="${LOG:-latencies_and_cfds.log}"
+STUB_ONLY="${STUB_ONLY:-false}"
+
+# Other useful variables
 MDBENCH_BIN=./MDBench-$TAG-$OPT_SCHEME
-CORE=0
-FREQ=2.4
-NRUNS=3
 FIXED_PARAMS="--freq $FREQ"
 CPU_VENDOR=$(lscpu | grep "Vendor ID" | tr -s ' ' | cut -d ' ' -f3)
-LOG=latencies_and_cfds.log
 
 if [ "$CPU_VENDOR" == "GenuineIntel" ]; then
     ALL_PREFETCHERS="HW_PREFETCHER,CL_PREFETCHER,DCU_PREFETCHER,IP_PREFETCHER"
@@ -45,6 +49,7 @@ echo "Optimization scheme: $OPT_SCHEME" | tee -a $LOG
 echo "Binary: $MDBENCH_BIN(-stub)" | tee -a $LOG
 echo "Frequency: $FREQ" | tee -a $LOG
 echo "Number of runs: $NRUNS" | tee -a $LOG
+echo "Run only stubbed cases: $STUB_ONLY" | tee -a $LOG
 
 echo "Fixing frequencies..."
 likwid-setFrequencies -f $FREQ -t 0
@@ -65,12 +70,15 @@ for p in $PREFETCHERS; do
     fi
 
     MSG="$p: "
-    run_benchmark $MDBENCH_BIN
-    MSG+="standard=$BEST, "
-    run_benchmark $MDBENCH_BIN -i data/copper_melting/input_lj_cu_one_atomtype_20x20x20.dmp
-    MSG+="melt=$BEST, "
-    run_benchmark $MDBENCH_BIN -p data/argon_1000/mdbench_params.conf -i data/argon_1000/tprout.gro
-    MSG+="argon=$BEST, "
+    if [ "$STUB_ONLY" == "false" ]; then
+        run_benchmark $MDBENCH_BIN
+        MSG+="standard=$BEST, "
+        run_benchmark $MDBENCH_BIN -i data/copper_melting/input_lj_cu_one_atomtype_20x20x20.dmp
+        MSG+="melt=$BEST, "
+        run_benchmark $MDBENCH_BIN -p data/argon_1000/mdbench_params.conf -i data/argon_1000/tprout.gro
+        MSG+="argon=$BEST, "
+    fi
+
     run_benchmark $MDBENCH_BIN-stub $STUB1_PARAMS
     MSG+="$STUB1_NAME=$BEST, "
     run_benchmark $MDBENCH_BIN-stub $STUB2_PARAMS

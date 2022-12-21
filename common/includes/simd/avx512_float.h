@@ -7,10 +7,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <immintrin.h>
-#include <zmmintrin.h>
+#ifndef NO_ZMM_INTRIN
+#   include <zmmintrin.h>
+#endif
 
-#define MD_SIMD_FLOAT       __m512
-#define MD_SIMD_MASK        __mmask16
+#define MD_SIMD_FLOAT   __m512
+#define MD_SIMD_MASK    __mmask16
+#define MD_SIMD_INT     __m256i
 
 static inline MD_SIMD_FLOAT simd_broadcast(float scalar) { return _mm512_set1_ps(scalar); }
 static inline MD_SIMD_FLOAT simd_zero() { return _mm512_set1_ps(0.0f); }
@@ -69,7 +72,7 @@ static inline MD_FLOAT simd_h_dual_incr_reduced_sum(float* m, MD_SIMD_FLOAT v0, 
     return _mm_cvtss_f32(t3);
 }
 
-inline void simd_h_decr(MD_FLOAT *m, MD_SIMD_FLOAT a) {
+static inline void simd_h_decr(MD_FLOAT *m, MD_SIMD_FLOAT a) {
     __m256 t;
     a = _mm512_add_ps(a, _mm512_shuffle_f32x4(a, a, 0xee));
     t = _mm256_load_ps(m);
