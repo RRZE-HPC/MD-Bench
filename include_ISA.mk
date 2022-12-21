@@ -9,13 +9,15 @@ else ifeq ($(strip $(ISA)), AVX_FMA)
     __ISA_AVX_FMA__=true
     __SIMD_WIDTH_DBL__=4
 else ifeq ($(strip $(ISA)), AVX2)
-    __ISA_AVX2__=true
     #__SIMD_KERNEL__=true
+    __ISA_AVX2__=true
     __SIMD_WIDTH_DBL__=4
 else ifeq ($(strip $(ISA)), AVX512)
     __ISA_AVX512__=true
-    __SIMD_KERNEL__=true
     __SIMD_WIDTH_DBL__=8
+    ifeq ($(strip $(DATA_TYPE)), DP)
+        __SIMD_KERNEL__=true
+    endif
 endif
 
 # SIMD width is specified in double-precision, hence it may
