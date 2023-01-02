@@ -153,6 +153,12 @@ clean:
 	@rm -rf $(BUILD_DIR)
 	@rm -f tags
 
+cleanall:
+	$(info ===>  CLEAN)
+	@rm -rf ICC-lammps ICX-lammps GCC-lammps CLANG-lammps NVCC-lammps
+	@rm -rf ICC-gromacs ICX-gromacs GCC-gromacs CLANG-gromacs NVCC-gromacs
+	@rm -f tags
+
 distclean: clean
 	$(info ===>  DIST CLEAN)
 	@rm -f $(TARGET)*
