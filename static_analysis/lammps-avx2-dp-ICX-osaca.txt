@@ -1,0 +1,105 @@
+Open Source Architecture Code Analyzer (OSACA) - 0.4.12
+Analyzed file:      force_lj_icx_avx2_markers.s
+Architecture:       ZEN3
+Timestamp:          2022-12-12 12:47:07
+
+
+ P - Throughput of LOAD operation can be hidden behind a past or future STORE instruction
+ * - Instruction micro-ops not bound to a port
+ X - No throughput/latency information for this instruction in data file
+
+
+Combined Analysis Report
+------------------------
+                                                           Port pressure in cycles                                                            
+     |  0   |   1   |  2   |  3   | DV0  | DV1  |  4   |  5   |  6   |  7   |  8   - 8DV  |  9   |  10  |  11  |  12  |  13  ||  CP  | LCD  |
+---------------------------------------------------------------------------------------------------------------------------------------------
+ 172 |      |       |      |      |      |      |      |      |      |      |             |      |      |      |      |      ||      |      |   .LBB0_9:                                #
+ 173 |      |       |      |      |      |      |      |      |      |      |             |      |      |      |      |      ||      |      |   #   Parent Loop BB0_6 Depth=1
+ 174 |      |       |      |      |      |      |      |      |      |      |             |      |      |      |      |      ||      |      |   # =>  This Inner Loop Header: Depth=2
+ 175 |      | 0.250 | 0.75 |      |      |      |      |      |      |      |             |      |      | 0.50 | 0.50 |      ||  1.0 |      |   vpbroadcastd .LCPI0_1(%rip), %xmm1 # xmm1 = [3,3,3,3]
+ 176 | 0.00 |       |      | 1.00 |      |      |      |      |      |      |             |      |      | 0.50 | 0.50 |      ||  3.0 |      |   vpmulld (%r11,%rbp,4), %xmm1, %xmm11
+ 177 | 0.00 | 1.010 | 0.25 | 0.74 |      |      |      |      |      |      |             |      |      |      |      |      ||  4.0 |      |   vpmovsxdq %xmm11, %ymm1
+ 178 |      | 0.000 | 1.00 |      |      |      |      |      |      |      |             |      |      |      |      |      ||  1.0 |      |   vpsllq $3, %ymm1, %ymm1
+ 179 | 0.00 | 0.000 | 0.49 | 0.51 |      |      |      |      |      |      |             |      |      |      |      |      ||  1.0 |      |   vpaddq %ymm1, %ymm3, %ymm1
+ 180 | 0.00 | 0.000 | 0.51 | 0.49 |      |      |      |      |      |      |             |      |      |      |      |      ||      |      |   vmovq %xmm1, %r14
+ 181 |      | 1.000 |      |      |      |      |      |      |      |      |             |      |      |      |      |      ||      |      |   vpextrq $1, %xmm1, %r9
+ 182 |      | 1.000 |      |      |      |      |      |      |      |      |             |      |      |      |      |      ||  3.0 |      |   vextracti128 $1, %ymm1, %xmm1
+ 183 |      |       |      |      |      |      |      |      |      |      |             |      |      | 0.50 | 0.50 |      ||      |      |   vmovsd (%r14), %xmm2           # xmm2 = mem[0],zero
+ 184 | 0.00 | 0.000 | 0.49 | 0.51 |      |      |      |      |      |      |             |      |      |      |      |      ||      |      |   vpsubd .LCPI0_5, %xmm11, %xmm6
+ 185 | 0.00 | 0.750 | 0.38 | 0.87 |      |      |      |      |      |      |             |      |      |      |      |      ||      |      |   vpmovsxdq %xmm6, %ymm6
+ 186 |      | 0.000 | 1.00 |      |      |      |      |      |      |      |             |      |      |      |      |      ||      |      |   vpsllq $3, %ymm6, %ymm6
+ 187 | 0.00 | 0.000 | 0.50 | 0.50 |      |      |      |      |      |      |             |      |      |      |      |      ||      |      |   vmovq %xmm1, %rdi
+ 188 | 0.00 | 0.000 | 0.50 | 0.50 |      |      |      |      |      |      |             |      |      |      |      |      ||      |      |   vpaddq %ymm6, %ymm3, %ymm6
+ 189 | 0.00 | 0.000 | 0.50 | 0.50 |      |      |      |      |      |      |             |      |      |      |      |      ||      |      |   vmovq %xmm6, %rcx
+ 190 |      | 1.000 |      |      |      |      |      |      |      |      |             |      |      |      |      |      ||  6.0 |      |   vpextrq $1, %xmm1, %rbx
+ 191 |      | 1.000 |      |      |      |      |      |      |      |      |             |      |      |      |      |      ||      |      |   vpextrq $1, %xmm6, %rax
+ 192 |      | 1.000 |      |      |      |      |      |      |      |      |             |      |      |      |      |      ||      |      |   vextracti128 $1, %ymm6, %xmm1
+ 193 |      |       |      |      |      |      |      |      |      |      |             |      |      | 0.50 | 0.50 |      ||      |      |   vmovsd (%rdi), %xmm6           # xmm6 = mem[0],zero
+ 194 | 0.00 | 0.000 | 0.00 | 1.00 |      |      |      |      |      |      |             |      |      |      |      |      ||      |      |   vmovq %xmm1, %rdi
+ 195 |      | 1.000 |      |      |      |      |      |      |      |      |             |      |      |      |      |      ||      |      |   vpextrq $1, %xmm1, %rsi
+ 196 |      |       |      |      |      |      |      |      |      |      |             |      |      | 0.50 | 0.50 |      ||      |      |   vmovsd (%rdi), %xmm1           # xmm1 = mem[0],zero
+ 197 |      |       |      |      |      |      |      |      |      |      |             |      |      | 0.50 | 0.50 |      ||      |      |   vmovsd (%rcx), %xmm7           # xmm7 = mem[0],zero
+ 198 |      | 0.000 | 1.00 |      |      |      |      |      |      |      |             |      |      | 0.50 | 0.50 |      ||      |      |   vpbroadcastd .LCPI0_2(%rip), %xmm12 # xmm12 = [2,2,2,2]
+ 199 |      | 0.000 | 1.00 |      |      |      |      |      |      |      |             |      |      | 0.50 | 0.50 |      ||      |      |   vmovhpd (%r9), %xmm2, %xmm2     # xmm2 = xmm2[0],mem[0]
+ 200 | 0.00 | 0.000 | 0.62 | 0.38 |      |      |      |      |      |      |             |      |      |      |      |      ||      |      |   vpaddd %xmm12, %xmm11, %xmm4
+ 201 | 0.00 | 0.750 | 0.00 | 1.25 |      |      |      |      |      |      |             |      |      |      |      |      ||      |      |   vpmovsxdq %xmm4, %ymm4
+ 202 |      | 0.000 | 1.00 |      |      |      |      |      |      |      |             |      |      | 0.50 | 0.50 |      ||      |      |   vmovhpd (%rax), %xmm7, %xmm7    # xmm7 = xmm7[0],mem[0]
+ 203 |      | 0.000 | 1.00 |      |      |      |      |      |      |      |             |      |      |      |      |      ||      |      |   vpsllq $3, %ymm4, %ymm4
+ 204 | 0.00 | 0.000 | 0.00 | 1.00 |      |      |      |      |      |      |             |      |      |      |      |      ||      |      |   vpaddq %ymm4, %ymm3, %ymm4
+ 205 |      | 0.000 | 1.00 |      |      |      |      |      |      |      |             |      |      | 0.50 | 0.50 |      ||  5.0 |      |   vmovhpd (%rbx), %xmm6, %xmm6    # xmm6 = xmm6[0],mem[0]
+ 206 |      | 1.000 |      |      |      |      |      |      |      |      |             |      |      |      |      |      ||      |      |   vpextrq $1, %xmm4, %rax
+ 207 |      | 0.000 | 1.00 |      |      |      |      |      |      |      |             |      |      | 0.50 | 0.50 |      ||      |      |   vmovhpd (%rsi), %xmm1, %xmm1    # xmm1 = xmm1[0],mem[0]
+ 208 | 0.00 | 0.000 | 0.51 | 0.49 |      |      |      |      |      |      |             |      |      |      |      |      ||      |      |   vmovq %xmm4, %rcx
+ 209 |      | 1.000 |      |      |      |      |      |      |      |      |             |      |      |      |      |      ||      |      |   vextracti128 $1, %ymm4, %xmm4
+ 210 | 0.00 | -0.01 | 0.00 | 1.00 |      |      |      |      |      |      |             |      |      |      |      |      ||      |      |   vmovq %xmm4, %rsi
+ 211 |      | 1.000 |      |      |      |      |      |      |      |      |             |      |      |      |      |      ||  1.0 |      |   vinsertf128 $1, %xmm6, %ymm2, %ymm2
+ 212 |      | 1.000 |      |      |      |      |      |      |      |      |             |      |      |      |      |      ||      |      |   vpextrq $1, %xmm4, %rdi
+ 213 |      |       |      |      |      |      |      |      |      |      |             |      |      | 0.50 | 0.50 |      ||      |      |   vmovsd (%rsi), %xmm4           # xmm4 = mem[0],zero
+ 214 |      |       | 0.00 | 1.00 |      |      |      |      |      |      |             |      |      |      |      |      ||  3.0 |      |   vsubpd %ymm2, %ymm14, %ymm2
+ 215 |      | 0.000 | 1.00 |      |      |      |      |      |      |      |             |      |      | 0.50 | 0.50 |      ||      |      |   vmovhpd (%rdi), %xmm4, %xmm4    # xmm4 = xmm4[0],mem[0]
+ 216 |      |       |      |      |      |      |      |      |      |      |             |      |      | 0.50 | 0.50 |      ||      |      |   vmovsd (%rcx), %xmm6           # xmm6 = mem[0],zero
+ 217 |      | 1.000 |      |      |      |      |      |      |      |      |             |      |      |      |      |      ||      |      |   vinsertf128 $1, %xmm1, %ymm7, %ymm1
+ 218 |      | 0.000 | 1.00 |      |      |      |      |      |      |      |             |      |      | 0.50 | 0.50 |      ||      |      |   vmovhpd (%rax), %xmm6, %xmm6    # xmm6 = xmm6[0],mem[0]
+ 219 |      | 1.000 |      |      |      |      |      |      |      |      |             |      |      |      |      |      ||      |      |   vinsertf128 $1, %xmm4, %ymm6, %ymm4
+ 220 |      |       | 0.00 | 1.00 |      |      |      |      |      |      |             |      |      |      |      |      ||      |      |   vsubpd %ymm1, %ymm5, %ymm1
+ 221 |      |       | 0.00 | 1.00 |      |      |      |      |      |      |             |      |      |      |      |      ||      |      |   vsubpd %ymm4, %ymm10, %ymm4
+ 222 | 1.00 | 0.000 |      |      |      |      |      |      |      |      |             |      |      |      |      |      ||  3.0 |      |   vmulpd %ymm2, %ymm2, %ymm6
+ 223 | 1.00 | 0.000 |      |      |      |      |      |      |      |      |             |      |      |      |      |      ||  4.0 |      |   vfmadd231pd %ymm1, %ymm1, %ymm6 # ymm6 = (ymm1 * ymm1) + ymm6
+ 224 | 1.00 | 0.000 |      |      |      |      |      |      |      |      |             |      |      |      |      |      ||  4.0 |      |   vfmadd231pd %ymm4, %ymm4, %ymm6 # ymm6 = (ymm4 * ymm4) + ymm6
+ 225 | 1.00 |       |      |      |      |      |      |      |      |      |             |      |      | 0.50 | 0.50 |      ||      |      |   vbroadcastsd .LCPI0_3(%rip), %ymm7 # ymm7 = [1.0E+0,1.0E+0,1.0E+0,1.0E+0]
+ 226 |      |       |      |      | 4.50 | 4.50 |      |      |      |      |             |      |      |      |      |      || 13.0 |      |   vdivpd %ymm6, %ymm7, %ymm7
+ 227 | 1.00 | 0.000 |      |      |      |      |      |      |      |      |             |      |      |      |      |      ||  3.0 |      |   vmulpd %ymm7, %ymm7, %ymm11
+ 228 | 1.00 | 0.000 |      |      |      |      |      |      |      |      |             |      |      |      |      |      ||  3.0 |      |   vmulpd %ymm9, %ymm11, %ymm11
+ 229 | 1.00 |       |      |      |      |      |      |      |      |      |             |      |      | 0.50 | 0.50 |      ||      |      |   vbroadcastsd .LCPI0_4(%rip), %ymm12 # ymm12 = [-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1]
+ 230 | 1.00 | 0.000 |      |      |      |      |      |      |      |      |             |      |      |      |      |      ||  3.0 |      |   vmulpd %ymm7, %ymm11, %ymm11
+ 231 |      |       | 0.00 | 1.00 |      |      |      |      |      |      |             |      |      |      |      |      ||  3.0 |      |   vaddpd %ymm12, %ymm11, %ymm12
+ 232 | 1.00 | 0.000 |      |      |      |      |      |      |      |      |             |      |      | 0.50 | 0.50 |      ||      |      |   vmulpd 128(%rsp), %ymm7, %ymm7 # 32-byte Folded Reload
+ 233 | 1.00 | 0.000 |      |      |      |      |      |      |      |      |             |      |      |      |      |      ||      |      |   vmulpd %ymm7, %ymm11, %ymm7
+ 234 | 1.00 | 0.000 |      |      |      |      |      |      |      |      |             |      |      |      |      |      ||  3.0 |      |   vmulpd %ymm7, %ymm12, %ymm7
+ 235 |      |       | 0.12 | 0.88 |      |      |      |      |      |      |             |      |      |      |      |      ||      |      |   vcmpltpd %ymm8, %ymm6, %ymm6
+ 236 | 1.00 | 0.000 |      |      |      |      |      |      |      |      |             |      |      |      |      |      ||  4.0 |      |   vfmadd213pd %ymm0, %ymm7, %ymm2 # ymm2 = (ymm7 * ymm2) + ymm0
+ 237 | 1.00 | 0.000 |      |      |      |      |      |      |      |      |             |      |      |      |      |      ||  1.0 |      |   vblendvpd %ymm6, %ymm2, %ymm0, %ymm0
+ 238 | 1.00 | 0.000 |      |      |      |      |      |      |      |      |             |      |      |      |      |      ||      |      |   vfmadd213pd %ymm15, %ymm7, %ymm1 # ymm1 = (ymm7 * ymm1) + ymm15
+ 239 | 1.00 | 0.000 |      |      |      |      |      |      |      |      |             |      |      |      |      |      ||      |  4.0 |   vfmadd213pd %ymm13, %ymm7, %ymm4 # ymm4 = (ymm7 * ymm4) + ymm13
+ 240 | 0.62 | 0.380 |      |      |      |      |      |      |      |      |             |      |      |      |      |      ||      |      |   vblendvpd %ymm6, %ymm1, %ymm15, %ymm15
+ 241 | 0.50 | 0.500 |      |      |      |      |      |      |      |      |             |      |      |      |      |      ||      |  1.0 |   vblendvpd %ymm6, %ymm4, %ymm13, %ymm13
+ 242 |      |       |      |      |      |      |      |      | 0.25 | 0.25 | 0.25        | 0.25 |      |      |      |      ||      |      |   addq $4, %rbp
+ 243 |      |       |      |      |      |      |      |      | 0.25 | 0.25 | 0.25        | 0.25 |      |      |      |      ||      |      |   cmpq %rdx, %rbp
+ 244 |      |       |      |      |      |      |      |      | 0.00 |      |             |      | 1.00 |      |      |      ||      |      |   jb .LBB0_9
+
+       16.1   15.63   15.6   15.6   4.50   4.50                 0.50   0.50   0.50          0.50          9.00   9.00             72    5.0  
+
+
+
+
+Loop-Carried Dependencies Analysis Report
+-----------------------------------------
+ 239 |  5.0 | vfmadd213pd	%ymm13, %ymm7, %ymm4 # ymm4 = (ymm7 * ymm4) + ymm13| [239, 241]
+ 238 |  5.0 | vfmadd213pd	%ymm15, %ymm7, %ymm1 # ymm1 = (ymm7 * ymm1) + ymm15| [238, 240]
+ 236 |  5.0 | vfmadd213pd	%ymm0, %ymm7, %ymm2 # ymm2 = (ymm7 * ymm2) + ymm0| [236, 237]
+ 242 |  1.0 | addq	$4, %rbp                       | [242]
+ 241 |  1.0 | vblendvpd	%ymm6, %ymm4, %ymm13, %ymm13| [241]
+ 240 |  1.0 | vblendvpd	%ymm6, %ymm1, %ymm15, %ymm15| [240]
+ 237 |  1.0 | vblendvpd	%ymm6, %ymm2, %ymm0, %ymm0| [237]
+
