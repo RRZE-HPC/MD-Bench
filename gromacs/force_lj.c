@@ -423,8 +423,6 @@ double computeForceLJ_4xn_half(Parameter *param, Atom *atom, Neighbor *neighbor,
     MD_SIMD_FLOAT eps_vec = simd_broadcast(epsilon);
     MD_SIMD_FLOAT c48_vec = simd_broadcast(48.0);
     MD_SIMD_FLOAT c05_vec = simd_broadcast(0.5);
-    double S = getTimeStamp();
-    LIKWID_MARKER_START("force");
 
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
         int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
@@ -435,6 +433,9 @@ double computeForceLJ_4xn_half(Parameter *param, Atom *atom, Neighbor *neighbor,
             ci_f[CL_Z_OFFSET + cii] = 0.0;
         }
     }
+
+    double S = getTimeStamp();
+    LIKWID_MARKER_START("force");
 
     #pragma omp parallel for
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
@@ -607,8 +608,6 @@ double computeForceLJ_4xn_full(Parameter *param, Atom *atom, Neighbor *neighbor,
     MD_SIMD_FLOAT eps_vec = simd_broadcast(epsilon);
     MD_SIMD_FLOAT c48_vec = simd_broadcast(48.0);
     MD_SIMD_FLOAT c05_vec = simd_broadcast(0.5);
-    double S = getTimeStamp();
-    LIKWID_MARKER_START("force");
 
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
         int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
@@ -619,6 +618,9 @@ double computeForceLJ_4xn_full(Parameter *param, Atom *atom, Neighbor *neighbor,
             ci_f[CL_Z_OFFSET + cii] = 0.0;
         }
     }
+
+    double S = getTimeStamp();
+    LIKWID_MARKER_START("force");
 
     #pragma omp parallel for
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
