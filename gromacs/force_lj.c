@@ -746,7 +746,8 @@ double computeForceLJ_4xn_full(Parameter *param, Atom *atom, Neighbor *neighbor,
 
         addStat(stats->calculated_forces, 1);
         addStat(stats->num_neighs, numneighs);
-        addStat(stats->force_iters, (long long int)((double)numneighs * CLUSTER_M / CLUSTER_N));
+        addStat(stats->force_iters, (long long int)((double)numneighs));
+        //addStat(stats->force_iters, (long long int)((double)numneighs * CLUSTER_M / CLUSTER_N));
     }
 
     LIKWID_MARKER_STOP("force");
