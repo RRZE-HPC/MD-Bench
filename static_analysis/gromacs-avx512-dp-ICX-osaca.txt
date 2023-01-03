@@ -1,0 +1,159 @@
+Open Source Architecture Code Analyzer (OSACA) - 0.4.12
+Analyzed file:      gromacs-avx512-dp-ICX.s
+Architecture:       CSX
+Timestamp:          2023-01-03 00:07:20
+
+
+ P - Throughput of LOAD operation can be hidden behind a past or future STORE instruction
+ * - Instruction micro-ops not bound to a port
+ X - No throughput/latency information for this instruction in data file
+
+
+Combined Analysis Report
+------------------------
+                                      Port pressure in cycles                                       
+     |  0   - 0DV  |  1   |  2   -  2D  |  3   -  3D  |  4   |  5   |  6   |  7   ||  CP  | LCD  |
+--------------------------------------------------------------------------------------------------
+2287 |             |      |             |             |      |      |      |      ||      |      |   .LBB5_11:                               #
+2288 |             |      |             |             |      |      |      |      ||      |      |   #   Parent Loop BB5_6 Depth=1
+2289 |             |      |             |             |      |      |      |      ||      |      |   # =>  This Inner Loop Header: Depth=2
+2290 |             |      | 0.50   0.50 | 0.50   0.50 |      |      |      |      ||  4.0 |      |   movslq (%r12,%r14,4), %rbx
+2291 |             | 1.00 |             |             |      | 0.00 |      |      ||  1.0 |      |   leaq (%rbx,%rbx,2), %rcx
+2292 | 0.00        |      |             |             |      |      | 1.00 |      ||  1.0 |      |   shlq $6, %rcx
+2293 |             |      | 0.50   0.50 | 0.50   0.50 |      |      |      |      ||      |      |   vmovapd (%rsi,%rcx), %zmm29
+2294 |             |      | 0.50   0.50 | 0.50   0.50 |      |      |      |      ||      |      |   vmovapd 64(%rsi,%rcx), %zmm30
+2295 |             |      | 0.50   0.50 | 0.50   0.50 |      |      |      |      ||  0.0 |      |   vmovapd 128(%rsi,%rcx), %zmm31
+2296 |             |      | 0.50   0.50 | 0.50   0.50 |      |      |      |      ||      |      |   vmovupd 64(%rsp), %zmm3         # 64-byte Reload
+2297 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vsubpd %zmm29, %zmm3, %zmm4
+2298 |             |      | 0.50   0.50 | 0.50   0.50 |      |      |      |      ||      |      |   vmovupd 320(%rsp), %zmm3        # 64-byte Reload
+2299 | 0.75        |      |             |             |      | 0.25 |      |      ||      |      |   vsubpd %zmm30, %zmm3, %zmm3
+2300 |             | 1.00 |             |             |      | 0.00 |      |      ||      |      |   leal (%rbx,%rbx), %ecx
+2301 | 0.00        | 1.00 |             |             |      | 0.00 | 0.00 |      ||      |      |   cmpq %rcx, %rdi
+2302 | 0.00        |      |             |             |      |      | 1.00 |      ||      |      |   setne %dl
+2303 | 0.00        |      |             |             |      |      | 1.00 |      ||      |      |   sete %cl
+2304 |             | 1.00 |             |             |      |      |      |      ||      |      |   leal 1(%rbx,%rbx), %ebx
+2305 | 0.50        |      |             |             |      | 0.50 |      |      ||  4.0 |      |   vsubpd %zmm31, %zmm25, %zmm17
+2306 | 0.50        |      |             |             |      | 0.50 |      |      ||  4.0 |      |   vmulpd %zmm17, %zmm17, %zmm18
+2307 | 0.50        |      |             |             |      | 0.50 |      |      ||  4.0 |      |   vfmadd231pd %zmm3, %zmm3, %zmm18 # zmm18 = (zmm3 * zmm3) + zmm18
+2308 | 0.50        |      |             |             |      | 0.50 |      |      ||  4.0 |      |   vfmadd231pd %zmm4, %zmm4, %zmm18 # zmm18 = (zmm4 * zmm4) + zmm18
+2309 | 2.75        |      |             |             |      | 0.25 |      |      ||  8.0 |      |   vrcp14pd %zmm18, %zmm19
+2310 | 0.00        | 0.75 |             |             |      | 0.00 | 0.25 |      ||      |      |   cmpq %rbx, %rdi
+2311 | 0.00        |      |             |             |      |      | 1.00 |      ||      |      |   sete %bl
+2312 | 0.00        | 0.75 |             |             |      | 0.00 | 0.25 |      ||      |      |   movl %ebx, %ebp
+2313 | 0.50        |      |             |             |      | 0.50 |      |      ||  4.0 |      |   vmulpd %zmm22, %zmm19, %zmm20
+2314 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vmulpd %zmm19, %zmm19, %zmm21
+2315 | 0.50        |      |             |             |      | 0.50 |      |      ||  4.0 |      |   vmulpd %zmm20, %zmm21, %zmm20
+2316 |             |      | 0.50   0.50 | 0.50   0.50 |      |      |      |      ||      |      |   vmovupd 128(%rsp), %zmm21       # 64-byte Reload
+2317 | 0.75        |      |             |             |      | 0.25 |      |      ||      |      |   vsubpd %zmm29, %zmm21, %zmm21
+2318 | 0.00        |      |             |             |      |      | 1.00 |      ||      |      |   shlb $4, %bpl
+2319 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vmulpd %zmm19, %zmm1, %zmm19
+2320 | 0.50        |      |             |             |      | 0.50 |      |      ||  4.0 |      |   vmulpd %zmm20, %zmm19, %zmm19
+2321 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vaddpd %zmm2, %zmm20, %zmm20
+2322 | 0.50        |      |             |             |      | 0.50 |      |      ||  4.0 |      |   vmulpd %zmm20, %zmm19, %zmm19
+2323 |             |      | 0.50   0.50 | 0.50   0.50 |      |      |      |      ||      |      |   vmovupd 256(%rsp), %zmm20       # 64-byte Reload
+2324 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vsubpd %zmm30, %zmm20, %zmm20
+2325 | 0.00        | 0.50 |             |             |      | 0.00 | 0.50 |      ||      |      |   notb %bpl
+2326 | 0.00        | 0.25 |             |             |      | 0.00 | 0.75 |      ||      |      |   subb %cl, %bpl
+2327 | 1.00        |      |             |             |      |      |      |      ||      |      |   kmovd %ebp, %k1
+2328 |             |      |             |             |      |      |      |      ||      |      | X vcmpltpd %zmm0, %zmm18, %k1 {%k1}
+2329 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vsubpd %zmm31, %zmm26, %zmm18
+2330 | 0.50        |      |             |             |      | 0.50 |      |      ||  4.0 |      |   vfmadd231pd %zmm4, %zmm19, %zmm15 {%k1} # zmm15 = (zmm19 * zmm4) + zmm15
+2331 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vmulpd %zmm18, %zmm18, %zmm4
+2332 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vfmadd231pd %zmm20, %zmm20, %zmm4 # zmm4 = (zmm20 * zmm20) + zmm4
+2333 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vfmadd231pd %zmm21, %zmm21, %zmm4 # zmm4 = (zmm21 * zmm21) + zmm4
+2334 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vfmadd231pd %zmm3, %zmm19, %zmm12 {%k1} # zmm12 = (zmm19 * zmm3) + zmm12
+2335 | 2.25        |      |             |             |      | 0.75 |      |      ||      |      |   vrcp14pd %zmm4, %zmm3
+2336 |             | 1.00 |             |             |      | 0.00 |      |      ||      |      |   leal (%rdx,%rdx), %ecx
+2337 | 0.00        | 0.75 |             |             |      | 0.00 | 0.25 |      ||      |      |   movl %ebx, %eax
+2338 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vfmadd231pd %zmm17, %zmm19, %zmm8 {%k1} # zmm8 = (zmm19 * zmm17) + zmm8
+2339 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vmulpd %zmm22, %zmm3, %zmm17
+2340 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vmulpd %zmm3, %zmm3, %zmm19
+2341 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vmulpd %zmm17, %zmm19, %zmm17
+2342 |             |      | 0.50   0.50 | 0.50   0.50 |      |      |      |      ||      |      |   vmovupd 448(%rsp), %zmm19       # 64-byte Reload
+2343 | 0.75        |      |             |             |      | 0.25 |      |      ||      |      |   vsubpd %zmm29, %zmm19, %zmm19
+2344 | 0.00        |      |             |             |      |      | 1.00 |      ||      |      |   shlb $5, %al
+2345 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vmulpd %zmm3, %zmm1, %zmm3
+2346 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vmulpd %zmm17, %zmm3, %zmm3
+2347 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vaddpd %zmm2, %zmm17, %zmm17
+2348 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vmulpd %zmm17, %zmm3, %zmm3
+2349 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vsubpd %zmm30, %zmm23, %zmm17
+2350 | 0.00        | 0.50 |             |             |      | 0.00 | 0.50 |      ||      |      |   subb %al, %cl
+2351 | 0.00        | 0.25 |             |             |      | 0.00 | 0.75 |      ||      |      |   addb $-3, %cl
+2352 | 1.00        |      |             |             |      |      |      |      ||      |      |   kmovd %ecx, %k1
+2353 |             |      |             |             |      |      |      |      ||      |      | X vcmpltpd %zmm0, %zmm4, %k1 {%k1}
+2354 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vsubpd %zmm31, %zmm27, %zmm4
+2355 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vfmadd231pd %zmm21, %zmm3, %zmm14 {%k1} # zmm14 = (zmm3 * zmm21) + zmm14
+2356 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vmulpd %zmm4, %zmm4, %zmm21
+2357 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vfmadd231pd %zmm17, %zmm17, %zmm21 # zmm21 = (zmm17 * zmm17) + zmm21
+2358 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vfmadd231pd %zmm19, %zmm19, %zmm21 # zmm21 = (zmm19 * zmm19) + zmm21
+2359 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vfmadd231pd %zmm20, %zmm3, %zmm10 {%k1} # zmm10 = (zmm3 * zmm20) + zmm10
+2360 | 2.50        |      |             |             |      | 0.50 |      |      ||      |      |   vrcp14pd %zmm21, %zmm20
+2361 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vfmadd231pd %zmm18, %zmm3, %zmm6 {%k1} # zmm6 = (zmm3 * zmm18) + zmm6
+2362 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vmulpd %zmm22, %zmm20, %zmm3
+2363 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vmulpd %zmm20, %zmm20, %zmm18
+2364 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vmulpd %zmm3, %zmm18, %zmm3
+2365 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vmulpd %zmm20, %zmm1, %zmm18
+2366 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vmulpd %zmm3, %zmm18, %zmm18
+2367 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vaddpd %zmm2, %zmm3, %zmm3
+2368 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vmulpd %zmm3, %zmm18, %zmm3
+2369 |             | 1.00 |             |             |      | 0.00 |      |      ||      |      |   leal (,%rdx,4), %eax
+2370 | 0.00        | 0.75 |             |             |      | 0.00 | 0.25 |      ||      |      |   movl %ebx, %ecx
+2371 | 0.00        |      |             |             |      |      | 1.00 |      ||      |      |   shlb $6, %cl
+2372 | 0.00        | 0.50 |             |             |      | 0.00 | 0.50 |      ||      |      |   subb %cl, %al
+2373 | 0.00        | 1.00 |             |             |      | 0.00 | 0.00 |      ||      |      |   addb $-5, %al
+2374 | 1.00        |      |             |             |      |      |      |      ||      |      |   kmovd %eax, %k1
+2375 |             |      |             |             |      |      |      |      ||      |      | X vcmpltpd %zmm0, %zmm21, %k1 {%k1}
+2376 |             |      | 0.50   0.50 | 0.50   0.50 |      |      |      |      ||      |      |   vmovupd 384(%rsp), %zmm18       # 64-byte Reload
+2377 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vsubpd %zmm29, %zmm18, %zmm18
+2378 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vsubpd %zmm30, %zmm24, %zmm20
+2379 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vsubpd %zmm31, %zmm28, %zmm21
+2380 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vfmadd231pd %zmm19, %zmm3, %zmm16 {%k1} # zmm16 = (zmm3 * zmm19) + zmm16
+2381 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vmulpd %zmm21, %zmm21, %zmm19
+2382 | 0.50        |      |             |             |      | 0.50 |      |      ||      |      |   vfmadd231pd %zmm20, %zmm20, %zmm19 # zmm19 = (zmm20 * zmm20) + zmm19
+2383 | 0.25        |      |             |             |      | 0.75 |      |      ||      |      |   vfmadd231pd %zmm18, %zmm18, %zmm19 # zmm19 = (zmm18 * zmm18) + zmm19
+2384 | 0.00        |      |             |             |      | 1.00 |      |      ||      |      |   vfmadd231pd %zmm17, %zmm3, %zmm11 {%k1} # zmm11 = (zmm3 * zmm17) + zmm11
+2385 | 2.00        |      |             |             |      | 1.00 |      |      ||      |      |   vrcp14pd %zmm19, %zmm17
+2386 | 0.00        |      |             |             |      | 1.00 |      |      ||      |      |   vfmadd231pd %zmm4, %zmm3, %zmm7 {%k1} # zmm7 = (zmm3 * zmm4) + zmm7
+2387 | 0.00        |      |             |             |      | 1.00 |      |      ||      |      |   vmulpd %zmm22, %zmm17, %zmm3
+2388 | 0.00        |      |             |             |      | 1.00 |      |      ||      |      |   vmulpd %zmm17, %zmm17, %zmm4
+2389 | 0.00        |      |             |             |      | 1.00 |      |      ||      |      |   vmulpd %zmm3, %zmm4, %zmm3
+2390 | 0.00        |      |             |             |      | 1.00 |      |      ||      |      |   vmulpd %zmm17, %zmm1, %zmm4
+2391 | 0.00        |      |             |             |      | 1.00 |      |      ||      |      |   vmulpd %zmm3, %zmm4, %zmm4
+2392 | 0.00        |      |             |             |      | 1.00 |      |      ||      |      |   vaddpd %zmm2, %zmm3, %zmm3
+2393 | 0.00        |      |             |             |      | 1.00 |      |      ||      |      |   vmulpd %zmm3, %zmm4, %zmm3
+2394 | 0.00        |      |             |             |      |      | 1.00 |      ||      |      |   shlb $3, %dl
+2395 | 0.00        |      |             |             |      |      | 1.00 |      ||      |      |   shlb $7, %bl
+2396 | 0.00        | 0.50 |             |             |      | 0.00 | 0.50 |      ||      |      |   subb %bl, %dl
+2397 | 0.00        | 0.50 |             |             |      | 0.00 | 0.50 |      ||      |      |   addb $-9, %dl
+2398 | 1.00        |      |             |             |      |      |      |      ||      |      |   kmovd %edx, %k1
+2399 |             |      |             |             |      |      |      |      ||      |      | X vcmpltpd %zmm0, %zmm19, %k1 {%k1}
+2400 | 0.00        |      |             |             |      | 1.00 |      |      ||      |      |   vfmadd231pd %zmm18, %zmm3, %zmm13 {%k1} # zmm13 = (zmm3 * zmm18) + zmm13
+2401 | 0.00        |      |             |             |      | 1.00 |      |      ||      |      |   vfmadd231pd %zmm20, %zmm3, %zmm9 {%k1} # zmm9 = (zmm3 * zmm20) + zmm9
+2402 | 0.00        |      |             |             |      | 1.00 |      |      ||      |  4.0 |   vfmadd231pd %zmm21, %zmm3, %zmm5 {%k1} # zmm5 = (zmm3 * zmm21) + zmm5
+2403 | 0.00        | 0.50 |             |             |      | 0.00 | 0.50 |      ||      |      |   incq %r14
+2404 | 0.00        | 1.00 |             |             |      | 0.00 | 0.00 |      ||      |      |   cmpq %r14, %r11
+2405 |             |      |             |             |      |      |      |      ||      |      | * jne .LBB5_11
+
+       40.0          14.5   5.00   5.00   5.00   5.00          40.0   14.5           50.0    4.0  
+
+
+
+
+Loop-Carried Dependencies Analysis Report
+-----------------------------------------
+2402 |  4.0 | vfmadd231pd	%zmm21, %zmm3, %zmm5 {%k1} # zmm5 = (zmm3 * zmm21) + zmm5| [2402]
+2401 |  4.0 | vfmadd231pd	%zmm20, %zmm3, %zmm9 {%k1} # zmm9 = (zmm3 * zmm20) + zmm9| [2401]
+2400 |  4.0 | vfmadd231pd	%zmm18, %zmm3, %zmm13 {%k1} # zmm13 = (zmm3 * zmm18) + zmm13| [2400]
+2386 |  4.0 | vfmadd231pd	%zmm4, %zmm3, %zmm7 {%k1} # zmm7 = (zmm3 * zmm4) + zmm7| [2386]
+2384 |  4.0 | vfmadd231pd	%zmm17, %zmm3, %zmm11 {%k1} # zmm11 = (zmm3 * zmm17) + zmm11| [2384]
+2380 |  4.0 | vfmadd231pd	%zmm19, %zmm3, %zmm16 {%k1} # zmm16 = (zmm3 * zmm19) + zmm16| [2380]
+2361 |  4.0 | vfmadd231pd	%zmm18, %zmm3, %zmm6 {%k1} # zmm6 = (zmm3 * zmm18) + zmm6| [2361]
+2359 |  4.0 | vfmadd231pd	%zmm20, %zmm3, %zmm10 {%k1} # zmm10 = (zmm3 * zmm20) + zmm10| [2359]
+2355 |  4.0 | vfmadd231pd	%zmm21, %zmm3, %zmm14 {%k1} # zmm14 = (zmm3 * zmm21) + zmm14| [2355]
+2338 |  4.0 | vfmadd231pd	%zmm17, %zmm19, %zmm8 {%k1} # zmm8 = (zmm19 * zmm17) + zmm8| [2338]
+2334 |  4.0 | vfmadd231pd	%zmm3, %zmm19, %zmm12 {%k1} # zmm12 = (zmm19 * zmm3) + zmm12| [2334]
+2330 |  4.0 | vfmadd231pd	%zmm4, %zmm19, %zmm15 {%k1} # zmm15 = (zmm19 * zmm4) + zmm15| [2330]
+2394 |  3.0 | shlb	$3, %dl                        | [2394, 2396, 2397]
+2318 |  3.0 | shlb	$4, %bpl                       | [2318, 2325, 2326]
+2403 |  1.0 | incq	%r14                           | [2403]
+
