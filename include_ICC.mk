@@ -10,6 +10,7 @@ OPTS      = -Ofast -xCORE-AVX512 -qopt-zmm-usage=high $(PROFILE)
 #OPTS     = -Ofast -xSSE4.2 $(PROFILE)
 #OPTS     = -Ofast -no-vec $(PROFILE)
 #OPTS     = -Ofast -xHost $(PROFILE)
+#OPTS     = -Ofast -march=core-avx2 $(PROFILE)
 CFLAGS   = $(PROFILE) -restrict $(OPENMP) $(OPTS)
 ASFLAGS  = #-masm=intel
 LFLAGS   = $(PROFILE) $(OPTS) $(OPENMP)
