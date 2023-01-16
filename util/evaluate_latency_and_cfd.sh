@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Adjustable variables
-TAG="${TAG:-ICX}"
-OPT_SCHEME="${OPT_SCHEME:-gromacs}"
+TAG="${TAG:-ICC}"
+OPT_SCHEME="${OPT_SCHEME:-lammps}"
 CORE="${CORE:-0}"
 FREQ="${FREQ:-2.4}"
 NRUNS="${NRUNS:-3}"

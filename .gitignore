@@ -58,13 +58,10 @@ dkms.conf
 todo.txt
 
 # Build directories and executables
-GCC-*/
-ICC-*/
-ICX-*/
-CLANG-*/
-NVCC-*/
-MDBench-GCC*
-MDBench-ICC*
-MDBench-ICX*
-MDBench-CLANG*
-MDBench-NVCC*
+#GCC-*/
+#ICC-*/
+#ICX-*/
+#CLANG-*/
+#NVCC-*/
+build-*/
+MDBench-*
