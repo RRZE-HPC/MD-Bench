@@ -1,6 +1,7 @@
 #CONFIGURE BUILD SYSTEM
-TARGET	   = MDBench-$(TAG)-$(OPT_SCHEME)
-BUILD_DIR  = ./$(TAG)-$(OPT_SCHEME)
+IDENTIFIER = $(OPT_SCHEME)-$(TAG)-$(ISA)-$(DATA_TYPE)
+TARGET	   = MDBench-$(IDENTIFIER)
+BUILD_DIR  = ./build-$(IDENTIFIER)
 SRC_DIR    = ./$(OPT_SCHEME)
 ASM_DIR    = ./asm
 COMMON_DIR = ./common
@@ -155,9 +156,8 @@ clean:
 
 cleanall:
 	$(info ===>  CLEAN)
-	@rm -rf ICC-lammps ICX-lammps GCC-lammps CLANG-lammps NVCC-lammps
-	@rm -rf ICC-gromacs ICX-gromacs GCC-gromacs CLANG-gromacs NVCC-gromacs
-	@rm -rf MDBench-GCC* MDBench-ICC* MDBench-ICX* MDBench-CLANG* MDBench-NVCC*
+	@rm -rf build-*
+	@rm -rf MDBench-*
 	@rm -f tags
 
 distclean: clean
