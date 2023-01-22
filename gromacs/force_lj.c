@@ -35,9 +35,12 @@ double computeForceLJ_ref(Parameter *param, Atom *atom, Neighbor *neighbor, Stat
     }
 
     double S = getTimeStamp();
+
+    #pragma omp parallel
+    {
     LIKWID_MARKER_START("force");
 
-    #pragma omp parallel for
+    #pragma omp for
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
         int ci_cj0 = CJ0_FROM_CI(ci);
         int ci_cj1 = CJ1_FROM_CI(ci);
@@ -119,6 +122,8 @@ double computeForceLJ_ref(Parameter *param, Atom *atom, Neighbor *neighbor, Stat
     }
 
     LIKWID_MARKER_STOP("force");
+    }
+
     double E = getTimeStamp();
     DEBUG_MESSAGE("computeForceLJ end\n");
     return E-S;
@@ -149,9 +154,12 @@ double computeForceLJ_2xnn_half(Parameter *param, Atom *atom, Neighbor *neighbor
     }
 
     double S = getTimeStamp();
+
+    #pragma omp parallel
+    {
     LIKWID_MARKER_START("force");
 
-    #pragma omp parallel for
+    #pragma omp for
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
         int ci_cj0 = CJ0_FROM_CI(ci);
         #if CLUSTER_M > CLUSTER_N
@@ -266,6 +274,8 @@ double computeForceLJ_2xnn_half(Parameter *param, Atom *atom, Neighbor *neighbor
     }
 
     LIKWID_MARKER_STOP("force");
+    }
+
     double E = getTimeStamp();
     DEBUG_MESSAGE("computeForceLJ_2xnn end\n");
     return E-S;
@@ -296,9 +306,12 @@ double computeForceLJ_2xnn_full(Parameter *param, Atom *atom, Neighbor *neighbor
     }
 
     double S = getTimeStamp();
+
+    #pragma omp parallel
+    {
     LIKWID_MARKER_START("force");
 
-    #pragma omp parallel for
+    #pragma omp for
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
         int ci_cj0 = CJ0_FROM_CI(ci);
         #if CLUSTER_M > CLUSTER_N
@@ -398,6 +411,8 @@ double computeForceLJ_2xnn_full(Parameter *param, Atom *atom, Neighbor *neighbor
     }
 
     LIKWID_MARKER_STOP("force");
+    }
+
     double E = getTimeStamp();
     DEBUG_MESSAGE("computeForceLJ_2xnn end\n");
     return E-S;
@@ -435,9 +450,12 @@ double computeForceLJ_4xn_half(Parameter *param, Atom *atom, Neighbor *neighbor,
     }
 
     double S = getTimeStamp();
+
+    #pragma omp parallel
+    {
     LIKWID_MARKER_START("force");
 
-    #pragma omp parallel for
+    #pragma omp for
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
         int ci_cj0 = CJ0_FROM_CI(ci);
         #if CLUSTER_M > CLUSTER_N
@@ -591,6 +609,8 @@ double computeForceLJ_4xn_half(Parameter *param, Atom *atom, Neighbor *neighbor,
     }
 
     LIKWID_MARKER_STOP("force");
+    }
+
     double E = getTimeStamp();
     DEBUG_MESSAGE("computeForceLJ_4xn end\n");
     return E-S;
@@ -620,9 +640,12 @@ double computeForceLJ_4xn_full(Parameter *param, Atom *atom, Neighbor *neighbor,
     }
 
     double S = getTimeStamp();
+
+    #pragma omp parallel
+    {
     LIKWID_MARKER_START("force");
 
-    #pragma omp parallel for
+    #pragma omp for
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
         int ci_cj0 = CJ0_FROM_CI(ci);
         #if CLUSTER_M > CLUSTER_N
@@ -751,6 +774,8 @@ double computeForceLJ_4xn_full(Parameter *param, Atom *atom, Neighbor *neighbor,
     }
 
     LIKWID_MARKER_STOP("force");
+    }
+
     double E = getTimeStamp();
     DEBUG_MESSAGE("computeForceLJ_4xn end\n");
     return E-S;
