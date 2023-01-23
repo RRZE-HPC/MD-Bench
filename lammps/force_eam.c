@@ -31,8 +31,12 @@ double computeForceEam(Eam* eam, Parameter* param, Atom *atom, Neighbor *neighbo
     int nrho = eam->nrho; int nrho_tot = eam->nrho_tot;
     double S = getTimeStamp();
 
+
+    #pragma omp parallel
+    {
     LIKWID_MARKER_START("force_eam_fp");
-    #pragma omp parallel for
+
+    #pragma omp for
     for(int i = 0; i < Nlocal; i++) {
         neighs = &neighbor->neighbors[i * neighbor->maxneighs];
         int numneighs = neighbor->numneigh[i];
@@ -95,13 +99,19 @@ double computeForceEam(Eam* eam, Parameter* param, Atom *atom, Neighbor *neighbo
     }
 
     LIKWID_MARKER_STOP("force_eam_fp");
+    }
 
     // We still need to update fp for PBC atoms
     for(int i = 0; i < atom->Nghost; i++) {
         fp[Nlocal + i] = fp[atom->border_map[i]];
     }
 
+
+    #pragma omp parallel
+    {
     LIKWID_MARKER_START("force_eam");
+
+    #pragma omp for
     for(int i = 0; i < Nlocal; i++) {
         neighs = &neighbor->neighbors[i * neighbor->maxneighs];
         int numneighs = neighbor->numneigh[i];
@@ -192,6 +202,8 @@ double computeForceEam(Eam* eam, Parameter* param, Atom *atom, Neighbor *neighbo
     }
 
     LIKWID_MARKER_STOP("force_eam");
+    }
+
     double E = getTimeStamp();
     return E-S;
 }
