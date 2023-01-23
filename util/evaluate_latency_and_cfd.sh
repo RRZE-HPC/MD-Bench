@@ -18,8 +18,8 @@ NRUNS="${NRUNS:-3}"
 LOG="${LOG:-latencies_and_cfds.log}"
 STUB_ONLY="${STUB_ONLY:-false}"
 
-while getopts c:f:n:l:s flag
-do
+OPTIND=2
+while getopts "c:f:n:l:s" flag; do
     case "${flag}" in
         c) CORE=${OPTARG};;
         f) FREQ=${OPTARG};;
