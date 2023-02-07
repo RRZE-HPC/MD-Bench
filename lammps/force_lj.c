@@ -257,10 +257,10 @@ double computeForceLJFullNeigh_simd(Parameter *param, Atom *atom, Neighbor *neig
         atom_fy(i) += simd_h_reduce_sum(fiy);
         atom_fz(i) += simd_h_reduce_sum(fiz);
     }
-    #endif
 
     LIKWID_MARKER_STOP("force");
     }
+    #endif
 
     double E = getTimeStamp();
     return E-S;
