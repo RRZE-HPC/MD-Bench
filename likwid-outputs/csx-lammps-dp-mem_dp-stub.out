@@ -1,0 +1,88 @@
+--------------------------------------------------------------------------------
+CPU name:	Intel(R) Xeon(R) Gold 6248 CPU @ 2.50GHz
+CPU type:	Intel Cascadelake SP processor
+CPU clock:	2.49 GHz
+--------------------------------------------------------------------------------
+Initializing parameters...
+Initializing atoms...
+Creating atoms...
+Pattern: seq
+Number of timesteps: 200
+Number of atoms: 256
+Number of neighbors per atom: 1024
+Number of times to replicate neighbor lists: 1
+Estimated total data volume (kB): 1062.9120
+Estimated atom data volume (kB): 6.1440
+Estimated neighborlist data volume (kB): 1050.6240
+Initializing neighbor lists...
+Creating neighbor lists...
+Computing forces...
+Total time: 0.2735, Mega atom updates/s: 0.1872
+Cycles per atom: 10682.8568, Cycles per neighbor: 10.4325
+Statistics:
+	Vector width: 8, Processor frequency: 2.0000 GHz
+	Average neighbors per atom: 1018.9055
+	Average SIMD iterations per atom: 127.3632
+	Total number of computed pair interactions: 52428800
+	Total number of SIMD iterations: 6553600
+	Useful read data volume for force computation: 1.47GB
+	Cycles/SIMD iteration: 83.4598
+--------------------------------------------------------------------------------
+Region force, Group 1: MEM_DP
++-------------------+------------+
+|    Region Info    | HWThread 0 |
++-------------------+------------+
+| RDTSC Runtime [s] |   0.110776 |
+|     call count    |        200 |
++-------------------+------------+
+
++------------------------------------------+---------+------------+
+|                   Event                  | Counter | HWThread 0 |
++------------------------------------------+---------+------------+
+|             INSTR_RETIRED_ANY            |  FIXC0  |  267036300 |
+|           CPU_CLK_UNHALTED_CORE          |  FIXC1  |  219034500 |
+|           CPU_CLK_UNHALTED_REF           |  FIXC2  |  273793400 |
+|              PWR_PKG_ENERGY              |   PWR0  |    10.9296 |
+|              PWR_DRAM_ENERGY             |   PWR3  |          0 |
+| FP_ARITH_INST_RETIRED_128B_PACKED_DOUBLE |   PMC0  |          0 |
+|    FP_ARITH_INST_RETIRED_SCALAR_DOUBLE   |   PMC1  |     159400 |
+| FP_ARITH_INST_RETIRED_256B_PACKED_DOUBLE |   PMC2  |          0 |
+| FP_ARITH_INST_RETIRED_512B_PACKED_DOUBLE |   PMC3  |  197068800 |
+|               CAS_COUNT_RD               | MBOX0C0 |       8643 |
+|               CAS_COUNT_WR               | MBOX0C1 |       1367 |
+|               CAS_COUNT_RD               | MBOX1C0 |       9124 |
+|               CAS_COUNT_WR               | MBOX1C1 |       1354 |
+|               CAS_COUNT_RD               | MBOX2C0 |       9138 |
+|               CAS_COUNT_WR               | MBOX2C1 |       1356 |
+|               CAS_COUNT_RD               | MBOX3C0 |       5586 |
+|               CAS_COUNT_WR               | MBOX3C1 |       1297 |
+|               CAS_COUNT_RD               | MBOX4C0 |       5328 |
+|               CAS_COUNT_WR               | MBOX4C1 |       1269 |
+|               CAS_COUNT_RD               | MBOX5C0 |       5280 |
+|               CAS_COUNT_WR               | MBOX5C1 |       1295 |
++------------------------------------------+---------+------------+
+
++-----------------------------------+------------+
+|               Metric              | HWThread 0 |
++-----------------------------------+------------+
+|        Runtime (RDTSC) [s]        |     0.1108 |
+|        Runtime unhalted [s]       |     0.0878 |
+|            Clock [MHz]            |  1995.2564 |
+|                CPI                |     0.8202 |
+|             Energy [J]            |    10.9296 |
+|             Power [W]             |    98.6643 |
+|          Energy DRAM [J]          |          0 |
+|           Power DRAM [W]          |          0 |
+|            DP [MFLOP/s]           | 14233.3287 |
+|          AVX DP [MFLOP/s]         | 14231.8898 |
+|          Packed [MUOPS/s]         |  1778.9862 |
+|          Scalar [MUOPS/s]         |     1.4389 |
+|  Memory read bandwidth [MBytes/s] |    24.9001 |
+|  Memory read data volume [GBytes] |     0.0028 |
+| Memory write bandwidth [MBytes/s] |     4.5861 |
+| Memory write data volume [GBytes] |     0.0005 |
+|    Memory bandwidth [MBytes/s]    |    29.4863 |
+|    Memory data volume [GBytes]    |     0.0033 |
+|       Operational intensity       |   482.7104 |
++-----------------------------------+------------+
+
