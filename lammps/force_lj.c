@@ -36,9 +36,12 @@ double computeForceLJFullNeigh_plain_c(Parameter *param, Atom *atom, Neighbor *n
         atom_fz(i) = 0.0;
     }
     double S = getTimeStamp();
+
+    #pragma omp parallel
+    {
     LIKWID_MARKER_START("force");
 
-    #pragma omp parallel for
+    #pragma omp for
     for(int i = 0; i < Nlocal; i++) {
         neighs = &neighbor->neighbors[i * neighbor->maxneighs];
         int numneighs = neighbor->numneigh[i];
@@ -92,6 +95,8 @@ double computeForceLJFullNeigh_plain_c(Parameter *param, Atom *atom, Neighbor *n
     }
 
     LIKWID_MARKER_STOP("force");
+    }
+
     double E = getTimeStamp();
     return E-S;
 }
@@ -112,8 +117,12 @@ double computeForceLJHalfNeigh(Parameter *param, Atom *atom, Neighbor *neighbor,
     }
 
     double S = getTimeStamp();
+
+    #pragma omp parallel
+    {
     LIKWID_MARKER_START("forceLJ-halfneigh");
 
+    #pragma omp for
     for(int i = 0; i < Nlocal; i++) {
         neighs = &neighbor->neighbors[i * neighbor->maxneighs];
         int numneighs = neighbor->numneigh[i];
@@ -173,6 +182,8 @@ double computeForceLJHalfNeigh(Parameter *param, Atom *atom, Neighbor *neighbor,
     }
 
     LIKWID_MARKER_STOP("forceLJ-halfneigh");
+    }
+
     double E = getTimeStamp();
     return E-S;
 }
@@ -191,7 +202,6 @@ double computeForceLJFullNeigh_simd(Parameter *param, Atom *atom, Neighbor *neig
     }
 
     double S = getTimeStamp();
-    LIKWID_MARKER_START("force");
 
     #ifndef __SIMD_KERNEL__
     fprintf(stderr, "Error: SIMD kernel not implemented for specified instruction set!");
@@ -203,7 +213,12 @@ double computeForceLJFullNeigh_simd(Parameter *param, Atom *atom, Neighbor *neig
     MD_SIMD_FLOAT c48_vec = simd_broadcast(48.0);
     MD_SIMD_FLOAT c05_vec = simd_broadcast(0.5);
 
-    #pragma omp parallel for
+
+    #pragma omp parallel
+    {
+    LIKWID_MARKER_START("force");
+
+    #pragma omp for
     for(int i = 0; i < Nlocal; i++) {
         neighs = &neighbor->neighbors[i * neighbor->maxneighs];
         int numneighs = neighbor->numneigh[i];
@@ -244,9 +259,11 @@ double computeForceLJFullNeigh_simd(Parameter *param, Atom *atom, Neighbor *neig
         atom_fy(i) += simd_h_reduce_sum(fiy);
         atom_fz(i) += simd_h_reduce_sum(fiz);
     }
-    #endif
 
     LIKWID_MARKER_STOP("force");
+    }
+    #endif
+
     double E = getTimeStamp();
     return E-S;
 }
