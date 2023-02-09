@@ -1,16 +1,36 @@
 #!/bin/bash
 
-# Adjustable variables
-TAG="${TAG:-ICC}"
-OPT_SCHEME="${OPT_SCHEME:-lammps}"
+[[ -z "$1" ]] && echo "Use: $0 <binary> [-c <core>] [-f <freq>] [-n <nruns>] [-l <log>] [-s]" && exit
+[[ ! -f "$1" ]] && echo "Binary file not found, make sure to use 'make'" && exit
+[[ ! -f "$1-stub" ]] && echo "Binary file for stubbed case not found, make sure to use 'make VARIANT=stub'" && exit
+
+MDBENCH_BIN=$1
+BIN_INFO="${MDBENCH_BIN#*-}" # $OPT_SCHEME-$TAG-$ISA-$PREC
+OPT_SCHEME="${BIN_INFO%%-*}"
+PREC="${BIN_INFO##*-}"
+BIN_INFO="${BIN_INFO#*-}" # $TAG-$ISA-$PREC
+BIN_INFO="${BIN_INFO%-*}" # $TAG-$ISA
+TAG="${BIN_INFO%%-*}"
+ISA="${BIN_INFO##*-}"
 CORE="${CORE:-0}"
 FREQ="${FREQ:-2.4}"
 NRUNS="${NRUNS:-3}"
 LOG="${LOG:-latencies_and_cfds.log}"
 STUB_ONLY="${STUB_ONLY:-false}"
 
+OPTIND=2
+while getopts "c:f:n:l:s" flag; do
+    case "${flag}" in
+        c) CORE=${OPTARG};;
+        f) FREQ=${OPTARG};;
+        n) NRUNS=${OPTARG};;
+        l) LOG=${OPTARG};;
+        s) STUB_ONLY=true;;
+    esac
+done
+
 # Other useful variables
-MDBENCH_BIN=./MDBench-$TAG-$OPT_SCHEME
+MDBENCH_BIN=./MDBench-$OPT_SCHEME-$TAG-$ISA-$PREC
 FIXED_PARAMS="--freq $FREQ"
 CPU_VENDOR=$(lscpu | grep "Vendor ID" | tr -s ' ' | cut -d ' ' -f3)
 
@@ -46,6 +66,8 @@ function run_benchmark() {
 
 echo "Tag: $TAG" | tee -a $LOG
 echo "Optimization scheme: $OPT_SCHEME" | tee -a $LOG
+echo "Instruction set: $ISA" | tee -a $LOG
+echo "Precision: $PREC" | tee -a $LOG
 echo "Binary: $MDBENCH_BIN(-stub)" | tee -a $LOG
 echo "Frequency: $FREQ" | tee -a $LOG
 echo "Number of runs: $NRUNS" | tee -a $LOG

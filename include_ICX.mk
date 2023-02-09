@@ -11,7 +11,7 @@ endif
 
 ifeq ($(ISA),AVX2)
 OPTS     = -Ofast -xCORE-AVX2  $(PROFILE)
-#OPTS     = -Ofast -xAVX2  $(PROFILE)
+#OPTS     = -Ofast -xHost  $(PROFILE)
 #OPTS     = -Ofast -march=core-avx2 $(PROFILE)
 endif
 
