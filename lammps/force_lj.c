@@ -26,13 +26,15 @@ double computeForceLJFullNeigh_plain_c(Parameter *param, Atom *atom, Neighbor *n
     MD_FLOAT sigma6 = param->sigma6;
     MD_FLOAT epsilon = param->epsilon;
     #endif
+    const MD_FLOAT num1 = 1.0;
+    const MD_FLOAT num48 = 48.0;
+    const MD_FLOAT num05 = 0.5;
 
     for(int i = 0; i < Nlocal; i++) {
         atom_fx(i) = 0.0;
         atom_fy(i) = 0.0;
         atom_fz(i) = 0.0;
     }
-
     double S = getTimeStamp();
     LIKWID_MARKER_START("force");
 
@@ -67,9 +69,9 @@ double computeForceLJFullNeigh_plain_c(Parameter *param, Atom *atom, Neighbor *n
             #endif
 
             if(rsq < cutforcesq) {
-                MD_FLOAT sr2 = 1.0 / rsq;
+                MD_FLOAT sr2 = num1 / rsq;
                 MD_FLOAT sr6 = sr2 * sr2 * sr2 * sigma6;
-                MD_FLOAT force = 48.0 * sr6 * (sr6 - 0.5) * sr2 * epsilon;
+                MD_FLOAT force = num48 * sr6 * (sr6 - num05) * sr2 * epsilon;
                 fix += delx * force;
                 fiy += dely * force;
                 fiz += delz * force;
