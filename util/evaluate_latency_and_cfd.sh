@@ -17,6 +17,7 @@ FREQ="${FREQ:-2.4}"
 NRUNS="${NRUNS:-3}"
 LOG="${LOG:-latencies_and_cfds.log}"
 STUB_ONLY="${STUB_ONLY:-false}"
+SKIP_SET_FREQ="${SKIP_SET_FREQ:-false}"
 
 OPTIND=2
 while getopts "c:f:n:l:s" flag; do
@@ -73,8 +74,10 @@ echo "Frequency: $FREQ" | tee -a $LOG
 echo "Number of runs: $NRUNS" | tee -a $LOG
 echo "Run only stubbed cases: $STUB_ONLY" | tee -a $LOG
 
-echo "Fixing frequencies..."
-likwid-setFrequencies -f $FREQ -t 0
+if [ "$SKIP_SET_FREQ" == "false" ]; then
+    echo "Fixing frequencies..."
+    likwid-setFrequencies -f $FREQ -t 0
+fi
 
 for p in $PREFETCHERS; do
     if [ "$p" != "IGNORE" ]; then
