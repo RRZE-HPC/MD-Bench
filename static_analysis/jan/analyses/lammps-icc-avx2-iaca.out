@@ -1,0 +1,88 @@
+Intel(R) Architecture Code Analyzer Version -  v3.0-28-g1ba2cbb build date: 2017-10-23;16:42:45
+Analyzed File -  lammps-icc-avx2.o
+Binary Format - 64Bit
+Architecture  -  SKX
+Analysis Type - Throughput
+
+Throughput Analysis Report
+--------------------------
+Block Throughput: 25.58 Cycles       Throughput Bottleneck: Backend
+Loop Count:  22
+Port Binding In Cycles Per Iteration:
+--------------------------------------------------------------------------------------------------
+|  Port  |   0   -  DV   |   1   |   2   -  D    |   3   -  D    |   4   |   5   |   6   |   7   |
+--------------------------------------------------------------------------------------------------
+| Cycles | 13.7     8.0  | 13.6  |  5.5     5.5  |  5.5     5.5  |  0.0  | 13.7  |  7.0  |  0.0  |
+--------------------------------------------------------------------------------------------------
+
+DV - Divider pipe (on port 0)
+D - Data fetch pipe (on ports 2 and 3)
+F - Macro Fusion with the previous instruction occurred
+* - instruction micro-ops not bound to a port
+^ - Micro Fusion occurred
+# - ESP Tracking sync uop was issued
+@ - SSE instruction followed an AVX256/AVX512 instruction, dozens of cycles penalty is expected
+X - instruction not supported, was not accounted in Analysis
+
+| Num Of   |                    Ports pressure in cycles                         |      |
+|  Uops    |  0  - DV    |  1   |  2  -  D    |  3  -  D    |  4   |  5   |  6   |  7   |
+-----------------------------------------------------------------------------------------
+|   1      |             |      | 0.5     0.5 | 0.5     0.5 |      |      |      |      | vmovdqu xmm0, xmmword ptr [rbx+rdx*4]
+|   1      | 1.0         |      |             |             |      |      |      |      | vmovq rcx, xmm0
+|   1      |             |      |             |             |      | 1.0  |      |      | vpunpckhqdq xmm2, xmm0, xmm0
+|   1      | 1.0         |      |             |             |      |      |      |      | vmovq r15, xmm2
+|   1*     |             |      |             |             |      |      |      |      | mov r8d, ecx
+|   1      |             |      |             |             |      |      | 1.0  |      | shr rcx, 0x20
+|   1      |             |      |             |             |      | 1.0  |      |      | lea r14d, ptr [rcx+rcx*2]
+|   1      |             |      |             |             |      | 1.0  |      |      | lea r8d, ptr [r8+r8*2]
+|   1      |             |      |             |             |      |      | 1.0  |      | movsxd rcx, r8d
+|   1      |             |      |             |             |      |      | 1.0  |      | movsxd r8, r14d
+|   1*     |             |      |             |             |      |      |      |      | mov r14d, r15d
+|   1      |             |      |             |             |      |      | 1.0  |      | shr r15, 0x20
+|   1      |             |      | 0.5     0.5 | 0.5     0.5 |      |      |      |      | vmovups xmm7, xmmword ptr [r11+rcx*8]
+|   1      |             |      | 0.5     0.5 | 0.5     0.5 |      |      |      |      | vmovups xmm6, xmmword ptr [r11+r8*8]
+|   1      |             |      | 0.5     0.5 | 0.5     0.5 |      |      |      |      | vmovq xmm14, qword ptr [r11+rcx*8+0x10]
+|   1      |             | 0.3  |             |             |      | 0.7  |      |      | lea r14d, ptr [r14+r14*2]
+|   1      |             |      |             |             |      |      | 1.0  |      | movsxd r14, r14d
+|   1      |             | 0.7  |             |             |      | 0.3  |      |      | lea r15d, ptr [r15+r15*2]
+|   1      |             |      |             |             |      |      | 1.0  |      | movsxd r15, r15d
+|   2      |             |      | 0.5     0.5 | 0.5     0.5 |      | 1.0  |      |      | vmovhpd xmm15, xmm14, qword ptr [r11+r8*8+0x10]
+|   2      |             | 1.0  | 0.5     0.5 | 0.5     0.5 |      |      |      |      | vinsertf128 ymm1, ymm7, xmmword ptr [r11+r14*8], 0x1
+|   1      |             |      | 0.5     0.5 | 0.5     0.5 |      |      |      |      | vmovq xmm0, qword ptr [r11+r14*8+0x10]
+|   2      |             | 0.3  | 0.5     0.5 | 0.5     0.5 |      | 0.7  |      |      | vinsertf128 ymm6, ymm6, xmmword ptr [r11+r15*8], 0x1
+|   2      |             |      | 0.5     0.5 | 0.5     0.5 |      | 1.0  |      |      | vmovhpd xmm2, xmm0, qword ptr [r11+r15*8+0x10]
+|   1      |             |      |             |             |      | 1.0  |      |      | vunpcklpd ymm14, ymm1, ymm6
+|   1      |             |      |             |             |      | 1.0  |      |      | vunpckhpd ymm1, ymm1, ymm6
+|   1      | 0.7         | 0.3  |             |             |      |      |      |      | vsubpd ymm6, ymm10, ymm14
+|   1      |             |      |             |             |      | 1.0  |      |      | vinsertf128 ymm7, ymm15, xmm2, 0x1
+|   1      | 0.3         | 0.7  |             |             |      |      |      |      | vsubpd ymm2, ymm9, ymm1
+|   1      | 0.7         | 0.3  |             |             |      |      |      |      | vsubpd ymm0, ymm8, ymm7
+|   1      | 0.3         | 0.7  |             |             |      |      |      |      | vmulpd ymm14, ymm2, ymm2
+|   1      | 0.7         | 0.3  |             |             |      |      |      |      | vfmadd231pd ymm14, ymm6, ymm6
+|   1      | 0.3         | 0.7  |             |             |      |      |      |      | vfmadd231pd ymm14, ymm0, ymm0
+|   1      | 0.7         | 0.3  |             |             |      |      |      |      | vcmppd ymm1, ymm14, ymm5, 0x1
+|   1      | 0.3         | 0.7  |             |             |      |      |      |      | vpcmpeqd ymm7, ymm7, ymm7
+|   2      | 1.0         |      |             |             |      | 1.0  |      |      | vptest ymm1, ymm7
+|   1      | 1.0     8.0 |      |             |             |      |      |      |      | vdivpd ymm7, ymm4, ymm14
+|   2^     |             | 1.0  | 0.5     0.5 | 0.5     0.5 |      |      |      |      | vmulpd ymm14, ymm7, ymmword ptr [rsp+0x60]
+|   1      |             | 1.0  |             |             |      |      |      |      | vmulpd ymm14, ymm7, ymm14
+|   1      | 0.7         | 0.3  |             |             |      |      |      |      | vmulpd ymm15, ymm7, ymm14
+|   1      | 0.3         | 0.7  |             |             |      |      |      |      | vfmsub213pd ymm14, ymm7, ymm3
+|   2^     | 0.7         | 0.3  | 0.5     0.5 | 0.5     0.5 |      |      |      |      | vmulpd ymm7, ymm7, ymmword ptr [rsp+0x40]
+|   1      | 0.3         | 0.7  |             |             |      |      |      |      | vmulpd ymm15, ymm15, ymm7
+|   1      | 0.7         | 0.3  |             |             |      |      |      |      | vmulpd ymm7, ymm15, ymm14
+|   1      | 0.3         | 0.7  |             |             |      |      |      |      | vmulpd ymm6, ymm6, ymm7
+|   1      | 0.7         | 0.3  |             |             |      |      |      |      | vmulpd ymm2, ymm2, ymm7
+|   1      |             |      |             |             |      | 1.0  |      |      | vandpd ymm6, ymm1, ymm6
+|   1      | 0.3         | 0.7  |             |             |      |      |      |      | vaddpd ymm13, ymm13, ymm6
+|   1      | 0.7         | 0.3  |             |             |      |      |      |      | vmulpd ymm6, ymm0, ymm7
+|   1      |             |      |             |             |      | 1.0  |      |      | vandpd ymm0, ymm1, ymm2
+|   1      |             |      |             |             |      | 1.0  |      |      | vandpd ymm1, ymm1, ymm6
+|   1      | 0.3         | 0.7  |             |             |      |      |      |      | vaddpd ymm12, ymm12, ymm0
+|   1      | 0.7         | 0.3  |             |             |      |      |      |      | vaddpd ymm11, ymm11, ymm1
+|   1      |             |      |             |             |      |      | 1.0  |      | add rdx, 0x4
+|   1*     |             |      |             |             |      |      |      |      | cmp rdx, rsi
+|   0*F    |             |      |             |             |      |      |      |      | jb 0xffffffffffffff02
+Total Num Of Uops: 62
+Analysis Notes:
+Backend allocation was stalled due to unavailable allocation resources.
