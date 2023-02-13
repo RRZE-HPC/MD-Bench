@@ -2238,8 +2238,8 @@ movl      $111, %ebx # OSACA START MARKER
 .byte     100        # OSACA START MARKER
 .byte     103        # OSACA START MARKER
 .byte     144        # OSACA START MARKER
+# pointer_increment=64 da67166e5736661e6b03ea29ee7bfd67
 # LLVM-MCA-BEGIN
-# pointer_increment=256 da67166e5736661e6b03ea29ee7bfd67
 .LBB5_12:                               #   Parent Loop BB5_7 Depth=1
                                         # =>  This Inner Loop Header: Depth=2
 	movslq	(%r10,%rbx,4), %rcx

@@ -172,8 +172,8 @@ movl      $111, %ebx # OSACA START MARKER
 .byte     100        # OSACA START MARKER
 .byte     103        # OSACA START MARKER
 .byte     144        # OSACA START MARKER
-# LLVM-MCA-BEGIN
 # pointer_increment=16 e95035fc9e97f63299dd5188a0872bfc
+# LLVM-MCA-BEGIN
 .LBB0_9:                                # 
                                         #   Parent Loop BB0_6 Depth=1
                                         # =>  This Inner Loop Header: Depth=2
@@ -386,8 +386,6 @@ movl      $222, %ebx # OSACA END MARKER
 	.quad	4607182418800017408     #  1
 .LCPI1_2:
 	.quad	-4620693217682128896    #  -0.5
-.LCPI1_3:
-	.quad	4741671816366391296     #  1.0E+9
 	.text
 	.globl	computeForceLJHalfNeigh
 	.p2align	4, 0x90
@@ -408,128 +406,125 @@ computeForceLJHalfNeigh:                #
 	.cfi_def_cfa_offset 48
 	pushq	%rbx
 	.cfi_def_cfa_offset 56
-	subq	$56, %rsp
-	.cfi_def_cfa_offset 112
+	subq	$40, %rsp
+	.cfi_def_cfa_offset 96
 	.cfi_offset %rbx, -56
 	.cfi_offset %r12, -48
 	.cfi_offset %r13, -40
 	.cfi_offset %r14, -32
 	.cfi_offset %r15, -24
 	.cfi_offset %rbp, -16
-	movq	%rcx, 24(%rsp)          # 8-byte Spill
-	movq	%rdx, %r12
-	movq	%rsi, %r13
-	movl	4(%rsi), %r15d
+	movq	%rcx, 16(%rsp)          # 8-byte Spill
+	movq	%rdx, %r15
+	movq	%rsi, %r12
+	movl	4(%rsi), %r13d
 	vmovsd	144(%rdi), %xmm0        # xmm0 = mem[0],zero
-	vmovsd	%xmm0, (%rsp)           # 8-byte Spill
-	vmovsd	40(%rdi), %xmm0         # xmm0 = mem[0],zero
 	vmovsd	%xmm0, 8(%rsp)          # 8-byte Spill
-	movq	%rdi, 40(%rsp)          # 8-byte Spill
+	vmovsd	40(%rdi), %xmm0         # xmm0 = mem[0],zero
+	vmovsd	%xmm0, (%rsp)           # 8-byte Spill
 	vmovsd	56(%rdi), %xmm0         # xmm0 = mem[0],zero
-	vmovsd	%xmm0, 16(%rsp)         # 8-byte Spill
-	testl	%r15d, %r15d
+	vmovsd	%xmm0, 32(%rsp)         # 8-byte Spill
+	testl	%r13d, %r13d
 	jle	.LBB1_2
 # %bb.1:                                # 
-	movq	64(%r13), %rdi
-	leaq	(,%r15,8), %rax
+	movq	64(%r12), %rdi
+	leaq	(,%r13,8), %rax
 	leaq	(%rax,%rax,2), %rdx
 	xorl	%esi, %esi
 	callq	_intel_fast_memset
 .LBB1_2:                                # 
-	xorl	%r14d, %r14d
 	xorl	%eax, %eax
 	callq	getTimeStamp
-	vmovsd	%xmm0, 32(%rsp)         # 8-byte Spill
+	vmovsd	%xmm0, 24(%rsp)         # 8-byte Spill
 	movl	$.L.str.1, %edi
 	callq	likwid_markerStartRegion
-	testl	%r15d, %r15d
+	testl	%r13d, %r13d
 	jle	.LBB1_8
 # %bb.3:                                # 
-	vmovsd	(%rsp), %xmm0           # 8-byte Reload
-                                        # xmm0 = mem[0],zero
-	vmulsd	%xmm0, %xmm0, %xmm12
-	movq	16(%r12), %rax
-	movq	24(%r12), %rcx
-	movq	%rcx, (%rsp)            # 8-byte Spill
-	movslq	8(%r12), %rdx
-	movq	16(%r13), %rsi
-	movq	64(%r13), %rdi
 	vmovsd	8(%rsp), %xmm0          # 8-byte Reload
                                         # xmm0 = mem[0],zero
+	vmulsd	%xmm0, %xmm0, %xmm12
+	movq	16(%r15), %rax
+	movq	24(%r15), %rcx
+	movq	%rcx, 8(%rsp)           # 8-byte Spill
+	movslq	8(%r15), %rdx
+	movq	16(%r12), %rsi
+	movq	64(%r12), %rdi
+	vmovsd	(%rsp), %xmm0           # 8-byte Reload
+                                        # xmm0 = mem[0],zero
 	vmulsd	.LCPI1_0(%rip), %xmm0, %xmm11
-	movq	24(%rsp), %rcx          # 8-byte Reload
+	movq	16(%rsp), %rcx          # 8-byte Reload
 	vmovdqu	(%rcx), %xmm10
 	shlq	$2, %rdx
-	movq	%rdx, 48(%rsp)          # 8-byte Spill
-	xorl	%r13d, %r13d
-	xorl	%r14d, %r14d
+	movq	%rdx, (%rsp)            # 8-byte Spill
+	xorl	%r12d, %r12d
 	jmp	.LBB1_4
 	.p2align	4, 0x90
-.LBB1_14:                               # 
+.LBB1_5:                                # 
                                         #   in Loop: Header=BB1_4 Depth=1
-	movq	8(%rsp), %rbp           # 8-byte Reload
+	vxorpd	%xmm13, %xmm13, %xmm13
+	movq	%r9, %rdx
+	vxorpd	%xmm9, %xmm9, %xmm9
+	vxorpd	%xmm14, %xmm14, %xmm14
 .LBB1_6:                                # 
                                         #   in Loop: Header=BB1_4 Depth=1
-	addl	%r10d, %r14d
-	vaddsd	(%rdi,%r12,8), %xmm14, %xmm0
-	vmovsd	%xmm0, (%rdi,%r12,8)
-	vaddsd	(%rdi,%rbp,8), %xmm15, %xmm0
-	vmovsd	%xmm0, (%rdi,%rbp,8)
+	vaddsd	(%rdi,%r15,8), %xmm14, %xmm0
+	vmovsd	%xmm0, (%rdi,%r15,8)
+	vaddsd	(%rdi,%r10,8), %xmm9, %xmm0
+	vmovsd	%xmm0, (%rdi,%r10,8)
 	vaddsd	(%rdi,%r11,8), %xmm13, %xmm0
 	vmovsd	%xmm0, (%rdi,%r11,8)
-	leal	3(%r10), %ecx
-	addl	$6, %r10d
+	leal	3(%r9), %ecx
+	addl	$6, %r9d
 	testl	%ecx, %ecx
-	cmovnsl	%ecx, %r10d
-	sarl	$2, %r10d
-	movslq	%r10d, %rcx
+	cmovnsl	%ecx, %r9d
+	sarl	$2, %r9d
+	movslq	%r9d, %rcx
 	vmovq	%rcx, %xmm0
 	vmovq	%rdx, %xmm1
 	vpunpcklqdq	%xmm0, %xmm1, %xmm0 # xmm0 = xmm1[0],xmm0[0]
 	vpaddq	%xmm0, %xmm10, %xmm10
-	incq	%r13
-	addq	48(%rsp), %rax          # 8-byte Folded Reload
-	cmpq	%r15, %r13
+	incq	%r12
+	addq	(%rsp), %rax            # 8-byte Folded Reload
+	cmpq	%r13, %r12
 	je	.LBB1_7
 .LBB1_4:                                # 
                                         # =>This Loop Header: Depth=1
                                         #     Child Loop BB1_10 Depth 2
-	movq	(%rsp), %rcx            # 8-byte Reload
-	movslq	(%rcx,%r13,4), %r10
-	leaq	(,%r13,2), %rcx
-	addq	%r13, %rcx
-	leal	1(%rcx), %ebp
+	movq	8(%rsp), %rcx           # 8-byte Reload
+	movslq	(%rcx,%r12,4), %r9
+	leaq	(%r12,%r12,2), %rcx
+	leal	1(%rcx), %r10d
 	leal	2(%rcx), %r11d
-	movl	%ecx, %r12d
-	testq	%r10, %r10
+	movl	%ecx, %r15d
+	testq	%r9, %r9
 	jle	.LBB1_5
 # %bb.9:                                # 
                                         #   in Loop: Header=BB1_4 Depth=1
-	vmovsd	(%rsi,%r12,8), %xmm9    # xmm9 = mem[0],zero
-	movq	%rbp, 8(%rsp)           # 8-byte Spill
-	vmovsd	(%rsi,%rbp,8), %xmm4    # xmm4 = mem[0],zero
+	vmovsd	(%rsi,%r15,8), %xmm15   # xmm15 = mem[0],zero
+	vmovsd	(%rsi,%r10,8), %xmm4    # xmm4 = mem[0],zero
 	vmovsd	(%rsi,%r11,8), %xmm1    # xmm1 = mem[0],zero
-	movl	%r10d, %edx
+	movl	%r9d, %edx
 	vxorpd	%xmm14, %xmm14, %xmm14
-	xorl	%ebx, %ebx
-	vxorpd	%xmm15, %xmm15, %xmm15
+	xorl	%ecx, %ecx
+	vxorpd	%xmm9, %xmm9, %xmm9
 	vxorpd	%xmm13, %xmm13, %xmm13
 	jmp	.LBB1_10
 	.p2align	4, 0x90
 .LBB1_13:                               # 
                                         #   in Loop: Header=BB1_10 Depth=2
-	incq	%rbx
-	cmpq	%rbx, %rdx
-	je	.LBB1_14
+	incq	%rcx
+	cmpq	%rcx, %rdx
+	je	.LBB1_6
 .LBB1_10:                               # 
                                         #   Parent Loop BB1_4 Depth=1
                                         # =>  This Inner Loop Header: Depth=2
-	movslq	(%rax,%rbx,4), %r9
-	leaq	(%r9,%r9,2), %r8
-	vsubsd	(%rsi,%r8,8), %xmm9, %xmm2
-	movslq	%r8d, %rcx
-	vsubsd	8(%rsi,%rcx,8), %xmm4, %xmm5
-	vsubsd	16(%rsi,%rcx,8), %xmm1, %xmm0
+	movslq	(%rax,%rcx,4), %r8
+	leaq	(%r8,%r8,2), %r14
+	vsubsd	(%rsi,%r14,8), %xmm15, %xmm2
+	movslq	%r14d, %rbp
+	vsubsd	8(%rsi,%rbp,8), %xmm4, %xmm5
+	vsubsd	16(%rsi,%rbp,8), %xmm1, %xmm0
 	vmulsd	%xmm2, %xmm2, %xmm6
 	vfmadd231sd	%xmm5, %xmm5, %xmm6 # xmm6 = (xmm5 * xmm5) + xmm6
 	vfmadd231sd	%xmm0, %xmm0, %xmm6 # xmm6 = (xmm0 * xmm0) + xmm6
@@ -539,70 +534,45 @@ computeForceLJHalfNeigh:                #
                                         #   in Loop: Header=BB1_10 Depth=2
 	vmovsd	.LCPI1_1(%rip), %xmm3   # xmm3 = mem[0],zero
 	vdivsd	%xmm6, %xmm3, %xmm6
-	vmulsd	16(%rsp), %xmm6, %xmm7  # 8-byte Folded Reload
+	vmulsd	32(%rsp), %xmm6, %xmm3  # 8-byte Folded Reload
 	vmulsd	%xmm6, %xmm6, %xmm8
-	vmulsd	%xmm7, %xmm8, %xmm7
-	vaddsd	.LCPI1_2(%rip), %xmm7, %xmm3
+	vmulsd	%xmm3, %xmm8, %xmm3
+	vaddsd	.LCPI1_2(%rip), %xmm3, %xmm7
 	vmulsd	%xmm6, %xmm11, %xmm6
-	vmulsd	%xmm7, %xmm6, %xmm6
 	vmulsd	%xmm3, %xmm6, %xmm3
+	vmulsd	%xmm7, %xmm3, %xmm3
 	vmulsd	%xmm2, %xmm3, %xmm6
 	vaddsd	%xmm6, %xmm14, %xmm14
 	vmulsd	%xmm5, %xmm3, %xmm2
-	vaddsd	%xmm2, %xmm15, %xmm15
+	vaddsd	%xmm2, %xmm9, %xmm9
 	vmulsd	%xmm0, %xmm3, %xmm0
 	vaddsd	%xmm0, %xmm13, %xmm13
-	cmpl	%r15d, %r9d
+	cmpl	%r13d, %r8d
 	jge	.LBB1_13
 # %bb.12:                               # 
                                         #   in Loop: Header=BB1_10 Depth=2
-	leaq	1(%rcx), %rbp
-	addq	$2, %rcx
-	vmovsd	(%rdi,%r8,8), %xmm3     # xmm3 = mem[0],zero
+	leaq	1(%rbp), %rbx
+	addq	$2, %rbp
+	vmovsd	(%rdi,%r14,8), %xmm3    # xmm3 = mem[0],zero
 	vsubsd	%xmm6, %xmm3, %xmm3
-	vmovsd	%xmm3, (%rdi,%r8,8)
-	vmovsd	(%rdi,%rbp,8), %xmm3    # xmm3 = mem[0],zero
+	vmovsd	%xmm3, (%rdi,%r14,8)
+	vmovsd	(%rdi,%rbx,8), %xmm3    # xmm3 = mem[0],zero
 	vsubsd	%xmm2, %xmm3, %xmm2
-	vmovsd	%xmm2, (%rdi,%rbp,8)
-	vmovsd	(%rdi,%rcx,8), %xmm2    # xmm2 = mem[0],zero
+	vmovsd	%xmm2, (%rdi,%rbx,8)
+	vmovsd	(%rdi,%rbp,8), %xmm2    # xmm2 = mem[0],zero
 	vsubsd	%xmm0, %xmm2, %xmm0
-	vmovsd	%xmm0, (%rdi,%rcx,8)
+	vmovsd	%xmm0, (%rdi,%rbp,8)
 	jmp	.LBB1_13
-	.p2align	4, 0x90
-.LBB1_5:                                # 
-                                        #   in Loop: Header=BB1_4 Depth=1
-	vxorpd	%xmm13, %xmm13, %xmm13
-	movq	%r10, %rdx
-	vxorpd	%xmm15, %xmm15, %xmm15
-	vxorpd	%xmm14, %xmm14, %xmm14
-	jmp	.LBB1_6
 .LBB1_7:                                # 
-	movq	24(%rsp), %rax          # 8-byte Reload
+	movq	16(%rsp), %rax          # 8-byte Reload
 	vmovdqu	%xmm10, (%rax)
 .LBB1_8:                                # 
 	movl	$.L.str.1, %edi
 	callq	likwid_markerStopRegion
 	xorl	%eax, %eax
 	callq	getTimeStamp
-	movq	40(%rsp), %rax          # 8-byte Reload
-	vmovsd	264(%rax), %xmm3        # xmm3 = mem[0],zero
-	vsubsd	32(%rsp), %xmm0, %xmm2  # 8-byte Folded Reload
-	vmulsd	.LCPI1_3(%rip), %xmm3, %xmm0
-	vmulsd	%xmm2, %xmm0, %xmm0
-	vmovapd	%xmm2, %xmm1
-	vmovsd	%xmm2, 16(%rsp)         # 8-byte Spill
-	movl	%r14d, %eax
-	vxorps	%xmm12, %xmm12, %xmm12
-	vcvtsi2sd	%rax, %xmm12, %xmm2
-	vdivsd	%xmm2, %xmm0, %xmm2
-	movl	$.L.str.2, %edi
-	movl	%r14d, %esi
-	vmovapd	%xmm3, %xmm0
-	movb	$3, %al
-	callq	printf
-	vmovsd	16(%rsp), %xmm0         # 8-byte Reload
-                                        # xmm0 = mem[0],zero
-	addq	$56, %rsp
+	vsubsd	24(%rsp), %xmm0, %xmm0  # 8-byte Folded Reload
+	addq	$40, %rsp
 	.cfi_def_cfa_offset 56
 	popq	%rbx
 	.cfi_def_cfa_offset 48
@@ -642,10 +612,8 @@ computeForceLJFullNeigh_simd:           #
 .LBB2_2:                                # 
 	xorl	%eax, %eax
 	callq	getTimeStamp
-	movl	$.L.str, %edi
-	callq	likwid_markerStartRegion
 	movq	stderr(%rip), %rcx
-	movl	$.L.str.3, %edi
+	movl	$.L.str.2, %edi
 	movl	$65, %esi
 	movl	$1, %edx
 	callq	fwrite
@@ -666,11 +634,7 @@ computeForceLJFullNeigh_simd:           #
 	.size	.L.str.1, 18
 	.type	.L.str.2,@object        # 
 .L.str.2:
-	.asciz	"Its: %u  Freq: %f  Time: %f\nCy/it: %f (half-neigh)\n"
-	.size	.L.str.2, 52
-	.type	.L.str.3,@object        # 
-.L.str.3:
 	.asciz	"Error: SIMD kernel not implemented for specified instruction set!"
-	.size	.L.str.3, 66
+	.size	.L.str.2, 66
 	.ident	"Intel(R) oneAPI DPC++ Compiler 2021.1-beta05 (2020.2.0.0304)"
 	.section	".note.GNU-stack","",@progbits

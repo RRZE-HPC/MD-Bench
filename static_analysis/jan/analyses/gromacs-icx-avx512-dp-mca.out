@@ -1,0 +1,288 @@
+
+[0] Code Region
+
+Iterations:        100
+Instructions:      12200
+Total Cycles:      4745
+Total uOps:        14000
+
+Dispatch Width:    6
+uOps Per Cycle:    2.95
+IPC:               2.57
+Block RThroughput: 34.0
+
+
+Instruction Info:
+[1]: #uOps
+[2]: Latency
+[3]: RThroughput
+[4]: MayLoad
+[5]: MayStore
+[6]: HasSideEffects (U)
+
+[1]    [2]    [3]    [4]    [5]    [6]    Instructions:
+ 1      5     0.50    *                   movslq	(%r10,%rbx,4), %rcx
+ 1      1     0.50                        leaq	(%rcx,%rcx,2), %rdx
+ 1      1     0.50                        shlq	$6, %rdx
+ 2      8     0.50    *                   vmovupd	(%rsi,%rdx), %zmm28
+ 2      8     0.50    *                   vmovupd	64(%rsi,%rdx), %zmm29
+ 2      8     0.50    *                   vmovupd	128(%rsi,%rdx), %zmm30
+ 2      8     0.50    *                   vmovupd	16(%rsp), %zmm3
+ 1      4     0.50                        vsubpd	%zmm28, %zmm3, %zmm3
+ 1      4     0.50                        vsubpd	%zmm30, %zmm24, %zmm31
+ 2      8     0.50    *                   vmovupd	336(%rsp), %zmm16
+ 1      4     0.50                        vsubpd	%zmm29, %zmm16, %zmm16
+ 1      4     0.50                        vmulpd	%zmm31, %zmm31, %zmm17
+ 1      4     0.50                        vfmadd231pd	%zmm16, %zmm16, %zmm17
+ 1      4     0.50                        vfmadd231pd	%zmm3, %zmm3, %zmm17
+ 3      4     2.00                        vrcp14pd	%zmm17, %zmm18
+ 1      4     0.50                        vmulpd	%zmm18, %zmm21, %zmm19
+ 1      4     0.50                        vmulpd	%zmm19, %zmm18, %zmm19
+ 1      4     0.50                        vmulpd	%zmm19, %zmm18, %zmm19
+ 1      4     0.50                        vaddpd	%zmm1, %zmm19, %zmm20
+ 1      4     0.50                        vmulpd	%zmm18, %zmm22, %zmm18
+ 1      4     0.50                        vmulpd	%zmm20, %zmm18, %zmm18
+ 1      4     0.50                        vsubpd	%zmm30, %zmm25, %zmm20
+ 1      1     0.50                        leal	(%rcx,%rcx), %edx
+ 1      1     0.25                        cmpq	%rdx, %r11
+ 1      1     0.50                        setne	%dl
+ 1      1     0.50                        sete	%al
+ 1      1     0.25                        addl	%ecx, %ecx
+ 1      1     0.25                        incl	%ecx
+ 1      1     0.25                        cmpq	%rcx, %r11
+ 1      1     0.50                        sete	%cl
+ 1      4     0.50                        vmulpd	%zmm18, %zmm19, %zmm18
+ 2      8     0.50    *                   vmovupd	528(%rsp), %zmm19
+ 1      4     0.50                        vsubpd	%zmm28, %zmm19, %zmm19
+ 1      1     0.50                        setne	%dil
+ 1      1     0.25                        movl	%edi, %ebp
+ 1      1     0.50                        shlb	$4, %bpl
+ 1      1     0.25                        subb	%al, %bpl
+ 1      1     0.25                        addb	$-17, %bpl
+ 1      1     1.00                        kmovd	%ebp, %k1
+ 1      4     1.00                        vcmpltpd	%zmm0, %zmm17, %k1 {%k1}
+ 2      8     0.50    *                   vmovupd	272(%rsp), %zmm17
+ 1      4     0.50                        vsubpd	%zmm29, %zmm17, %zmm17
+ 1      1     0.50                        leal	(%rdx,%rdx), %eax
+ 1      1     0.25                        movl	%edi, %ebp
+ 1      4     0.50                        vmulpd	%zmm2, %zmm18, %zmm18
+ 1      4     0.50                        vfmadd231pd	%zmm18, %zmm3, %zmm14 {%k1}
+ 1      4     0.50                        vmulpd	%zmm20, %zmm20, %zmm3
+ 1      4     0.50                        vfmadd231pd	%zmm17, %zmm17, %zmm3
+ 1      4     0.50                        vfmadd231pd	%zmm19, %zmm19, %zmm3
+ 1      4     0.50                        vfmadd231pd	%zmm18, %zmm16, %zmm11 {%k1}
+ 3      4     2.00                        vrcp14pd	%zmm3, %zmm16
+ 1      4     0.50                        vfmadd231pd	%zmm18, %zmm31, %zmm7 {%k1}
+ 1      4     0.50                        vmulpd	%zmm16, %zmm21, %zmm18
+ 1      4     0.50                        vmulpd	%zmm18, %zmm16, %zmm18
+ 1      4     0.50                        vmulpd	%zmm18, %zmm16, %zmm18
+ 1      4     0.50                        vaddpd	%zmm1, %zmm18, %zmm31
+ 1      4     0.50                        vmulpd	%zmm16, %zmm22, %zmm16
+ 1      4     0.50                        vmulpd	%zmm31, %zmm16, %zmm16
+ 2      8     0.50    *                   vmovupd	464(%rsp), %zmm31
+ 1      4     0.50                        vsubpd	%zmm28, %zmm31, %zmm31
+ 1      1     0.50                        shlb	$5, %bpl
+ 1      1     0.25                        orb	%al, %bpl
+ 1      1     0.25                        orb	$-35, %bpl
+ 1      1     1.00                        kmovd	%ebp, %k1
+ 1      4     1.00                        vcmpltpd	%zmm0, %zmm3, %k1 {%k1}
+ 2      8     0.50    *                   vmovupd	208(%rsp), %zmm3
+ 1      4     0.50                        vsubpd	%zmm29, %zmm3, %zmm3
+ 1      4     0.50                        vmulpd	%zmm16, %zmm18, %zmm16
+ 1      4     0.50                        vsubpd	%zmm30, %zmm26, %zmm18
+ 1      4     0.50                        vmulpd	%zmm2, %zmm16, %zmm16
+ 1      4     0.50                        vfmadd231pd	%zmm16, %zmm19, %zmm15 {%k1}
+ 1      4     0.50                        vmulpd	%zmm18, %zmm18, %zmm19
+ 1      4     0.50                        vfmadd231pd	%zmm3, %zmm3, %zmm19
+ 1      4     0.50                        vfmadd231pd	%zmm31, %zmm31, %zmm19
+ 1      4     0.50                        vfmadd231pd	%zmm16, %zmm17, %zmm10 {%k1}
+ 3      4     2.00                        vrcp14pd	%zmm19, %zmm17
+ 1      4     0.50                        vfmadd231pd	%zmm16, %zmm20, %zmm6 {%k1}
+ 1      4     0.50                        vmulpd	%zmm17, %zmm21, %zmm16
+ 1      4     0.50                        vmulpd	%zmm16, %zmm17, %zmm16
+ 1      4     0.50                        vmulpd	%zmm16, %zmm17, %zmm16
+ 1      4     0.50                        vaddpd	%zmm1, %zmm16, %zmm20
+ 1      4     0.50                        vmulpd	%zmm17, %zmm22, %zmm17
+ 1      4     0.50                        vmulpd	%zmm20, %zmm17, %zmm17
+ 1      4     0.50                        vmulpd	%zmm17, %zmm16, %zmm16
+ 1      1     0.50                        leal	(,%rdx,4), %eax
+ 1      1     0.50                        shlb	$6, %dil
+ 1      1     0.25                        orb	%al, %dil
+ 1      1     0.25                        orb	$-69, %dil
+ 1      1     1.00                        kmovd	%edi, %k1
+ 1      4     1.00                        vcmpltpd	%zmm0, %zmm19, %k1 {%k1}
+ 2      8     0.50    *                   vmovupd	400(%rsp), %zmm17
+ 1      4     0.50                        vsubpd	%zmm28, %zmm17, %zmm17
+ 1      4     0.50                        vsubpd	%zmm29, %zmm23, %zmm19
+ 1      4     0.50                        vsubpd	%zmm30, %zmm27, %zmm20
+ 1      4     0.50                        vmulpd	%zmm2, %zmm16, %zmm16
+ 1      4     0.50                        vfmadd231pd	%zmm16, %zmm31, %zmm13 {%k1}
+ 1      4     0.50                        vmulpd	%zmm20, %zmm20, %zmm28
+ 1      4     0.50                        vfmadd231pd	%zmm19, %zmm19, %zmm28
+ 1      4     0.50                        vfmadd231pd	%zmm17, %zmm17, %zmm28
+ 1      4     0.50                        vfmadd231pd	%zmm16, %zmm3, %zmm9 {%k1}
+ 3      4     2.00                        vrcp14pd	%zmm28, %zmm3
+ 1      4     0.50                        vfmadd231pd	%zmm16, %zmm18, %zmm5 {%k1}
+ 1      4     0.50                        vmulpd	%zmm3, %zmm21, %zmm16
+ 1      4     0.50                        vmulpd	%zmm16, %zmm3, %zmm16
+ 1      4     0.50                        vmulpd	%zmm16, %zmm3, %zmm16
+ 1      4     0.50                        vaddpd	%zmm1, %zmm16, %zmm18
+ 1      4     0.50                        vmulpd	%zmm3, %zmm22, %zmm3
+ 1      4     0.50                        vmulpd	%zmm18, %zmm3, %zmm3
+ 1      4     0.50                        vmulpd	%zmm3, %zmm16, %zmm3
+ 1      1     0.50                        shlb	$3, %dl
+ 1      1     0.50                        shlb	$7, %cl
+ 1      1     0.25                        orb	%dl, %cl
+ 1      1     0.25                        addb	$-9, %cl
+ 1      1     1.00                        kmovd	%ecx, %k1
+ 1      4     1.00                        vcmpltpd	%zmm0, %zmm28, %k1 {%k1}
+ 1      4     0.50                        vmulpd	%zmm2, %zmm3, %zmm3
+ 1      4     0.50                        vfmadd231pd	%zmm3, %zmm17, %zmm12 {%k1}
+ 1      4     0.50                        vfmadd231pd	%zmm3, %zmm19, %zmm8 {%k1}
+ 1      4     0.50                        vfmadd231pd	%zmm3, %zmm20, %zmm4 {%k1}
+ 1      1     0.25                        incq	%rbx
+ 1      1     0.25                        cmpq	%rbx, %r9
+ 1      1     0.50                        jne	.LBB5_12
+
+
+Resources:
+[0]   - SKXDivider
+[1]   - SKXFPDivider
+[2]   - SKXPort0
+[3]   - SKXPort1
+[4]   - SKXPort2
+[5]   - SKXPort3
+[6]   - SKXPort4
+[7]   - SKXPort5
+[8]   - SKXPort6
+[9]   - SKXPort7
+
+
+Resource pressure per iteration:
+[0]    [1]    [2]    [3]    [4]    [5]    [6]    [7]    [8]    [9]    
+ -      -     45.53  20.45  5.50   5.50    -     44.64  18.38   -     
+
+Resource pressure by instruction:
+[0]    [1]    [2]    [3]    [4]    [5]    [6]    [7]    [8]    [9]    Instructions:
+ -      -      -      -     0.50   0.50    -      -      -      -     movslq	(%r10,%rbx,4), %rcx
+ -      -      -     0.99    -      -      -     0.01    -      -     leaq	(%rcx,%rcx,2), %rdx
+ -      -     0.01    -      -      -      -      -     0.99    -     shlq	$6, %rdx
+ -      -     0.01   0.99   0.49   0.51    -      -      -      -     vmovupd	(%rsi,%rdx), %zmm28
+ -      -     0.01   0.91   0.51   0.49    -     0.08    -      -     vmovupd	64(%rsi,%rdx), %zmm29
+ -      -     0.01   0.56   0.49   0.51    -     0.43    -      -     vmovupd	128(%rsi,%rdx), %zmm30
+ -      -      -     0.99   0.50   0.50    -     0.01    -      -     vmovupd	16(%rsp), %zmm3
+ -      -     0.95    -      -      -      -     0.05    -      -     vsubpd	%zmm28, %zmm3, %zmm3
+ -      -     0.48    -      -      -      -     0.52    -      -     vsubpd	%zmm30, %zmm24, %zmm31
+ -      -      -     1.00   0.50   0.50    -      -      -      -     vmovupd	336(%rsp), %zmm16
+ -      -     0.49    -      -      -      -     0.51    -      -     vsubpd	%zmm29, %zmm16, %zmm16
+ -      -     0.48    -      -      -      -     0.52    -      -     vmulpd	%zmm31, %zmm31, %zmm17
+ -      -     0.49    -      -      -      -     0.51    -      -     vfmadd231pd	%zmm16, %zmm16, %zmm17
+ -      -     0.04    -      -      -      -     0.96    -      -     vfmadd231pd	%zmm3, %zmm3, %zmm17
+ -      -     2.00    -      -      -      -     1.00    -      -     vrcp14pd	%zmm17, %zmm18
+ -      -     1.00    -      -      -      -      -      -      -     vmulpd	%zmm18, %zmm21, %zmm19
+ -      -     0.51    -      -      -      -     0.49    -      -     vmulpd	%zmm19, %zmm18, %zmm19
+ -      -     0.49    -      -      -      -     0.51    -      -     vmulpd	%zmm19, %zmm18, %zmm19
+ -      -     0.07    -      -      -      -     0.93    -      -     vaddpd	%zmm1, %zmm19, %zmm20
+ -      -      -      -      -      -      -     1.00    -      -     vmulpd	%zmm18, %zmm22, %zmm18
+ -      -     0.95    -      -      -      -     0.05    -      -     vmulpd	%zmm20, %zmm18, %zmm18
+ -      -     0.92    -      -      -      -     0.08    -      -     vsubpd	%zmm30, %zmm25, %zmm20
+ -      -      -     0.94    -      -      -     0.06    -      -     leal	(%rcx,%rcx), %edx
+ -      -      -      -      -      -      -      -     1.00    -     cmpq	%rdx, %r11
+ -      -      -      -      -      -      -      -     1.00    -     setne	%dl
+ -      -     0.44    -      -      -      -      -     0.56    -     sete	%al
+ -      -      -     0.07    -      -      -     0.02   0.91    -     addl	%ecx, %ecx
+ -      -      -     0.53    -      -      -     0.46   0.01    -     incl	%ecx
+ -      -      -     0.51    -      -      -     0.46   0.03    -     cmpq	%rcx, %r11
+ -      -     0.02    -      -      -      -      -     0.98    -     sete	%cl
+ -      -     0.94    -      -      -      -     0.06    -      -     vmulpd	%zmm18, %zmm19, %zmm18
+ -      -     0.01   0.99   0.51   0.49    -      -      -      -     vmovupd	528(%rsp), %zmm19
+ -      -     0.47    -      -      -      -     0.53    -      -     vsubpd	%zmm28, %zmm19, %zmm19
+ -      -     0.04    -      -      -      -      -     0.96    -     setne	%dil
+ -      -      -     0.95    -      -      -     0.02   0.03    -     movl	%edi, %ebp
+ -      -     0.01    -      -      -      -      -     0.99    -     shlb	$4, %bpl
+ -      -      -     0.96    -      -      -      -     0.04    -     subb	%al, %bpl
+ -      -      -     0.06    -      -      -      -     0.94    -     addb	$-17, %bpl
+ -      -      -      -      -      -      -     1.00    -      -     kmovd	%ebp, %k1
+ -      -      -      -      -      -      -     1.00    -      -     vcmpltpd	%zmm0, %zmm17, %k1 {%k1}
+ -      -     0.02   0.97   0.50   0.50    -     0.01    -      -     vmovupd	272(%rsp), %zmm17
+ -      -     0.96    -      -      -      -     0.04    -      -     vsubpd	%zmm29, %zmm17, %zmm17
+ -      -      -     1.00    -      -      -      -      -      -     leal	(%rdx,%rdx), %eax
+ -      -      -     0.05    -      -      -      -     0.95    -     movl	%edi, %ebp
+ -      -     0.51    -      -      -      -     0.49    -      -     vmulpd	%zmm2, %zmm18, %zmm18
+ -      -     0.53    -      -      -      -     0.47    -      -     vfmadd231pd	%zmm18, %zmm3, %zmm14 {%k1}
+ -      -     0.45    -      -      -      -     0.55    -      -     vmulpd	%zmm20, %zmm20, %zmm3
+ -      -     0.94    -      -      -      -     0.06    -      -     vfmadd231pd	%zmm17, %zmm17, %zmm3
+ -      -     0.03    -      -      -      -     0.97    -      -     vfmadd231pd	%zmm19, %zmm19, %zmm3
+ -      -     0.47    -      -      -      -     0.53    -      -     vfmadd231pd	%zmm18, %zmm16, %zmm11 {%k1}
+ -      -     2.00    -      -      -      -     1.00    -      -     vrcp14pd	%zmm3, %zmm16
+ -      -     0.53    -      -      -      -     0.47    -      -     vfmadd231pd	%zmm18, %zmm31, %zmm7 {%k1}
+ -      -     0.99    -      -      -      -     0.01    -      -     vmulpd	%zmm16, %zmm21, %zmm18
+ -      -     0.99    -      -      -      -     0.01    -      -     vmulpd	%zmm18, %zmm16, %zmm18
+ -      -     0.97    -      -      -      -     0.03    -      -     vmulpd	%zmm18, %zmm16, %zmm18
+ -      -     0.52    -      -      -      -     0.48    -      -     vaddpd	%zmm1, %zmm18, %zmm31
+ -      -     0.01    -      -      -      -     0.99    -      -     vmulpd	%zmm16, %zmm22, %zmm16
+ -      -     0.52    -      -      -      -     0.48    -      -     vmulpd	%zmm31, %zmm16, %zmm16
+ -      -      -     0.99   0.50   0.50    -     0.01    -      -     vmovupd	464(%rsp), %zmm31
+ -      -     0.03    -      -      -      -     0.97    -      -     vsubpd	%zmm28, %zmm31, %zmm31
+ -      -     0.01    -      -      -      -      -     0.99    -     shlb	$5, %bpl
+ -      -      -     0.94    -      -      -      -     0.06    -     orb	%al, %bpl
+ -      -      -     0.04    -      -      -      -     0.96    -     orb	$-35, %bpl
+ -      -      -      -      -      -      -     1.00    -      -     kmovd	%ebp, %k1
+ -      -      -      -      -      -      -     1.00    -      -     vcmpltpd	%zmm0, %zmm3, %k1 {%k1}
+ -      -      -     0.99   0.50   0.50    -     0.01    -      -     vmovupd	208(%rsp), %zmm3
+ -      -     0.95    -      -      -      -     0.05    -      -     vsubpd	%zmm29, %zmm3, %zmm3
+ -      -     0.51    -      -      -      -     0.49    -      -     vmulpd	%zmm16, %zmm18, %zmm16
+ -      -     0.01    -      -      -      -     0.99    -      -     vsubpd	%zmm30, %zmm26, %zmm18
+ -      -     0.52    -      -      -      -     0.48    -      -     vmulpd	%zmm2, %zmm16, %zmm16
+ -      -     1.00    -      -      -      -      -      -      -     vfmadd231pd	%zmm16, %zmm19, %zmm15 {%k1}
+ -      -     0.03    -      -      -      -     0.97    -      -     vmulpd	%zmm18, %zmm18, %zmm19
+ -      -     0.06    -      -      -      -     0.94    -      -     vfmadd231pd	%zmm3, %zmm3, %zmm19
+ -      -     0.50    -      -      -      -     0.50    -      -     vfmadd231pd	%zmm31, %zmm31, %zmm19
+ -      -      -      -      -      -      -     1.00    -      -     vfmadd231pd	%zmm16, %zmm17, %zmm10 {%k1}
+ -      -     2.00    -      -      -      -     1.00    -      -     vrcp14pd	%zmm19, %zmm17
+ -      -     1.00    -      -      -      -      -      -      -     vfmadd231pd	%zmm16, %zmm20, %zmm6 {%k1}
+ -      -     0.07    -      -      -      -     0.93    -      -     vmulpd	%zmm17, %zmm21, %zmm16
+ -      -     0.50    -      -      -      -     0.50    -      -     vmulpd	%zmm16, %zmm17, %zmm16
+ -      -     0.09    -      -      -      -     0.91    -      -     vmulpd	%zmm16, %zmm17, %zmm16
+ -      -     0.07    -      -      -      -     0.93    -      -     vaddpd	%zmm1, %zmm16, %zmm20
+ -      -     0.93    -      -      -      -     0.07    -      -     vmulpd	%zmm17, %zmm22, %zmm17
+ -      -     0.94    -      -      -      -     0.06    -      -     vmulpd	%zmm20, %zmm17, %zmm17
+ -      -     0.51    -      -      -      -     0.49    -      -     vmulpd	%zmm17, %zmm16, %zmm16
+ -      -      -     1.00    -      -      -      -      -      -     leal	(,%rdx,4), %eax
+ -      -      -      -      -      -      -      -     1.00    -     shlb	$6, %dil
+ -      -      -     0.02    -      -      -      -     0.98    -     orb	%al, %dil
+ -      -      -     0.48    -      -      -      -     0.52    -     orb	$-69, %dil
+ -      -      -      -      -      -      -     1.00    -      -     kmovd	%edi, %k1
+ -      -      -      -      -      -      -     1.00    -      -     vcmpltpd	%zmm0, %zmm19, %k1 {%k1}
+ -      -      -     1.00   0.50   0.50    -      -      -      -     vmovupd	400(%rsp), %zmm17
+ -      -     0.49    -      -      -      -     0.51    -      -     vsubpd	%zmm28, %zmm17, %zmm17
+ -      -     0.49    -      -      -      -     0.51    -      -     vsubpd	%zmm29, %zmm23, %zmm19
+ -      -     0.02    -      -      -      -     0.98    -      -     vsubpd	%zmm30, %zmm27, %zmm20
+ -      -     0.98    -      -      -      -     0.02    -      -     vmulpd	%zmm2, %zmm16, %zmm16
+ -      -     0.50    -      -      -      -     0.50    -      -     vfmadd231pd	%zmm16, %zmm31, %zmm13 {%k1}
+ -      -     0.94    -      -      -      -     0.06    -      -     vmulpd	%zmm20, %zmm20, %zmm28
+ -      -     0.04    -      -      -      -     0.96    -      -     vfmadd231pd	%zmm19, %zmm19, %zmm28
+ -      -     0.07    -      -      -      -     0.93    -      -     vfmadd231pd	%zmm17, %zmm17, %zmm28
+ -      -     0.50    -      -      -      -     0.50    -      -     vfmadd231pd	%zmm16, %zmm3, %zmm9 {%k1}
+ -      -     2.00    -      -      -      -     1.00    -      -     vrcp14pd	%zmm28, %zmm3
+ -      -     0.50    -      -      -      -     0.50    -      -     vfmadd231pd	%zmm16, %zmm18, %zmm5 {%k1}
+ -      -     1.00    -      -      -      -      -      -      -     vmulpd	%zmm3, %zmm21, %zmm16
+ -      -     0.55    -      -      -      -     0.45    -      -     vmulpd	%zmm16, %zmm3, %zmm16
+ -      -     0.99    -      -      -      -     0.01    -      -     vmulpd	%zmm16, %zmm3, %zmm16
+ -      -     0.99    -      -      -      -     0.01    -      -     vaddpd	%zmm1, %zmm16, %zmm18
+ -      -      -      -      -      -      -     1.00    -      -     vmulpd	%zmm3, %zmm22, %zmm3
+ -      -     0.52    -      -      -      -     0.48    -      -     vmulpd	%zmm18, %zmm3, %zmm3
+ -      -     0.99    -      -      -      -     0.01    -      -     vmulpd	%zmm3, %zmm16, %zmm3
+ -      -      -      -      -      -      -      -     1.00    -     shlb	$3, %dl
+ -      -      -      -      -      -      -      -     1.00    -     shlb	$7, %cl
+ -      -      -     1.00    -      -      -      -      -      -     orb	%dl, %cl
+ -      -      -     0.52    -      -      -      -     0.48    -     addb	$-9, %cl
+ -      -      -      -      -      -      -     1.00    -      -     kmovd	%ecx, %k1
+ -      -      -      -      -      -      -     1.00    -      -     vcmpltpd	%zmm0, %zmm28, %k1 {%k1}
+ -      -     0.98    -      -      -      -     0.02    -      -     vmulpd	%zmm2, %zmm3, %zmm3
+ -      -     0.97    -      -      -      -     0.03    -      -     vfmadd231pd	%zmm3, %zmm17, %zmm12 {%k1}
+ -      -     0.03    -      -      -      -     0.97    -      -     vfmadd231pd	%zmm3, %zmm19, %zmm8 {%k1}
+ -      -     0.97    -      -      -      -     0.03    -      -     vfmadd231pd	%zmm3, %zmm20, %zmm4 {%k1}
+ -      -      -     0.48    -      -      -      -     0.52    -     incq	%rbx
+ -      -      -     0.52    -      -      -      -     0.48    -     cmpq	%rbx, %r9
+ -      -      -      -      -      -      -      -     1.00    -     jne	.LBB5_12

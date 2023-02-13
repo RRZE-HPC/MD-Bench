@@ -1,17 +1,17 @@
 	.text
 	.file	"force_lj.c"
-	.section	.rodata.cst8,"aM",@progbits,8
-	.p2align	3                               # -- Begin function computeForceLJ_ref
-.LCPI0_0:
-	.quad	0x4048000000000000              #  48
-.LCPI0_2:
-	.quad	0xbfe0000000000000              #  -0.5
-.LCPI0_3:
-	.quad	0x3fe0000000000000              #  0.5
 	.section	.rodata.cst4,"aM",@progbits,4
-	.p2align	2
+	.p2align	2                               # -- Begin function computeForceLJ_ref
+.LCPI0_0:
+	.long	0x42400000                      #  48
 .LCPI0_1:
 	.long	0x3f800000                      #  1
+.LCPI0_2:
+	.long	0xbf000000                      #  -0.5
+	.section	.rodata.cst8,"aM",@progbits,8
+	.p2align	3
+.LCPI0_3:
+	.quad	0x3fe0000000000000              #  0.5
 	.text
 	.globl	computeForceLJ_ref
 	.p2align	4, 0x90
@@ -146,8 +146,7 @@ computeForceLJ_ref:                     #
 	leaq	32(%rax), %r15
 	vmovss	(%rsp), %xmm0                   # 4-byte Reload
                                         # xmm0 = mem[0],zero,zero,zero
-	vcvtss2sd	%xmm0, %xmm0, %xmm0
-	vmulsd	.LCPI0_0(%rip), %xmm0, %xmm12
+	vmulss	.LCPI0_0(%rip), %xmm0, %xmm12
 	leaq	24(%rax), %rdx
 	movq	160(%r14), %rdi
 	movq	176(%r14), %rbp
@@ -170,7 +169,7 @@ computeForceLJ_ref:                     #
 	movq	%rax, 120(%rsp)                 # 8-byte Spill
 	xorl	%edi, %edi
 	vmovss	.LCPI0_1(%rip), %xmm10          # xmm10 = mem[0],zero,zero,zero
-	vmovsd	.LCPI0_2(%rip), %xmm11          # xmm11 = mem[0],zero
+	vmovss	.LCPI0_2(%rip), %xmm11          # xmm11 = mem[0],zero,zero,zero
 	vmovsd	.LCPI0_3(%rip), %xmm8           # xmm8 = mem[0],zero
 	vmovss	28(%rsp), %xmm20                # 4-byte Reload
                                         # xmm20 = mem[0],zero,zero,zero
@@ -259,13 +258,10 @@ computeForceLJ_ref:                     #
 	vmulss	%xmm20, %xmm3, %xmm14
 	vmulss	%xmm3, %xmm3, %xmm4
 	vmulss	%xmm4, %xmm14, %xmm4
-	vcvtss2sd	%xmm4, %xmm4, %xmm4
-	vaddsd	%xmm4, %xmm11, %xmm14
-	vcvtss2sd	%xmm3, %xmm3, %xmm3
-	vmulsd	%xmm3, %xmm12, %xmm3
-	vmulsd	%xmm4, %xmm14, %xmm4
-	vmulsd	%xmm3, %xmm4, %xmm3
-	vcvtsd2ss	%xmm3, %xmm3, %xmm3
+	vaddss	%xmm4, %xmm11, %xmm14
+	vmulss	%xmm3, %xmm12, %xmm3
+	vmulss	%xmm4, %xmm14, %xmm4
+	vmulss	%xmm3, %xmm4, %xmm3
 	vfmadd231ss	%xmm2, %xmm3, %xmm7     # xmm7 = (xmm3 * xmm2) + xmm7
 	vfmadd231ss	%xmm1, %xmm3, %xmm5     # xmm5 = (xmm3 * xmm1) + xmm5
 	vfmadd231ss	%xmm0, %xmm3, %xmm19    # xmm19 = (xmm3 * xmm0) + xmm19
@@ -311,25 +307,22 @@ computeForceLJ_ref:                     #
 	vmulss	%xmm20, %xmm3, %xmm4
 	vmulss	%xmm3, %xmm3, %xmm6
 	vmulss	%xmm4, %xmm6, %xmm4
-	vcvtss2sd	%xmm4, %xmm4, %xmm4
-	vaddsd	%xmm4, %xmm11, %xmm6
-	vcvtss2sd	%xmm3, %xmm3, %xmm3
-	vmulsd	%xmm3, %xmm12, %xmm3
-	vmulsd	%xmm4, %xmm6, %xmm4
-	vmulsd	%xmm3, %xmm4, %xmm3
-	vcvtsd2ss	%xmm3, %xmm3, %xmm3
-	vmovss	-32(%rsi,%rbx,4), %xmm4         # xmm4 = mem[0],zero,zero,zero
-	vmovss	-64(%rsi,%rbx,4), %xmm6         # xmm6 = mem[0],zero,zero,zero
-	vfnmadd231ss	%xmm2, %xmm3, %xmm6     # xmm6 = -(xmm3 * xmm2) + xmm6
-	vmovss	%xmm6, -64(%rsi,%rbx,4)
-	vfnmadd231ss	%xmm0, %xmm3, %xmm4     # xmm4 = -(xmm3 * xmm0) + xmm4
-	vmovss	%xmm4, -32(%rsi,%rbx,4)
+	vaddss	%xmm4, %xmm11, %xmm6
+	vmulss	%xmm3, %xmm12, %xmm3
+	vmulss	%xmm4, %xmm6, %xmm4
+	vmovss	-32(%rsi,%rbx,4), %xmm6         # xmm6 = mem[0],zero,zero,zero
+	vmulss	%xmm3, %xmm4, %xmm3
+	vmovss	-64(%rsi,%rbx,4), %xmm4         # xmm4 = mem[0],zero,zero,zero
+	vfnmadd231ss	%xmm3, %xmm2, %xmm4     # xmm4 = -(xmm2 * xmm3) + xmm4
+	vmovss	%xmm4, -64(%rsi,%rbx,4)
+	vfnmadd231ss	%xmm3, %xmm0, %xmm6     # xmm6 = -(xmm0 * xmm3) + xmm6
+	vmovss	%xmm6, -32(%rsi,%rbx,4)
 	vmovss	(%rsi,%rbx,4), %xmm4            # xmm4 = mem[0],zero,zero,zero
-	vfnmadd231ss	%xmm1, %xmm3, %xmm4     # xmm4 = -(xmm3 * xmm1) + xmm4
+	vfnmadd231ss	%xmm3, %xmm1, %xmm4     # xmm4 = -(xmm1 * xmm3) + xmm4
 	vmovss	%xmm4, (%rsi,%rbx,4)
 	vfmadd231ss	%xmm2, %xmm3, %xmm7     # xmm7 = (xmm3 * xmm2) + xmm7
 	vfmadd231ss	%xmm0, %xmm3, %xmm5     # xmm5 = (xmm3 * xmm0) + xmm5
-	vfmadd231ss	%xmm1, %xmm3, %xmm19    # xmm19 = (xmm3 * xmm1) + xmm19
+	vfmadd231ss	%xmm3, %xmm1, %xmm19    # xmm19 = (xmm1 * xmm3) + xmm19
 	movl	$1, %r14d
 	movq	%rdx, %rcx
 .LBB0_71:                               #   in Loop: Header=BB0_12 Depth=4
@@ -392,16 +385,13 @@ computeForceLJ_ref:                     #
 	vmulss	%xmm20, %xmm0, %xmm3
 	vmulss	%xmm0, %xmm0, %xmm5
 	vmulss	%xmm3, %xmm5, %xmm3
-	vcvtss2sd	%xmm3, %xmm3, %xmm3
-	vaddsd	%xmm3, %xmm11, %xmm5
-	vcvtss2sd	%xmm0, %xmm0, %xmm0
-	vmulsd	%xmm0, %xmm12, %xmm0
-	vmulsd	%xmm3, %xmm5, %xmm3
-	vmulsd	%xmm0, %xmm3, %xmm0
-	vcvtsd2ss	%xmm0, %xmm0, %xmm0
+	vaddss	%xmm3, %xmm11, %xmm5
+	vmulss	%xmm0, %xmm12, %xmm0
+	vmulss	%xmm3, %xmm5, %xmm3
+	vmulss	%xmm0, %xmm3, %xmm0
 	vmulss	%xmm0, %xmm15, %xmm7
-	vmulss	%xmm0, %xmm1, %xmm5
-	vmulss	%xmm0, %xmm2, %xmm19
+	vmulss	%xmm1, %xmm0, %xmm5
+	vmulss	%xmm2, %xmm0, %xmm19
 	movl	$1, %r14d
 	movq	%rdx, %rbx
 .LBB0_26:                               #   in Loop: Header=BB0_10 Depth=3
@@ -425,13 +415,10 @@ computeForceLJ_ref:                     #
 	vmulss	%xmm20, %xmm0, %xmm17
 	vmulss	%xmm0, %xmm0, %xmm3
 	vmulss	%xmm17, %xmm3, %xmm3
-	vcvtss2sd	%xmm3, %xmm3, %xmm3
-	vaddsd	%xmm11, %xmm3, %xmm17
-	vcvtss2sd	%xmm0, %xmm0, %xmm0
-	vmulsd	%xmm0, %xmm12, %xmm0
-	vmulsd	%xmm3, %xmm17, %xmm3
-	vmulsd	%xmm0, %xmm3, %xmm0
-	vcvtsd2ss	%xmm0, %xmm0, %xmm0
+	vaddss	%xmm11, %xmm3, %xmm17
+	vmulss	%xmm0, %xmm12, %xmm0
+	vmulss	%xmm3, %xmm17, %xmm3
+	vmulss	%xmm0, %xmm3, %xmm0
 	vfmadd231ss	%xmm2, %xmm0, %xmm7     # xmm7 = (xmm0 * xmm2) + xmm7
 	vfmadd231ss	%xmm1, %xmm0, %xmm5     # xmm5 = (xmm0 * xmm1) + xmm5
 	vfmadd231ss	%xmm15, %xmm0, %xmm19   # xmm19 = (xmm0 * xmm15) + xmm19
@@ -463,13 +450,10 @@ computeForceLJ_ref:                     #
 	vmulss	%xmm20, %xmm0, %xmm17
 	vmulss	%xmm0, %xmm0, %xmm3
 	vmulss	%xmm17, %xmm3, %xmm3
-	vcvtss2sd	%xmm3, %xmm3, %xmm3
-	vaddsd	%xmm11, %xmm3, %xmm17
-	vcvtss2sd	%xmm0, %xmm0, %xmm0
-	vmulsd	%xmm0, %xmm12, %xmm0
-	vmulsd	%xmm3, %xmm17, %xmm3
-	vmulsd	%xmm0, %xmm3, %xmm0
-	vcvtsd2ss	%xmm0, %xmm0, %xmm0
+	vaddss	%xmm11, %xmm3, %xmm17
+	vmulss	%xmm0, %xmm12, %xmm0
+	vmulss	%xmm3, %xmm17, %xmm3
+	vmulss	%xmm0, %xmm3, %xmm0
 	vfmadd231ss	%xmm2, %xmm0, %xmm7     # xmm7 = (xmm0 * xmm2) + xmm7
 	vfmadd231ss	%xmm1, %xmm0, %xmm5     # xmm5 = (xmm0 * xmm1) + xmm5
 	vfmadd231ss	%xmm15, %xmm0, %xmm19   # xmm19 = (xmm0 * xmm15) + xmm19
@@ -501,13 +485,10 @@ computeForceLJ_ref:                     #
 	vmulss	%xmm20, %xmm0, %xmm17
 	vmulss	%xmm0, %xmm0, %xmm3
 	vmulss	%xmm17, %xmm3, %xmm3
-	vcvtss2sd	%xmm3, %xmm3, %xmm3
-	vaddsd	%xmm11, %xmm3, %xmm17
-	vcvtss2sd	%xmm0, %xmm0, %xmm0
-	vmulsd	%xmm0, %xmm12, %xmm0
-	vmulsd	%xmm3, %xmm17, %xmm3
-	vmulsd	%xmm0, %xmm3, %xmm0
-	vcvtsd2ss	%xmm0, %xmm0, %xmm0
+	vaddss	%xmm11, %xmm3, %xmm17
+	vmulss	%xmm0, %xmm12, %xmm0
+	vmulss	%xmm3, %xmm17, %xmm3
+	vmulss	%xmm0, %xmm3, %xmm0
 	vfmadd231ss	%xmm2, %xmm0, %xmm7     # xmm7 = (xmm0 * xmm2) + xmm7
 	vfmadd231ss	%xmm1, %xmm0, %xmm5     # xmm5 = (xmm0 * xmm1) + xmm5
 	vfmadd231ss	%xmm15, %xmm0, %xmm19   # xmm19 = (xmm0 * xmm15) + xmm19
@@ -539,13 +520,10 @@ computeForceLJ_ref:                     #
 	vmulss	%xmm20, %xmm0, %xmm17
 	vmulss	%xmm0, %xmm0, %xmm3
 	vmulss	%xmm17, %xmm3, %xmm3
-	vcvtss2sd	%xmm3, %xmm3, %xmm3
-	vaddsd	%xmm11, %xmm3, %xmm17
-	vcvtss2sd	%xmm0, %xmm0, %xmm0
-	vmulsd	%xmm0, %xmm12, %xmm0
-	vmulsd	%xmm3, %xmm17, %xmm3
-	vmulsd	%xmm0, %xmm3, %xmm0
-	vcvtsd2ss	%xmm0, %xmm0, %xmm0
+	vaddss	%xmm11, %xmm3, %xmm17
+	vmulss	%xmm0, %xmm12, %xmm0
+	vmulss	%xmm3, %xmm17, %xmm3
+	vmulss	%xmm0, %xmm3, %xmm0
 	vfmadd231ss	%xmm2, %xmm0, %xmm7     # xmm7 = (xmm0 * xmm2) + xmm7
 	vfmadd231ss	%xmm1, %xmm0, %xmm5     # xmm5 = (xmm0 * xmm1) + xmm5
 	vfmadd231ss	%xmm15, %xmm0, %xmm19   # xmm19 = (xmm0 * xmm15) + xmm19
@@ -577,13 +555,10 @@ computeForceLJ_ref:                     #
 	vmulss	%xmm20, %xmm0, %xmm17
 	vmulss	%xmm0, %xmm0, %xmm3
 	vmulss	%xmm17, %xmm3, %xmm3
-	vcvtss2sd	%xmm3, %xmm3, %xmm3
-	vaddsd	%xmm11, %xmm3, %xmm17
-	vcvtss2sd	%xmm0, %xmm0, %xmm0
-	vmulsd	%xmm0, %xmm12, %xmm0
-	vmulsd	%xmm3, %xmm17, %xmm3
-	vmulsd	%xmm0, %xmm3, %xmm0
-	vcvtsd2ss	%xmm0, %xmm0, %xmm0
+	vaddss	%xmm11, %xmm3, %xmm17
+	vmulss	%xmm0, %xmm12, %xmm0
+	vmulss	%xmm3, %xmm17, %xmm3
+	vmulss	%xmm0, %xmm3, %xmm0
 	vfmadd231ss	%xmm2, %xmm0, %xmm7     # xmm7 = (xmm0 * xmm2) + xmm7
 	vfmadd231ss	%xmm1, %xmm0, %xmm5     # xmm5 = (xmm0 * xmm1) + xmm5
 	vfmadd231ss	%xmm15, %xmm0, %xmm19   # xmm19 = (xmm0 * xmm15) + xmm19
@@ -615,13 +590,10 @@ computeForceLJ_ref:                     #
 	vmulss	%xmm20, %xmm0, %xmm17
 	vmulss	%xmm0, %xmm0, %xmm3
 	vmulss	%xmm17, %xmm3, %xmm3
-	vcvtss2sd	%xmm3, %xmm3, %xmm3
-	vaddsd	%xmm11, %xmm3, %xmm17
-	vcvtss2sd	%xmm0, %xmm0, %xmm0
-	vmulsd	%xmm0, %xmm12, %xmm0
-	vmulsd	%xmm3, %xmm17, %xmm3
-	vmulsd	%xmm0, %xmm3, %xmm0
-	vcvtsd2ss	%xmm0, %xmm0, %xmm0
+	vaddss	%xmm11, %xmm3, %xmm17
+	vmulss	%xmm0, %xmm12, %xmm0
+	vmulss	%xmm3, %xmm17, %xmm3
+	vmulss	%xmm0, %xmm3, %xmm0
 	vfmadd231ss	%xmm2, %xmm0, %xmm7     # xmm7 = (xmm0 * xmm2) + xmm7
 	vfmadd231ss	%xmm1, %xmm0, %xmm5     # xmm5 = (xmm0 * xmm1) + xmm5
 	vfmadd231ss	%xmm15, %xmm0, %xmm19   # xmm19 = (xmm0 * xmm15) + xmm19
@@ -704,8 +676,6 @@ computeForceLJ_ref:                     #
 	.p2align	3
 .LCPI1_3:
 	.quad	0x3fe0000000000000              #  0.5
-.LCPI1_4:
-	.quad	0x41cdcd6500000000              #  1.0E+9
 	.text
 	.globl	computeForceLJ_2xnn_half
 	.p2align	4, 0x90
@@ -725,27 +695,25 @@ computeForceLJ_2xnn_half:               #
 	.cfi_def_cfa_offset 48
 	pushq	%rbx
 	.cfi_def_cfa_offset 56
-	subq	$232, %rsp
-	.cfi_def_cfa_offset 288
+	subq	$216, %rsp
+	.cfi_def_cfa_offset 272
 	.cfi_offset %rbx, -56
 	.cfi_offset %r12, -48
 	.cfi_offset %r13, -40
 	.cfi_offset %r14, -32
 	.cfi_offset %r15, -24
 	.cfi_offset %rbp, -16
-	movq	%rcx, 48(%rsp)                  # 8-byte Spill
-	movq	%rdx, %r12
+	movq	%rcx, 32(%rsp)                  # 8-byte Spill
+	movq	%rdx, %r14
 	movq	%rsi, %r15
-	movq	%rdi, %rbp
-	xorl	%ebx, %ebx
+	movq	%rdi, %r12
 	movl	$.L.str.3, %edi
 	xorl	%eax, %eax
 	callq	debug_printf
-	vmovss	108(%rbp), %xmm0                # xmm0 = mem[0],zero,zero,zero
+	vmovss	108(%r12), %xmm0                # xmm0 = mem[0],zero,zero,zero
 	vmovss	%xmm0, (%rsp)                   # 4-byte Spill
-	vbroadcastss	48(%rbp), %zmm2
-	movq	%rbp, 32(%rsp)                  # 8-byte Spill
-	vpbroadcastd	40(%rbp), %zmm3
+	vbroadcastss	48(%r12), %zmm2
+	vpbroadcastd	40(%r12), %zmm3
 	movl	20(%r15), %r11d
 	testl	%r11d, %r11d
 	jle	.LBB1_5
@@ -769,70 +737,71 @@ computeForceLJ_2xnn_half:               #
 	leaq	(%rdi,%rdi,8), %rax
 	leaq	(%rax,%rax,2), %rax
 	addq	%rdi, %rax
-	movl	(%r10,%rax), %ecx
-	testl	%ecx, %ecx
+	movl	(%r10,%rax), %esi
+	testl	%esi, %esi
 	jle	.LBB1_21
 # %bb.3:                                #   in Loop: Header=BB1_2 Depth=1
-	leal	(,%rdi,4), %esi
-	movl	%esi, %eax
+	leal	(,%rdi,4), %ebx
+	movl	%ebx, %eax
 	andl	$2147483640, %eax               # imm = 0x7FFFFFF8
 	leal	(%rax,%rax,2), %eax
-	andl	$4, %esi
-	orl	%eax, %esi
-	cmpl	$7, %ecx
+	andl	$4, %ebx
+	orl	%eax, %ebx
+	cmpl	$7, %esi
 	ja	.LBB1_15
 # %bb.4:                                #   in Loop: Header=BB1_2 Depth=1
-	movl	%ecx, %ebp
+	movl	%esi, %ebp
 	andl	$-8, %ebp
-	cmpq	%rcx, %rbp
+	cmpq	%rsi, %rbp
 	jae	.LBB1_21
 	jmp	.LBB1_19
 	.p2align	5, 0x90
 .LBB1_15:                               #   in Loop: Header=BB1_2 Depth=1
-	leaq	(,%rcx,4), %rbp
+	leaq	(,%rsi,4), %rbp
 	andq	$-32, %rbp
-	movl	%esi, %r14d
-	leaq	(%r9,%r14,4), %rax
-	xorl	%edx, %edx
+	movl	%ebx, %ecx
+	leaq	(%r9,%rcx,4), %rdx
+	xorl	%eax, %eax
 	.p2align	4, 0x90
 .LBB1_16:                               #   Parent Loop BB1_2 Depth=1
                                         # =>  This Inner Loop Header: Depth=2
-	vmovups	%ymm0, (%rax,%rdx)
-	addq	$32, %rdx
-	cmpq	%rdx, %rbp
+	vmovups	%ymm0, (%rdx,%rax)
+	addq	$32, %rax
+	cmpq	%rax, %rbp
 	jne	.LBB1_16
 # %bb.17:                               #   in Loop: Header=BB1_2 Depth=1
-	movl	%ecx, %ebp
+	movl	%esi, %ebp
 	andl	$-8, %ebp
-	addq	%rbp, %r14
-	vmovups	%zmm1, (%r9,%r14,4)
-	cmpq	%rcx, %rbp
+	addq	%rbp, %rcx
+	vmovups	%zmm1, (%r9,%rcx,4)
+	cmpq	%rsi, %rbp
 	jae	.LBB1_21
 .LBB1_19:                               #   in Loop: Header=BB1_2 Depth=1
-	movl	%esi, %eax
-	leaq	(%r8,%rax,4), %rdx
+	movl	%ebx, %eax
+	leaq	(%r8,%rax,4), %rcx
 	.p2align	4, 0x90
 .LBB1_20:                               #   Parent Loop BB1_2 Depth=1
                                         # =>  This Inner Loop Header: Depth=2
-	movl	$0, -64(%rdx,%rbp,4)
-	movl	$0, -32(%rdx,%rbp,4)
-	movl	$0, (%rdx,%rbp,4)
+	movl	$0, -64(%rcx,%rbp,4)
+	movl	$0, -32(%rcx,%rbp,4)
+	movl	$0, (%rcx,%rbp,4)
 	incq	%rbp
-	cmpq	%rbp, %rcx
+	cmpq	%rbp, %rsi
 	jne	.LBB1_20
 	jmp	.LBB1_21
 	.p2align	5, 0x90
 .LBB1_5:
+	xorl	%r13d, %r13d
 	xorl	%eax, %eax
-	vmovups	%zmm2, 160(%rsp)                # 64-byte Spill
-	vmovdqu64	%zmm3, 96(%rsp)         # 64-byte Spill
+	vmovups	%zmm2, 144(%rsp)                # 64-byte Spill
+	vmovdqu64	%zmm3, 80(%rsp)         # 64-byte Spill
 	vzeroupper
 	callq	getTimeStamp
-	vmovsd	%xmm0, 24(%rsp)                 # 8-byte Spill
+	vmovsd	%xmm0, 16(%rsp)                 # 8-byte Spill
 	movl	$.L.str.1, %edi
 	callq	likwid_markerStartRegion
-	vmovups	96(%rsp), %zmm31                # 64-byte Reload
-	vmovups	160(%rsp), %zmm30               # 64-byte Reload
+	vmovups	80(%rsp), %zmm31                # 64-byte Reload
+	vmovups	144(%rsp), %zmm30               # 64-byte Reload
 	cmpl	$0, 20(%r15)
 	jle	.LBB1_10
 # %bb.6:
@@ -840,27 +809,25 @@ computeForceLJ_2xnn_half:               #
                                         # xmm0 = mem[0],zero,zero,zero
 	vmulss	%xmm0, %xmm0, %xmm0
 	vbroadcastss	%xmm0, %zmm0
-	xorl	%r11d, %r11d
 	vbroadcastss	.LCPI1_0(%rip), %zmm1   # zmm1 = [-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1]
 	vbroadcastss	.LCPI1_1(%rip), %zmm2   # zmm2 = [4.8E+1,4.8E+1,4.8E+1,4.8E+1,4.8E+1,4.8E+1,4.8E+1,4.8E+1,4.8E+1,4.8E+1,4.8E+1,4.8E+1,4.8E+1,4.8E+1,4.8E+1,4.8E+1]
-	movw	$4369, %cx                      # imm = 0x1111
-	kmovw	%ecx, %k1
+	movw	$4369, %ax                      # imm = 0x1111
+	kmovw	%eax, %k1
 	vmovdqu	.LCPI1_2(%rip), %xmm3           # xmm3 = <1,u>
                                         # AlignMOV convert to UnAlignMOV 
 	vmovsd	.LCPI1_3(%rip), %xmm4           # xmm4 = mem[0],zero
-	xorl	%ebx, %ebx
-	movq	%r12, 40(%rsp)                  # 8-byte Spill
-	movq	%r15, 16(%rsp)                  # 8-byte Spill
+	movq	%r14, 24(%rsp)                  # 8-byte Spill
+	movq	%r15, 8(%rsp)                   # 8-byte Spill
+	movl	$248, %ebp
 	jmp	.LBB1_7
 	.p2align	5, 0x90
 .LBB1_13:                               #   in Loop: Header=BB1_7 Depth=1
-	movl	12(%rsp), %ebx                  # 4-byte Reload
-	movq	40(%rsp), %r12                  # 8-byte Reload
-	movq	16(%rsp), %r15                  # 8-byte Reload
-	movq	80(%rsp), %rax                  # 8-byte Reload
-	movq	72(%rsp), %rsi                  # 8-byte Reload
-	movq	64(%rsp), %r10                  # 8-byte Reload
-	movq	56(%rsp), %rcx                  # 8-byte Reload
+	movq	24(%rsp), %r14                  # 8-byte Reload
+	movq	8(%rsp), %r15                   # 8-byte Reload
+	movq	64(%rsp), %rcx                  # 8-byte Reload
+	movq	56(%rsp), %rdx                  # 8-byte Reload
+	movq	48(%rsp), %rsi                  # 8-byte Reload
+	movq	40(%rsp), %rax                  # 8-byte Reload
 .LBB1_9:                                #   in Loop: Header=BB1_7 Depth=1
 	vshuff64x2	$136, %zmm14, %zmm12, %zmm7 # zmm7 = zmm12[0,1,4,5],zmm14[0,1,4,5]
 	vshuff64x2	$221, %zmm14, %zmm12, %zmm10 # zmm10 = zmm12[2,3,6,7],zmm14[2,3,6,7]
@@ -870,8 +837,8 @@ computeForceLJ_2xnn_half:               #
 	vpermilps	$177, %zmm7, %zmm10     # zmm10 = zmm7[1,0,3,2,5,4,7,6,9,8,11,10,13,12,15,14]
 	vaddps	%zmm10, %zmm7, %zmm7
 	vcompressps	%zmm7, %zmm7 {%k1} {z}
-	vaddps	(%r10,%rax,4), %xmm7, %xmm7
-	vmovups	%xmm7, (%r10,%rax,4)            # AlignMOV convert to UnAlignMOV 
+	vaddps	(%rsi,%rcx,4), %xmm7, %xmm7
+	vmovups	%xmm7, (%rsi,%rcx,4)            # AlignMOV convert to UnAlignMOV 
 	vshuff64x2	$136, %zmm9, %zmm8, %zmm7 # zmm7 = zmm8[0,1,4,5],zmm9[0,1,4,5]
 	vshuff64x2	$221, %zmm9, %zmm8, %zmm8 # zmm8 = zmm8[2,3,6,7],zmm9[2,3,6,7]
 	vaddps	%zmm8, %zmm7, %zmm7
@@ -880,8 +847,8 @@ computeForceLJ_2xnn_half:               #
 	vpermilps	$177, %zmm7, %zmm8      # zmm8 = zmm7[1,0,3,2,5,4,7,6,9,8,11,10,13,12,15,14]
 	vaddps	%zmm8, %zmm7, %zmm7
 	vcompressps	%zmm7, %zmm7 {%k1} {z}
-	vaddps	32(%r10,%rax,4), %xmm7, %xmm7
-	vmovups	%xmm7, 32(%r10,%rax,4)          # AlignMOV convert to UnAlignMOV 
+	vaddps	32(%rsi,%rcx,4), %xmm7, %xmm7
+	vmovups	%xmm7, 32(%rsi,%rcx,4)          # AlignMOV convert to UnAlignMOV 
 	vshuff64x2	$136, %zmm5, %zmm6, %zmm7 # zmm7 = zmm6[0,1,4,5],zmm5[0,1,4,5]
 	vshuff64x2	$221, %zmm5, %zmm6, %zmm5 # zmm5 = zmm6[2,3,6,7],zmm5[2,3,6,7]
 	vaddps	%zmm5, %zmm7, %zmm5
@@ -890,70 +857,69 @@ computeForceLJ_2xnn_half:               #
 	vpermilps	$177, %zmm5, %zmm6      # zmm6 = zmm5[1,0,3,2,5,4,7,6,9,8,11,10,13,12,15,14]
 	vaddps	%zmm6, %zmm5, %zmm5
 	vcompressps	%zmm5, %zmm5 {%k1} {z}
-	vaddps	64(%r10,%rax,4), %xmm5, %xmm5
-	vmovups	%xmm5, 64(%r10,%rax,4)          # AlignMOV convert to UnAlignMOV 
-	vpinsrq	$1, %rcx, %xmm3, %xmm5
-	movq	48(%rsp), %rdx                  # 8-byte Reload
-	vpaddq	(%rdx), %xmm5, %xmm5
-	vmovdqu	%xmm5, (%rdx)
-	addl	%esi, %ebx
-	vcvtsi2sd	%esi, %xmm11, %xmm5
+	vaddps	64(%rsi,%rcx,4), %xmm5, %xmm5
+	vmovups	%xmm5, 64(%rsi,%rcx,4)          # AlignMOV convert to UnAlignMOV 
+	vpinsrq	$1, %rax, %xmm3, %xmm5
+	movq	32(%rsp), %rcx                  # 8-byte Reload
+	vpaddq	(%rcx), %xmm5, %xmm5
+	vmovdqu	%xmm5, (%rcx)
+	vcvtsi2sd	%edx, %xmm11, %xmm5
 	vmulsd	%xmm4, %xmm5, %xmm5
-	vcvttsd2si	%xmm5, %rcx
-	addq	%rcx, 16(%rdx)
-	incq	%r11
-	movslq	20(%r15), %rcx
-	cmpq	%rcx, %r11
+	vcvttsd2si	%xmm5, %rax
+	addq	%rax, 16(%rcx)
+	incq	%r13
+	movslq	20(%r15), %rax
+	cmpq	%rax, %r13
 	jge	.LBB1_10
 .LBB1_7:                                # =>This Loop Header: Depth=1
                                         #     Child Loop BB1_12 Depth 2
-	leal	(,%r11,4), %eax
-	movl	%eax, %ecx
-	andl	$2147483640, %ecx               # imm = 0x7FFFFFF8
-	leal	(%rcx,%rcx,2), %ecx
-	andl	$4, %eax
-	orl	%ecx, %eax
-	movq	176(%r15), %r10
-	movq	24(%r12), %rcx
-	movslq	(%rcx,%r11,4), %rsi
-	testq	%rsi, %rsi
+	leal	(,%r13,4), %ecx
+	movl	%ecx, %eax
+	andl	$2147483640, %eax               # imm = 0x7FFFFFF8
+	leal	(%rax,%rax,2), %eax
+	andl	$4, %ecx
+	orl	%eax, %ecx
+	movq	176(%r15), %rsi
+	movq	24(%r14), %rax
+	movslq	(%rax,%r13,4), %rdx
+	testq	%rdx, %rdx
 	jle	.LBB1_8
 # %bb.11:                               #   in Loop: Header=BB1_7 Depth=1
-	movl	%ebx, 12(%rsp)                  # 4-byte Spill
-	movq	160(%r15), %r15
-	vbroadcastss	(%r15,%rax,4), %ymm5
-	movq	8(%r12), %rcx
-	vbroadcastss	4(%r15,%rax,4), %ymm6
+	movq	160(%r15), %r9
+	vbroadcastss	(%r9,%rcx,4), %ymm5
+	movq	8(%r14), %rax
+	vbroadcastss	4(%r9,%rcx,4), %ymm6
 	vinsertf64x4	$1, %ymm6, %zmm5, %zmm7
-	vbroadcastss	8(%r15,%rax,4), %ymm5
-	vbroadcastss	12(%r15,%rax,4), %ymm6
-	vbroadcastss	32(%r15,%rax,4), %ymm8
-	vbroadcastss	36(%r15,%rax,4), %ymm9
+	vbroadcastss	8(%r9,%rcx,4), %ymm5
+	vbroadcastss	12(%r9,%rcx,4), %ymm6
+	vbroadcastss	32(%r9,%rcx,4), %ymm8
+	vbroadcastss	36(%r9,%rcx,4), %ymm9
 	vinsertf64x4	$1, %ymm6, %zmm5, %zmm10
 	vinsertf64x4	$1, %ymm9, %zmm8, %zmm11
-	vbroadcastss	40(%r15,%rax,4), %ymm5
-	vbroadcastss	44(%r15,%rax,4), %ymm6
+	vbroadcastss	40(%r9,%rcx,4), %ymm5
+	vbroadcastss	44(%r9,%rcx,4), %ymm6
 	vinsertf64x4	$1, %ymm6, %zmm5, %zmm13
-	vbroadcastss	64(%r15,%rax,4), %ymm5
-	vbroadcastss	68(%r15,%rax,4), %ymm6
+	vbroadcastss	64(%r9,%rcx,4), %ymm5
+	vbroadcastss	68(%r9,%rcx,4), %ymm6
 	vinsertf64x4	$1, %ymm6, %zmm5, %zmm15
-	vbroadcastss	72(%r15,%rax,4), %ymm5
-	movq	%rax, 80(%rsp)                  # 8-byte Spill
-	vbroadcastss	76(%r15,%rax,4), %ymm6
+	vbroadcastss	72(%r9,%rcx,4), %ymm5
+	movq	%rcx, 64(%rsp)                  # 8-byte Spill
+	vbroadcastss	76(%r9,%rcx,4), %ymm6
 	vinsertf64x4	$1, %ymm6, %zmm5, %zmm16
-	movq	%rsi, 72(%rsp)                  # 8-byte Spill
-	movl	%esi, %eax
-	movl	16(%r12), %edx
-	imull	%r11d, %edx
-	movslq	%edx, %rdx
-	leaq	(%rcx,%rdx,4), %rcx
-	movq	%rcx, (%rsp)                    # 8-byte Spill
-	movq	%rax, 56(%rsp)                  # 8-byte Spill
-	decq	%rax
-	movq	%rax, 88(%rsp)                  # 8-byte Spill
+	movq	%rdx, 56(%rsp)                  # 8-byte Spill
+	movl	%edx, %edx
+	movl	16(%r14), %ecx
+	imull	%r13d, %ecx
+	movslq	%ecx, %rcx
+	leaq	(%rax,%rcx,4), %rax
+	movq	%rax, (%rsp)                    # 8-byte Spill
+	movq	%rdx, 40(%rsp)                  # 8-byte Spill
+	leaq	-1(%rdx), %rax
+	movq	%rax, 72(%rsp)                  # 8-byte Spill
 	vxorps	%xmm12, %xmm12, %xmm12
-	movq	%r10, 64(%rsp)                  # 8-byte Spill
-	xorl	%ecx, %ecx
+	movq	%rsi, 48(%rsp)                  # 8-byte Spill
+	movq	%rsi, %rcx
+	xorl	%r11d, %r11d
 	vxorps	%xmm8, %xmm8, %xmm8
 	vxorps	%xmm6, %xmm6, %xmm6
 	vxorps	%xmm14, %xmm14, %xmm14
@@ -963,47 +929,46 @@ computeForceLJ_2xnn_half:               #
 .LBB1_12:                               #   Parent Loop BB1_7 Depth=1
                                         # =>  This Inner Loop Header: Depth=2
 	movq	(%rsp), %rax                    # 8-byte Reload
-	movslq	(%rax,%rcx,4), %rdx
+	movslq	(%rax,%r11,4), %rdx
 	leal	(%rdx,%rdx), %esi
-	xorl	%ebx, %ebx
-	cmpq	%rsi, %r11
-	leal	1(%rdx,%rdx), %edi
-	setne	%bl
-	leal	(%rbx,%rbx,2), %ebx
-	movl	$255, %ebp
-	movl	$248, %eax
-	cmovel	%eax, %ebp
-	orl	$252, %ebx
-	leal	-127(%rbp), %r8d
-	cmpq	%rdi, %r11
-	cmovnel	%ebp, %r8d
-	leal	193(%rbx), %r14d
-	xorl	%r13d, %r13d
-	cmpq	%rdi, %r11
-	cmovnel	%ebx, %r14d
-	sete	%r13b
-	movl	$0, %r9d
-	movl	$-31, %eax
-	cmovel	%eax, %r9d
-	leal	240(%r13), %edi
-	addl	$255, %r13d
-	xorl	%ebx, %ebx
-	cmpq	%rsi, %r11
-	cmovel	%edi, %r13d
-	sete	%bl
+	xorl	%edi, %edi
+	cmpq	%rsi, %r13
+	leal	1(%rdx,%rdx), %ebx
+	setne	%dil
+	leal	(%rdi,%rdi,2), %edi
+	movl	$255, %eax
+	cmovel	%ebp, %eax
+	orl	$252, %edi
+	leal	-127(%rax), %r15d
+	cmpq	%rbx, %r13
+	cmovnel	%eax, %r15d
+	leal	193(%rdi), %r10d
+	xorl	%r8d, %r8d
+	cmpq	%rbx, %r13
+	cmovnel	%edi, %r10d
+	sete	%r8b
+	movl	$0, %r12d
+	movl	$-31, %edi
+	cmovel	%edi, %r12d
+	leal	240(%r8), %eax
+	addl	$255, %r8d
+	xorl	%edi, %edi
+	cmpq	%rsi, %r13
+	cmovel	%eax, %r8d
+	sete	%dil
 	shlq	$5, %rdx
-	leaq	(%rdx,%rdx,2), %r12
-	vmovupd	(%r15,%r12), %zmm17
-	vbroadcastf64x4	(%r15,%r12), %zmm18     # zmm18 = mem[0,1,2,3,0,1,2,3]
-	vbroadcastf64x4	64(%r15,%r12), %zmm19   # zmm19 = mem[0,1,2,3,0,1,2,3]
-	subl	%ebx, %r9d
-	addl	$255, %r9d
-	shll	$8, %r14d
-	orl	%r9d, %r14d
-	kmovd	%r14d, %k2
-	shll	$8, %r13d
-	orl	%r8d, %r13d
-	kmovd	%r13d, %k3
+	leaq	(%rdx,%rdx,2), %r14
+	vmovupd	(%r9,%r14), %zmm17
+	vbroadcastf64x4	(%r9,%r14), %zmm18      # zmm18 = mem[0,1,2,3,0,1,2,3]
+	vbroadcastf64x4	64(%r9,%r14), %zmm19    # zmm19 = mem[0,1,2,3,0,1,2,3]
+	subl	%edi, %r12d
+	addl	$255, %r12d
+	shll	$8, %r10d
+	orl	%r12d, %r10d
+	kmovd	%r10d, %k2
+	shll	$8, %r8d
+	orl	%r15d, %r8d
+	kmovd	%r8d, %k3
 	vshuff64x2	$238, %zmm17, %zmm17, %zmm17 # zmm17 = zmm17[4,5,6,7,4,5,6,7]
 	vsubps	%zmm18, %zmm7, %zmm20
 	vsubps	%zmm17, %zmm11, %zmm21
@@ -1047,38 +1012,38 @@ computeForceLJ_2xnn_half:               #
 	vaddps	%zmm17, %zmm21, %zmm24
 	vextractf64x4	$1, %zmm23, %ymm25
 	vaddps	%ymm25, %ymm23, %ymm23
-	vmovups	(%r10,%r12), %ymm25             # AlignMOV convert to UnAlignMOV 
+	vmovups	(%rcx,%r14), %ymm25             # AlignMOV convert to UnAlignMOV 
 	vsubps	%ymm23, %ymm25, %ymm23
-	vmovups	32(%r10,%r12), %ymm25           # AlignMOV convert to UnAlignMOV 
-	vmovups	64(%r10,%r12), %ymm26           # AlignMOV convert to UnAlignMOV 
-	vmovups	%ymm23, (%r10,%r12)             # AlignMOV convert to UnAlignMOV 
+	vmovups	32(%rcx,%r14), %ymm25           # AlignMOV convert to UnAlignMOV 
+	vmovups	64(%rcx,%r14), %ymm26           # AlignMOV convert to UnAlignMOV 
+	vmovups	%ymm23, (%rcx,%r14)             # AlignMOV convert to UnAlignMOV 
 	vaddps	%zmm19, %zmm22, %zmm23
 	vextractf64x4	$1, %zmm24, %ymm27
 	vaddps	%ymm27, %ymm24, %ymm24
 	vsubps	%ymm24, %ymm25, %ymm24
-	vmovups	%ymm24, 32(%r10,%r12)           # AlignMOV convert to UnAlignMOV 
+	vmovups	%ymm24, 32(%rcx,%r14)           # AlignMOV convert to UnAlignMOV 
 	vextractf64x4	$1, %zmm23, %ymm24
 	vaddps	%ymm24, %ymm23, %ymm23
 	vsubps	%ymm23, %ymm26, %ymm23
-	vmovups	%ymm23, 64(%r10,%r12)           # AlignMOV convert to UnAlignMOV 
+	vmovups	%ymm23, 64(%rcx,%r14)           # AlignMOV convert to UnAlignMOV 
 	vaddps	%zmm20, %zmm12, %zmm12
 	vaddps	%zmm21, %zmm8, %zmm8
 	vaddps	%zmm22, %zmm6, %zmm6
 	vaddps	%zmm18, %zmm14, %zmm14
 	vaddps	%zmm17, %zmm9, %zmm9
 	vaddps	%zmm19, %zmm5, %zmm5
-	cmpq	%rcx, 88(%rsp)                  # 8-byte Folded Reload
+	cmpq	%r11, 72(%rsp)                  # 8-byte Folded Reload
 	je	.LBB1_13
 # %bb.14:                               #   in Loop: Header=BB1_12 Depth=2
-	movq	16(%rsp), %rdx                  # 8-byte Reload
-	movq	160(%rdx), %r15
-	movq	176(%rdx), %r10
-	incq	%rcx
+	movq	8(%rsp), %rax                   # 8-byte Reload
+	movq	160(%rax), %r9
+	movq	176(%rax), %rcx
+	incq	%r11
 	jmp	.LBB1_12
 	.p2align	5, 0x90
 .LBB1_8:                                #   in Loop: Header=BB1_7 Depth=1
 	vxorps	%xmm5, %xmm5, %xmm5
-	movq	%rsi, %rcx
+	movq	%rdx, %rax
 	vxorps	%xmm9, %xmm9, %xmm9
 	vxorps	%xmm14, %xmm14, %xmm14
 	vxorps	%xmm6, %xmm6, %xmm6
@@ -1092,25 +1057,14 @@ computeForceLJ_2xnn_half:               #
 	callq	likwid_markerStopRegion
 	xorl	%eax, %eax
 	callq	getTimeStamp
-	movq	32(%rsp), %rax                  # 8-byte Reload
-	vmovsd	184(%rax), %xmm3                # xmm3 = mem[0],zero
-	vsubsd	24(%rsp), %xmm0, %xmm1          # 8-byte Folded Reload
-	vmovsd	%xmm1, (%rsp)                   # 8-byte Spill
-	vmulsd	.LCPI1_4(%rip), %xmm3, %xmm0
-	vmulsd	%xmm1, %xmm0, %xmm0
-	vcvtusi2sd	%ebx, %xmm11, %xmm2
-	vdivsd	%xmm2, %xmm0, %xmm2
+	vmovsd	%xmm0, (%rsp)                   # 8-byte Spill
 	movl	$.L.str.4, %edi
-	movl	%ebx, %esi
-	vmovapd	%xmm3, %xmm0
-	movb	$3, %al
-	callq	printf
-	movl	$.L.str.5, %edi
 	xorl	%eax, %eax
 	callq	debug_printf
 	vmovsd	(%rsp), %xmm0                   # 8-byte Reload
                                         # xmm0 = mem[0],zero
-	addq	$232, %rsp
+	vsubsd	16(%rsp), %xmm0, %xmm0          # 8-byte Folded Reload
+	addq	$216, %rsp
 	.cfi_def_cfa_offset 56
 	popq	%rbx
 	.cfi_def_cfa_offset 48
@@ -1377,12 +1331,6 @@ computeForceLJ_2xnn_full:               #
 	vxorps	%xmm8, %xmm8, %xmm8
 	vxorps	%xmm4, %xmm4, %xmm4
 	.p2align	4, 0x90
-movl      $111, %ebx # OSACA START MARKER
-.byte     100        # OSACA START MARKER
-.byte     103        # OSACA START MARKER
-.byte     144        # OSACA START MARKER
-# LLVM-MCA-BEGIN
-# pointer_increment=256 a23042eac7d8a1e13e9ff886fc02a80e
 .LBB2_12:                               #   Parent Loop BB2_7 Depth=1
                                         # =>  This Inner Loop Header: Depth=2
 	movslq	(%r11,%rax,4), %rcx
@@ -1464,11 +1412,6 @@ movl      $111, %ebx # OSACA START MARKER
 	incq	%rax
 	cmpq	%rax, %r10
 	jne	.LBB2_12
-# LLVM-MCA-END
-movl      $222, %ebx # OSACA END MARKER
-.byte     100        # OSACA END MARKER
-.byte     103        # OSACA END MARKER
-.byte     144        # OSACA END MARKER
 # %bb.13:                               #   in Loop: Header=BB2_7 Depth=1
 	movq	%r15, %r14
 	movq	8(%rsp), %rbp                   # 8-byte Reload
@@ -1481,7 +1424,7 @@ movl      $222, %ebx # OSACA END MARKER
 	xorl	%eax, %eax
 	callq	getTimeStamp
 	vmovsd	%xmm0, 8(%rsp)                  # 8-byte Spill
-	movl	$.L.str.5, %edi
+	movl	$.L.str.4, %edi
 	xorl	%eax, %eax
 	callq	debug_printf
 	vmovsd	8(%rsp), %xmm0                  # 8-byte Reload
@@ -1523,15 +1466,11 @@ computeForceLJ_2xnn:                    #
 	.size	computeForceLJ_2xnn, .Lfunc_end3-computeForceLJ_2xnn
 	.cfi_endproc
                                         # -- End function
-	.section	.rodata.cst8,"aM",@progbits,8
-	.p2align	3                               # -- Begin function computeForceLJ_4xn_half
-.LCPI4_0:
-	.quad	0x41cdcd6500000000              #  1.0E+9
 	.section	.rodata.cst4,"aM",@progbits,4
-	.p2align	2
-.LCPI4_1:
+	.p2align	2                               # -- Begin function computeForceLJ_4xn_half
+.LCPI4_0:
 	.long	0xbf000000                      #  -0.5
-.LCPI4_2:
+.LCPI4_1:
 	.long	0x42400000                      #  48
 	.text
 	.globl	computeForceLJ_4xn_half
@@ -1544,31 +1483,28 @@ computeForceLJ_4xn_half:                #
 	.cfi_def_cfa_offset 16
 	pushq	%r14
 	.cfi_def_cfa_offset 24
-	pushq	%r13
-	.cfi_def_cfa_offset 32
 	pushq	%r12
-	.cfi_def_cfa_offset 40
+	.cfi_def_cfa_offset 32
 	pushq	%rbx
-	.cfi_def_cfa_offset 48
-	subq	$576, %rsp                      # imm = 0x240
+	.cfi_def_cfa_offset 40
+	subq	$584, %rsp                      # imm = 0x248
 	.cfi_def_cfa_offset 624
-	.cfi_offset %rbx, -48
-	.cfi_offset %r12, -40
-	.cfi_offset %r13, -32
+	.cfi_offset %rbx, -40
+	.cfi_offset %r12, -32
 	.cfi_offset %r14, -24
 	.cfi_offset %r15, -16
 	movq	%rdx, %r14
 	movq	%rsi, %r15
-	movq	%rdi, %r12
-	movl	$.L.str.6, %edi
+	movq	%rdi, %rbx
+	movl	$.L.str.5, %edi
 	xorl	%eax, %eax
 	callq	debug_printf
-	vmovss	108(%r12), %xmm0                # xmm0 = mem[0],zero,zero,zero
-	vmovss	%xmm0, 64(%rsp)                 # 4-byte Spill
-	vbroadcastss	48(%r12), %zmm0
+	vmovss	108(%rbx), %xmm0                # xmm0 = mem[0],zero,zero,zero
+	vmovss	%xmm0, (%rsp)                   # 4-byte Spill
+	vbroadcastss	48(%rbx), %zmm0
+	vmovups	%zmm0, 64(%rsp)                 # 64-byte Spill
+	vbroadcastss	40(%rbx), %zmm0
 	vmovups	%zmm0, 512(%rsp)                # 64-byte Spill
-	vbroadcastss	40(%r12), %zmm0
-	vmovupd	%zmm0, 448(%rsp)                # 64-byte Spill
 	movl	20(%r15), %r11d
 	testl	%r11d, %r11d
 	jle	.LBB4_5
@@ -1578,7 +1514,7 @@ computeForceLJ_4xn_half:                #
 	decq	%r11
 	leaq	64(%r9), %r8
 	xorl	%edi, %edi
-	vxorpd	%xmm0, %xmm0, %xmm0
+	vxorps	%xmm0, %xmm0, %xmm0
 	vxorps	%xmm1, %xmm1, %xmm1
 	jmp	.LBB4_2
 	.p2align	5, 0x90
@@ -1614,21 +1550,21 @@ computeForceLJ_4xn_half:                #
 .LBB4_10:                               #   in Loop: Header=BB4_2 Depth=1
 	leaq	(,%rcx,4), %rbx
 	andq	$-32, %rbx
-	movl	%esi, %r13d
-	leaq	(%r9,%r13,4), %rax
+	movl	%esi, %r12d
+	leaq	(%r9,%r12,4), %rax
 	xorl	%edx, %edx
 	.p2align	4, 0x90
 .LBB4_11:                               #   Parent Loop BB4_2 Depth=1
                                         # =>  This Inner Loop Header: Depth=2
-	vmovupd	%ymm0, (%rax,%rdx)
+	vmovups	%ymm0, (%rax,%rdx)
 	addq	$32, %rdx
 	cmpq	%rdx, %rbx
 	jne	.LBB4_11
 # %bb.12:                               #   in Loop: Header=BB4_2 Depth=1
 	movl	%ecx, %ebx
 	andl	$-8, %ebx
-	addq	%rbx, %r13
-	vmovups	%zmm1, (%r9,%r13,4)
+	addq	%rbx, %r12
+	vmovups	%zmm1, (%r9,%r12,4)
 	cmpq	%rcx, %rbx
 	jae	.LBB4_16
 .LBB4_14:                               #   in Loop: Header=BB4_2 Depth=1
@@ -1649,7 +1585,7 @@ computeForceLJ_4xn_half:                #
 	xorl	%eax, %eax
 	vzeroupper
 	callq	getTimeStamp
-	vmovsd	%xmm0, (%rsp)                   # 8-byte Spill
+	vmovsd	%xmm0, 128(%rsp)                # 8-byte Spill
 	movl	$.L.str.1, %edi
 	callq	likwid_markerStartRegion
 	cmpl	$0, 20(%r15)
@@ -1659,30 +1595,18 @@ computeForceLJ_4xn_half:                #
 	callq	likwid_markerStopRegion
 	xorl	%eax, %eax
 	callq	getTimeStamp
-	vmovsd	184(%r12), %xmm3                # xmm3 = mem[0],zero
-	vsubsd	(%rsp), %xmm0, %xmm1            # 8-byte Folded Reload
-	vmovsd	%xmm1, (%rsp)                   # 8-byte Spill
-	vmulsd	.LCPI4_0(%rip), %xmm3, %xmm0
-	vmulsd	%xmm1, %xmm0, %xmm0
-	vxorpd	%xmm2, %xmm2, %xmm2
-	vdivsd	%xmm2, %xmm0, %xmm2
-	movl	$.L.str.4, %edi
-	xorl	%esi, %esi
-	vmovapd	%xmm3, %xmm0
-	movb	$3, %al
-	callq	printf
-	movl	$.L.str.7, %edi
+	vmovsd	%xmm0, 64(%rsp)                 # 8-byte Spill
+	movl	$.L.str.6, %edi
 	xorl	%eax, %eax
 	callq	debug_printf
-	vmovsd	(%rsp), %xmm0                   # 8-byte Reload
+	vmovsd	64(%rsp), %xmm0                 # 8-byte Reload
                                         # xmm0 = mem[0],zero
-	addq	$576, %rsp                      # imm = 0x240
-	.cfi_def_cfa_offset 48
-	popq	%rbx
+	vsubsd	128(%rsp), %xmm0, %xmm0         # 8-byte Folded Reload
+	addq	$584, %rsp                      # imm = 0x248
 	.cfi_def_cfa_offset 40
-	popq	%r12
+	popq	%rbx
 	.cfi_def_cfa_offset 32
-	popq	%r13
+	popq	%r12
 	.cfi_def_cfa_offset 24
 	popq	%r14
 	.cfi_def_cfa_offset 16
@@ -1697,26 +1621,26 @@ computeForceLJ_4xn_half:                #
 	testl	%r10d, %r10d
 	jle	.LBB4_18
 # %bb.7:
-	vmovss	64(%rsp), %xmm0                 # 4-byte Reload
+	vmovss	(%rsp), %xmm0                   # 4-byte Reload
                                         # xmm0 = mem[0],zero,zero,zero
 	vmulss	%xmm0, %xmm0, %xmm0
 	vbroadcastss	%xmm0, %zmm0
 	movq	160(%r15), %rdi
 	movq	8(%r14), %r11
 	vbroadcastss	(%rdi), %zmm1
-	vmovups	%zmm1, (%rsp)                   # 64-byte Spill
-	vbroadcastss	4(%rdi), %zmm1
-	vmovups	%zmm1, 64(%rsp)                 # 64-byte Spill
-	vbroadcastss	8(%rdi), %zmm1
-	vmovups	%zmm1, 384(%rsp)                # 64-byte Spill
-	vbroadcastss	12(%rdi), %zmm1
-	vmovups	%zmm1, 320(%rsp)                # 64-byte Spill
-	vbroadcastss	32(%rdi), %zmm1
-	vmovups	%zmm1, 256(%rsp)                # 64-byte Spill
-	vbroadcastss	36(%rdi), %zmm1
-	vmovups	%zmm1, 192(%rsp)                # 64-byte Spill
-	vbroadcastss	40(%rdi), %zmm1
 	vmovups	%zmm1, 128(%rsp)                # 64-byte Spill
+	vbroadcastss	4(%rdi), %zmm1
+	vmovups	%zmm1, (%rsp)                   # 64-byte Spill
+	vbroadcastss	8(%rdi), %zmm1
+	vmovups	%zmm1, 448(%rsp)                # 64-byte Spill
+	vbroadcastss	12(%rdi), %zmm1
+	vmovups	%zmm1, 384(%rsp)                # 64-byte Spill
+	vbroadcastss	32(%rdi), %zmm1
+	vmovups	%zmm1, 320(%rsp)                # 64-byte Spill
+	vbroadcastss	36(%rdi), %zmm1
+	vmovups	%zmm1, 256(%rsp)                # 64-byte Spill
+	vbroadcastss	40(%rdi), %zmm1
+	vmovups	%zmm1, 192(%rsp)                # 64-byte Spill
 	vbroadcastss	44(%rdi), %zmm8
 	vbroadcastss	64(%rdi), %zmm9
 	vbroadcastss	68(%rdi), %zmm10
@@ -1726,11 +1650,17 @@ computeForceLJ_4xn_half:                #
 	xorl	%edx, %edx
 	movl	$248, %r8d
 	movl	$240, %r9d
-	vbroadcastss	.LCPI4_1(%rip), %zmm13  # zmm13 = [-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1]
-	vbroadcastss	.LCPI4_2(%rip), %zmm14  # zmm14 = [4.8E+1,4.8E+1,4.8E+1,4.8E+1,4.8E+1,4.8E+1,4.8E+1,4.8E+1,4.8E+1,4.8E+1,4.8E+1,4.8E+1,4.8E+1,4.8E+1,4.8E+1,4.8E+1]
-	vmovups	512(%rsp), %zmm6                # 64-byte Reload
-	vmovups	448(%rsp), %zmm7                # 64-byte Reload
+	vbroadcastss	.LCPI4_0(%rip), %zmm13  # zmm13 = [-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1,-5.0E-1]
+	vbroadcastss	.LCPI4_1(%rip), %zmm14  # zmm14 = [4.8E+1,4.8E+1,4.8E+1,4.8E+1,4.8E+1,4.8E+1,4.8E+1,4.8E+1,4.8E+1,4.8E+1,4.8E+1,4.8E+1,4.8E+1,4.8E+1,4.8E+1,4.8E+1]
+	vmovups	64(%rsp), %zmm6                 # 64-byte Reload
+	vmovups	512(%rsp), %zmm7                # 64-byte Reload
 	.p2align	4, 0x90
+movl      $111, %ebx # OSACA START MARKER
+.byte     100        # OSACA START MARKER
+.byte     103        # OSACA START MARKER
+.byte     144        # OSACA START MARKER
+# pointer_increment=64 0f91ac4f7fe1a70d0c899f7f3e745649
+# LLVM-MCA-BEGIN
 .LBB4_8:                                # =>This Inner Loop Header: Depth=1
 	movslq	(%r11,%rdx,4), %rax
 	movq	%rax, %rsi
@@ -1739,22 +1669,22 @@ computeForceLJ_4xn_half:                #
 	vmovups	(%rdi,%rbx), %zmm15             # AlignMOV convert to UnAlignMOV 
 	vmovups	32(%rdi,%rbx), %zmm16           # AlignMOV convert to UnAlignMOV 
 	vmovups	64(%rdi,%rbx), %zmm27           # AlignMOV convert to UnAlignMOV 
-	vmovups	(%rsp), %zmm1                   # 64-byte Reload
+	vmovups	128(%rsp), %zmm1                # 64-byte Reload
 	vsubps	%zmm15, %zmm1, %zmm24
-	vmovups	256(%rsp), %zmm1                # 64-byte Reload
+	vmovups	320(%rsp), %zmm1                # 64-byte Reload
 	vsubps	%zmm16, %zmm1, %zmm25
 	vsubps	%zmm27, %zmm9, %zmm26
-	vmovups	64(%rsp), %zmm1                 # 64-byte Reload
+	vmovups	(%rsp), %zmm1                   # 64-byte Reload
 	vsubps	%zmm15, %zmm1, %zmm21
-	vmovups	192(%rsp), %zmm1                # 64-byte Reload
+	vmovups	256(%rsp), %zmm1                # 64-byte Reload
 	vsubps	%zmm16, %zmm1, %zmm22
 	vsubps	%zmm27, %zmm10, %zmm23
-	vmovups	384(%rsp), %zmm1                # 64-byte Reload
+	vmovups	448(%rsp), %zmm1                # 64-byte Reload
 	vsubps	%zmm15, %zmm1, %zmm17
-	vmovups	128(%rsp), %zmm1                # 64-byte Reload
+	vmovups	192(%rsp), %zmm1                # 64-byte Reload
 	vsubps	%zmm16, %zmm1, %zmm19
 	vsubps	%zmm27, %zmm11, %zmm20
-	vmovups	320(%rsp), %zmm1                # 64-byte Reload
+	vmovups	384(%rsp), %zmm1                # 64-byte Reload
 	vsubps	%zmm15, %zmm1, %zmm18
 	vsubps	%zmm16, %zmm8, %zmm16
 	vsubps	%zmm27, %zmm12, %zmm15
@@ -1863,6 +1793,11 @@ computeForceLJ_4xn_half:                #
 	movq	160(%r15), %rdi
 	incq	%rdx
 	jmp	.LBB4_8
+# LLVM-MCA-END
+movl      $222, %ebx # OSACA END MARKER
+.byte     100        # OSACA END MARKER
+.byte     103        # OSACA END MARKER
+.byte     144        # OSACA END MARKER
 	.p2align	5, 0x90
 .LBB4_18:
 	vzeroupper
@@ -1879,7 +1814,7 @@ simd_incr_reduced_sum:                  #
 	pushq	%rax
 	.cfi_def_cfa_offset 16
 	movq	stderr(%rip), %rcx
-	movl	$.L.str.8, %edi
+	movl	$.L.str.7, %edi
 	movl	$92, %esi
 	movl	$1, %edx
 	callq	fwrite@PLT
@@ -1889,12 +1824,7 @@ simd_incr_reduced_sum:                  #
 	.size	simd_incr_reduced_sum, .Lfunc_end5-simd_incr_reduced_sum
 	.cfi_endproc
                                         # -- End function
-	.section	.rodata.cst8,"aM",@progbits,8
-	.p2align	3                               # -- Begin function computeForceLJ_4xn_full
-.LCPI6_0:
-	.quad	0x41cdcd6500000000              #  1.0E+9
-	.text
-	.globl	computeForceLJ_4xn_full
+	.globl	computeForceLJ_4xn_full         # -- Begin function computeForceLJ_4xn_full
 	.p2align	4, 0x90
 	.type	computeForceLJ_4xn_full,@function
 computeForceLJ_4xn_full:                # 
@@ -1904,31 +1834,27 @@ computeForceLJ_4xn_full:                #
 	.cfi_def_cfa_offset 16
 	pushq	%r14
 	.cfi_def_cfa_offset 24
-	pushq	%r12
-	.cfi_def_cfa_offset 32
 	pushq	%rbx
-	.cfi_def_cfa_offset 40
-	pushq	%rax
+	.cfi_def_cfa_offset 32
+	subq	$16, %rsp
 	.cfi_def_cfa_offset 48
-	.cfi_offset %rbx, -40
-	.cfi_offset %r12, -32
+	.cfi_offset %rbx, -32
 	.cfi_offset %r14, -24
 	.cfi_offset %r15, -16
-	movq	%rsi, %r15
-	movq	%rdi, %r14
-	movl	$.L.str.6, %edi
+	movq	%rsi, %r14
+	movl	$.L.str.5, %edi
 	xorl	%eax, %eax
 	callq	debug_printf
-	movl	20(%r15), %r11d
+	movl	20(%r14), %r11d
 	testl	%r11d, %r11d
 	jle	.LBB6_5
 # %bb.1:
-	movq	176(%r15), %r9
-	movq	192(%r15), %r10
+	movq	176(%r14), %r9
+	movq	192(%r14), %r10
 	decq	%r11
 	leaq	64(%r9), %r8
 	xorl	%edi, %edi
-	vxorpd	%xmm0, %xmm0, %xmm0
+	vxorps	%xmm0, %xmm0, %xmm0
 	vxorps	%xmm1, %xmm1, %xmm1
 	jmp	.LBB6_2
 	.p2align	5, 0x90
@@ -1964,21 +1890,21 @@ computeForceLJ_4xn_full:                #
 .LBB6_7:                                #   in Loop: Header=BB6_2 Depth=1
 	leaq	(,%rcx,4), %rbx
 	andq	$-32, %rbx
-	movl	%esi, %r12d
-	leaq	(%r9,%r12,4), %rax
+	movl	%esi, %r15d
+	leaq	(%r9,%r15,4), %rax
 	xorl	%edx, %edx
 	.p2align	4, 0x90
 .LBB6_8:                                #   Parent Loop BB6_2 Depth=1
                                         # =>  This Inner Loop Header: Depth=2
-	vmovupd	%ymm0, (%rax,%rdx)
+	vmovups	%ymm0, (%rax,%rdx)
 	addq	$32, %rdx
 	cmpq	%rdx, %rbx
 	jne	.LBB6_8
 # %bb.9:                                #   in Loop: Header=BB6_2 Depth=1
 	movl	%ecx, %ebx
 	andl	$-8, %ebx
-	addq	%rbx, %r12
-	vmovups	%zmm1, (%r9,%r12,4)
+	addq	%rbx, %r15
+	vmovups	%zmm1, (%r9,%r15,4)
 	cmpq	%rcx, %rbx
 	jae	.LBB6_13
 .LBB6_11:                               #   in Loop: Header=BB6_2 Depth=1
@@ -1999,38 +1925,26 @@ computeForceLJ_4xn_full:                #
 	xorl	%eax, %eax
 	vzeroupper
 	callq	getTimeStamp
-	vmovsd	%xmm0, (%rsp)                   # 8-byte Spill
+	vmovsd	%xmm0, 8(%rsp)                  # 8-byte Spill
 	movl	$.L.str.1, %edi
 	callq	likwid_markerStartRegion
-	cmpl	$0, 20(%r15)
+	cmpl	$0, 20(%r14)
 	jg	.LBB6_6
 # %bb.14:
 	movl	$.L.str.1, %edi
 	callq	likwid_markerStopRegion
 	xorl	%eax, %eax
 	callq	getTimeStamp
-	vmovsd	184(%r14), %xmm3                # xmm3 = mem[0],zero
-	vsubsd	(%rsp), %xmm0, %xmm1            # 8-byte Folded Reload
-	vmovsd	%xmm1, (%rsp)                   # 8-byte Spill
-	vmulsd	.LCPI6_0(%rip), %xmm3, %xmm0
-	vmulsd	%xmm1, %xmm0, %xmm0
-	vxorpd	%xmm2, %xmm2, %xmm2
-	vdivsd	%xmm2, %xmm0, %xmm2
-	movl	$.L.str.4, %edi
-	xorl	%esi, %esi
-	vmovapd	%xmm3, %xmm0
-	movb	$3, %al
-	callq	printf
-	movl	$.L.str.7, %edi
+	vmovsd	%xmm0, (%rsp)                   # 8-byte Spill
+	movl	$.L.str.6, %edi
 	xorl	%eax, %eax
 	callq	debug_printf
 	vmovsd	(%rsp), %xmm0                   # 8-byte Reload
                                         # xmm0 = mem[0],zero
-	addq	$8, %rsp
-	.cfi_def_cfa_offset 40
-	popq	%rbx
+	vsubsd	8(%rsp), %xmm0, %xmm0           # 8-byte Folded Reload
+	addq	$16, %rsp
 	.cfi_def_cfa_offset 32
-	popq	%r12
+	popq	%rbx
 	.cfi_def_cfa_offset 24
 	popq	%r14
 	.cfi_def_cfa_offset 16
@@ -2081,23 +1995,19 @@ computeForceLJ_4xn:                     #
 	.size	.L.str.3, 27
 	.type	.L.str.4,@object                # 
 .L.str.4:
-	.asciz	"Its: %u  Freq: %f  Time: %f\nCy/it: %f\n"
-	.size	.L.str.4, 39
+	.asciz	"computeForceLJ_2xnn end\n"
+	.size	.L.str.4, 25
 	.type	.L.str.5,@object                # 
 .L.str.5:
-	.asciz	"computeForceLJ_2xnn end\n"
-	.size	.L.str.5, 25
+	.asciz	"computeForceLJ_4xn begin\n"
+	.size	.L.str.5, 26
 	.type	.L.str.6,@object                # 
 .L.str.6:
-	.asciz	"computeForceLJ_4xn begin\n"
-	.size	.L.str.6, 26
+	.asciz	"computeForceLJ_4xn end\n"
+	.size	.L.str.6, 24
 	.type	.L.str.7,@object                # 
 .L.str.7:
-	.asciz	"computeForceLJ_4xn end\n"
-	.size	.L.str.7, 24
-	.type	.L.str.8,@object                # 
-.L.str.8:
 	.asciz	"simd_h_reduce_sum(): Called with AVX512 intrinsics and single-precision which is not valid!\n"
-	.size	.L.str.8, 93
+	.size	.L.str.7, 93
 	.ident	"Intel(R) oneAPI DPC++/C++ Compiler 2022.1.0 (2022.1.0.20220316)"
 	.section	".note.GNU-stack","",@progbits
