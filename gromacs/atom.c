@@ -50,11 +50,17 @@ void createAtom(Atom *atom, Parameter *param) {
     atom->sigma6 = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
     atom->cutforcesq = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
     atom->cutneighsq = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
+    atom->exclusion_filter = allocate(ALIGNMENT, CLUSTER_M * VECTOR_WIDTH * sizeof(MD_UINT));
+
     for(int i = 0; i < atom->ntypes * atom->ntypes; i++) {
         atom->epsilon[i] = param->epsilon;
         atom->sigma6[i] = param->sigma6;
         atom->cutneighsq[i] = param->cutneigh * param->cutneigh;
         atom->cutforcesq[i] = param->cutforce * param->cutforce;
+    }
+
+    for(int i = 0; i < CLUSTER_M * VECTOR_WIDTH; i++) {
+        atom->exclusion_filter[i] = (1U << i);
     }
 
     MD_FLOAT alat = pow((4.0 / param->rho), (1.0 / 3.0));

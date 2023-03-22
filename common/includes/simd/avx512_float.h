@@ -11,10 +11,26 @@
 #   include <zmmintrin.h>
 #endif
 
-#define MD_SIMD_FLOAT   __m512
-#define MD_SIMD_MASK    __mmask16
-#define MD_SIMD_INT     __m256i
+#define MD_SIMD_FLOAT       __m512
+#define MD_SIMD_MASK        __mmask16
+#define MD_SIMD_INT         __m256i
+#define MD_SIMD_IBOOL       __mmask16
+#define MD_SIMD_INT32       __m512i
+#define MD_SIMD_BITMASK     MD_SIMD_INT32
 
+static inline MD_SIMD_BITMASK simd_load_bitmask(const int *m) {
+    return _mm512_load_si512(m);
+}
+
+static inline MD_SIMD_INT32 simd_int32_broadcast(int a) {
+    return _mm512_set1_epi32(a);
+}
+
+static inline MD_SIMD_IBOOL simd_test_bits(MD_SIMD_FLOAT a) {
+    return _mm512_test_epi32_mask(_mm512_castps_si512(a), _mm512_castps_si512(a));
+}
+
+static inline MD_SIMD_MASK cvtIB2B(MD_SIMD_IBOOL a) { return a; }
 static inline MD_SIMD_FLOAT simd_broadcast(float scalar) { return _mm512_set1_ps(scalar); }
 static inline MD_SIMD_FLOAT simd_zero() { return _mm512_set1_ps(0.0f); }
 static inline MD_SIMD_FLOAT simd_add(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b) { return _mm512_add_ps(a, b); }

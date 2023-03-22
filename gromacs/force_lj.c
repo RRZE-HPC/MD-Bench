@@ -16,10 +16,36 @@
 #include <simd.h>
 
 
+static inline void gmx_load_simd_2xnn_interactions(
+    int excl,
+    MD_SIMD_BITMASK filter0, MD_SIMD_BITMASK filter2,
+    MD_SIMD_MASK *interact0, MD_SIMD_MASK *interact2) {
+
+    //SimdInt32 mask_pr_S(excl);
+    MD_SIMD_INT32 mask_pr_S = simd_int32_broadcast(excl);
+    *interact0 = cvtIB2B(simd_test_bits(mask_pr_S));
+    *interact2 = cvtIB2B(simd_test_bits(mask_pr_S));
+    //*interact0 = cvtIB2B(simd_test_bits(mask_pr_S & filter0));
+    //*interact2 = cvtIB2B(simd_test_bits(mask_pr_S & filter2));
+}
+
+static inline void gmx_load_simd_4xn_interactions(
+    int excl,
+    MD_SIMD_BITMASK filter0, MD_SIMD_BITMASK filter1, MD_SIMD_BITMASK filter2, MD_SIMD_BITMASK filter3,
+    MD_SIMD_MASK *interact0, MD_SIMD_MASK *interact1, MD_SIMD_MASK *interact2, MD_SIMD_MASK *interact3) {
+
+    //SimdInt32 mask_pr_S(excl);
+    MD_SIMD_INT32 mask_pr_S = simd_int32_broadcast(excl);
+    *interact0 = cvtIB2B(simd_test_bits(mask_pr_S & filter0));
+    *interact1 = cvtIB2B(simd_test_bits(mask_pr_S & filter1));
+    *interact2 = cvtIB2B(simd_test_bits(mask_pr_S & filter2));
+    *interact3 = cvtIB2B(simd_test_bits(mask_pr_S & filter3));
+}
+
 double computeForceLJ_ref(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *stats) {
     DEBUG_MESSAGE("computeForceLJ begin\n");
     int Nlocal = atom->Nlocal;
-    int* neighs;
+    NeighborCluster* neighs;
     MD_FLOAT cutforcesq = param->cutforce * param->cutforce;
     MD_FLOAT sigma6 = param->sigma6;
     MD_FLOAT epsilon = param->epsilon;
@@ -51,7 +77,7 @@ double computeForceLJ_ref(Parameter *param, Atom *atom, Neighbor *neighbor, Stat
         int numneighs = neighbor->numneigh[ci];
 
         for(int k = 0; k < numneighs; k++) {
-            int cj = neighs[k];
+            int cj = neighs[k].cj;
             int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
             int any = 0;
             MD_FLOAT *cj_x = &atom->cl_x[cj_vec_base];
@@ -132,7 +158,7 @@ double computeForceLJ_ref(Parameter *param, Atom *atom, Neighbor *neighbor, Stat
 double computeForceLJ_2xnn_half(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *stats) {
     DEBUG_MESSAGE("computeForceLJ_2xnn begin\n");
     int Nlocal = atom->Nlocal;
-    int* neighs;
+    NeighborCluster* neighs;
     MD_FLOAT cutforcesq = param->cutforce * param->cutforce;
     MD_FLOAT sigma6 = param->sigma6;
     MD_FLOAT epsilon = param->epsilon;
@@ -158,6 +184,9 @@ double computeForceLJ_2xnn_half(Parameter *param, Atom *atom, Neighbor *neighbor
     #pragma omp parallel
     {
     LIKWID_MARKER_START("force");
+
+    MD_SIMD_BITMASK filter0 = simd_load_bitmask((const int *) &atom->exclusion_filter[0 * (VECTOR_WIDTH / UNROLL_J)]);
+    MD_SIMD_BITMASK filter2 = simd_load_bitmask((const int *) &atom->exclusion_filter[2 * (VECTOR_WIDTH / UNROLL_J)]);
 
     #pragma omp for
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
@@ -185,11 +214,13 @@ double computeForceLJ_2xnn_half(Parameter *param, Atom *atom, Neighbor *neighbor
         MD_SIMD_FLOAT fiz2 = simd_zero();
 
         for(int k = 0; k < numneighs; k++) {
-            int cj = neighs[k];
+            int cj = neighs[k].cj;
             int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
+            int imask = neighs[k].imask;
             MD_FLOAT *cj_x = &atom->cl_x[cj_vec_base];
             MD_FLOAT *cj_f = &atom->cl_f[cj_vec_base];
-            unsigned int mask0, mask1, mask2, mask3;
+            MD_SIMD_MASK interact0;
+            MD_SIMD_MASK interact2;
 
             MD_SIMD_FLOAT xj_tmp = simd_load_h_duplicate(&cj_x[CL_X_OFFSET]);
             MD_SIMD_FLOAT yj_tmp = simd_load_h_duplicate(&cj_x[CL_Y_OFFSET]);
@@ -201,36 +232,13 @@ double computeForceLJ_2xnn_half(Parameter *param, Atom *atom, Neighbor *neighbor
             MD_SIMD_FLOAT dely2 = simd_sub(yi2_tmp, yj_tmp);
             MD_SIMD_FLOAT delz2 = simd_sub(zi2_tmp, zj_tmp);
 
-            #if CLUSTER_M == CLUSTER_N
-            unsigned int cond0 = (unsigned int)(cj == ci_cj0);
-            mask0 = (unsigned int)(0xf - 0x1 * cond0);
-            mask1 = (unsigned int)(0xf - 0x3 * cond0);
-            mask2 = (unsigned int)(0xf - 0x7 * cond0);
-            mask3 = (unsigned int)(0xf - 0xf * cond0);
-            #elif CLUSTER_M < CLUSTER_N
-            unsigned int cond0 = (unsigned int)((cj << 1) + 0 == ci);
-            unsigned int cond1 = (unsigned int)((cj << 1) + 1 == ci);
-            mask0 = (unsigned int)(0xff - 0x1 * cond0 - 0x1f * cond1);
-            mask1 = (unsigned int)(0xff - 0x3 * cond0 - 0x3f * cond1);
-            mask2 = (unsigned int)(0xff - 0x7 * cond0 - 0x7f * cond1);
-            mask3 = (unsigned int)(0xff - 0xf * cond0 - 0xff * cond1);
-            #else
-            unsigned int cond0 = (unsigned int)(cj == ci_cj0);
-            unsigned int cond1 = (unsigned int)(cj == ci_cj1);
-            mask0 = (unsigned int)(0x3 - 0x1 * cond0);
-            mask1 = (unsigned int)(0x3 - 0x3 * cond0);
-            mask2 = (unsigned int)(0x3 - cond0 * 0x3 - 0x1 * cond1);
-            mask3 = (unsigned int)(0x3 - cond0 * 0x3 - 0x3 * cond1);
-            #endif
-
-            MD_SIMD_MASK excl_mask0 = simd_mask_from_u32((mask1 << half_mask_bits) | mask0);
-            MD_SIMD_MASK excl_mask2 = simd_mask_from_u32((mask3 << half_mask_bits) | mask2);
+            gmx_load_simd_2xnn_interactions((int) imask, filter0, filter2, &interact0, &interact2);
 
             MD_SIMD_FLOAT rsq0 = simd_fma(delx0, delx0, simd_fma(dely0, dely0, simd_mul(delz0, delz0)));
             MD_SIMD_FLOAT rsq2 = simd_fma(delx2, delx2, simd_fma(dely2, dely2, simd_mul(delz2, delz2)));
 
-            MD_SIMD_MASK cutoff_mask0 = simd_mask_and(excl_mask0, simd_mask_cond_lt(rsq0, cutforcesq_vec));
-            MD_SIMD_MASK cutoff_mask2 = simd_mask_and(excl_mask2, simd_mask_cond_lt(rsq2, cutforcesq_vec));
+            MD_SIMD_MASK cutoff_mask0 = simd_mask_and(interact0, simd_mask_cond_lt(rsq0, cutforcesq_vec));
+            MD_SIMD_MASK cutoff_mask2 = simd_mask_and(interact2, simd_mask_cond_lt(rsq2, cutforcesq_vec));
 
             MD_SIMD_FLOAT sr2_0 = simd_reciprocal(rsq0);
             MD_SIMD_FLOAT sr2_2 = simd_reciprocal(rsq2);
@@ -284,7 +292,7 @@ double computeForceLJ_2xnn_half(Parameter *param, Atom *atom, Neighbor *neighbor
 double computeForceLJ_2xnn_full(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *stats) {
     DEBUG_MESSAGE("computeForceLJ_2xnn begin\n");
     int Nlocal = atom->Nlocal;
-    int* neighs;
+    NeighborCluster* neighs;
     MD_FLOAT cutforcesq = param->cutforce * param->cutforce;
     MD_FLOAT sigma6 = param->sigma6;
     MD_FLOAT epsilon = param->epsilon;
@@ -337,8 +345,9 @@ double computeForceLJ_2xnn_full(Parameter *param, Atom *atom, Neighbor *neighbor
         MD_SIMD_FLOAT fiz2 = simd_zero();
 
         for(int k = 0; k < numneighs; k++) {
-            int cj = neighs[k];
+            int cj = neighs[k].cj;
             int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
+            int imask = neighs[k].imask;
             MD_FLOAT *cj_x = &atom->cl_x[cj_vec_base];
             unsigned int mask0, mask1, mask2, mask3;
 
@@ -429,7 +438,7 @@ double computeForceLJ_2xnn(Parameter *param, Atom *atom, Neighbor *neighbor, Sta
 double computeForceLJ_4xn_half(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *stats) {
     DEBUG_MESSAGE("computeForceLJ_4xn begin\n");
     int Nlocal = atom->Nlocal;
-    int* neighs;
+    NeighborCluster* neighs;
     MD_FLOAT cutforcesq = param->cutforce * param->cutforce;
     MD_FLOAT sigma6 = param->sigma6;
     MD_FLOAT epsilon = param->epsilon;
@@ -493,8 +502,9 @@ double computeForceLJ_4xn_half(Parameter *param, Atom *atom, Neighbor *neighbor,
         MD_SIMD_FLOAT fiz3 = simd_zero();
 
         for(int k = 0; k < numneighs; k++) {
-            int cj = neighs[k];
+            int cj = neighs[k].cj;
             int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
+            int imask = neighs[k].imask;
             MD_FLOAT *cj_x = &atom->cl_x[cj_vec_base];
             MD_FLOAT *cj_f = &atom->cl_f[cj_vec_base];
             MD_SIMD_FLOAT xj_tmp = simd_load(&cj_x[CL_X_OFFSET]);
@@ -619,7 +629,7 @@ double computeForceLJ_4xn_half(Parameter *param, Atom *atom, Neighbor *neighbor,
 double computeForceLJ_4xn_full(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *stats) {
     DEBUG_MESSAGE("computeForceLJ_4xn begin\n");
     int Nlocal = atom->Nlocal;
-    int* neighs;
+    NeighborCluster* neighs;
     MD_FLOAT cutforcesq = param->cutforce * param->cutforce;
     MD_FLOAT sigma6 = param->sigma6;
     MD_FLOAT epsilon = param->epsilon;
@@ -683,8 +693,9 @@ double computeForceLJ_4xn_full(Parameter *param, Atom *atom, Neighbor *neighbor,
         MD_SIMD_FLOAT fiz3 = simd_zero();
 
         for(int k = 0; k < numneighs; k++) {
-            int cj = neighs[k];
+            int cj = neighs[k].cj;
             int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
+            int imask = neighs[k].imask;
             MD_FLOAT *cj_x = &atom->cl_x[cj_vec_base];
             MD_SIMD_FLOAT xj_tmp = simd_load(&cj_x[CL_X_OFFSET]);
             MD_SIMD_FLOAT yj_tmp = simd_load(&cj_x[CL_Y_OFFSET]);

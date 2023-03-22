@@ -9,13 +9,34 @@
 
 #ifndef __NEIGHBOR_H_
 #define __NEIGHBOR_H_
+// Interaction masks from GROMACS, things to remember (maybe these confused just me):
+//   1. These are not "exclusion" masks as the name suggests in GROMACS, but rather
+//      interaction masks (1 = interaction, 0 = no interaction)
+//   2. These are inverted (maybe because that is how you use in AVX2/AVX512 masking),
+//      so read them from right to left (least significant to most significant bit)
+// All interaction mask is the same for all kernels
+#define NBNXN_INTERACTION_MASK_ALL 0xffffffffU
+// 4x4 kernel diagonal mask
+#define NBNXN_INTERACTION_MASK_DIAG 0x08ceU
+// 4x2 kernel diagonal masks
+#define NBNXN_INTERACTION_MASK_DIAG_J2_0 0x0002U
+#define NBNXN_INTERACTION_MASK_DIAG_J2_1 0x002fU
+// 4x8 kernel diagonal masks
+#define NBNXN_INTERACTION_MASK_DIAG_J8_0 0xf0f8fcfeU
+#define NBNXN_INTERACTION_MASK_DIAG_J8_1 0x0080c0e0U
+
+typedef struct {
+    int cj;
+    unsigned int imask;
+} NeighborCluster;
+
 typedef struct {
     int every;
     int ncalls;
-    int* neighbors;
     int maxneighs;
     int* numneigh;
     int half_neigh;
+    NeighborCluster* neighbors;
 } Neighbor;
 
 extern void initNeighbor(Neighbor*, Parameter*);
