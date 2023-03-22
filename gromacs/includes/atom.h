@@ -22,6 +22,7 @@
 #   define KERNEL_NAME              "CUDA"
 #   define CLUSTER_M                8
 #   define CLUSTER_N                VECTOR_WIDTH
+#   define UNROLL_J                 1
 #   define computeForceLJ           computeForceLJ_cuda
 #   define initialIntegrate         cudaInitialIntegrate
 #   define finalIntegrate           cudaFinalIntegrate
@@ -32,11 +33,13 @@
 #   if VECTOR_WIDTH > CLUSTER_M * 2
 #       define KERNEL_NAME          "Simd2xNN"
 #       define CLUSTER_N            (VECTOR_WIDTH / 2)
+#       define UNROLL_J             2
 #       define computeForceLJ       computeForceLJ_2xnn
 // Simd4xN
 #   else
 #       define KERNEL_NAME          "Simd4xN"
 #       define CLUSTER_N            VECTOR_WIDTH
+#       define UNROLL_J             1
 #       define computeForceLJ       computeForceLJ_4xn
 #   endif
 #   ifdef USE_REFERENCE_VERSION
@@ -116,6 +119,7 @@ typedef struct {
     Cluster *iclusters, *jclusters;
     int *icluster_bin;
     int dummy_cj;
+    MD_UINT *exclusion_filter;
 } Atom;
 
 extern void initAtom(Atom*);

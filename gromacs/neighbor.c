@@ -184,6 +184,43 @@ int atomDistanceInRange(Atom *atom, int ci, int cj, MD_FLOAT rsq) {
     return 0;
 }
 
+/* Returns a diagonal or off-diagonal interaction mask for plain C lists */
+static unsigned int get_imask(int rdiag, int ci, int cj) {
+    return (rdiag && ci == cj ? NBNXN_INTERACTION_MASK_DIAG : NBNXN_INTERACTION_MASK_ALL);
+}
+
+/* Returns a diagonal or off-diagonal interaction mask for cj-size=2 */
+static unsigned int get_imask_simd_j2(int rdiag, int ci, int cj) {
+    return (rdiag && ci * 2 == cj ? NBNXN_INTERACTION_MASK_DIAG_J2_0
+                                  : (rdiag && ci * 2 + 1 == cj ? NBNXN_INTERACTION_MASK_DIAG_J2_1
+                                                               : NBNXN_INTERACTION_MASK_ALL));
+}
+
+/* Returns a diagonal or off-diagonal interaction mask for cj-size=4 */
+static unsigned int get_imask_simd_j4(int rdiag, int ci, int cj) {
+    return (rdiag && ci == cj ? NBNXN_INTERACTION_MASK_DIAG : NBNXN_INTERACTION_MASK_ALL);
+}
+
+/* Returns a diagonal or off-diagonal interaction mask for cj-size=8 */
+static unsigned int get_imask_simd_j8(int rdiag, int ci, int cj) {
+    return (rdiag && ci == cj * 2 ? NBNXN_INTERACTION_MASK_DIAG_J8_0
+                                  : (rdiag && ci == cj * 2 + 1 ? NBNXN_INTERACTION_MASK_DIAG_J8_1
+                                                               : NBNXN_INTERACTION_MASK_ALL));
+}
+
+#if VECTOR_WIDTH == 2
+#   define get_imask_simd_4xn get_imask_simd_j2
+#elif VECTOR_WIDTH== 4
+#   define get_imask_simd_4xn get_imask_simd_j4
+#elif VECTOR_WIDTH == 8
+#   define get_imask_simd_4xn get_imask_simd_j8
+#   define get_imask_simd_2xnn get_imask_simd_j4
+#elif VECTOR_WIDTH == 16
+#   define get_imask_simd_2xnn get_imask_simd_j8
+#else
+#   error "Invalid cluster configuration"
+#endif
+
 void buildNeighbor(Atom *atom, Neighbor *neighbor) {
     DEBUG_MESSAGE("buildNeighbor start\n");
 
@@ -193,7 +230,7 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
         if(neighbor->numneigh) free(neighbor->numneigh);
         if(neighbor->neighbors) free(neighbor->neighbors);
         neighbor->numneigh = (int*) malloc(nmax * sizeof(int));
-        neighbor->neighbors = (int*) malloc(nmax * neighbor->maxneighs * sizeof(int*));
+        neighbor->neighbors = (NeighborCluster*) malloc(nmax * neighbor->maxneighs * sizeof(NeighborCluster));
     }
 
     MD_FLOAT bbx = 0.5 * (binsizex + binsizex);
@@ -209,7 +246,7 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
 
         for(int ci = 0; ci < atom->Nclusters_local; ci++) {
             int ci_cj1 = CJ1_FROM_CI(ci);
-            int *neighptr = &(neighbor->neighbors[ci * neighbor->maxneighs]);
+            NeighborCluster *neighptr = &(neighbor->neighbors[ci * neighbor->maxneighs]);
             int n = 0;
             int ibin = atom->icluster_bin[ci];
             MD_FLOAT ibb_xmin = atom->iclusters[ci].bbminx;
@@ -275,7 +312,16 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
 
                             if(d_bb_sq < cutneighsq) {
                                 if(d_bb_sq < rbb_sq || atomDistanceInRange(atom, ci, cj, cutneighsq)) {
-                                    neighptr[n++] = cj;
+                                    unsigned int imask;
+                                    #if CLUSTER_N == (VECTOR_WIDTH / 2) // 2xnn
+                                    imask = get_imask_simd_2xnn(neighbor->half_neigh, ci, cj);
+                                    #else // 4xn
+                                    imask = get_imask_simd_4xn(neighbor->half_neigh, ci, cj);
+                                    #endif
+
+                                    neighptr[n].cj = cj;
+                                    neighptr[n].imask = imask;
+                                    n++;
                                 }
                             }
                         }
@@ -297,7 +343,9 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
             // Fill neighbor list with dummy values to fit vector width
             if(CLUSTER_N < VECTOR_WIDTH) {
                 while(n % (VECTOR_WIDTH / CLUSTER_N)) {
-                    neighptr[n++] = atom->dummy_cj; // Last cluster is always a dummy cluster
+                    neighptr[n].cj = atom->dummy_cj; // Last cluster is always a dummy cluster
+                    neighptr[n].imask = 0;
+                    n++;
                 }
             }
 
@@ -315,7 +363,7 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
             fprintf(stdout, "RESIZE %d\n", neighbor->maxneighs);
             neighbor->maxneighs = new_maxneighs * 1.2;
             free(neighbor->neighbors);
-            neighbor->neighbors = (int*) malloc(atom->Nmax * neighbor->maxneighs * sizeof(int));
+            neighbor->neighbors = (NeighborCluster*) malloc(atom->Nmax * neighbor->maxneighs * sizeof(int));
         }
     }
 
@@ -370,19 +418,19 @@ void pruneNeighbor(Parameter *param, Atom *atom, Neighbor *neighbor) {
     MD_FLOAT cutsq = cutneighsq;
 
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
-        int *neighs = &neighbor->neighbors[ci * neighbor->maxneighs];
+        NeighborCluster *neighs = &neighbor->neighbors[ci * neighbor->maxneighs];
         int numneighs = neighbor->numneigh[ci];
         int k = 0;
 
         // Remove dummy clusters if necessary
         if(CLUSTER_N < VECTOR_WIDTH) {
-            while(neighs[numneighs - 1] == atom->dummy_cj) {
+            while(neighs[numneighs - 1].cj == atom->dummy_cj) {
                 numneighs--;
             }
         }
 
         while(k < numneighs) {
-            int cj = neighs[k];
+            int cj = neighs[k].cj;
             if(atomDistanceInRange(atom, ci, cj, cutsq)) {
                 k++;
             } else {
@@ -394,7 +442,9 @@ void pruneNeighbor(Parameter *param, Atom *atom, Neighbor *neighbor) {
         // Readd dummy clusters if necessary
         if(CLUSTER_N < VECTOR_WIDTH) {
             while(numneighs % (VECTOR_WIDTH / CLUSTER_N)) {
-                neighs[numneighs++] = atom->dummy_cj; // Last cluster is always a dummy cluster
+                neighs[numneighs].cj = atom->dummy_cj; // Last cluster is always a dummy cluster
+                neighs[numneighs].imask = 0;
+                numneighs++;
             }
         }
 
