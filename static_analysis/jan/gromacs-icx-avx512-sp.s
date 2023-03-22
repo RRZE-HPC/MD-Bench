@@ -1331,11 +1331,12 @@ computeForceLJ_2xnn_full:               #
 	vxorps	%xmm8, %xmm8, %xmm8
 	vxorps	%xmm4, %xmm4, %xmm4
 	.p2align	4, 0x90
-# LLVM-MCA-BEGIN
 movl      $111, %ebx # OSACA START MARKER
 .byte     100        # OSACA START MARKER
 .byte     103        # OSACA START MARKER
 .byte     144        # OSACA START MARKER
+# pointer_increment=64 0f91ac4f7fe1a70d0c899f7f3e745649
+# LLVM-MCA-BEGIN
 .LBB2_12:                               #   Parent Loop BB2_7 Depth=1
                                         # =>  This Inner Loop Header: Depth=2
 	movslq	(%r11,%rax,4), %rcx
@@ -1665,7 +1666,6 @@ computeForceLJ_4xn_half:                #
 	vmovups	64(%rsp), %zmm6                 # 64-byte Reload
 	vmovups	512(%rsp), %zmm7                # 64-byte Reload
 	.p2align	4, 0x90
-# pointer_increment=64 0f91ac4f7fe1a70d0c899f7f3e745649
 .LBB4_8:                                # =>This Inner Loop Header: Depth=1
 	movslq	(%r11,%rdx,4), %rax
 	movq	%rax, %rsi
