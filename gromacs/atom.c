@@ -51,12 +51,23 @@ void createAtom(Atom *atom, Parameter *param) {
     atom->cutforcesq = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
     atom->cutneighsq = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
     atom->exclusion_filter = allocate(ALIGNMENT, CLUSTER_M * VECTOR_WIDTH * sizeof(MD_UINT));
+    atom->diagonal_4xn_j_minus_i = allocate(ALIGNMENT, MAX(CLUSTER_M, VECTOR_WIDTH) * sizeof(MD_UINT));
+    atom->diagonal_2xnn_j_minus_i = allocate(ALIGNMENT, VECTOR_WIDTH * sizeof(MD_UINT));
 
     for(int i = 0; i < atom->ntypes * atom->ntypes; i++) {
         atom->epsilon[i] = param->epsilon;
         atom->sigma6[i] = param->sigma6;
         atom->cutneighsq[i] = param->cutneigh * param->cutneigh;
         atom->cutforcesq[i] = param->cutforce * param->cutforce;
+    }
+
+    for(int j = 0; j < MAX(CLUSTER_M, VECTOR_WIDTH); j++) {   
+        atom->diagonal_4xn_j_minus_i[j] = j - 0.5;
+    }
+
+    for(int j = 0; j < VECTOR_WIDTH / 2; j++) {
+        atom->diagonal_2xnn_j_minus_i[j] = j - 0.5;
+        atom->diagonal_2xnn_j_minus_i[VECTOR_WIDTH / 2 + j] = j - 1 - 0.5;
     }
 
     for(int i = 0; i < CLUSTER_M * VECTOR_WIDTH; i++) {
