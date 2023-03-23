@@ -33,12 +33,14 @@
 #   if VECTOR_WIDTH > CLUSTER_M * 2
 #       define KERNEL_NAME          "Simd2xNN"
 #       define CLUSTER_N            (VECTOR_WIDTH / 2)
+#       define UNROLL_I             4
 #       define UNROLL_J             2
 #       define computeForceLJ       computeForceLJ_2xnn
 // Simd4xN
 #   else
 #       define KERNEL_NAME          "Simd4xN"
 #       define CLUSTER_N            VECTOR_WIDTH
+#       define UNROLL_I             4
 #       define UNROLL_J             1
 #       define computeForceLJ       computeForceLJ_4xn
 #   endif
@@ -120,6 +122,8 @@ typedef struct {
     int *icluster_bin;
     int dummy_cj;
     MD_UINT *exclusion_filter;
+    MD_FLOAT *diagonal_4xn_j_minus_i;
+    MD_FLOAT *diagonal_2xnn_j_minus_i;
 } Atom;
 
 extern void initAtom(Atom*);

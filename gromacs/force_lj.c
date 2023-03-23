@@ -23,10 +23,8 @@ static inline void gmx_load_simd_2xnn_interactions(
 
     //SimdInt32 mask_pr_S(excl);
     MD_SIMD_INT32 mask_pr_S = simd_int32_broadcast(excl);
-    *interact0 = cvtIB2B(simd_test_bits(mask_pr_S));
-    *interact2 = cvtIB2B(simd_test_bits(mask_pr_S));
-    //*interact0 = cvtIB2B(simd_test_bits(mask_pr_S & filter0));
-    //*interact2 = cvtIB2B(simd_test_bits(mask_pr_S & filter2));
+    *interact0 = cvtIB2B(simd_test_bits(mask_pr_S & filter0));
+    *interact2 = cvtIB2B(simd_test_bits(mask_pr_S & filter2));
 }
 
 static inline void gmx_load_simd_4xn_interactions(
@@ -188,6 +186,32 @@ double computeForceLJ_2xnn_half(Parameter *param, Atom *atom, Neighbor *neighbor
     MD_SIMD_BITMASK filter0 = simd_load_bitmask((const int *) &atom->exclusion_filter[0 * (VECTOR_WIDTH / UNROLL_J)]);
     MD_SIMD_BITMASK filter2 = simd_load_bitmask((const int *) &atom->exclusion_filter[2 * (VECTOR_WIDTH / UNROLL_J)]);
 
+    MD_SIMD_FLOAT diagonal_jmi_S = simd_load(atom->diagonal_2xnn_j_minus_i);
+    MD_SIMD_FLOAT zero_S = simd_broadcast(0.0);
+    MD_SIMD_FLOAT one_S = simd_broadcast(1.0);
+
+    /*
+    #if UNROLL_I == UNROLL_J
+    MD_SIMD_MASK diagonal_mask_S0, diagonal_mask_S2;
+    diagonal_mask0 = (zero_S < diagonal_jmi_S);
+    diagonal_jmi_S = diagonal_jmi_S - one_S;
+    diagonal_jmi_S = diagonal_jmi_S - one_S;
+    diagonal_mask2 = (zero_S < diagonal_jmi_S);
+    #elif 2 * UNROLL_I == UNROLL_J
+    */
+    MD_SIMD_MASK diagonal_mask00, diagonal_mask02, diagonal_mask10, diagonal_mask12;
+    diagonal_mask00 = simd_mask_cond_lt(zero_S, diagonal_jmi_S);
+    diagonal_jmi_S = diagonal_jmi_S - one_S;
+    diagonal_jmi_S = diagonal_jmi_S - one_S;
+    diagonal_mask02 = simd_mask_cond_lt(zero_S, diagonal_jmi_S);
+    diagonal_jmi_S = diagonal_jmi_S - one_S;
+    diagonal_jmi_S = diagonal_jmi_S - one_S;
+    diagonal_mask10 = simd_mask_cond_lt(zero_S, diagonal_jmi_S);
+    diagonal_jmi_S = diagonal_jmi_S - one_S;
+    diagonal_jmi_S = diagonal_jmi_S - one_S;
+    diagonal_mask12 = simd_mask_cond_lt(zero_S, diagonal_jmi_S);
+    //#endif
+
     #pragma omp for
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
         int ci_cj0 = CJ0_FROM_CI(ci);
@@ -222,6 +246,8 @@ double computeForceLJ_2xnn_half(Parameter *param, Atom *atom, Neighbor *neighbor
             MD_SIMD_MASK interact0;
             MD_SIMD_MASK interact2;
 
+            gmx_load_simd_2xnn_interactions((int)imask, filter0, filter2, &interact0, &interact2);
+
             MD_SIMD_FLOAT xj_tmp = simd_load_h_duplicate(&cj_x[CL_X_OFFSET]);
             MD_SIMD_FLOAT yj_tmp = simd_load_h_duplicate(&cj_x[CL_Y_OFFSET]);
             MD_SIMD_FLOAT zj_tmp = simd_load_h_duplicate(&cj_x[CL_Z_OFFSET]);
@@ -231,14 +257,28 @@ double computeForceLJ_2xnn_half(Parameter *param, Atom *atom, Neighbor *neighbor
             MD_SIMD_FLOAT delx2 = simd_sub(xi2_tmp, xj_tmp);
             MD_SIMD_FLOAT dely2 = simd_sub(yi2_tmp, yj_tmp);
             MD_SIMD_FLOAT delz2 = simd_sub(zi2_tmp, zj_tmp);
-
-            gmx_load_simd_2xnn_interactions((int) imask, filter0, filter2, &interact0, &interact2);
-
             MD_SIMD_FLOAT rsq0 = simd_fma(delx0, delx0, simd_fma(dely0, dely0, simd_mul(delz0, delz0)));
             MD_SIMD_FLOAT rsq2 = simd_fma(delx2, delx2, simd_fma(dely2, dely2, simd_mul(delz2, delz2)));
 
-            MD_SIMD_MASK cutoff_mask0 = simd_mask_and(interact0, simd_mask_cond_lt(rsq0, cutforcesq_vec));
-            MD_SIMD_MASK cutoff_mask2 = simd_mask_and(interact2, simd_mask_cond_lt(rsq2, cutforcesq_vec));
+            MD_SIMD_MASK cutoff_mask0 = simd_mask_cond_lt(rsq0, cutforcesq_vec);
+            MD_SIMD_MASK cutoff_mask2 = simd_mask_cond_lt(rsq2, cutforcesq_vec);
+
+            /*#if UNROLL_J == UNROLL_I
+            if(cj == ci) {
+                cutoff_mask0 = cutoff_mask0 && diagonal_mask0;
+                cutoff_mask2 = cutoff_mask2 && diagonal_mask2;
+            }
+            #elif UNROLL_J == 2 * UNROLL_I*/
+            if(cj * 2 == ci) {
+                cutoff_mask0 = cutoff_mask0 && diagonal_mask00;
+                cutoff_mask2 = cutoff_mask2 && diagonal_mask02;
+            } else if (cj * 2 + 1 == ci) {
+                cutoff_mask0 = cutoff_mask0 && diagonal_mask10;
+                cutoff_mask2 = cutoff_mask2 && diagonal_mask12;
+            }
+            /*else
+            #   error "Invalid cluster configuration!"
+            #endif*/
 
             MD_SIMD_FLOAT sr2_0 = simd_reciprocal(rsq0);
             MD_SIMD_FLOAT sr2_2 = simd_reciprocal(rsq2);
