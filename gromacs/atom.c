@@ -37,6 +37,7 @@ void initAtom(Atom *atom) {
     atom->iclusters = NULL;
     atom->jclusters = NULL;
     atom->icluster_bin = NULL;
+    initMasks(atom);
 }
 
 void createAtom(Atom *atom, Parameter *param) {
@@ -50,28 +51,12 @@ void createAtom(Atom *atom, Parameter *param) {
     atom->sigma6 = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
     atom->cutforcesq = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
     atom->cutneighsq = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
-    atom->exclusion_filter = allocate(ALIGNMENT, CLUSTER_M * VECTOR_WIDTH * sizeof(MD_UINT));
-    atom->diagonal_4xn_j_minus_i = allocate(ALIGNMENT, MAX(CLUSTER_M, VECTOR_WIDTH) * sizeof(MD_UINT));
-    atom->diagonal_2xnn_j_minus_i = allocate(ALIGNMENT, VECTOR_WIDTH * sizeof(MD_UINT));
 
     for(int i = 0; i < atom->ntypes * atom->ntypes; i++) {
         atom->epsilon[i] = param->epsilon;
         atom->sigma6[i] = param->sigma6;
         atom->cutneighsq[i] = param->cutneigh * param->cutneigh;
         atom->cutforcesq[i] = param->cutforce * param->cutforce;
-    }
-
-    for(int j = 0; j < MAX(CLUSTER_M, VECTOR_WIDTH); j++) {   
-        atom->diagonal_4xn_j_minus_i[j] = (MD_FLOAT)(j) - 0.5;
-    }
-
-    for(int j = 0; j < VECTOR_WIDTH / 2; j++) {
-        atom->diagonal_2xnn_j_minus_i[j] = (MD_FLOAT)(j) - 0.5;
-        atom->diagonal_2xnn_j_minus_i[VECTOR_WIDTH / 2 + j] = (MD_FLOAT)(j - 1) - 0.5;
-    }
-
-    for(int i = 0; i < CLUSTER_M * VECTOR_WIDTH; i++) {
-        atom->exclusion_filter[i] = (1U << i);
     }
 
     MD_FLOAT alat = pow((4.0 / param->rho), (1.0 / 3.0));
@@ -407,6 +392,59 @@ int readAtom_dmp(Atom* atom, Parameter* param) {
     fprintf(stdout, "Read %d atoms from %s\n", natoms, param->input_file);
     fclose(fp);
     return natoms;
+}
+
+void initMasks(Atom *atom) {
+    const unsigned int half_mask_bits = VECTOR_WIDTH >> 1;
+    unsigned int mask0, mask1, mask2, mask3;
+
+    atom->exclusion_filter = allocate(ALIGNMENT, CLUSTER_M * VECTOR_WIDTH * sizeof(MD_UINT));
+    atom->diagonal_4xn_j_minus_i = allocate(ALIGNMENT, MAX(CLUSTER_M, VECTOR_WIDTH) * sizeof(MD_UINT));
+    atom->diagonal_2xnn_j_minus_i = allocate(ALIGNMENT, VECTOR_WIDTH * sizeof(MD_UINT));
+    //atom->masks_2xnn = allocate(ALIGNMENT, 8 * sizeof(unsigned int));
+
+    for(int j = 0; j < MAX(CLUSTER_M, VECTOR_WIDTH); j++) {
+        atom->diagonal_4xn_j_minus_i[j] = (MD_FLOAT)(j) - 0.5;
+    }
+
+    for(int j = 0; j < VECTOR_WIDTH / 2; j++) {
+        atom->diagonal_2xnn_j_minus_i[j] = (MD_FLOAT)(j) - 0.5;
+        atom->diagonal_2xnn_j_minus_i[VECTOR_WIDTH / 2 + j] = (MD_FLOAT)(j - 1) - 0.5;
+    }
+
+    for(int i = 0; i < CLUSTER_M * VECTOR_WIDTH; i++) {
+        atom->exclusion_filter[i] = (1U << i);
+    }
+
+    #if CLUSTER_M == CLUSTER_N
+    for(unsigned int cond0 = 0; cond0 < 2; cond0++) {
+        mask0 = (unsigned int)(0xf - 0x1 * cond0);
+        mask1 = (unsigned int)(0xf - 0x3 * cond0);
+        mask2 = (unsigned int)(0xf - 0x7 * cond0);
+        mask3 = (unsigned int)(0xf - 0xf * cond0);
+        atom->masks_2xnn[cond0 * 2 + 0] = (mask1 << half_mask_bits) | mask0;
+        atom->masks_2xnn[cond0 * 2 + 1] = (mask3 << half_mask_bits) | mask2;
+    }
+    #else
+    for(unsigned int cond0 = 0; cond0 < 2; cond0++) {
+        for(unsigned int cond1 = 0; cond1 < 2; cond1++) {
+            #if CLUSTER_M < CLUSTER_N
+            mask0 = (unsigned int)(0xff - 0x1 * cond0 - 0x1f * cond1);
+            mask1 = (unsigned int)(0xff - 0x3 * cond0 - 0x3f * cond1);
+            mask2 = (unsigned int)(0xff - 0x7 * cond0 - 0x7f * cond1);
+            mask3 = (unsigned int)(0xff - 0xf * cond0 - 0xff * cond1);
+            #else
+            mask0 = (unsigned int)(0x3 - 0x1 * cond0);
+            mask1 = (unsigned int)(0x3 - 0x3 * cond0);
+            mask2 = (unsigned int)(0x3 - cond0 * 0x3 - 0x1 * cond1);
+            mask3 = (unsigned int)(0x3 - cond0 * 0x3 - 0x3 * cond1);
+            #endif
+
+            atom->masks_2xnn[cond0 * 4 + cond1 * 2 + 0] = (mask1 << half_mask_bits) | mask0;
+            atom->masks_2xnn[cond0 * 4 + cond1 * 2 + 1] = (mask3 << half_mask_bits) | mask2;
+        }
+    }
+    #endif
 }
 
 void growAtom(Atom *atom) {
