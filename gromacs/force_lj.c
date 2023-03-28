@@ -16,6 +16,7 @@
 #include <simd.h>
 
 
+/*
 static inline void gmx_load_simd_2xnn_interactions(
     int excl,
     MD_SIMD_BITMASK filter0, MD_SIMD_BITMASK filter2,
@@ -39,6 +40,7 @@ static inline void gmx_load_simd_4xn_interactions(
     *interact2 = cvtIB2B(simd_test_bits(mask_pr_S & filter2));
     *interact3 = cvtIB2B(simd_test_bits(mask_pr_S & filter3));
 }
+*/
 
 double computeForceLJ_ref(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *stats) {
     DEBUG_MESSAGE("computeForceLJ begin\n");
@@ -655,24 +657,22 @@ double computeForceLJ_4xn_half(Parameter *param, Atom *atom, Neighbor *neighbor,
 
             #if CLUSTER_M == CLUSTER_N
             unsigned int cond0 = (unsigned int)(cj == ci_cj0);
-            MD_SIMD_MASK excl_mask0 = simd_mask_from_u32((unsigned int)(0xf - 0x1 * cond0));
-            MD_SIMD_MASK excl_mask1 = simd_mask_from_u32((unsigned int)(0xf - 0x3 * cond0));
-            MD_SIMD_MASK excl_mask2 = simd_mask_from_u32((unsigned int)(0xf - 0x7 * cond0));
-            MD_SIMD_MASK excl_mask3 = simd_mask_from_u32((unsigned int)(0xf - 0xf * cond0));
-            #elif CLUSTER_M < CLUSTER_N
+            MD_SIMD_MASK excl_mask0 = simd_mask_from_u32(atom->masks_4xn_hn[cond0 * 4 + 0]);
+            MD_SIMD_MASK excl_mask1 = simd_mask_from_u32(atom->masks_4xn_hn[cond0 * 4 + 1]);
+            MD_SIMD_MASK excl_mask2 = simd_mask_from_u32(atom->masks_4xn_hn[cond0 * 4 + 2]);
+            MD_SIMD_MASK excl_mask3 = simd_mask_from_u32(atom->masks_4xn_hn[cond0 * 4 + 3]);
+            #else
+            #if CLUSTER_M < CLUSTER_N
             unsigned int cond0 = (unsigned int)((cj << 1) + 0 == ci);
             unsigned int cond1 = (unsigned int)((cj << 1) + 1 == ci);
-            MD_SIMD_MASK excl_mask0 = simd_mask_from_u32((unsigned int)(0xff - 0x1 * cond0 - 0x1f * cond1));
-            MD_SIMD_MASK excl_mask1 = simd_mask_from_u32((unsigned int)(0xff - 0x3 * cond0 - 0x3f * cond1));
-            MD_SIMD_MASK excl_mask2 = simd_mask_from_u32((unsigned int)(0xff - 0x7 * cond0 - 0x7f * cond1));
-            MD_SIMD_MASK excl_mask3 = simd_mask_from_u32((unsigned int)(0xff - 0xf * cond0 - 0xff * cond1));
             #else
             unsigned int cond0 = (unsigned int)(cj == ci_cj0);
             unsigned int cond1 = (unsigned int)(cj == ci_cj1);
-            MD_SIMD_MASK excl_mask0 = simd_mask_from_u32((unsigned int)(0x3 - 0x1 * cond0));
-            MD_SIMD_MASK excl_mask1 = simd_mask_from_u32((unsigned int)(0x3 - 0x3 * cond0));
-            MD_SIMD_MASK excl_mask2 = simd_mask_from_u32((unsigned int)(0x3 - 0x3 * cond0 - 0x1 * cond1));
-            MD_SIMD_MASK excl_mask3 = simd_mask_from_u32((unsigned int)(0x3 - 0x3 * cond0 - 0x3 * cond1));
+            #endif
+            MD_SIMD_MASK excl_mask0 = simd_mask_from_u32(atom->masks_4xn_hn[cond0 * 8 + cond1 * 4 + 0]);
+            MD_SIMD_MASK excl_mask1 = simd_mask_from_u32(atom->masks_4xn_hn[cond0 * 8 + cond1 * 4 + 1]);
+            MD_SIMD_MASK excl_mask2 = simd_mask_from_u32(atom->masks_4xn_hn[cond0 * 8 + cond1 * 4 + 2]);
+            MD_SIMD_MASK excl_mask3 = simd_mask_from_u32(atom->masks_4xn_hn[cond0 * 8 + cond1 * 4 + 3]);
             #endif
 
             MD_SIMD_FLOAT rsq0 = simd_fma(delx0, delx0, simd_fma(dely0, dely0, simd_mul(delz0, delz0)));
@@ -845,24 +845,22 @@ double computeForceLJ_4xn_full(Parameter *param, Atom *atom, Neighbor *neighbor,
 
             #if CLUSTER_M == CLUSTER_N
             unsigned int cond0 = (unsigned int)(cj == ci_cj0);
-            MD_SIMD_MASK excl_mask0 = simd_mask_from_u32((unsigned int)(0xf - 0x1 * cond0));
-            MD_SIMD_MASK excl_mask1 = simd_mask_from_u32((unsigned int)(0xf - 0x2 * cond0));
-            MD_SIMD_MASK excl_mask2 = simd_mask_from_u32((unsigned int)(0xf - 0x4 * cond0));
-            MD_SIMD_MASK excl_mask3 = simd_mask_from_u32((unsigned int)(0xf - 0x8 * cond0));
-            #elif CLUSTER_M < CLUSTER_N
+            MD_SIMD_MASK excl_mask0 = simd_mask_from_u32(atom->masks_4xn_fn[cond0 * 4 + 0]);
+            MD_SIMD_MASK excl_mask1 = simd_mask_from_u32(atom->masks_4xn_fn[cond0 * 4 + 1]);
+            MD_SIMD_MASK excl_mask2 = simd_mask_from_u32(atom->masks_4xn_fn[cond0 * 4 + 2]);
+            MD_SIMD_MASK excl_mask3 = simd_mask_from_u32(atom->masks_4xn_fn[cond0 * 4 + 3]);
+            #else
+            #if CLUSTER_M < CLUSTER_N
             unsigned int cond0 = (unsigned int)((cj << 1) + 0 == ci);
             unsigned int cond1 = (unsigned int)((cj << 1) + 1 == ci);
-            MD_SIMD_MASK excl_mask0 = simd_mask_from_u32((unsigned int)(0xff - 0x1 * cond0 - 0x10 * cond1));
-            MD_SIMD_MASK excl_mask1 = simd_mask_from_u32((unsigned int)(0xff - 0x2 * cond0 - 0x20 * cond1));
-            MD_SIMD_MASK excl_mask2 = simd_mask_from_u32((unsigned int)(0xff - 0x4 * cond0 - 0x40 * cond1));
-            MD_SIMD_MASK excl_mask3 = simd_mask_from_u32((unsigned int)(0xff - 0x8 * cond0 - 0x80 * cond1));
             #else
             unsigned int cond0 = (unsigned int)(cj == ci_cj0);
             unsigned int cond1 = (unsigned int)(cj == ci_cj1);
-            MD_SIMD_MASK excl_mask0 = simd_mask_from_u32((unsigned int)(0x3 - 0x1 * cond0));
-            MD_SIMD_MASK excl_mask1 = simd_mask_from_u32((unsigned int)(0x3 - 0x2 * cond0));
-            MD_SIMD_MASK excl_mask2 = simd_mask_from_u32((unsigned int)(0x3 - 0x1 * cond1));
-            MD_SIMD_MASK excl_mask3 = simd_mask_from_u32((unsigned int)(0x3 - 0x2 * cond1));
+            #endif
+            MD_SIMD_MASK excl_mask0 = simd_mask_from_u32(atom->masks_4xn_fn[cond0 * 8 + cond1 * 4 + 0]);
+            MD_SIMD_MASK excl_mask1 = simd_mask_from_u32(atom->masks_4xn_fn[cond0 * 8 + cond1 * 4 + 1]);
+            MD_SIMD_MASK excl_mask2 = simd_mask_from_u32(atom->masks_4xn_fn[cond0 * 8 + cond1 * 4 + 2]);
+            MD_SIMD_MASK excl_mask3 = simd_mask_from_u32(atom->masks_4xn_fn[cond0 * 8 + cond1 * 4 + 3]);
             #endif
 
             MD_SIMD_FLOAT rsq0 = simd_fma(delx0, delx0, simd_fma(dely0, dely0, simd_mul(delz0, delz0)));
