@@ -131,19 +131,19 @@ void readParameter(Parameter *param, const char *filename) {
 void printParameter(Parameter *param) {
     printf("Parameters:\n");
     if(param->input_file != NULL) {
-        printf("Input file: %s\n", param->input_file);
+        printf("\tInput file: %s\n", param->input_file);
     }
 
     if(param->vtk_file != NULL) {
-        printf("VTK file: %s\n", param->vtk_file);
+        printf("\tVTK file: %s\n", param->vtk_file);
     }
 
     if(param->xtc_file != NULL) {
-        printf("XTC file: %s\n", param->xtc_file);
+        printf("\tXTC file: %s\n", param->xtc_file);
     }
 
     if(param->eam_file != NULL) {
-        printf("EAM file: %s\n", param->eam_file);
+        printf("\tEAM file: %s\n", param->eam_file);
     }
 
     printf("\tForce field: %s\n", ff2str(param->force_field));
