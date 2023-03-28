@@ -431,6 +431,16 @@ void initMasks(Atom *atom) {
         mask3 = (unsigned int)(0xf - 0x8 * cond0);
         atom->masks_2xnn_fn[cond0 * 2 + 0] = (mask1 << half_mask_bits) | mask0;
         atom->masks_2xnn_fn[cond0 * 2 + 1] = (mask3 << half_mask_bits) | mask2;
+
+        atom->masks_4xn_hn[cond0 * 4 + 0] = (unsigned int)(0xf - 0x1 * cond0);
+        atom->masks_4xn_hn[cond0 * 4 + 1] = (unsigned int)(0xf - 0x3 * cond0);
+        atom->masks_4xn_hn[cond0 * 4 + 2] = (unsigned int)(0xf - 0x7 * cond0);
+        atom->masks_4xn_hn[cond0 * 4 + 3] = (unsigned int)(0xf - 0xf * cond0);
+
+        atom->masks_4xn_fn[cond0 * 4 + 0] = (unsigned int)(0xf - 0x1 * cond0);
+        atom->masks_4xn_fn[cond0 * 4 + 1] = (unsigned int)(0xf - 0x2 * cond0);
+        atom->masks_4xn_fn[cond0 * 4 + 2] = (unsigned int)(0xf - 0x4 * cond0);
+        atom->masks_4xn_fn[cond0 * 4 + 3] = (unsigned int)(0xf - 0x8 * cond0);
     }
     #else
     for(unsigned int cond0 = 0; cond0 < 2; cond0++) {
@@ -464,6 +474,28 @@ void initMasks(Atom *atom) {
 
             atom->masks_2xnn_fn[cond0 * 4 + cond1 * 2 + 0] = (mask1 << half_mask_bits) | mask0;
             atom->masks_2xnn_fn[cond0 * 4 + cond1 * 2 + 1] = (mask3 << half_mask_bits) | mask2;
+
+            #if CLUSTER_M < CLUSTER_N
+            atom->masks_4xn_hn[cond0 * 8 + cond1 * 4 + 0] = (unsigned int)(0xff - 0x1 * cond0 - 0x1f * cond1);
+            atom->masks_4xn_hn[cond0 * 8 + cond1 * 4 + 1] = (unsigned int)(0xff - 0x3 * cond0 - 0x3f * cond1);
+            atom->masks_4xn_hn[cond0 * 8 + cond1 * 4 + 2] = (unsigned int)(0xff - 0x7 * cond0 - 0x7f * cond1);
+            atom->masks_4xn_hn[cond0 * 8 + cond1 * 4 + 3] = (unsigned int)(0xff - 0xf * cond0 - 0xff * cond1);
+
+            atom->masks_4xn_fn[cond0 * 8 + cond1 * 4 + 0] = (unsigned int)(0xff - 0x1 * cond0 - 0x10 * cond1);
+            atom->masks_4xn_fn[cond0 * 8 + cond1 * 4 + 1] = (unsigned int)(0xff - 0x2 * cond0 - 0x20 * cond1);
+            atom->masks_4xn_fn[cond0 * 8 + cond1 * 4 + 2] = (unsigned int)(0xff - 0x4 * cond0 - 0x40 * cond1);
+            atom->masks_4xn_fn[cond0 * 8 + cond1 * 4 + 3] = (unsigned int)(0xff - 0x8 * cond0 - 0x80 * cond1);
+            #else
+            atom->masks_4xn_hn[cond0 * 8 + cond1 * 4 + 0] = (unsigned int)(0x3 - 0x1 * cond0);
+            atom->masks_4xn_hn[cond0 * 8 + cond1 * 4 + 1] = (unsigned int)(0x3 - 0x3 * cond0);
+            atom->masks_4xn_hn[cond0 * 8 + cond1 * 4 + 2] = (unsigned int)(0x3 - 0x3 * cond0 - 0x1 * cond1);
+            atom->masks_4xn_hn[cond0 * 8 + cond1 * 4 + 3] = (unsigned int)(0x3 - 0x3 * cond0 - 0x3 * cond1);
+
+            atom->masks_4xn_fn[cond0 * 8 + cond1 * 4 + 0] = (unsigned int)(0x3 - 0x1 * cond0);
+            atom->masks_4xn_fn[cond0 * 8 + cond1 * 4 + 0] = (unsigned int)(0x3 - 0x2 * cond0);
+            atom->masks_4xn_fn[cond0 * 8 + cond1 * 4 + 0] = (unsigned int)(0x3 - 0x1 * cond1);
+            atom->masks_4xn_fn[cond0 * 8 + cond1 * 4 + 0] = (unsigned int)(0x3 - 0x2 * cond1);
+            #endif
         }
     }
     #endif
