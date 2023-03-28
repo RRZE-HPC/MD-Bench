@@ -190,15 +190,13 @@ double computeForceLJ_2xnn_half(Parameter *param, Atom *atom, Neighbor *neighbor
     MD_SIMD_FLOAT zero_S = simd_broadcast(0.0);
     MD_SIMD_FLOAT one_S = simd_broadcast(1.0);
 
-    /*
-    #if UNROLL_I == UNROLL_J
-    MD_SIMD_MASK diagonal_mask_S0, diagonal_mask_S2;
-    diagonal_mask0 = (zero_S < diagonal_jmi_S);
+    #if CLUSTER_M <= CLUSTER_N
+    MD_SIMD_MASK diagonal_mask0, diagonal_mask2;
+    diagonal_mask0 = simd_mask_cond_lt(zero_S, diagonal_jmi_S);
     diagonal_jmi_S = diagonal_jmi_S - one_S;
     diagonal_jmi_S = diagonal_jmi_S - one_S;
-    diagonal_mask2 = (zero_S < diagonal_jmi_S);
-    #elif 2 * UNROLL_I == UNROLL_J
-    */
+    diagonal_mask2 = simd_mask_cond_lt(zero_S, diagonal_jmi_S);
+    #else
     MD_SIMD_MASK diagonal_mask00, diagonal_mask02, diagonal_mask10, diagonal_mask12;
     diagonal_mask00 = simd_mask_cond_lt(zero_S, diagonal_jmi_S);
     diagonal_jmi_S = diagonal_jmi_S - one_S;
@@ -210,7 +208,7 @@ double computeForceLJ_2xnn_half(Parameter *param, Atom *atom, Neighbor *neighbor
     diagonal_jmi_S = diagonal_jmi_S - one_S;
     diagonal_jmi_S = diagonal_jmi_S - one_S;
     diagonal_mask12 = simd_mask_cond_lt(zero_S, diagonal_jmi_S);
-    //#endif
+    #endif
 
     #pragma omp for
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
@@ -238,6 +236,7 @@ double computeForceLJ_2xnn_half(Parameter *param, Atom *atom, Neighbor *neighbor
         MD_SIMD_FLOAT fiz2 = simd_zero();
 
         for(int k = 0; k < numneighs; k++) {
+            unsigned int mask0, mask1, mask2, mask3;
             int cj = neighs[k].cj;
             int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
             int imask = neighs[k].imask;
@@ -246,7 +245,7 @@ double computeForceLJ_2xnn_half(Parameter *param, Atom *atom, Neighbor *neighbor
             MD_SIMD_MASK interact0;
             MD_SIMD_MASK interact2;
 
-            gmx_load_simd_2xnn_interactions((int)imask, filter0, filter2, &interact0, &interact2);
+            //gmx_load_simd_2xnn_interactions((int)imask, filter0, filter2, &interact0, &interact2);
 
             MD_SIMD_FLOAT xj_tmp = simd_load_h_duplicate(&cj_x[CL_X_OFFSET]);
             MD_SIMD_FLOAT yj_tmp = simd_load_h_duplicate(&cj_x[CL_Y_OFFSET]);
@@ -260,48 +259,74 @@ double computeForceLJ_2xnn_half(Parameter *param, Atom *atom, Neighbor *neighbor
             MD_SIMD_FLOAT rsq0 = simd_fma(delx0, delx0, simd_fma(dely0, dely0, simd_mul(delz0, delz0)));
             MD_SIMD_FLOAT rsq2 = simd_fma(delx2, delx2, simd_fma(dely2, dely2, simd_mul(delz2, delz2)));
 
+            #if CLUSTER_M == CLUSTER_N
+            unsigned int cond0 = (unsigned int)(cj == ci_cj0);
+            mask0 = (unsigned int)(0xf - 0x1 * cond0);
+            mask1 = (unsigned int)(0xf - 0x3 * cond0);
+            mask2 = (unsigned int)(0xf - 0x7 * cond0);
+            mask3 = (unsigned int)(0xf - 0xf * cond0);
+            #elif CLUSTER_M < CLUSTER_N
+            unsigned int cond0 = (unsigned int)((cj << 1) + 0 == ci);
+            unsigned int cond1 = (unsigned int)((cj << 1) + 1 == ci);
+            mask0 = (unsigned int)(0xff - 0x1 * cond0 - 0x1f * cond1);
+            mask1 = (unsigned int)(0xff - 0x3 * cond0 - 0x3f * cond1);
+            mask2 = (unsigned int)(0xff - 0x7 * cond0 - 0x7f * cond1);
+            mask3 = (unsigned int)(0xff - 0xf * cond0 - 0xff * cond1);
+            #else
+            unsigned int cond0 = (unsigned int)(cj == ci_cj0);
+            unsigned int cond1 = (unsigned int)(cj == ci_cj1);
+            mask0 = (unsigned int)(0x3 - 0x1 * cond0);
+            mask1 = (unsigned int)(0x3 - 0x3 * cond0);
+            mask2 = (unsigned int)(0x3 - cond0 * 0x3 - 0x1 * cond1);
+            mask3 = (unsigned int)(0x3 - cond0 * 0x3 - 0x3 * cond1);
+            #endif
+
+            MD_SIMD_MASK excl_mask0 = simd_mask_from_u32((mask1 << half_mask_bits) | mask0);
+            MD_SIMD_MASK excl_mask2 = simd_mask_from_u32((mask3 << half_mask_bits) | mask2);
             MD_SIMD_MASK cutoff_mask0 = simd_mask_cond_lt(rsq0, cutforcesq_vec);
             MD_SIMD_MASK cutoff_mask2 = simd_mask_cond_lt(rsq2, cutforcesq_vec);
+            cutoff_mask0 = simd_mask_and(cutoff_mask0, excl_mask0);
+            cutoff_mask2 = simd_mask_and(cutoff_mask2, excl_mask2);
 
-            /*#if UNROLL_J == UNROLL_I
-            if(cj == ci) {
-                cutoff_mask0 = cutoff_mask0 && diagonal_mask0;
-                cutoff_mask2 = cutoff_mask2 && diagonal_mask2;
+            /*
+            #if CLUSTER_M <= CLUSTER_N
+            if(ci == ci_cj0) {
+                cutoff_mask0 = simd_mask_and(cutoff_mask0, diagonal_mask0);
+                cutoff_mask2 = simd_mask_and(cutoff_mask2, diagonal_mask2);
             }
-            #elif UNROLL_J == 2 * UNROLL_I*/
-            if(cj * 2 == ci) {
+            #else
+            if(ci == ci_cj0) {
                 cutoff_mask0 = cutoff_mask0 && diagonal_mask00;
                 cutoff_mask2 = cutoff_mask2 && diagonal_mask02;
-            } else if (cj * 2 + 1 == ci) {
+            } else if(ci == ci_cj1) {
                 cutoff_mask0 = cutoff_mask0 && diagonal_mask10;
                 cutoff_mask2 = cutoff_mask2 && diagonal_mask12;
             }
-            /*else
-            #   error "Invalid cluster configuration!"
-            #endif*/
+            #endif
+            */
 
             MD_SIMD_FLOAT sr2_0 = simd_reciprocal(rsq0);
             MD_SIMD_FLOAT sr2_2 = simd_reciprocal(rsq2);
 
-            MD_SIMD_FLOAT sr6_0 = simd_mul(sr2_0, simd_mul(sr2_0, simd_mul(sr2_0, sigma6_vec)));
-            MD_SIMD_FLOAT sr6_2 = simd_mul(sr2_2, simd_mul(sr2_2, simd_mul(sr2_2, sigma6_vec)));
+            MD_SIMD_FLOAT sr6_0 = sr2_0 * sr2_0 * sr2_0;
+            MD_SIMD_FLOAT sr6_2 = sr2_2 * sr2_2 * sr2_2;
 
-            MD_SIMD_FLOAT force0 = simd_mul(c48_vec, simd_mul(sr6_0, simd_mul(simd_sub(sr6_0, c05_vec), simd_mul(sr2_0, eps_vec))));
-            MD_SIMD_FLOAT force2 = simd_mul(c48_vec, simd_mul(sr6_2, simd_mul(simd_sub(sr6_2, c05_vec), simd_mul(sr2_2, eps_vec))));
+            MD_SIMD_FLOAT force0 = c48_vec * sr6_0 * (sr6_0 - c05_vec) * sr2_0 * eps_vec;
+            MD_SIMD_FLOAT force2 = c48_vec * sr6_2 * (sr6_2 - c05_vec) * sr2_2 * eps_vec;
 
-            MD_SIMD_FLOAT tx0 = select_by_mask(simd_mul(delx0, force0), cutoff_mask0);
-            MD_SIMD_FLOAT ty0 = select_by_mask(simd_mul(dely0, force0), cutoff_mask0);
-            MD_SIMD_FLOAT tz0 = select_by_mask(simd_mul(delz0, force0), cutoff_mask0);
-            MD_SIMD_FLOAT tx2 = select_by_mask(simd_mul(delx2, force2), cutoff_mask2);
-            MD_SIMD_FLOAT ty2 = select_by_mask(simd_mul(dely2, force2), cutoff_mask2);
-            MD_SIMD_FLOAT tz2 = select_by_mask(simd_mul(delz2, force2), cutoff_mask2);
+            MD_SIMD_FLOAT tx0 = select_by_mask(delx0 * force0, cutoff_mask0);
+            MD_SIMD_FLOAT ty0 = select_by_mask(dely0 * force0, cutoff_mask0);
+            MD_SIMD_FLOAT tz0 = select_by_mask(delz0 * force0, cutoff_mask0);
+            MD_SIMD_FLOAT tx2 = select_by_mask(delx2 * force2, cutoff_mask2);
+            MD_SIMD_FLOAT ty2 = select_by_mask(dely2 * force2, cutoff_mask2);
+            MD_SIMD_FLOAT tz2 = select_by_mask(delz2 * force2, cutoff_mask2);
 
-            fix0 = simd_add(fix0, tx0);
-            fiy0 = simd_add(fiy0, ty0);
-            fiz0 = simd_add(fiz0, tz0);
-            fix2 = simd_add(fix2, tx2);
-            fiy2 = simd_add(fiy2, ty2);
-            fiz2 = simd_add(fiz2, tz2);
+            fix0 += tx0;
+            fiy0 += ty0;
+            fiz0 += tz0;
+            fix2 += tx2;
+            fiy2 += ty2;
+            fiz2 += tz2;
 
             #ifdef HALF_NEIGHBOR_LISTS_CHECK_CJ
             if(cj < CJ1_FROM_CI(atom->Nlocal)) {
