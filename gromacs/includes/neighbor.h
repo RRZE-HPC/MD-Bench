@@ -35,6 +35,7 @@ typedef struct {
     int ncalls;
     int maxneighs;
     int* numneigh;
+    int* numneigh_masked;
     int half_neigh;
     NeighborCluster* neighbors;
 } Neighbor;
