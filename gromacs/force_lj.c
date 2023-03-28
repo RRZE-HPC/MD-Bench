@@ -253,14 +253,14 @@ double computeForceLJ_2xnn_half(Parameter *param, Atom *atom, Neighbor *neighbor
             MD_SIMD_FLOAT xj_tmp = simd_load_h_duplicate(&cj_x[CL_X_OFFSET]);
             MD_SIMD_FLOAT yj_tmp = simd_load_h_duplicate(&cj_x[CL_Y_OFFSET]);
             MD_SIMD_FLOAT zj_tmp = simd_load_h_duplicate(&cj_x[CL_Z_OFFSET]);
-            MD_SIMD_FLOAT delx0 = simd_sub(xi0_tmp, xj_tmp);
-            MD_SIMD_FLOAT dely0 = simd_sub(yi0_tmp, yj_tmp);
-            MD_SIMD_FLOAT delz0 = simd_sub(zi0_tmp, zj_tmp);
-            MD_SIMD_FLOAT delx2 = simd_sub(xi2_tmp, xj_tmp);
-            MD_SIMD_FLOAT dely2 = simd_sub(yi2_tmp, yj_tmp);
-            MD_SIMD_FLOAT delz2 = simd_sub(zi2_tmp, zj_tmp);
-            MD_SIMD_FLOAT rsq0 = simd_fma(delx0, delx0, simd_fma(dely0, dely0, simd_mul(delz0, delz0)));
-            MD_SIMD_FLOAT rsq2 = simd_fma(delx2, delx2, simd_fma(dely2, dely2, simd_mul(delz2, delz2)));
+            MD_SIMD_FLOAT delx0 = xi0_tmp - xj_tmp;
+            MD_SIMD_FLOAT dely0 = yi0_tmp - yj_tmp;
+            MD_SIMD_FLOAT delz0 = zi0_tmp - zj_tmp;
+            MD_SIMD_FLOAT delx2 = xi2_tmp - xj_tmp;
+            MD_SIMD_FLOAT dely2 = yi2_tmp - yj_tmp;
+            MD_SIMD_FLOAT delz2 = zi2_tmp - zj_tmp;
+            MD_SIMD_FLOAT rsq0 = simd_fma(delx0, delx0, simd_fma(dely0, dely0, delz0 * delz0));
+            MD_SIMD_FLOAT rsq2 = simd_fma(delx2, delx2, simd_fma(dely2, dely2, delz2 * delz2));
 
             #if CLUSTER_M == CLUSTER_N
             unsigned int cond0 = (unsigned int)(cj == ci_cj0);
@@ -339,14 +339,14 @@ double computeForceLJ_2xnn_half(Parameter *param, Atom *atom, Neighbor *neighbor
             MD_SIMD_FLOAT xj_tmp = simd_load_h_duplicate(&cj_x[CL_X_OFFSET]);
             MD_SIMD_FLOAT yj_tmp = simd_load_h_duplicate(&cj_x[CL_Y_OFFSET]);
             MD_SIMD_FLOAT zj_tmp = simd_load_h_duplicate(&cj_x[CL_Z_OFFSET]);
-            MD_SIMD_FLOAT delx0 = simd_sub(xi0_tmp, xj_tmp);
-            MD_SIMD_FLOAT dely0 = simd_sub(yi0_tmp, yj_tmp);
-            MD_SIMD_FLOAT delz0 = simd_sub(zi0_tmp, zj_tmp);
-            MD_SIMD_FLOAT delx2 = simd_sub(xi2_tmp, xj_tmp);
-            MD_SIMD_FLOAT dely2 = simd_sub(yi2_tmp, yj_tmp);
-            MD_SIMD_FLOAT delz2 = simd_sub(zi2_tmp, zj_tmp);
-            MD_SIMD_FLOAT rsq0 = simd_fma(delx0, delx0, simd_fma(dely0, dely0, simd_mul(delz0, delz0)));
-            MD_SIMD_FLOAT rsq2 = simd_fma(delx2, delx2, simd_fma(dely2, dely2, simd_mul(delz2, delz2)));
+            MD_SIMD_FLOAT delx0 = xi0_tmp - xj_tmp;
+            MD_SIMD_FLOAT dely0 = yi0_tmp - yj_tmp;
+            MD_SIMD_FLOAT delz0 = zi0_tmp - zj_tmp;
+            MD_SIMD_FLOAT delx2 = xi2_tmp - xj_tmp;
+            MD_SIMD_FLOAT dely2 = yi2_tmp - yj_tmp;
+            MD_SIMD_FLOAT delz2 = zi2_tmp - zj_tmp;
+            MD_SIMD_FLOAT rsq0 = simd_fma(delx0, delx0, simd_fma(dely0, dely0, delz0 * delz0));
+            MD_SIMD_FLOAT rsq2 = simd_fma(delx2, delx2, simd_fma(dely2, dely2, delz2 * delz2));
 
             MD_SIMD_MASK cutoff_mask0 = simd_mask_cond_lt(rsq0, cutforcesq_vec);
             MD_SIMD_MASK cutoff_mask2 = simd_mask_cond_lt(rsq2, cutforcesq_vec);
@@ -463,14 +463,14 @@ double computeForceLJ_2xnn_full(Parameter *param, Atom *atom, Neighbor *neighbor
             MD_SIMD_FLOAT xj_tmp = simd_load_h_duplicate(&cj_x[CL_X_OFFSET]);
             MD_SIMD_FLOAT yj_tmp = simd_load_h_duplicate(&cj_x[CL_Y_OFFSET]);
             MD_SIMD_FLOAT zj_tmp = simd_load_h_duplicate(&cj_x[CL_Z_OFFSET]);
-            MD_SIMD_FLOAT delx0 = simd_sub(xi0_tmp, xj_tmp);
-            MD_SIMD_FLOAT dely0 = simd_sub(yi0_tmp, yj_tmp);
-            MD_SIMD_FLOAT delz0 = simd_sub(zi0_tmp, zj_tmp);
-            MD_SIMD_FLOAT delx2 = simd_sub(xi2_tmp, xj_tmp);
-            MD_SIMD_FLOAT dely2 = simd_sub(yi2_tmp, yj_tmp);
-            MD_SIMD_FLOAT delz2 = simd_sub(zi2_tmp, zj_tmp);
-            MD_SIMD_FLOAT rsq0 = simd_fma(delx0, delx0, simd_fma(dely0, dely0, simd_mul(delz0, delz0)));
-            MD_SIMD_FLOAT rsq2 = simd_fma(delx2, delx2, simd_fma(dely2, dely2, simd_mul(delz2, delz2)));
+            MD_SIMD_FLOAT delx0 = xi0_tmp - xj_tmp;
+            MD_SIMD_FLOAT dely0 = yi0_tmp - yj_tmp;
+            MD_SIMD_FLOAT delz0 = zi0_tmp - zj_tmp;
+            MD_SIMD_FLOAT delx2 = xi2_tmp - xj_tmp;
+            MD_SIMD_FLOAT dely2 = yi2_tmp - yj_tmp;
+            MD_SIMD_FLOAT delz2 = zi2_tmp - zj_tmp;
+            MD_SIMD_FLOAT rsq0 = simd_fma(delx0, delx0, simd_fma(dely0, dely0, delz0 * delz0));
+            MD_SIMD_FLOAT rsq2 = simd_fma(delx2, delx2, simd_fma(dely2, dely2, delz2 * delz2));
 
             #if CLUSTER_M == CLUSTER_N
             unsigned int cond0 = (unsigned int)(cj == ci_cj0);
@@ -514,14 +514,14 @@ double computeForceLJ_2xnn_full(Parameter *param, Atom *atom, Neighbor *neighbor
             MD_SIMD_FLOAT xj_tmp = simd_load_h_duplicate(&cj_x[CL_X_OFFSET]);
             MD_SIMD_FLOAT yj_tmp = simd_load_h_duplicate(&cj_x[CL_Y_OFFSET]);
             MD_SIMD_FLOAT zj_tmp = simd_load_h_duplicate(&cj_x[CL_Z_OFFSET]);
-            MD_SIMD_FLOAT delx0 = simd_sub(xi0_tmp, xj_tmp);
-            MD_SIMD_FLOAT dely0 = simd_sub(yi0_tmp, yj_tmp);
-            MD_SIMD_FLOAT delz0 = simd_sub(zi0_tmp, zj_tmp);
-            MD_SIMD_FLOAT delx2 = simd_sub(xi2_tmp, xj_tmp);
-            MD_SIMD_FLOAT dely2 = simd_sub(yi2_tmp, yj_tmp);
-            MD_SIMD_FLOAT delz2 = simd_sub(zi2_tmp, zj_tmp);
-            MD_SIMD_FLOAT rsq0 = simd_fma(delx0, delx0, simd_fma(dely0, dely0, simd_mul(delz0, delz0)));
-            MD_SIMD_FLOAT rsq2 = simd_fma(delx2, delx2, simd_fma(dely2, dely2, simd_mul(delz2, delz2)));
+            MD_SIMD_FLOAT delx0 = xi0_tmp - xj_tmp;
+            MD_SIMD_FLOAT dely0 = yi0_tmp - yj_tmp;
+            MD_SIMD_FLOAT delz0 = zi0_tmp - zj_tmp;
+            MD_SIMD_FLOAT delx2 = xi2_tmp - xj_tmp;
+            MD_SIMD_FLOAT dely2 = yi2_tmp - yj_tmp;
+            MD_SIMD_FLOAT delz2 = zi2_tmp - zj_tmp;
+            MD_SIMD_FLOAT rsq0 = simd_fma(delx0, delx0, simd_fma(dely0, dely0, delz0 * delz0));
+            MD_SIMD_FLOAT rsq2 = simd_fma(delx2, delx2, simd_fma(dely2, dely2, delz2 * delz2));
 
             MD_SIMD_MASK cutoff_mask0 = simd_mask_cond_lt(rsq0, cutforcesq_vec);
             MD_SIMD_MASK cutoff_mask2 = simd_mask_cond_lt(rsq2, cutforcesq_vec);
