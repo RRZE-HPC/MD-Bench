@@ -165,7 +165,6 @@ double computeForceLJ_2xnn_half(Parameter *param, Atom *atom, Neighbor *neighbor
     MD_SIMD_FLOAT eps_vec = simd_broadcast(epsilon);
     MD_SIMD_FLOAT c48_vec = simd_broadcast(48.0);
     MD_SIMD_FLOAT c05_vec = simd_broadcast(0.5);
-    const unsigned int half_mask_bits = VECTOR_WIDTH >> 1;
 
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
         int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
@@ -236,7 +235,6 @@ double computeForceLJ_2xnn_half(Parameter *param, Atom *atom, Neighbor *neighbor
         MD_SIMD_FLOAT fiz2 = simd_zero();
 
         for(int k = 0; k < numneighs; k++) {
-            unsigned int mask0, mask1, mask2, mask3;
             int cj = neighs[k].cj;
             int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
             int imask = neighs[k].imask;
@@ -261,30 +259,23 @@ double computeForceLJ_2xnn_half(Parameter *param, Atom *atom, Neighbor *neighbor
 
             #if CLUSTER_M == CLUSTER_N
             unsigned int cond0 = (unsigned int)(cj == ci_cj0);
-            mask0 = (unsigned int)(0xf - 0x1 * cond0);
-            mask1 = (unsigned int)(0xf - 0x3 * cond0);
-            mask2 = (unsigned int)(0xf - 0x7 * cond0);
-            mask3 = (unsigned int)(0xf - 0xf * cond0);
-            #elif CLUSTER_M < CLUSTER_N
+            MD_SIMD_MASK excl_mask0 = simd_mask_from_u32(atom->masks_2xnn[cond0 * 2 + 0]);
+            MD_SIMD_MASK excl_mask2 = simd_mask_from_u32(atom->masks_2xnn[cond0 * 2 + 1]);
+            #else
+            #if CLUSTER_M < CLUSTER_N
             unsigned int cond0 = (unsigned int)((cj << 1) + 0 == ci);
             unsigned int cond1 = (unsigned int)((cj << 1) + 1 == ci);
-            mask0 = (unsigned int)(0xff - 0x1 * cond0 - 0x1f * cond1);
-            mask1 = (unsigned int)(0xff - 0x3 * cond0 - 0x3f * cond1);
-            mask2 = (unsigned int)(0xff - 0x7 * cond0 - 0x7f * cond1);
-            mask3 = (unsigned int)(0xff - 0xf * cond0 - 0xff * cond1);
             #else
             unsigned int cond0 = (unsigned int)(cj == ci_cj0);
             unsigned int cond1 = (unsigned int)(cj == ci_cj1);
-            mask0 = (unsigned int)(0x3 - 0x1 * cond0);
-            mask1 = (unsigned int)(0x3 - 0x3 * cond0);
-            mask2 = (unsigned int)(0x3 - cond0 * 0x3 - 0x1 * cond1);
-            mask3 = (unsigned int)(0x3 - cond0 * 0x3 - 0x3 * cond1);
+            #endif
+            MD_SIMD_MASK excl_mask0 = simd_mask_from_u32(atom->masks_2xnn[cond0 * 4 + cond1 * 2 + 0]);
+            MD_SIMD_MASK excl_mask2 = simd_mask_from_u32(atom->masks_2xnn[cond0 * 4 + cond1 * 2 + 1]);
             #endif
 
-            MD_SIMD_MASK excl_mask0 = simd_mask_from_u32((mask1 << half_mask_bits) | mask0);
-            MD_SIMD_MASK excl_mask2 = simd_mask_from_u32((mask3 << half_mask_bits) | mask2);
             MD_SIMD_MASK cutoff_mask0 = simd_mask_cond_lt(rsq0, cutforcesq_vec);
             MD_SIMD_MASK cutoff_mask2 = simd_mask_cond_lt(rsq2, cutforcesq_vec);
+
             cutoff_mask0 = simd_mask_and(cutoff_mask0, excl_mask0);
             cutoff_mask2 = simd_mask_and(cutoff_mask2, excl_mask2);
 
@@ -308,8 +299,8 @@ double computeForceLJ_2xnn_half(Parameter *param, Atom *atom, Neighbor *neighbor
             MD_SIMD_FLOAT sr2_0 = simd_reciprocal(rsq0);
             MD_SIMD_FLOAT sr2_2 = simd_reciprocal(rsq2);
 
-            MD_SIMD_FLOAT sr6_0 = sr2_0 * sr2_0 * sr2_0;
-            MD_SIMD_FLOAT sr6_2 = sr2_2 * sr2_2 * sr2_2;
+            MD_SIMD_FLOAT sr6_0 = sr2_0 * sr2_0 * sr2_0 * sigma6_vec;
+            MD_SIMD_FLOAT sr6_2 = sr2_2 * sr2_2 * sr2_2 * sigma6_vec;
 
             MD_SIMD_FLOAT force0 = c48_vec * sr6_0 * (sr6_0 - c05_vec) * sr2_0 * eps_vec;
             MD_SIMD_FLOAT force2 = c48_vec * sr6_2 * (sr6_2 - c05_vec) * sr2_2 * eps_vec;
