@@ -124,7 +124,8 @@ typedef struct {
     MD_UINT *exclusion_filter;
     MD_FLOAT *diagonal_4xn_j_minus_i;
     MD_FLOAT *diagonal_2xnn_j_minus_i;
-    unsigned int masks_2xnn[8];
+    unsigned int masks_2xnn_hn[8];
+    unsigned int masks_2xnn_fn[8];
 } Atom;
 
 extern void initAtom(Atom*);

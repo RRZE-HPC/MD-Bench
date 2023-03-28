@@ -314,11 +314,14 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
 
                             if(d_bb_sq < cutneighsq) {
                                 if(d_bb_sq < rbb_sq || atomDistanceInRange(atom, ci, cj, cutneighsq)) {
+                                    // We use true (1) for rdiag because we only care if there are masks
+                                    // at all, and when this is set to false (0) the self-exclusions are
+                                    // not accounted for, which  makes the optimized version to not work!
                                     unsigned int imask;
                                     #if CLUSTER_N == (VECTOR_WIDTH / 2) // 2xnn
-                                    imask = get_imask_simd_2xnn(neighbor->half_neigh, ci, cj);
+                                    imask = get_imask_simd_2xnn(1, ci, cj);
                                     #else // 4xn
-                                    imask = get_imask_simd_4xn(neighbor->half_neigh, ci, cj);
+                                    imask = get_imask_simd_4xn(1, ci, cj);
                                     #endif
 
                                     if(imask == NBNXN_INTERACTION_MASK_ALL) {
