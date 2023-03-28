@@ -220,6 +220,7 @@ double computeForceLJ_2xnn_half(Parameter *param, Atom *atom, Neighbor *neighbor
         MD_FLOAT *ci_f = &atom->cl_f[ci_vec_base];
         neighs = &neighbor->neighbors[ci * neighbor->maxneighs];
         int numneighs = neighbor->numneigh[ci];
+        int numneighs_masked = neighbor->numneigh_masked[ci];
 
         MD_SIMD_FLOAT xi0_tmp = simd_load_h_dual(&ci_x[CL_X_OFFSET + 0]);
         MD_SIMD_FLOAT xi2_tmp = simd_load_h_dual(&ci_x[CL_X_OFFSET + 2]);
@@ -234,7 +235,7 @@ double computeForceLJ_2xnn_half(Parameter *param, Atom *atom, Neighbor *neighbor
         MD_SIMD_FLOAT fiy2 = simd_zero();
         MD_SIMD_FLOAT fiz2 = simd_zero();
 
-        for(int k = 0; k < numneighs; k++) {
+        for(int k = 0; k < numneighs_masked; k++) {
             int cj = neighs[k].cj;
             int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
             int imask = neighs[k].imask;
@@ -299,6 +300,58 @@ double computeForceLJ_2xnn_half(Parameter *param, Atom *atom, Neighbor *neighbor
             MD_SIMD_FLOAT sr2_0 = simd_reciprocal(rsq0);
             MD_SIMD_FLOAT sr2_2 = simd_reciprocal(rsq2);
 
+            MD_SIMD_FLOAT sr6_0 = sr2_0 * sr2_0 * sr2_0 * sigma6_vec;
+            MD_SIMD_FLOAT sr6_2 = sr2_2 * sr2_2 * sr2_2 * sigma6_vec;
+
+            MD_SIMD_FLOAT force0 = c48_vec * sr6_0 * (sr6_0 - c05_vec) * sr2_0 * eps_vec;
+            MD_SIMD_FLOAT force2 = c48_vec * sr6_2 * (sr6_2 - c05_vec) * sr2_2 * eps_vec;
+
+            MD_SIMD_FLOAT tx0 = select_by_mask(delx0 * force0, cutoff_mask0);
+            MD_SIMD_FLOAT ty0 = select_by_mask(dely0 * force0, cutoff_mask0);
+            MD_SIMD_FLOAT tz0 = select_by_mask(delz0 * force0, cutoff_mask0);
+            MD_SIMD_FLOAT tx2 = select_by_mask(delx2 * force2, cutoff_mask2);
+            MD_SIMD_FLOAT ty2 = select_by_mask(dely2 * force2, cutoff_mask2);
+            MD_SIMD_FLOAT tz2 = select_by_mask(delz2 * force2, cutoff_mask2);
+
+            fix0 += tx0;
+            fiy0 += ty0;
+            fiz0 += tz0;
+            fix2 += tx2;
+            fiy2 += ty2;
+            fiz2 += tz2;
+
+            #ifdef HALF_NEIGHBOR_LISTS_CHECK_CJ
+            if(cj < CJ1_FROM_CI(atom->Nlocal)) {
+                simd_h_decr3(cj_f, tx0 + tx2, ty0 + ty2, tz0 + tz2);
+            }
+            #else
+            simd_h_decr3(cj_f, tx0 + tx2, ty0 + ty2, tz0 + tz2);
+            #endif
+        }
+
+        for(int k = numneighs_masked; k < numneighs; k++) {
+            int cj = neighs[k].cj;
+            int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
+            MD_FLOAT *cj_x = &atom->cl_x[cj_vec_base];
+            MD_FLOAT *cj_f = &atom->cl_f[cj_vec_base];
+
+            MD_SIMD_FLOAT xj_tmp = simd_load_h_duplicate(&cj_x[CL_X_OFFSET]);
+            MD_SIMD_FLOAT yj_tmp = simd_load_h_duplicate(&cj_x[CL_Y_OFFSET]);
+            MD_SIMD_FLOAT zj_tmp = simd_load_h_duplicate(&cj_x[CL_Z_OFFSET]);
+            MD_SIMD_FLOAT delx0 = simd_sub(xi0_tmp, xj_tmp);
+            MD_SIMD_FLOAT dely0 = simd_sub(yi0_tmp, yj_tmp);
+            MD_SIMD_FLOAT delz0 = simd_sub(zi0_tmp, zj_tmp);
+            MD_SIMD_FLOAT delx2 = simd_sub(xi2_tmp, xj_tmp);
+            MD_SIMD_FLOAT dely2 = simd_sub(yi2_tmp, yj_tmp);
+            MD_SIMD_FLOAT delz2 = simd_sub(zi2_tmp, zj_tmp);
+            MD_SIMD_FLOAT rsq0 = simd_fma(delx0, delx0, simd_fma(dely0, dely0, simd_mul(delz0, delz0)));
+            MD_SIMD_FLOAT rsq2 = simd_fma(delx2, delx2, simd_fma(dely2, dely2, simd_mul(delz2, delz2)));
+
+            MD_SIMD_MASK cutoff_mask0 = simd_mask_cond_lt(rsq0, cutforcesq_vec);
+            MD_SIMD_MASK cutoff_mask2 = simd_mask_cond_lt(rsq2, cutforcesq_vec);
+
+            MD_SIMD_FLOAT sr2_0 = simd_reciprocal(rsq0);
+            MD_SIMD_FLOAT sr2_2 = simd_reciprocal(rsq2);
             MD_SIMD_FLOAT sr6_0 = sr2_0 * sr2_0 * sr2_0 * sigma6_vec;
             MD_SIMD_FLOAT sr6_2 = sr2_2 * sr2_2 * sr2_2 * sigma6_vec;
 
