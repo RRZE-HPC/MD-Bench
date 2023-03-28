@@ -62,12 +62,12 @@ void createAtom(Atom *atom, Parameter *param) {
     }
 
     for(int j = 0; j < MAX(CLUSTER_M, VECTOR_WIDTH); j++) {   
-        atom->diagonal_4xn_j_minus_i[j] = j - 0.5;
+        atom->diagonal_4xn_j_minus_i[j] = (MD_FLOAT)(j) - 0.5;
     }
 
     for(int j = 0; j < VECTOR_WIDTH / 2; j++) {
-        atom->diagonal_2xnn_j_minus_i[j] = j - 0.5;
-        atom->diagonal_2xnn_j_minus_i[VECTOR_WIDTH / 2 + j] = j - 1 - 0.5;
+        atom->diagonal_2xnn_j_minus_i[j] = (MD_FLOAT)(j) - 0.5;
+        atom->diagonal_2xnn_j_minus_i[VECTOR_WIDTH / 2 + j] = (MD_FLOAT)(j - 1) - 0.5;
     }
 
     for(int i = 0; i < CLUSTER_M * VECTOR_WIDTH; i++) {
