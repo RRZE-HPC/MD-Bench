@@ -26,18 +26,14 @@
 #define NBNXN_INTERACTION_MASK_DIAG_J8_1 0x0080c0e0U
 
 typedef struct {
-    int cj;
-    unsigned int imask;
-} NeighborCluster;
-
-typedef struct {
     int every;
     int ncalls;
     int maxneighs;
     int* numneigh;
     int* numneigh_masked;
     int half_neigh;
-    NeighborCluster* neighbors;
+    int* neighbors;
+    unsigned int* neighbors_imask;
 } Neighbor;
 
 extern void initNeighbor(Neighbor*, Parameter*);

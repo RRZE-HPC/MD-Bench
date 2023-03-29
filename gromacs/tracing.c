@@ -13,7 +13,8 @@ void traceAddresses(Parameter *param, Atom *atom, Neighbor *neighbor, int timest
     MEM_TRACER_INIT;
     INDEX_TRACER_INIT;
     int Nlocal = atom->Nlocal;
-    NeighborCluster* neighs;
+    int *neighs;
+    unsigned int *neighs_imask;
     //MD_FLOAT* fx = atom->fx; MD_FLOAT* fy = atom->fy; MD_FLOAT* fz = atom->fz;
 
     INDEX_TRACE_NATOMS(Nlocal, atom->Nghost, neighbor->maxneighs);
@@ -34,7 +35,7 @@ void traceAddresses(Parameter *param, Atom *atom, Neighbor *neighbor, int timest
         DIST_TRACE(neighs, numneighs);
 
         for(int k = 0; k < numneighs; k++) {
-            int j = neighs[k].cj;
+            int j = neighs[k];
             MEM_TRACE(j, 'R');
             MEM_TRACE(atom_x(j), 'R');
             MEM_TRACE(atom_y(j), 'R');
