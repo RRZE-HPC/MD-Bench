@@ -232,7 +232,8 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
         if(neighbor->neighbors) free(neighbor->neighbors);
         neighbor->numneigh = (int*) malloc(nmax * sizeof(int));
         neighbor->numneigh_masked = (int*) malloc(nmax * sizeof(int));
-        neighbor->neighbors = (NeighborCluster*) malloc(nmax * neighbor->maxneighs * sizeof(NeighborCluster));
+        neighbor->neighbors = (int*) malloc(nmax * neighbor->maxneighs * sizeof(int));
+        neighbor->neighbors_imask = (unsigned int*) malloc(nmax * neighbor->maxneighs * sizeof(unsigned int));
     }
 
     MD_FLOAT bbx = 0.5 * (binsizex + binsizex);
@@ -248,7 +249,8 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
 
         for(int ci = 0; ci < atom->Nclusters_local; ci++) {
             int ci_cj1 = CJ1_FROM_CI(ci);
-            NeighborCluster *neighptr = &(neighbor->neighbors[ci * neighbor->maxneighs]);
+            int *neighptr = &(neighbor->neighbors[ci * neighbor->maxneighs]);
+            unsigned int *neighptr_imask = &(neighbor->neighbors_imask[ci * neighbor->maxneighs]);
             int n = 0, nmasked = 0;
             int ibin = atom->icluster_bin[ci];
             MD_FLOAT ibb_xmin = atom->iclusters[ci].bbminx;
@@ -325,13 +327,13 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
                                     #endif
 
                                     if(imask == NBNXN_INTERACTION_MASK_ALL) {
-                                        neighptr[n].cj = cj;
-                                        neighptr[n].imask = imask;
+                                        neighptr[n] = cj;
+                                        neighptr_imask[n] = imask;
                                     } else {
-                                        neighptr[n].cj = neighptr[nmasked].cj;
-                                        neighptr[n].imask = neighptr[nmasked].imask;
-                                        neighptr[nmasked].cj = cj;
-                                        neighptr[nmasked].imask = imask;
+                                        neighptr[n] = neighptr[nmasked];
+                                        neighptr_imask[n] = neighptr_imask[nmasked];
+                                        neighptr[nmasked] = cj;
+                                        neighptr_imask[nmasked] = imask;
                                         nmasked++;
                                     }
 
@@ -357,8 +359,8 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
             // Fill neighbor list with dummy values to fit vector width
             if(CLUSTER_N < VECTOR_WIDTH) {
                 while(n % (VECTOR_WIDTH / CLUSTER_N)) {
-                    neighptr[n].cj = atom->dummy_cj; // Last cluster is always a dummy cluster
-                    neighptr[n].imask = 0;
+                    neighptr[n] = atom->dummy_cj; // Last cluster is always a dummy cluster
+                    neighptr_imask[n] = 0;
                     n++;
                 }
             }
@@ -378,7 +380,8 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
             fprintf(stdout, "RESIZE %d\n", neighbor->maxneighs);
             neighbor->maxneighs = new_maxneighs * 1.2;
             free(neighbor->neighbors);
-            neighbor->neighbors = (NeighborCluster*) malloc(atom->Nmax * neighbor->maxneighs * sizeof(int));
+            neighbor->neighbors = (int *) malloc(atom->Nmax * neighbor->maxneighs * sizeof(int));
+            neighbor->neighbors_imask = (unsigned int *) malloc(atom->Nmax * neighbor->maxneighs * sizeof(unsigned int));
         }
     }
 
@@ -433,20 +436,21 @@ void pruneNeighbor(Parameter *param, Atom *atom, Neighbor *neighbor) {
     MD_FLOAT cutsq = cutneighsq;
 
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
-        NeighborCluster *neighs = &neighbor->neighbors[ci * neighbor->maxneighs];
+        int *neighs = &neighbor->neighbors[ci * neighbor->maxneighs];
+        unsigned int *neighs_imask = &neighbor->neighbors_imask[ci * neighbor->maxneighs];
         int numneighs = neighbor->numneigh[ci];
         int numneighs_masked = neighbor->numneigh_masked[ci];
         int k = 0;
 
         // Remove dummy clusters if necessary
         if(CLUSTER_N < VECTOR_WIDTH) {
-            while(neighs[numneighs - 1].cj == atom->dummy_cj) {
+            while(neighs[numneighs - 1] == atom->dummy_cj) {
                 numneighs--;
             }
         }
 
         while(k < numneighs) {
-            int cj = neighs[k].cj;
+            int cj = neighs[k];
             if(atomDistanceInRange(atom, ci, cj, cutsq)) {
                 k++;
             } else {
@@ -461,8 +465,8 @@ void pruneNeighbor(Parameter *param, Atom *atom, Neighbor *neighbor) {
         // Readd dummy clusters if necessary
         if(CLUSTER_N < VECTOR_WIDTH) {
             while(numneighs % (VECTOR_WIDTH / CLUSTER_N)) {
-                neighs[numneighs].cj = atom->dummy_cj; // Last cluster is always a dummy cluster
-                neighs[numneighs].imask = 0;
+                neighs[numneighs] = atom->dummy_cj; // Last cluster is always a dummy cluster
+                neighs_imask[numneighs] = 0;
                 numneighs++;
             }
         }

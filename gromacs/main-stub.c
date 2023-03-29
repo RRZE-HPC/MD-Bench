@@ -72,7 +72,8 @@ void createNeighbors(Atom *atom, Neighbor *neighbor, int pattern, int nneighs, i
     const int ncj = atom->Nclusters_local / jfac;
     const unsigned int imask = NBNXN_INTERACTION_MASK_ALL;
     neighbor->numneigh = (int*) malloc(atom->Nclusters_max * sizeof(int));
-    neighbor->neighbors = (NeighborCluster*) malloc(atom->Nclusters_max * maxneighs * sizeof(int));
+    neighbor->neighbors = (int*) malloc(atom->Nclusters_max * maxneighs * sizeof(int));
+    neighbor->neighbors_imask = (unsigned int*) malloc(atom->Nclusters_max * maxneighs * sizeof(unsigned int));
 
     if(pattern == P_RAND && ncj <= nneighs) {
         fprintf(stderr, "Error: P_RAND: Number of j-clusters should be higher than number of j-cluster neighbors per i-cluster!\n");
@@ -80,7 +81,8 @@ void createNeighbors(Atom *atom, Neighbor *neighbor, int pattern, int nneighs, i
     }
 
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
-        NeighborCluster *neighptr = &(neighbor->neighbors[ci * neighbor->maxneighs]);
+        int *neighptr = &(neighbor->neighbors[ci * neighbor->maxneighs]);
+        unsigned int *neighptr_imask = &(neighbor->neighbors_imask[ci * neighbor->maxneighs]);
         int j = (pattern == P_SEQ) ? CJ0_FROM_CI(ci) : 0;
         int m = (pattern == P_SEQ) ? ncj : nneighs;
         int k = 0;
@@ -90,26 +92,26 @@ void createNeighbors(Atom *atom, Neighbor *neighbor, int pattern, int nneighs, i
                 int found = 0;
                 do {
                     int cj = rand() % ncj;
-                    neighptr[k].cj = cj;
-                    neighptr[k].imask = imask;
+                    neighptr[k] = cj;
+                    neighptr_imask[k] = imask;
                     found = 0;
                     for(int l = 0; l < k; l++) {
-                        if(neighptr[l].cj == cj) {
+                        if(neighptr[l] == cj) {
                             found = 1;
                         }
                     }
                 } while(found == 1);
             } else {
-                neighptr[k].cj = j;
-                neighptr[k].imask = imask;
+                neighptr[k] = j;
+                neighptr_imask[k] = imask;
                 j = (j + 1) % m;
             }
         }
 
         for(int r = 1; r < nreps; r++) {
             for(int k = 0; k < nneighs; k++) {
-                neighptr[r * nneighs + k].cj = neighptr[k].cj;
-                neighptr[r * nneighs + k].imask = neighptr[k].imask;
+                neighptr[r * nneighs + k] = neighptr[k];
+                neighptr_imask[r * nneighs + k] = neighptr_imask[k];
             }
         }
 
