@@ -66,12 +66,13 @@ void init(Parameter *param) {
 //#define DEBUG(msg)
 
 
-void createNeighbors(Atom *atom, Neighbor *neighbor, int pattern, int nneighs, int nreps) {
+void createNeighbors(Atom *atom, Neighbor *neighbor, int pattern, int nneighs, int nreps, int masked) {
     const int maxneighs = nneighs * nreps;
     const int jfac = MAX(1, CLUSTER_N / CLUSTER_M);
     const int ncj = atom->Nclusters_local / jfac;
+    const unsigned int imask = NBNXN_INTERACTION_MASK_ALL;
     neighbor->numneigh = (int*) malloc(atom->Nclusters_max * sizeof(int));
-    neighbor->neighbors = (int*) malloc(atom->Nclusters_max * maxneighs * sizeof(int));
+    neighbor->neighbors = (NeighborCluster*) malloc(atom->Nclusters_max * maxneighs * sizeof(int));
 
     if(pattern == P_RAND && ncj <= nneighs) {
         fprintf(stderr, "Error: P_RAND: Number of j-clusters should be higher than number of j-cluster neighbors per i-cluster!\n");
@@ -79,7 +80,7 @@ void createNeighbors(Atom *atom, Neighbor *neighbor, int pattern, int nneighs, i
     }
 
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
-        int *neighptr = &(neighbor->neighbors[ci * neighbor->maxneighs]);
+        NeighborCluster *neighptr = &(neighbor->neighbors[ci * neighbor->maxneighs]);
         int j = (pattern == P_SEQ) ? CJ0_FROM_CI(ci) : 0;
         int m = (pattern == P_SEQ) ? ncj : nneighs;
         int k = 0;
@@ -89,27 +90,31 @@ void createNeighbors(Atom *atom, Neighbor *neighbor, int pattern, int nneighs, i
                 int found = 0;
                 do {
                     int cj = rand() % ncj;
-                    neighptr[k] = cj;
+                    neighptr[k].cj = cj;
+                    neighptr[k].imask = imask;
                     found = 0;
                     for(int l = 0; l < k; l++) {
-                        if(neighptr[l] == cj) {
+                        if(neighptr[l].cj == cj) {
                             found = 1;
                         }
                     }
                 } while(found == 1);
             } else {
-                neighptr[k] = j;
+                neighptr[k].cj = j;
+                neighptr[k].imask = imask;
                 j = (j + 1) % m;
             }
         }
 
         for(int r = 1; r < nreps; r++) {
             for(int k = 0; k < nneighs; k++) {
-                neighptr[r * nneighs + k] = neighptr[k];
+                neighptr[r * nneighs + k].cj = neighptr[k].cj;
+                neighptr[r * nneighs + k].imask = neighptr[k].imask;
             }
         }
 
         neighbor->numneigh[ci] = nneighs * nreps;
+        neighbor->numneigh_masked[ci] = (masked == 1) ? (nneighs * nreps) : 0;
     }
 }
 
@@ -125,6 +130,7 @@ int main(int argc, const char *argv[]) {
     int niclusters = 256;               // Number of local i-clusters
     int iclusters_natoms = CLUSTER_M;   // Number of valid atoms within i-clusters
     int nneighs = 9;                    // Number of j-cluster neighbors per i-cluster
+    int masked = 0;                     // Use masked loop 
     int nreps = 1;
     int csv = 0;
 
@@ -154,6 +160,10 @@ int main(int argc, const char *argv[]) {
         }
         if((strcmp(argv[i], "-e") == 0)) {
             param.eam_file = strdup(argv[++i]);
+            continue;
+        }
+        if((strcmp(argv[i], "-m") == 0)) {
+            masked = 1;
             continue;
         }
         if((strcmp(argv[i], "-n") == 0) || (strcmp(argv[i], "--nsteps") == 0)) {
@@ -286,7 +296,7 @@ int main(int argc, const char *argv[]) {
     DEBUG("Initializing neighbor lists...\n");
     initNeighbor(&neighbor, &param);
     DEBUG("Creating neighbor lists...\n");
-    createNeighbors(atom, &neighbor, pattern, nneighs, nreps);
+    createNeighbors(atom, &neighbor, pattern, nneighs, nreps, masked);
     DEBUG("Computing forces...\n");
 
     double T_accum = 0.0;
