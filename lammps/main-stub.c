@@ -59,12 +59,6 @@ void init(Parameter *param) {
     param->eam_file = NULL;
 }
 
-// Show debug messages
-#define DEBUG(msg)  printf(msg)
-// Do not show debug messages
-//#define DEBUG(msg)
-
-
 void createNeighbors(Atom *atom, Neighbor *neighbor, int pattern, int nneighs, int nreps) {
     const int maxneighs = nneighs * nreps;
     neighbor->numneigh = (int*) malloc(atom->Nmax * sizeof(int));
@@ -125,7 +119,7 @@ int main(int argc, const char *argv[]) {
 
     LIKWID_MARKER_INIT;
     LIKWID_MARKER_REGISTER("force");
-    DEBUG("Initializing parameters...\n");
+    DEBUG_MESSAGE("Initializing parameters...\n");
     init(&param);
 
     for(int i = 0; i < argc; i++) {
@@ -196,11 +190,11 @@ int main(int argc, const char *argv[]) {
     }
 
     if(param.force_field == FF_EAM) {
-        DEBUG("Initializing EAM parameters...\n");
+        DEBUG_MESSAGE("Initializing EAM parameters...\n");
         initEam(&eam, &param);
     }
 
-    DEBUG("Initializing atoms...\n");
+    DEBUG_MESSAGE("Initializing atoms...\n");
     initAtom(atom);
     initStats(&stats);
 
@@ -216,7 +210,7 @@ int main(int argc, const char *argv[]) {
         atom->cutforcesq[i] = param.cutforce * param.cutforce;
     }
 
-    DEBUG("Creating atoms...\n");
+    DEBUG_MESSAGE("Creating atoms...\n");
     for(int i = 0; i < natoms; ++i) {
         while(atom->Nlocal > atom->Nmax - natoms) {
             growAtom(atom);
@@ -247,11 +241,11 @@ int main(int argc, const char *argv[]) {
         printf("Estimated neighborlist data volume (kB): %.4f\n", estim_neighbors_volume / 1000.0);
     }
 
-    DEBUG("Initializing neighbor lists...\n");
+    DEBUG_MESSAGE("Initializing neighbor lists...\n");
     initNeighbor(&neighbor, &param);
-    DEBUG("Creating neighbor lists...\n");
+    DEBUG_MESSAGE("Creating neighbor lists...\n");
     createNeighbors(atom, &neighbor, pattern, nneighs, nreps);
-    DEBUG("Computing forces...\n");
+    DEBUG_MESSAGE("Computing forces...\n");
 
     double T_accum = 0.0;
     for(int i = 0; i < param.ntimes; i++) {

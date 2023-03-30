@@ -152,7 +152,7 @@ $(BUILD_DIR)/%.o:  %.s
 clean:
 	$(info ===>  CLEAN)
 	@rm -rf $(BUILD_DIR)
-	@rm -rf MDBench-$(IDENTIFIER)
+	@rm -rf $(TARGET)*
 	@rm -f tags
 
 cleanall:
