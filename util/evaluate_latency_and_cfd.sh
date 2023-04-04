@@ -15,7 +15,7 @@ ISA="${BIN_INFO##*-}"
 CORE="${CORE:-0}"
 FREQ="${FREQ:-2.4}"
 NRUNS="${NRUNS:-3}"
-LOG="${LOG:-latencies_and_cfds.log}"
+LOG="${LOG:-latencies_and_cfds.$(hostname).log}"
 STUB_ONLY="${STUB_ONLY:-false}"
 SKIP_SET_FREQ="${SKIP_SET_FREQ:-false}"
 
@@ -37,10 +37,14 @@ CPU_VENDOR=$(lscpu | grep "Vendor ID" | tr -s ' ' | cut -d ' ' -f3)
 
 if [ "$CPU_VENDOR" == "GenuineIntel" ]; then
     ALL_PREFETCHERS="HW_PREFETCHER,CL_PREFETCHER,DCU_PREFETCHER,IP_PREFETCHER"
-    PREFETCHERS=("ALL HW_PREFETCHER CL_PREFETCHER DCU_PREFETCHER IP_PREFETCHER NONE")
+    DEFAULT_PREFETCHERS=("ALL HW_PREFETCHER CL_PREFETCHER DCU_PREFETCHER IP_PREFETCHER NONE")
 else
     ALL_PREFETCHERS=""
-    PREFETCHERS=("IGNORE")
+    DEFAULT_PREFETCHERS=("IGNORE")
+fi
+
+if [ -z ${PREFETCHERS+x} ]; then
+    PREFETCHERS=${DEFAULT_PREFETCHERS}
 fi
 
 if [ "$OPT_SCHEME" == "gromacs" ]; then
