@@ -1,17 +1,18 @@
 import sys
 import re
 
-if len(sys.argv) != 2:
-    print("Usage: python string_to_agr.py input_filename")
+if len(sys.argv) != 3:
+    print("Usage: python string_to_agr.py <input_filename> <div_factor>")
     sys.exit(1)
 
 input_filename = sys.argv[1]
+div_factor = float(sys.argv[2])
 result_list = []
 
 with open(input_filename, 'r') as file:
     for line in file:
         numbers = re.findall(r'\d+\.\d+', line)
-        divided_numbers = [float(number) / 8 for number in numbers]
+        divided_numbers = [float(number) / div_factor for number in numbers]
         result_list.append(divided_numbers)
 
 start = -2.5

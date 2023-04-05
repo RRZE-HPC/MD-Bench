@@ -1,15 +1,16 @@
 import sys
 import re
 
-if len(sys.argv) != 5:
-    print("Usage: python preds.py <iaca> <mca> <osaca> <uica>")
+if len(sys.argv) != 6:
+    print("Usage: python preds.py <iaca> <mca> <osaca> <uica> <div_factor>")
     sys.exit(1)
 
 iaca_pred = float(sys.argv[1])
 mca_pred = float(sys.argv[2])
 osaca_pred = float(sys.argv[3])
 uica_pred = float(sys.argv[4])
-preds = [iaca_pred, mca_pred, osaca_pred, uica_pred]
+div_factor = float(sys.argv[5])
+preds = [x / div_factor for x in [iaca_pred, mca_pred, osaca_pred, uica_pred]]
 
 start = -4.0
 end = 36.0
