@@ -1,0 +1,120 @@
+Intel(R) Architecture Code Analyzer Version -  v3.0-28-g1ba2cbb build date: 2017-10-23;16:42:45
+Analyzed File -  gromacs-avx512-dp.o
+Binary Format - 64Bit
+Architecture  -  SKX
+Analysis Type - Throughput
+
+Throughput Analysis Report
+--------------------------
+Block Throughput: 45.95 Cycles       Throughput Bottleneck: Backend
+Loop Count:  22
+Port Binding In Cycles Per Iteration:
+--------------------------------------------------------------------------------------------------
+|  Port  |   0   -  DV   |   1   |   2   -  D    |   3   -  D    |   4   |   5   |   6   |   7   |
+--------------------------------------------------------------------------------------------------
+| Cycles | 40.0     0.0  |  2.0  |  5.0     5.0  |  5.0     5.0  |  0.0  | 40.0  |  2.0  |  0.0  |
+--------------------------------------------------------------------------------------------------
+
+DV - Divider pipe (on port 0)
+D - Data fetch pipe (on ports 2 and 3)
+F - Macro Fusion with the previous instruction occurred
+* - instruction micro-ops not bound to a port
+^ - Micro Fusion occurred
+# - ESP Tracking sync uop was issued
+@ - SSE instruction followed an AVX256/AVX512 instruction, dozens of cycles penalty is expected
+X - instruction not supported, was not accounted in Analysis
+
+| Num Of   |                    Ports pressure in cycles                         |      |
+|  Uops    |  0  - DV    |  1   |  2  -  D    |  3  -  D    |  4   |  5   |  6   |  7   |
+-----------------------------------------------------------------------------------------
+|   1      |             |      | 1.0     1.0 |             |      |      |      |      | movsxd rax, dword ptr [rdx+rcx*4]
+|   1      |             | 1.0  |             |             |      |      |      |      | lea rax, ptr [rax+rax*2]
+|   1      |             |      |             |             |      |      | 1.0  |      | shl rax, 0x6
+|   1      |             |      |             | 1.0     1.0 |      |      |      |      | vmovapd zmm28, zmmword ptr [rdi+rax*1]
+|   1      |             |      | 1.0     1.0 |             |      |      |      |      | vmovapd zmm29, zmmword ptr [rdi+rax*1+0x40]
+|   1      |             |      |             | 1.0     1.0 |      |      |      |      | vmovapd zmm30, zmmword ptr [rdi+rax*1+0x80]
+|   1      |             |      | 1.0     1.0 |             |      |      |      |      | vmovupd zmm3, zmmword ptr [rsp+0x40]
+|   1      |             |      |             |             |      | 1.0  |      |      | vsubpd zmm14, zmm3, zmm28
+|   1      | 1.0         |      |             |             |      |      |      |      | vsubpd zmm12, zmm26, zmm29
+|   1      |             |      |             |             |      | 1.0  |      |      | vsubpd zmm31, zmm25, zmm30
+|   1      | 1.0         |      |             |             |      |      |      |      | vsubpd zmm3, zmm23, zmm28
+|   1      |             |      |             |             |      | 1.0  |      |      | vmulpd zmm15, zmm31, zmm31
+|   1      | 1.0         |      |             |             |      |      |      |      | vfmadd231pd zmm15, zmm12, zmm12
+|   1      |             |      |             |             |      | 1.0  |      |      | vfmadd231pd zmm15, zmm14, zmm14
+|   3      | 2.0         |      |             |             |      | 1.0  |      |      | vrcp14pd zmm16, zmm15
+|   1      |             |      |             |             |      | 1.0  |      |      | vcmppd k1, zmm15, zmm0, 0x1
+|   1      | 1.0         |      |             |             |      |      |      |      | vmulpd zmm15, zmm16, zmm20
+|   1      |             |      |             |             |      | 1.0  |      |      | vmulpd zmm18, zmm16, zmm16
+|   1      | 1.0         |      |             |             |      |      |      |      | vmulpd zmm15, zmm18, zmm15
+|   1      |             |      |             | 1.0     1.0 |      |      |      |      | vmovupd zmm18, zmmword ptr [rsp+0x200]
+|   1      |             |      |             |             |      | 1.0  |      |      | vsubpd zmm18, zmm18, zmm29
+|   1      | 1.0         |      |             |             |      |      |      |      | vmulpd zmm16, zmm1, zmm16
+|   1      |             |      |             |             |      | 1.0  |      |      | vmulpd zmm16, zmm16, zmm15
+|   1      | 1.0         |      |             |             |      |      |      |      | vaddpd zmm15, zmm15, zmm2
+|   1      |             |      |             |             |      | 1.0  |      |      | vmulpd zmm15, zmm16, zmm15
+|   1      |             |      | 1.0     1.0 |             |      |      |      |      | vmovupd zmm16, zmmword ptr [rsp+0x1c0]
+|   1      | 1.0         |      |             |             |      |      |      |      | vsubpd zmm16, zmm16, zmm30
+|   1      |             |      |             |             |      | 1.0  |      |      | vfmadd231pd zmm19{k1}, zmm15, zmm14
+|   1      | 1.0         |      |             |             |      |      |      |      | vmulpd zmm14, zmm16, zmm16
+|   1      |             |      |             |             |      | 1.0  |      |      | vfmadd231pd zmm14, zmm18, zmm18
+|   1      | 1.0         |      |             |             |      |      |      |      | vfmadd231pd zmm14, zmm3, zmm3
+|   1      |             |      |             |             |      | 1.0  |      |      | vcmppd k2, zmm14, zmm0, 0x1
+|   3      | 2.0         |      |             |             |      | 1.0  |      |      | vrcp14pd zmm14, zmm14
+|   1      |             |      |             |             |      | 1.0  |      |      | vfmadd231pd zmm11{k1}, zmm15, zmm12
+|   1      | 1.0         |      |             |             |      |      |      |      | vfmadd231pd zmm7{k1}, zmm15, zmm31
+|   1      |             |      |             |             |      | 1.0  |      |      | vmulpd zmm12, zmm14, zmm20
+|   1      | 1.0         |      |             |             |      |      |      |      | vmulpd zmm15, zmm14, zmm14
+|   1      |             |      |             |             |      | 1.0  |      |      | vmulpd zmm12, zmm15, zmm12
+|   1      | 1.0         |      |             |             |      |      |      |      | vsubpd zmm15, zmm24, zmm28
+|   1      |             |      |             |             |      | 1.0  |      |      | vmulpd zmm14, zmm1, zmm14
+|   1      | 1.0         |      |             |             |      |      |      |      | vmulpd zmm14, zmm14, zmm12
+|   1      |             |      |             |             |      | 1.0  |      |      | vaddpd zmm12, zmm12, zmm2
+|   1      | 1.0         |      |             |             |      |      |      |      | vmulpd zmm12, zmm14, zmm12
+|   1      |             |      |             |             |      | 1.0  |      |      | vsubpd zmm14, zmm22, zmm29
+|   1      | 1.0         |      |             |             |      |      |      |      | vfmadd231pd zmm17{k2}, zmm12, zmm3
+|   1      |             |      |             |             |      | 1.0  |      |      | vsubpd zmm3, zmm27, zmm30
+|   1      | 1.0         |      |             |             |      |      |      |      | vfmadd231pd zmm9{k2}, zmm12, zmm18
+|   1      |             |      |             |             |      | 1.0  |      |      | vmulpd zmm18, zmm3, zmm3
+|   1      | 1.0         |      |             |             |      |      |      |      | vfmadd231pd zmm18, zmm14, zmm14
+|   1      |             |      |             |             |      | 1.0  |      |      | vfmadd231pd zmm18, zmm15, zmm15
+|   1      |             |      |             |             |      | 1.0  |      |      | vcmppd k1, zmm18, zmm0, 0x1
+|   3      | 2.0         |      |             |             |      | 1.0  |      |      | vrcp14pd zmm18, zmm18
+|   1      | 1.0         |      |             |             |      |      |      |      | vfmadd231pd zmm5{k2}, zmm12, zmm16
+|   1      |             |      |             |             |      | 1.0  |      |      | vmulpd zmm12, zmm18, zmm20
+|   1      | 1.0         |      |             |             |      |      |      |      | vmulpd zmm16, zmm18, zmm18
+|   1      |             |      |             |             |      | 1.0  |      |      | vmulpd zmm12, zmm16, zmm12
+|   1      | 1.0         |      |             |             |      |      |      |      | vmulpd zmm16, zmm1, zmm18
+|   1      |             |      |             |             |      | 1.0  |      |      | vmulpd zmm16, zmm16, zmm12
+|   1      | 1.0         |      |             |             |      |      |      |      | vaddpd zmm12, zmm12, zmm2
+|   1      |             |      |             |             |      | 1.0  |      |      | vmulpd zmm12, zmm16, zmm12
+|   1      | 1.0         |      |             |             |      |      |      |      | vfmadd231pd zmm21{k1}, zmm12, zmm15
+|   1      |             |      |             | 1.0     1.0 |      |      |      |      | vmovupd zmm15, zmmword ptr [rsp+0x240]
+|   1      |             |      |             |             |      | 1.0  |      |      | vsubpd zmm15, zmm15, zmm28
+|   1      |             |      | 1.0     1.0 |             |      |      |      |      | vmovupd zmm16, zmmword ptr [rsp+0x80]
+|   1      | 1.0         |      |             |             |      |      |      |      | vsubpd zmm16, zmm16, zmm29
+|   1      |             |      |             | 1.0     1.0 |      |      |      |      | vmovupd zmm18, zmmword ptr [rsp+0x180]
+|   1      |             |      |             |             |      | 1.0  |      |      | vsubpd zmm18, zmm18, zmm30
+|   1      | 1.0         |      |             |             |      |      |      |      | vfmadd231pd zmm10{k1}, zmm12, zmm14
+|   1      |             |      |             |             |      | 1.0  |      |      | vmulpd zmm14, zmm18, zmm18
+|   1      | 1.0         |      |             |             |      |      |      |      | vfmadd231pd zmm14, zmm16, zmm16
+|   1      |             |      |             |             |      | 1.0  |      |      | vfmadd231pd zmm14, zmm15, zmm15
+|   1      |             |      |             |             |      | 1.0  |      |      | vcmppd k2, zmm14, zmm0, 0x1
+|   3      | 2.0         |      |             |             |      | 1.0  |      |      | vrcp14pd zmm14, zmm14
+|   1      | 1.0         |      |             |             |      |      |      |      | vfmadd231pd zmm6{k1}, zmm12, zmm3
+|   1      |             |      |             |             |      | 1.0  |      |      | vmulpd zmm3, zmm14, zmm20
+|   1      | 1.0         |      |             |             |      |      |      |      | vmulpd zmm12, zmm14, zmm14
+|   1      |             |      |             |             |      | 1.0  |      |      | vmulpd zmm3, zmm12, zmm3
+|   1      | 1.0         |      |             |             |      |      |      |      | vmulpd zmm12, zmm1, zmm14
+|   1      |             |      |             |             |      | 1.0  |      |      | vmulpd zmm12, zmm12, zmm3
+|   1      | 1.0         |      |             |             |      |      |      |      | vaddpd zmm3, zmm3, zmm2
+|   1      |             |      |             |             |      | 1.0  |      |      | vmulpd zmm3, zmm12, zmm3
+|   1      | 1.0         |      |             |             |      |      |      |      | vfmadd231pd zmm13{k2}, zmm3, zmm15
+|   1      |             |      |             |             |      | 1.0  |      |      | vfmadd231pd zmm8{k2}, zmm3, zmm16
+|   1      | 1.0         |      |             |             |      |      |      |      | vfmadd231pd zmm4{k2}, zmm3, zmm18
+|   1      |             | 1.0  |             |             |      |      |      |      | inc rcx
+|   1*     |             |      |             |             |      |      |      |      | cmp r11, rcx
+|   0*F    |             |      |             |             |      |      |      |      | jnz 0xfffffffffffffdf3
+|   1      |             |      |             |             |      |      | 1.0  |      | jmp 0xfffffffffffff7a5
+Total Num Of Uops: 95
+Analysis Notes:
+Backend allocation was stalled due to unavailable allocation resources.
