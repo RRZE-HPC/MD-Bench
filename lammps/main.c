@@ -63,6 +63,10 @@ double setup(Parameter *param, Eam *eam, Atom *atom, Neighbor *neighbor, Stats *
     setupNeighbor(param);
     setupThermo(param, atom->Natoms);
     if(param->input_file == NULL) { adjustThermo(param, atom); }
+    #ifdef SORT_ATOMS
+    atom->Nghost = 0;
+    sortAtom(atom);
+    #endif
     setupPbc(atom, param);
     initDevice(atom, neighbor);
     updatePbc(atom, param, true);
@@ -76,9 +80,12 @@ double reneighbour(Parameter *param, Atom *atom, Neighbor *neighbor) {
     S = getTimeStamp();
     LIKWID_MARKER_START("reneighbour");
     updateAtomsPbc(atom, param);
+    #ifdef SORT_ATOMS
+    atom->Nghost = 0;
+    sortAtom(atom);
+    #endif
     setupPbc(atom, param);
     updatePbc(atom, param, true);
-    //sortAtom(atom);
     buildNeighbor(atom, neighbor);
     LIKWID_MARKER_STOP("reneighbour");
     E = getTimeStamp();
