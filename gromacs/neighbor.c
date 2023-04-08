@@ -58,6 +58,7 @@ void initNeighbor(Neighbor *neighbor, Parameter *param) {
     neighbor->numneigh = NULL;
     neighbor->numneigh_masked = NULL;
     neighbor->neighbors = NULL;
+    neighbor->neighbors_imask = NULL;
 }
 
 void setupNeighbor(Parameter *param, Atom *atom) {
@@ -229,7 +230,9 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
     if(atom->Nclusters_local > nmax) {
         nmax = atom->Nclusters_local;
         if(neighbor->numneigh) free(neighbor->numneigh);
+        if(neighbor->numneigh_masked) free(neighbor->numneigh_masked);
         if(neighbor->neighbors) free(neighbor->neighbors);
+        if(neighbor->neighbors_imask) free(neighbor->neighbors_imask);
         neighbor->numneigh = (int*) malloc(nmax * sizeof(int));
         neighbor->numneigh_masked = (int*) malloc(nmax * sizeof(int));
         neighbor->neighbors = (int*) malloc(nmax * neighbor->maxneighs * sizeof(int));
@@ -326,15 +329,17 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
                                     imask = get_imask_simd_4xn(1, ci, cj);
                                     #endif
 
-                                    if(imask == NBNXN_INTERACTION_MASK_ALL) {
-                                        neighptr[n] = cj;
-                                        neighptr_imask[n] = imask;
-                                    } else {
-                                        neighptr[n] = neighptr[nmasked];
-                                        neighptr_imask[n] = neighptr_imask[nmasked];
-                                        neighptr[nmasked] = cj;
-                                        neighptr_imask[nmasked] = imask;
-                                        nmasked++;
+                                    if(n < neighbor->maxneighs) {
+                                        if(imask == NBNXN_INTERACTION_MASK_ALL) {
+                                            neighptr[n] = cj;
+                                            neighptr_imask[n] = imask;
+                                        } else {
+                                            neighptr[n] = neighptr[nmasked];
+                                            neighptr_imask[n] = neighptr_imask[nmasked];
+                                            neighptr[nmasked] = cj;
+                                            neighptr_imask[nmasked] = imask;
+                                            nmasked++;
+                                        }
                                     }
 
                                     n++;
@@ -377,11 +382,12 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
         }
 
         if(resize) {
-            fprintf(stdout, "RESIZE %d\n", neighbor->maxneighs);
             neighbor->maxneighs = new_maxneighs * 1.2;
+            fprintf(stdout, "RESIZE %d\n", neighbor->maxneighs);
             free(neighbor->neighbors);
-            neighbor->neighbors = (int *) malloc(atom->Nmax * neighbor->maxneighs * sizeof(int));
-            neighbor->neighbors_imask = (unsigned int *) malloc(atom->Nmax * neighbor->maxneighs * sizeof(unsigned int));
+            free(neighbor->neighbors_imask);
+            neighbor->neighbors = (int *) malloc(nmax * neighbor->maxneighs * sizeof(int));
+            neighbor->neighbors_imask = (unsigned int *) malloc(nmax * neighbor->maxneighs * sizeof(unsigned int));
         }
     }
 

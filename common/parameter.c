@@ -169,6 +169,11 @@ void printParameter(Parameter *param) {
     printf("\tNumber of timesteps: %d\n", param->ntimes);
     printf("\tReport stats every (timesteps): %d\n", param->nstat);
     printf("\tReneighbor every (timesteps): %d\n", param->reneigh_every);
+    #ifdef SORT_ATOMS
+    printf("\tSort atoms when reneighboring: yes\n");
+    #else
+    printf("\tSort atoms when reneighboring: no\n");
+    #endif
     printf("\tPrune every (timesteps): %d\n", param->prune_every);
     printf("\tOutput positions every (timesteps): %d\n", param->x_out_every);
     printf("\tOutput velocities every (timesteps): %d\n", param->v_out_every);
