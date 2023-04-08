@@ -30,6 +30,10 @@ ifneq ($(ASM_SYNTAX), ATT)
     ASFLAGS += -masm=intel
 endif
 
+ifeq ($(strip $(SORT_ATOMS)),true)
+    DEFINES += -DSORT_ATOMS
+endif
+
 ifeq ($(strip $(EXPLICIT_TYPES)),true)
     DEFINES += -DEXPLICIT_TYPES
 endif

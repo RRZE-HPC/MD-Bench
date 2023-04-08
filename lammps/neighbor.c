@@ -326,45 +326,45 @@ void sortAtom(Atom* atom) {
     int Nmax = atom->Nmax;
     int* binpos = bincount;
 
-    for(int i=1; i<mbins; i++) {
-        binpos[i] += binpos[i-1];
+    for(int i = 1; i < mbins; i++) {
+        binpos[i] += binpos[i - 1];
     }
 
-#ifdef AOS
+    #ifdef AOS
     MD_FLOAT* new_x = (MD_FLOAT*) malloc(Nmax * sizeof(MD_FLOAT) * 3);
     MD_FLOAT* new_vx = (MD_FLOAT*) malloc(Nmax * sizeof(MD_FLOAT) * 3);
-#else
+    #else
     MD_FLOAT* new_x = (MD_FLOAT*) malloc(Nmax * sizeof(MD_FLOAT));
     MD_FLOAT* new_y = (MD_FLOAT*) malloc(Nmax * sizeof(MD_FLOAT));
     MD_FLOAT* new_z = (MD_FLOAT*) malloc(Nmax * sizeof(MD_FLOAT));
     MD_FLOAT* new_vx = (MD_FLOAT*) malloc(Nmax * sizeof(MD_FLOAT));
     MD_FLOAT* new_vy = (MD_FLOAT*) malloc(Nmax * sizeof(MD_FLOAT));
     MD_FLOAT* new_vz = (MD_FLOAT*) malloc(Nmax * sizeof(MD_FLOAT));
-#endif
+    #endif
     MD_FLOAT* old_x = atom->x; MD_FLOAT* old_y = atom->y; MD_FLOAT* old_z = atom->z;
     MD_FLOAT* old_vx = atom->vx; MD_FLOAT* old_vy = atom->vy; MD_FLOAT* old_vz = atom->vz;
 
-    for(int mybin = 0; mybin<mbins; mybin++) {
-        int start = mybin>0?binpos[mybin-1]:0;
+    for(int mybin = 0; mybin < mbins; mybin++) {
+        int start = mybin > 0 ? binpos[mybin - 1] : 0;
         int count = binpos[mybin] - start;
-        for(int k=0; k<count; k++) {
+        for(int k = 0; k < count; k++) {
             int new_i = start + k;
             int old_i = bins[mybin * atoms_per_bin + k];
-#ifdef AOS
+            #ifdef AOS
             new_x[new_i * 3 + 0] = old_x[old_i * 3 + 0];
             new_x[new_i * 3 + 1] = old_x[old_i * 3 + 1];
             new_x[new_i * 3 + 2] = old_x[old_i * 3 + 2];
             new_vx[new_i * 3 + 0] = old_vx[old_i * 3 + 0];
             new_vx[new_i * 3 + 1] = old_vx[old_i * 3 + 1];
             new_vx[new_i * 3 + 2] = old_vx[old_i * 3 + 2];
-#else
+            #else
             new_x[new_i] = old_x[old_i];
             new_y[new_i] = old_y[old_i];
             new_z[new_i] = old_z[old_i];
             new_vx[new_i] = old_vx[old_i];
             new_vy[new_i] = old_vy[old_i];
             new_vz[new_i] = old_vz[old_i];
-#endif
+            #endif
         }
     }
 
@@ -372,7 +372,7 @@ void sortAtom(Atom* atom) {
     free(atom->vx);
     atom->x = new_x;
     atom->vx = new_vx;
-#ifndef AOS
+    #ifndef AOS
     free(atom->y);
     free(atom->z);
     free(atom->vy);
@@ -381,5 +381,5 @@ void sortAtom(Atom* atom) {
     atom->z = new_z;
     atom->vy = new_vy;
     atom->vz = new_vz;
-#endif
+    #endif
 }
