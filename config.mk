@@ -3,7 +3,7 @@ TAG ?= ICC
 # Instruction set (SSE/AVX/AVX_FMA/AVX2/AVX512)
 ISA ?= AVX512
 # Optimization scheme (lammps/gromacs/clusters_per_bin)
-OPT_SCHEME ?= gromacs
+OPT_SCHEME ?= lammps
 # Enable likwid (true or false)
 ENABLE_LIKWID ?= true
 # SP or DP
@@ -15,6 +15,8 @@ ASM_SYNTAX ?= ATT
 # Debug
 DEBUG ?= false
 
+# Sort atoms when reneighboring (true or false)
+SORT_ATOMS ?= true
 # Explicitly store and load atom types (true or false)
 EXPLICIT_TYPES ?= false
 # Trace memory addresses for cache simulator (true or false)
@@ -36,7 +38,7 @@ USE_REFERENCE_VERSION ?= false
 # Enable XTC output
 XTC_OUTPUT ?= false
 # Check if cj is local when decreasing reaction force
-HALF_NEIGHBOR_LISTS_CHECK_CJ ?= false
+HALF_NEIGHBOR_LISTS_CHECK_CJ ?= true
 
 # Configurations for CUDA
 # Use CUDA host memory to optimize transfers
