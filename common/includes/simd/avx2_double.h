@@ -48,11 +48,13 @@ static inline MD_FLOAT simd_incr_reduced_sum(MD_FLOAT *m, MD_SIMD_FLOAT v0, MD_S
     t2 = _mm256_permute2f128_pd(t0, t1, 0x21);
     t0 = _mm256_add_pd(t0, t2);
     t1 = _mm256_add_pd(t1, t2);
-    t0 = _mm256_blend_pd(t0, t1, 0b1100);
+    t0 = _mm256_blend_pd(t0, t1, 0xC);
+    //t0 = _mm256_blend_pd(t0, t1, 0b1100);
     t1 = _mm256_add_pd(t0, _mm256_load_pd(m));
     _mm256_store_pd(m, t1);
 
-    t0 = _mm256_add_pd(t0, _mm256_permute_pd(t0, 0b0101));
+    t0 = _mm256_add_pd(t0, _mm256_permute_pd(t0, 0x5));
+    //t0 = _mm256_add_pd(t0, _mm256_permute_pd(t0, 0b0101));
     a0 = _mm256_castpd256_pd128(t0);
     a1 = _mm256_extractf128_pd(t0, 0x1);
     a0 = _mm_add_sd(a0, a1);
@@ -91,7 +93,7 @@ static inline void simd_h_decr3(MD_FLOAT *m, MD_SIMD_FLOAT a0, MD_SIMD_FLOAT a1,
 }
 
 // Functions used in LAMMPS kernel
-static inline MD_SIMD_FLOAT simd_gather(MD_SIMD_INT vidx, const MD_FLOAT *m, int s) { return _mm256_i32gather_pd(m, vidx, s); }
+#define simd_gather(vidx, m, s)     _mm256_i32gather_pd(m, vidx, s);
 static inline MD_SIMD_INT simd_int_broadcast(int scalar) { return _mm_set1_epi32(scalar); }
 static inline MD_SIMD_INT simd_int_zero() { return _mm_setzero_si128(); }
 static inline MD_SIMD_INT simd_int_seq() { return _mm_set_epi32(3, 2, 1, 0); }
