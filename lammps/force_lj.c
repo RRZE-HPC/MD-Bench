@@ -90,6 +90,12 @@ double computeForceLJFullNeigh_plain_c(Parameter *param, Atom *atom, Neighbor *n
         atom_fy(i) += fiy;
         atom_fz(i) += fiz;
 
+        #ifdef USE_REFERENCE_VERSION
+        if(numneighs % VECTOR_WIDTH > 0) {
+            addStat(stats->atoms_outside_cutoff, VECTOR_WIDTH - (numneighs % VECTOR_WIDTH));
+        }
+        #endif
+
         addStat(stats->total_force_neighs, numneighs);
         addStat(stats->total_force_iters, (numneighs + VECTOR_WIDTH - 1) / VECTOR_WIDTH);
     }
