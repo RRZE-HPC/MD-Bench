@@ -77,7 +77,12 @@ double setup(Parameter *param, Eam *eam, Atom *atom, Neighbor *neighbor, Stats *
     buildClusters(atom);
     #endif //defined(CUDA_TARGET) && defined(USE_SUPER_CLUSTERS)
     defineJClusters(atom);
+    #if defined(CUDA_TARGET) && defined(USE_SUPER_CLUSTERS)
+    //setupPbcGPU(atom, param);
     setupPbc(atom, param);
+    #else
+    setupPbc(atom, param);
+    #endif //defined(CUDA_TARGET) && defined(USE_SUPER_CLUSTERS)
     binClusters(atom);
     #if defined(CUDA_TARGET) && defined(USE_SUPER_CLUSTERS)
     buildNeighborGPU(atom, neighbor);
@@ -101,7 +106,12 @@ double reneighbour(Parameter *param, Atom *atom, Neighbor *neighbor) {
     buildClusters(atom);
     #endif //defined(CUDA_TARGET) && defined(USE_SUPER_CLUSTERS)
     defineJClusters(atom);
+    #if defined(CUDA_TARGET) && defined(USE_SUPER_CLUSTERS)
+    //setupPbcGPU(atom, param);
     setupPbc(atom, param);
+    #else
+    setupPbc(atom, param);
+    #endif //defined(CUDA_TARGET) && defined(USE_SUPER_CLUSTERS)
     binClusters(atom);
     #if defined(CUDA_TARGET) && defined(USE_SUPER_CLUSTERS)
     buildNeighborGPU(atom, neighbor);
@@ -234,6 +244,8 @@ int main(int argc, char** argv) {
     printParameter(&param);
     printf(HLINE);
 
+    //verifyNeigh(&atom, &neighbor);
+
     printf("step\ttemp\t\tpressure\n");
     computeThermo(0, &param, &atom);
     #if defined(MEM_TRACER) || defined(INDEX_TRACER)
@@ -276,7 +288,10 @@ int main(int argc, char** argv) {
                 #endif //defined(CUDA_TARGET) && defined(USE_SUPER_CLUSTERS)
             }
 
+
+            copyDataFromCUDADevice(&atom);
             updatePbc(&atom, &param, 0);
+            copyDataToCUDADevice(&atom);
         } else {
             #ifdef CUDA_TARGET
             copyDataFromCUDADevice(&atom);
@@ -294,13 +309,33 @@ int main(int argc, char** argv) {
         traceAddresses(&param, &atom, &neighbor, n + 1);
         #endif
 
+
+        /*
+        printf("%d\t%d\r\n", atom.Nsclusters_local, atom.Nclusters_local);
+        copyDataToCUDADevice(&atom);
+        verifyLayout(&atom);
+
+        //printClusterIndices(&atom);
+
+        */
+
         if(param.force_field == FF_EAM) {
             timer[FORCE] += computeForceEam(&eam, &param, &atom, &neighbor, &stats);
         } else {
             timer[FORCE] += computeForceLJ(&param, &atom, &neighbor, &stats);
         }
 
+        /*
+        copyDataFromCUDADevice(&atom);
+        verifyLayout(&atom);
+
+        getchar();
+        */
+
         finalIntegrate(&param, &atom);
+
+
+
 
         if(!((n + 1) % param.nstat) && (n+1) < param.ntimes) {
             computeThermo(n + 1, &param, &atom);

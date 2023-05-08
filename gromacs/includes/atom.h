@@ -149,7 +149,6 @@ typedef struct {
 } Cluster;
 
 typedef struct {
-    //int *iclusters;
     int nclusters;
     MD_FLOAT bbminx, bbmaxx;
     MD_FLOAT bbminy, bbmaxy;

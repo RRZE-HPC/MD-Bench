@@ -4,7 +4,7 @@
  */
 
 #include <stdio.h>
-
+#include <stdlib.h>
 #include <utils.h>
 
 extern void alignDataToSuperclusters(Atom *atom);
@@ -274,4 +274,59 @@ void showSuperclusters(Atom *atom) {
 
     }
 }
+
+void printNeighs(Atom *atom, Neighbor *neighbor) {
+    for (int i = 0; i < atom->Nclusters_local; ++i) {
+        int neigh_num = neighbor->numneigh[i];
+        for (int j = 0; j < neigh_num; j++) {
+            printf("%d ", neighbor->neighbors[ i * neighbor->maxneighs + j]);
+        }
+        printf("\r\n");
+    }
+}
+
+void printClusterIndices(Atom *atom) {
+    for (int i = 0; i < atom->Nsclusters_local; ++i) {
+        int clusters_num = atom->siclusters[i].nclusters;
+        for (int j = 0; j < clusters_num; j++) {
+            printf("%d ", atom->icluster_idx[j + SCLUSTER_SIZE * i]);
+        }
+        printf("\r\n");
+    }
+}
+
+void verifyNeigh(Atom *atom, Neighbor *neighbor) {
+
+    buildNeighbor(atom, neighbor);
+    int *numneigh = (int*) malloc(atom->Nclusters_local * sizeof(int));
+    int *neighbors = (int*) malloc(atom->Nclusters_local * neighbor->maxneighs * sizeof(int*));
+
+    for (int i = 0; i < atom->Nclusters_local; ++i) {
+        int neigh_num = neighbor->numneigh[i];
+        numneigh[i] = neighbor->numneigh[i];
+        neighbor->numneigh[i] = 0;
+        for (int j = 0; j < neigh_num; j++) {
+            neighbors[i * neighbor->maxneighs + j] = neighbor->neighbors[i * neighbor->maxneighs + j];
+            neighbor->neighbors[i * neighbor->maxneighs + j] = 0;
+        }
+    }
+
+
+    buildNeighborGPU(atom, neighbor);
+
+    unsigned int num_diff = 0;
+    unsigned int neigh_diff = 0;
+
+    for (int i = 0; i < atom->Nclusters_local; ++i) {
+        int neigh_num = neighbor->numneigh[i];
+        if (numneigh[i] != neigh_num) num_diff++;
+        for (int j = 0; j < neigh_num; j++) {
+            if (neighbors[i * neighbor->maxneighs + j] !=
+            neighbor->neighbors[ i * neighbor->maxneighs + j]) neigh_diff++;
+        }
+    }
+
+    printf("%d\t%d\r\n", num_diff, neigh_diff);
+}
+
 #endif //USE_SUPER_CLUSTERS
