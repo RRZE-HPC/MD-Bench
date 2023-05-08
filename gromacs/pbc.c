@@ -229,3 +229,88 @@ void setupPbc(Atom *atom, Parameter *param) {
     cpuUpdatePbc(atom, param, 1);
     DEBUG_MESSAGE("setupPbc end\n");
 }
+
+void setupPbcGPU(Atom *atom, Parameter *param) {
+    DEBUG_MESSAGE("setupPbcGPU start\n");
+    MD_FLOAT xprd = param->xprd;
+    MD_FLOAT yprd = param->yprd;
+    MD_FLOAT zprd = param->zprd;
+    MD_FLOAT Cutneigh = param->cutneigh;
+    int jfac = SCLUSTER_SIZE / CLUSTER_M;
+    int ncj = atom->Nsclusters_local * jfac;
+    int Nghost = -1;
+    int Nghost_atoms = 0;
+
+    for(int cj = 0; cj < ncj; cj++) {
+        if(atom->jclusters[cj].natoms > 0) {
+            if(atom->Nsclusters_local + (Nghost + (jfac - 1) + 7) / jfac >= atom->Nclusters_max) {
+                growClusters(atom);
+            }
+
+            if((Nghost + 7) * CLUSTER_M >= NmaxGhost) {
+                growPbc(atom);
+            }
+
+            MD_FLOAT bbminx = atom->jclusters[cj].bbminx;
+            MD_FLOAT bbmaxx = atom->jclusters[cj].bbmaxx;
+            MD_FLOAT bbminy = atom->jclusters[cj].bbminy;
+            MD_FLOAT bbmaxy = atom->jclusters[cj].bbmaxy;
+            MD_FLOAT bbminz = atom->jclusters[cj].bbminz;
+            MD_FLOAT bbmaxz = atom->jclusters[cj].bbmaxz;
+
+            /* Setup ghost atoms */
+            /* 6 planes */
+            if (bbminx < Cutneigh)         { ADDGHOST(+1,0,0); }
+            if (bbmaxx >= (xprd-Cutneigh)) { ADDGHOST(-1,0,0); }
+            if (bbminy < Cutneigh)         { ADDGHOST(0,+1,0); }
+            if (bbmaxy >= (yprd-Cutneigh)) { ADDGHOST(0,-1,0); }
+            if (bbminz < Cutneigh)         { ADDGHOST(0,0,+1); }
+            if (bbmaxz >= (zprd-Cutneigh)) { ADDGHOST(0,0,-1); }
+            /* 8 corners */
+            if (bbminx < Cutneigh         && bbminy < Cutneigh         && bbminz < Cutneigh)         { ADDGHOST(+1,+1,+1); }
+            if (bbminx < Cutneigh         && bbmaxy >= (yprd-Cutneigh) && bbminz < Cutneigh)         { ADDGHOST(+1,-1,+1); }
+            if (bbminx < Cutneigh         && bbminy < Cutneigh         && bbmaxz >= (zprd-Cutneigh)) { ADDGHOST(+1,+1,-1); }
+            if (bbminx < Cutneigh         && bbmaxy >= (yprd-Cutneigh) && bbmaxz >= (zprd-Cutneigh)) { ADDGHOST(+1,-1,-1); }
+            if (bbmaxx >= (xprd-Cutneigh) && bbminy < Cutneigh         && bbminz < Cutneigh)         { ADDGHOST(-1,+1,+1); }
+            if (bbmaxx >= (xprd-Cutneigh) && bbmaxy >= (yprd-Cutneigh) && bbminz < Cutneigh)         { ADDGHOST(-1,-1,+1); }
+            if (bbmaxx >= (xprd-Cutneigh) && bbminy < Cutneigh         && bbmaxz >= (zprd-Cutneigh)) { ADDGHOST(-1,+1,-1); }
+            if (bbmaxx >= (xprd-Cutneigh) && bbmaxy >= (yprd-Cutneigh) && bbmaxz >= (zprd-Cutneigh)) { ADDGHOST(-1,-1,-1); }
+            /* 12 edges */
+            if (bbminx < Cutneigh         && bbminz < Cutneigh)         { ADDGHOST(+1,0,+1); }
+            if (bbminx < Cutneigh         && bbmaxz >= (zprd-Cutneigh)) { ADDGHOST(+1,0,-1); }
+            if (bbmaxx >= (xprd-Cutneigh) && bbminz < Cutneigh)         { ADDGHOST(-1,0,+1); }
+            if (bbmaxx >= (xprd-Cutneigh) && bbmaxz >= (zprd-Cutneigh)) { ADDGHOST(-1,0,-1); }
+            if (bbminy < Cutneigh         && bbminz < Cutneigh)         { ADDGHOST(0,+1,+1); }
+            if (bbminy < Cutneigh         && bbmaxz >= (zprd-Cutneigh)) { ADDGHOST(0,+1,-1); }
+            if (bbmaxy >= (yprd-Cutneigh) && bbminz < Cutneigh)         { ADDGHOST(0,-1,+1); }
+            if (bbmaxy >= (yprd-Cutneigh) && bbmaxz >= (zprd-Cutneigh)) { ADDGHOST(0,-1,-1); }
+            if (bbminy < Cutneigh         && bbminx < Cutneigh)         { ADDGHOST(+1,+1,0); }
+            if (bbminy < Cutneigh         && bbmaxx >= (xprd-Cutneigh)) { ADDGHOST(-1,+1,0); }
+            if (bbmaxy >= (yprd-Cutneigh) && bbminx < Cutneigh)         { ADDGHOST(+1,-1,0); }
+            if (bbmaxy >= (yprd-Cutneigh) && bbmaxx >= (xprd-Cutneigh)) { ADDGHOST(-1,-1,0); }
+        }
+    }
+
+    if(ncj + (Nghost + (jfac - 1) + 1) / jfac >= atom->Nclusters_max) {
+        growClusters(atom);
+    }
+
+    // Add dummy cluster at the end
+    int cj_vec_base = CJ_VECTOR_BASE_INDEX(ncj + Nghost + 1);
+    MD_FLOAT *cj_x = &atom->cl_x[cj_vec_base];
+    for(int cjj = 0; cjj < CLUSTER_N; cjj++) {
+        cj_x[CL_X_OFFSET + cjj] = INFINITY;
+        cj_x[CL_Y_OFFSET + cjj] = INFINITY;
+        cj_x[CL_Z_OFFSET + cjj] = INFINITY;
+    }
+
+    // increase by one to make it the ghost atom count
+    atom->dummy_cj = ncj + Nghost + 1;
+    atom->Nghost = Nghost_atoms;
+    atom->Nclusters_ghost = Nghost + 1;
+    atom->Nclusters = atom->Nclusters_local + Nghost + 1;
+
+    // Update created ghost clusters positions
+    cudaUpdatePbc(atom, param, 1);
+    DEBUG_MESSAGE("setupPbcGPU end\n");
+}

@@ -452,12 +452,5 @@ void growSuperClusters(Atom *atom) {
     atom->scl_x = (MD_FLOAT*) reallocate(atom->scl_x, ALIGNMENT, atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT), nold * SCLUSTER_M * 3 * sizeof(MD_FLOAT));
     atom->scl_f = (MD_FLOAT*) reallocate(atom->scl_f, ALIGNMENT, atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT), nold * SCLUSTER_M * 3 * sizeof(MD_FLOAT));
     atom->scl_v = (MD_FLOAT*) reallocate(atom->scl_v, ALIGNMENT, atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT), nold * SCLUSTER_M * 3 * sizeof(MD_FLOAT));
-
-
-    /*
-    for (int sci = 0; sci < atom->Nsclusters_max; sci++) {
-        atom->siclusters[sci].iclusters = (int*) reallocate(atom->siclusters[sci].iclusters, ALIGNMENT, SCLUSTER_SIZE * sizeof(int), SCLUSTER_SIZE * sizeof(int));
-    }
-     */
 }
 #endif //USE_SUPER_CLUSTERS

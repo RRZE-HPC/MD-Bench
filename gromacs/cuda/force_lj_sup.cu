@@ -193,9 +193,11 @@ __global__ void computeForceLJSup_cuda_warp(MD_FLOAT *cuda_cl_x, MD_FLOAT *cuda_
     int numneighs = cuda_numneigh[cuda_iclusters[SCLUSTER_SIZE * sci_pos + ci_pos]];
 
     for(int k = 0; k < numneighs; k++) {
-        int cj = (&cuda_neighs[cuda_iclusters[SCLUSTER_SIZE * sci_pos + ci_pos] * maxneighs])[k];
+        int glob_j = (&cuda_neighs[cuda_iclusters[SCLUSTER_SIZE * sci_pos + ci_pos] * maxneighs])[k];
+        int scj = glob_j / SCLUSTER_SIZE;
         // TODO Make cj accessible from super cluster data alignment (not reachable right now)
-        int cj_vec_base = SCJ_VECTOR_BASE_INDEX(cj);
+        int cj = SCJ_VECTOR_BASE_INDEX(scj) + CLUSTER_M * (glob_j % SCLUSTER_SIZE);
+        int cj_vec_base = cj;
         MD_FLOAT *cj_x = &cuda_cl_x[cj_vec_base];
         MD_FLOAT *cj_f = &cuda_cl_f[cj_vec_base];
 
@@ -206,14 +208,10 @@ __global__ void computeForceLJSup_cuda_warp(MD_FLOAT *cuda_cl_x, MD_FLOAT *cuda_
         MD_FLOAT fiy = 0;
         MD_FLOAT fiz = 0;
 
-        int cond;
-#if CLUSTER_M == CLUSTER_N
-        cond = half_neigh ? (ci_cj0 != cj || cii_pos < cjj_pos) :
-               (ci_cj0 != cj || cii_pos != cjj_pos);
-#elif CLUSTER_M < CLUSTER_N
-        cond = half_neigh ? (ci_cj0 != cj || cii_pos + CLUSTER_M * (ci_pos & 0x1) < cjj_pos) :
-                            (ci_cj0 != cj || cii_pos + CLUSTER_M * (ci_pos & 0x1) != cjj_pos);
-#endif
+
+        //int cond = ci_cj0 != cj || cii_pos != cjj_pos || scj != sci_pos;
+        int cond = (glob_j != cuda_iclusters[SCLUSTER_SIZE * sci_pos + ci_pos] && cii_pos != cjj_pos);
+
         if(cond) {
             MD_FLOAT delx = xtmp - cj_x[SCL_CL_X_OFFSET(ci_pos) + cjj_pos];
             MD_FLOAT dely = ytmp - cj_x[SCL_CL_Y_OFFSET(ci_pos) + cjj_pos];

@@ -13,7 +13,7 @@ DATA_LAYOUT ?= AOS
 # Assembly syntax to generate (ATT/INTEL)
 ASM_SYNTAX ?= ATT
 # Debug
-DEBUG ?= false
+DEBUG ?= true
 
 # Explicitly store and load atom types (true or false)
 EXPLICIT_TYPES ?= false

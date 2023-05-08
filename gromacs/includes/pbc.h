@@ -16,5 +16,8 @@ extern void setupPbc(Atom*, Parameter*);
 
 #ifdef CUDA_TARGET
 extern void cudaUpdatePbc(Atom*, Parameter*, int);
+#if defined(USE_SUPER_CLUSTERS)
+extern void setupPbcGPU(Atom*, Parameter*);
+#endif //defined(USE_SUPER_CLUSTERS)
 #endif
 #endif

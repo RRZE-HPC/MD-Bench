@@ -154,11 +154,11 @@ void copyDataFromCUDADevice(Atom *atom) {
     memcpyFromGPU(atom->cl_f, cuda_cl_f, atom->Nclusters_max * CLUSTER_M * 3 * sizeof(MD_FLOAT));
 
 #ifdef USE_SUPER_CLUSTERS
-    alignDataFromSuperclusters(atom);
-
     memcpyFromGPU(atom->scl_x, cuda_scl_x, atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT));
     memcpyFromGPU(atom->scl_v, cuda_scl_v, atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT));
     memcpyFromGPU(atom->scl_f, cuda_scl_f, atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT));
+
+    alignDataFromSuperclusters(atom);
 #endif //USE_SUPER_CLUSTERS
 
     DEBUG_MESSAGE("copyDataFromCUDADevice stop\r\n");
@@ -224,6 +224,39 @@ __global__ void cudaUpdatePbc_warp(MD_FLOAT *cuda_cl_x, int *cuda_border_map,
 
     int jfac = MAX(1, CLUSTER_N / CLUSTER_M);
     int ncj = Nclusters_local / jfac;
+    MD_FLOAT xprd = param_xprd;
+    MD_FLOAT yprd = param_yprd;
+    MD_FLOAT zprd = param_zprd;
+
+    const int cj = ncj + cg;
+    int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
+    int bmap_vec_base = CJ_VECTOR_BASE_INDEX(cuda_border_map[cg]);
+    MD_FLOAT *cj_x = &cuda_cl_x[cj_vec_base];
+    MD_FLOAT *bmap_x = &cuda_cl_x[bmap_vec_base];
+
+    for(int cjj = 0; cjj < cuda_jclusters_natoms[cg]; cjj++) {
+        cj_x[CL_X_OFFSET + cjj] = bmap_x[CL_X_OFFSET + cjj] + cuda_PBCx[cg] * xprd;
+        cj_x[CL_Y_OFFSET + cjj] = bmap_x[CL_Y_OFFSET + cjj] + cuda_PBCy[cg] * yprd;
+        cj_x[CL_Z_OFFSET + cjj] = bmap_x[CL_Z_OFFSET + cjj] + cuda_PBCz[cg] * zprd;
+    }
+}
+
+__global__ void cudaUpdatePbcSup_warp(MD_FLOAT *cuda_cl_x, int *cuda_border_map,
+                                   int *cuda_jclusters_natoms,
+                                   int *cuda_PBCx,
+                                   int *cuda_PBCy,
+                                   int *cuda_PBCz,
+                                   int Nsclusters_local,
+                                   int Nclusters_ghost,
+                                   MD_FLOAT param_xprd,
+                                   MD_FLOAT param_yprd,
+                                   MD_FLOAT param_zprd) {
+    unsigned int cg = blockDim.x * blockIdx.x + threadIdx.x;
+    if (cg >= Nclusters_ghost) return;
+
+    //int jfac = MAX(1, CLUSTER_N / CLUSTER_M);
+    int jfac = SCLUSTER_SIZE / CLUSTER_M;
+    int ncj = Nsclusters_local / jfac;
     MD_FLOAT xprd = param_xprd;
     MD_FLOAT yprd = param_yprd;
     MD_FLOAT zprd = param_zprd;
@@ -348,11 +381,19 @@ extern "C"
 void cudaUpdatePbc(Atom *atom, Parameter *param) {
     const int threads_num = 512;
     dim3 block_size = dim3(threads_num, 1, 1);;
-    dim3 grid_size = dim3(atom->Nclusters_ghost/(threads_num)+1, 1, 1);;
-    cudaUpdatePbc_warp<<<grid_size, block_size>>>(cuda_cl_x, cuda_border_map,
+    dim3 grid_size = dim3(atom->Nclusters_ghost/(threads_num)+1, 1, 1);
+
+#ifdef USE_SUPER_CLUSTERS
+    cudaUpdatePbcSup_warp<<<grid_size, block_size>>>(cuda_scl_x, cuda_border_map,
                                        cuda_jclusters_natoms, cuda_PBCx, cuda_PBCy, cuda_PBCz,
                                        atom->Nclusters_local, atom->Nclusters_ghost,
                                        param->xprd, param->yprd, param->zprd);
+#else
+    cudaUpdatePbc_warp<<<grid_size, block_size>>>(cuda_cl_x, cuda_border_map,
+                                                  cuda_jclusters_natoms, cuda_PBCx, cuda_PBCy, cuda_PBCz,
+                                                  atom->Nclusters_local, atom->Nclusters_ghost,
+                                                  param->xprd, param->yprd, param->zprd);
+#endif //USE_SUPER_CLUSTERS
     cuda_assert("cudaUpdatePbc", cudaPeekAtLastError());
     cuda_assert("cudaUpdatePbc", cudaDeviceSynchronize());
 }

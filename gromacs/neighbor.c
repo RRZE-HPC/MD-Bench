@@ -395,11 +395,11 @@ void buildNeighborGPU(Atom *atom, Neighbor *neighbor) {
         int new_maxneighs = neighbor->maxneighs;
         resize = 0;
 
-        //for (int sci = 0; sci < atom->Nsclusters_local; sci++) {
-            //for (int scii = 0; scii < atom->siclusters[sci].nclusters; scii++) {
-            for(int ci = 0; ci < atom->Nclusters_local; ci++) {
+        for (int sci = 0; sci < atom->Nsclusters_local; sci++) {
+            for (int scii = 0; scii < atom->siclusters[sci].nclusters; scii++) {
+            //for(int ci = 0; ci < atom->Nclusters_local; ci++) {
                 //const int ci = atom->siclusters[sci].iclusters[scii];
-                //const int ci = atom->icluster_idx[SCLUSTER_SIZE * sci + scii];
+                const int ci = atom->icluster_idx[SCLUSTER_SIZE * sci + scii];
                 int ci_cj1 = CJ1_FROM_CI(ci);
                 int *neighptr = &(neighbor->neighbors[ci * neighbor->maxneighs]);
                 //int *neighptr = &(neighbor->neighbors[sci * neighbor->maxneighs]);
@@ -504,7 +504,7 @@ void buildNeighborGPU(Atom *atom, Neighbor *neighbor) {
                     }
                 }
             }
-        //}
+        }
 
         if(resize) {
             fprintf(stdout, "RESIZE %d\n", neighbor->maxneighs);
@@ -898,10 +898,7 @@ void buildClustersGPU(Atom *atom) {
         int n_super_clusters =  n_super_clusters_xy / SCLUSTER_SIZE_Z;
         if (n_super_clusters_xy % SCLUSTER_SIZE_Z) n_super_clusters++;
 
-        //printf("%d\t%d\t%d\t%d\r\n", nclusters, n_super_clusters_xy, n_super_clusters, (SCLUSTER_SIZE_X * SCLUSTER_SIZE_Y * SCLUSTER_SIZE_Z)*n_super_clusters);
-
         int cl_count = 0;
-
         for (int scl = 0; scl < n_super_clusters; scl++) {
             const int sci = atom->Nsclusters_local;
             if(sci >= atom->Nsclusters_max) {
@@ -928,8 +925,6 @@ void buildClustersGPU(Atom *atom) {
 
                 sortAtomsByCoord(atom, YY, bin, atom_scl_z_offset, atom_scl_z_end_idx);
 
-                //printf("%d\t%d\t%d\t%d\t%d\t%d\r\n", nclusters, scl, scl_z, atom_scl_z_offset, atom_scl_z_end_idx, c);
-
                 for (int scl_y = 0; scl_y < SCLUSTER_SIZE_Y; scl_y++) {
 
                     if (cl_count >= nclusters) break;
@@ -941,10 +936,7 @@ void buildClustersGPU(Atom *atom) {
                     const int atom_scl_y_end_idx = MIN(atom_scl_y_offset +
                             SCLUSTER_SIZE_X * CLUSTER_M - 1, c - 1);
 
-                    //printf("%d\t%d\t%d\t%d\t%d\t%d\t%d\r\n", nclusters, scl, scl_z, scl_y, atom_scl_y_offset, atom_scl_y_end_idx, c);
-
                     sortAtomsByCoord(atom, XX, bin, atom_scl_y_offset, atom_scl_y_end_idx);
-
 
                     for (int scl_x = 0; scl_x < SCLUSTER_SIZE_X; scl_x++) {
                         if (cl_count >= nclusters) break;
@@ -1035,9 +1027,6 @@ void buildClustersGPU(Atom *atom) {
             atom->siclusters[sci].bbmaxz = sc_bbmaxz;
             atom->Nsclusters_local++;
         }
-
-        //printf("%d\t%d\r\n", (SCLUSTER_SIZE_X * SCLUSTER_SIZE_Y * SCLUSTER_SIZE_Z)*n_super_clusters, count);
-
     }
 
     DEBUG_MESSAGE("buildClustersGPU end\n");
