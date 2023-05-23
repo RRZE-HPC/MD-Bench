@@ -86,6 +86,98 @@ void cpuUpdatePbc(Atom *atom, Parameter *param, int firstUpdate) {
     DEBUG_MESSAGE("updatePbc end\n");
 }
 
+/* update coordinates of ghost atoms */
+/* uses mapping created in setupPbc */
+void gpuUpdatePbc(Atom *atom, Parameter *param, int firstUpdate) {
+    DEBUG_MESSAGE("gpuUpdatePbc start\n");
+    int jfac = MAX(1, CLUSTER_N / CLUSTER_M);
+    int ncj = atom->Nclusters_local / jfac;
+    MD_FLOAT xprd = param->xprd;
+    MD_FLOAT yprd = param->yprd;
+    MD_FLOAT zprd = param->zprd;
+
+    for(int cg = 0; cg < atom->Nclusters_ghost; cg++) {
+        const int cj = ncj + cg;
+        int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
+
+        int scj_vec_base = SCJ_VECTOR_BASE_INDEX(cj);
+
+        int bmap_vec_base = CJ_VECTOR_BASE_INDEX(atom->border_map[cg]);
+
+        int sbmap_vec_base = SCJ_VECTOR_BASE_INDEX(atom->border_map[cg]);
+
+        MD_FLOAT *cj_x = &atom->cl_x[cj_vec_base];
+        MD_FLOAT *bmap_x = &atom->cl_x[bmap_vec_base];
+
+        MD_FLOAT *scj_x = &atom->scl_x[scj_vec_base];
+        MD_FLOAT *sbmap_x = &atom->scl_x[sbmap_vec_base];
+
+        MD_FLOAT bbminx = INFINITY, bbmaxx = -INFINITY;
+        MD_FLOAT bbminy = INFINITY, bbmaxy = -INFINITY;
+        MD_FLOAT bbminz = INFINITY, bbmaxz = -INFINITY;
+
+        MD_FLOAT sbbminx = INFINITY, sbbmaxx = -INFINITY;
+        MD_FLOAT sbbminy = INFINITY, sbbmaxy = -INFINITY;
+        MD_FLOAT sbbminz = INFINITY, sbbmaxz = -INFINITY;
+
+        for(int cjj = 0; cjj < atom->jclusters[cj].natoms; cjj++) {
+            MD_FLOAT xtmp = bmap_x[CL_X_OFFSET + cjj] + atom->PBCx[cg] * xprd;
+            MD_FLOAT ytmp = bmap_x[CL_Y_OFFSET + cjj] + atom->PBCy[cg] * yprd;
+            MD_FLOAT ztmp = bmap_x[CL_Z_OFFSET + cjj] + atom->PBCz[cg] * zprd;
+
+            MD_FLOAT sxtmp = sbmap_x[CL_X_OFFSET + cjj] + atom->PBCx[cg] * xprd;
+            MD_FLOAT sytmp = sbmap_x[CL_Y_OFFSET + cjj] + atom->PBCy[cg] * yprd;
+            MD_FLOAT sztmp = sbmap_x[CL_Z_OFFSET + cjj] + atom->PBCz[cg] * zprd;
+
+            cj_x[CL_X_OFFSET + cjj] = xtmp;
+            cj_x[CL_Y_OFFSET + cjj] = ytmp;
+            cj_x[CL_Z_OFFSET + cjj] = ztmp;
+
+            scj_x[SCL_X_OFFSET + cjj] = sxtmp;
+            scj_x[SCL_Y_OFFSET + cjj] = sytmp;
+            scj_x[SCL_Z_OFFSET + cjj] = sztmp;
+
+            if(firstUpdate) {
+                // TODO: To create the bounding boxes faster, we can use SIMD operations
+                if(bbminx > xtmp) { bbminx = xtmp; }
+                if(bbmaxx < xtmp) { bbmaxx = xtmp; }
+                if(bbminy > ytmp) { bbminy = ytmp; }
+                if(bbmaxy < ytmp) { bbmaxy = ytmp; }
+                if(bbminz > ztmp) { bbminz = ztmp; }
+                if(bbmaxz < ztmp) { bbmaxz = ztmp; }
+
+                if(sbbminx > sxtmp) { sbbminx = sxtmp; }
+                if(sbbmaxx < sxtmp) { sbbmaxx = sxtmp; }
+                if(sbbminy > sytmp) { sbbminy = sytmp; }
+                if(sbbmaxy < sytmp) { sbbmaxy = sytmp; }
+                if(sbbminz > sztmp) { sbbminz = sztmp; }
+                if(sbbmaxz < sztmp) { sbbmaxz = sztmp; }
+            }
+        }
+
+        if(firstUpdate) {
+            for(int cjj = atom->jclusters[cj].natoms; cjj < CLUSTER_N; cjj++) {
+                cj_x[CL_X_OFFSET + cjj] = INFINITY;
+                cj_x[CL_Y_OFFSET + cjj] = INFINITY;
+                cj_x[CL_Z_OFFSET + cjj] = INFINITY;
+
+                scj_x[SCL_X_OFFSET + cjj] = INFINITY;
+                scj_x[SCL_Y_OFFSET + cjj] = INFINITY;
+                scj_x[SCL_Z_OFFSET + cjj] = INFINITY;
+            }
+
+            atom->jclusters[cj].bbminx = bbminx;
+            atom->jclusters[cj].bbmaxx = bbmaxx;
+            atom->jclusters[cj].bbminy = bbminy;
+            atom->jclusters[cj].bbmaxy = bbmaxy;
+            atom->jclusters[cj].bbminz = bbminz;
+            atom->jclusters[cj].bbmaxz = bbmaxz;
+        }
+    }
+
+    DEBUG_MESSAGE("gpuUpdatePbc end\n");
+}
+
 /* relocate atoms that have left domain according
  * to periodic boundary conditions */
 void updateAtomsPbc(Atom *atom, Parameter *param) {
@@ -236,7 +328,8 @@ void setupPbcGPU(Atom *atom, Parameter *param) {
     MD_FLOAT yprd = param->yprd;
     MD_FLOAT zprd = param->zprd;
     MD_FLOAT Cutneigh = param->cutneigh;
-    int jfac = SCLUSTER_SIZE / CLUSTER_M;
+    //int jfac = MAX(1, CLUSTER_N / CLUSTER_M);
+    int jfac = SCLUSTER_M / CLUSTER_M;
     int ncj = atom->Nsclusters_local * jfac;
     int Nghost = -1;
     int Nghost_atoms = 0;
@@ -245,6 +338,7 @@ void setupPbcGPU(Atom *atom, Parameter *param) {
         if(atom->jclusters[cj].natoms > 0) {
             if(atom->Nsclusters_local + (Nghost + (jfac - 1) + 7) / jfac >= atom->Nclusters_max) {
                 growClusters(atom);
+                //growSuperClusters(atom);
             }
 
             if((Nghost + 7) * CLUSTER_M >= NmaxGhost) {
@@ -293,6 +387,7 @@ void setupPbcGPU(Atom *atom, Parameter *param) {
 
     if(ncj + (Nghost + (jfac - 1) + 1) / jfac >= atom->Nclusters_max) {
         growClusters(atom);
+        //growSuperClusters(atom);
     }
 
     // Add dummy cluster at the end
@@ -311,6 +406,6 @@ void setupPbcGPU(Atom *atom, Parameter *param) {
     atom->Nclusters = atom->Nclusters_local + Nghost + 1;
 
     // Update created ghost clusters positions
-    cudaUpdatePbc(atom, param, 1);
+    gpuUpdatePbc(atom, param, 1);
     DEBUG_MESSAGE("setupPbcGPU end\n");
 }

@@ -74,6 +74,7 @@
 #   define CI_BASE_INDEX(a,b)       ((a) * CLUSTER_N * (b))
 #   define CJ_BASE_INDEX(a,b)       ((a) * CLUSTER_N * (b))
 #ifdef USE_SUPER_CLUSTERS
+#   define CJ1_FROM_SCI(a)          (a)
 #   define SCI_BASE_INDEX(a,b)      ((a) * CLUSTER_N * SCLUSTER_SIZE * (b))
 #   define SCJ_BASE_INDEX(a,b)      ((a) * CLUSTER_N * SCLUSTER_SIZE * (b))
 #endif //USE_SUPER_CLUSTERS
