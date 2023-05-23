@@ -78,8 +78,8 @@ double setup(Parameter *param, Eam *eam, Atom *atom, Neighbor *neighbor, Stats *
     #endif //defined(CUDA_TARGET) && defined(USE_SUPER_CLUSTERS)
     defineJClusters(atom);
     #if defined(CUDA_TARGET) && defined(USE_SUPER_CLUSTERS)
-    //setupPbcGPU(atom, param);
-    setupPbc(atom, param);
+    setupPbcGPU(atom, param);
+    //setupPbc(atom, param);
     #else
     setupPbc(atom, param);
     #endif //defined(CUDA_TARGET) && defined(USE_SUPER_CLUSTERS)

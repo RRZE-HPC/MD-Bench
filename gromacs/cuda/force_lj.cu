@@ -121,7 +121,7 @@ void copyDataToCUDADevice(Atom *atom) {
     memcpyToGPU(cuda_PBCz, atom->PBCz, atom->Nclusters_ghost * sizeof(int));
 
 #ifdef USE_SUPER_CLUSTERS
-    alignDataToSuperclusters(atom);
+    //alignDataToSuperclusters(atom);
 
     if (cuda_max_scl < atom->Nsclusters_max) {
         cuda_assert("cudaDeviceFree", cudaFree(cuda_scl_x));
@@ -158,7 +158,7 @@ void copyDataFromCUDADevice(Atom *atom) {
     memcpyFromGPU(atom->scl_v, cuda_scl_v, atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT));
     memcpyFromGPU(atom->scl_f, cuda_scl_f, atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT));
 
-    alignDataFromSuperclusters(atom);
+    //alignDataFromSuperclusters(atom);
 #endif //USE_SUPER_CLUSTERS
 
     DEBUG_MESSAGE("copyDataFromCUDADevice stop\r\n");

@@ -189,6 +189,30 @@ int atomDistanceInRange(Atom *atom, int ci, int cj, MD_FLOAT rsq) {
     return 0;
 }
 
+int atomDistanceInRangeGPU(Atom *atom, int sci, int cj, MD_FLOAT rsq) {
+    for (int ci = 0; ci < atom->siclusters[sci].nclusters; ci++) {
+        const int icluster_idx = atom->icluster_idx[SCLUSTER_SIZE * sci + ci];
+
+        int ci_vec_base = CI_VECTOR_BASE_INDEX(icluster_idx);
+        int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
+        MD_FLOAT *ci_x = &atom->cl_x[ci_vec_base];
+        MD_FLOAT *cj_x = &atom->cl_x[cj_vec_base];
+
+        for(int cii = 0; cii < atom->iclusters[icluster_idx].natoms; cii++) {
+            for(int cjj = 0; cjj < atom->jclusters[cj].natoms; cjj++) {
+                MD_FLOAT delx = ci_x[CL_X_OFFSET + cii] - cj_x[CL_X_OFFSET + cjj];
+                MD_FLOAT dely = ci_x[CL_Y_OFFSET + cii] - cj_x[CL_Y_OFFSET + cjj];
+                MD_FLOAT delz = ci_x[CL_Z_OFFSET + cii] - cj_x[CL_Z_OFFSET + cjj];
+                if(delx * delx + dely * dely + delz * delz < rsq) {
+                    return 1;
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
 void buildNeighbor(Atom *atom, Neighbor *neighbor) {
     DEBUG_MESSAGE("buildNeighbor start\n");
 
@@ -375,9 +399,8 @@ void buildNeighborGPU(Atom *atom, Neighbor *neighbor) {
     DEBUG_MESSAGE("buildNeighborGPU start\n");
 
     /* extend atom arrays if necessary */
-    if(atom->Nclusters_local > nmax) {
-        nmax = atom->Nclusters_local;
-        //nmax = atom->Nsclusters_local;
+    if(atom->Nsclusters_local > nmax) {
+        nmax = atom->Nsclusters_local;
         if(neighbor->numneigh) free(neighbor->numneigh);
         if(neighbor->neighbors) free(neighbor->neighbors);
         neighbor->numneigh = (int*) malloc(nmax * sizeof(int));
@@ -396,113 +419,115 @@ void buildNeighborGPU(Atom *atom, Neighbor *neighbor) {
         resize = 0;
 
         for (int sci = 0; sci < atom->Nsclusters_local; sci++) {
-            for (int scii = 0; scii < atom->siclusters[sci].nclusters; scii++) {
-            //for(int ci = 0; ci < atom->Nclusters_local; ci++) {
-                //const int ci = atom->siclusters[sci].iclusters[scii];
-                const int ci = atom->icluster_idx[SCLUSTER_SIZE * sci + scii];
-                int ci_cj1 = CJ1_FROM_CI(ci);
-                int *neighptr = &(neighbor->neighbors[ci * neighbor->maxneighs]);
-                //int *neighptr = &(neighbor->neighbors[sci * neighbor->maxneighs]);
-                int n = 0;
-                int ibin = atom->icluster_bin[ci];
-                MD_FLOAT ibb_xmin = atom->iclusters[ci].bbminx;
-                MD_FLOAT ibb_xmax = atom->iclusters[ci].bbmaxx;
-                MD_FLOAT ibb_ymin = atom->iclusters[ci].bbminy;
-                MD_FLOAT ibb_ymax = atom->iclusters[ci].bbmaxy;
-                MD_FLOAT ibb_zmin = atom->iclusters[ci].bbminz;
-                MD_FLOAT ibb_zmax = atom->iclusters[ci].bbmaxz;
+            int ci_cj1 = CJ1_FROM_SCI(sci);
+            int *neighptr = &(neighbor->neighbors[sci * neighbor->maxneighs]);
+            int n = 0;
+            int ibin = atom->sicluster_bin[sci];
+            MD_FLOAT ibb_xmin = atom->siclusters[sci].bbminx;
+            MD_FLOAT ibb_xmax = atom->siclusters[sci].bbmaxx;
+            MD_FLOAT ibb_ymin = atom->siclusters[sci].bbminy;
+            MD_FLOAT ibb_ymax = atom->siclusters[sci].bbmaxy;
+            MD_FLOAT ibb_zmin = atom->siclusters[sci].bbminz;
+            MD_FLOAT ibb_zmax = atom->siclusters[sci].bbmaxz;
 
-                for(int k = 0; k < nstencil; k++) {
-                    int jbin = ibin + stencil[k];
-                    int *loc_bin = &bin_clusters[jbin * clusters_per_bin];
-                    int cj, m = -1;
-                    MD_FLOAT jbb_xmin, jbb_xmax, jbb_ymin, jbb_ymax, jbb_zmin, jbb_zmax;
-                    const int c = bin_nclusters[jbin];
+            for(int k = 0; k < nstencil; k++) {
+                int jbin = ibin + stencil[k];
+                int *loc_bin = &bin_clusters[jbin * clusters_per_bin];
+                int cj, m = -1;
+                MD_FLOAT jbb_xmin, jbb_xmax, jbb_ymin, jbb_ymax, jbb_zmin, jbb_zmax;
+                const int c = bin_nclusters[jbin];
 
-                    if(c > 0) {
-                        MD_FLOAT dl, dh, dm, dm0, d_bb_sq;
+                if(c > 0) {
+                    MD_FLOAT dl, dh, dm, dm0, d_bb_sq;
 
-                        do {
-                            m++;
-                            cj = loc_bin[m];
-                            if(neighbor->half_neigh && ci_cj1 > cj) {
-                                continue;
-                            }
-                            jbb_zmin = atom->jclusters[cj].bbminz;
-                            jbb_zmax = atom->jclusters[cj].bbmaxz;
+                    do {
+                        m++;
+                        cj = loc_bin[m];
+                        if(neighbor->half_neigh && ci_cj1 > cj) {
+                            continue;
+                        }
+                        jbb_zmin = atom->jclusters[cj].bbminz;
+                        jbb_zmax = atom->jclusters[cj].bbmaxz;
+                        dl = ibb_zmin - jbb_zmax;
+                        dh = jbb_zmin - ibb_zmax;
+                        dm = MAX(dl, dh);
+                        dm0 = MAX(dm, 0.0);
+                        d_bb_sq = dm0 * dm0;
+                    } while(m + 1 < c && d_bb_sq > cutneighsq);
+
+                    jbb_xmin = atom->jclusters[cj].bbminx;
+                    jbb_xmax = atom->jclusters[cj].bbmaxx;
+                    jbb_ymin = atom->jclusters[cj].bbminy;
+                    jbb_ymax = atom->jclusters[cj].bbmaxy;
+
+                    while(m < c) {
+                        if(!neighbor->half_neigh || ci_cj1 <= cj) {
                             dl = ibb_zmin - jbb_zmax;
                             dh = jbb_zmin - ibb_zmax;
                             dm = MAX(dl, dh);
                             dm0 = MAX(dm, 0.0);
                             d_bb_sq = dm0 * dm0;
-                        } while(m + 1 < c && d_bb_sq > cutneighsq);
 
-                        jbb_xmin = atom->jclusters[cj].bbminx;
-                        jbb_xmax = atom->jclusters[cj].bbmaxx;
-                        jbb_ymin = atom->jclusters[cj].bbminy;
-                        jbb_ymax = atom->jclusters[cj].bbmaxy;
+                            /*if(d_bb_sq > cutneighsq) {
+                                break;
+                            }*/
 
-                        while(m < c) {
-                            if(!neighbor->half_neigh || ci_cj1 <= cj) {
-                                dl = ibb_zmin - jbb_zmax;
-                                dh = jbb_zmin - ibb_zmax;
-                                dm = MAX(dl, dh);
-                                dm0 = MAX(dm, 0.0);
-                                d_bb_sq = dm0 * dm0;
+                            dl = ibb_ymin - jbb_ymax;
+                            dh = jbb_ymin - ibb_ymax;
+                            dm = MAX(dl, dh);
+                            dm0 = MAX(dm, 0.0);
+                            d_bb_sq += dm0 * dm0;
 
-                                /*if(d_bb_sq > cutneighsq) {
-                                    break;
-                                }*/
+                            dl = ibb_xmin - jbb_xmax;
+                            dh = jbb_xmin - ibb_xmax;
+                            dm = MAX(dl, dh);
+                            dm0 = MAX(dm, 0.0);
+                            d_bb_sq += dm0 * dm0;
 
-                                dl = ibb_ymin - jbb_ymax;
-                                dh = jbb_ymin - ibb_ymax;
-                                dm = MAX(dl, dh);
-                                dm0 = MAX(dm, 0.0);
-                                d_bb_sq += dm0 * dm0;
-
-                                dl = ibb_xmin - jbb_xmax;
-                                dh = jbb_xmin - ibb_xmax;
-                                dm = MAX(dl, dh);
-                                dm0 = MAX(dm, 0.0);
-                                d_bb_sq += dm0 * dm0;
-
-                                if(d_bb_sq < cutneighsq) {
-                                    if(d_bb_sq < rbb_sq || atomDistanceInRange(atom, ci, cj, cutneighsq)) {
-                                        neighptr[n++] = cj;
-                                    }
+                            if(d_bb_sq < cutneighsq) {
+                                if(d_bb_sq < rbb_sq || atomDistanceInRangeGPU(atom, sci, cj, cutneighsq)) {
+                                    neighptr[n++] = cj;
                                 }
                             }
+                        }
 
-                            m++;
-                            if(m < c) {
-                                cj = loc_bin[m];
-                                jbb_xmin = atom->jclusters[cj].bbminx;
-                                jbb_xmax = atom->jclusters[cj].bbmaxx;
-                                jbb_ymin = atom->jclusters[cj].bbminy;
-                                jbb_ymax = atom->jclusters[cj].bbmaxy;
-                                jbb_zmin = atom->jclusters[cj].bbminz;
-                                jbb_zmax = atom->jclusters[cj].bbmaxz;
-                            }
+                        m++;
+                        if(m < c) {
+                            cj = loc_bin[m];
+                            jbb_xmin = atom->jclusters[cj].bbminx;
+                            jbb_xmax = atom->jclusters[cj].bbmaxx;
+                            jbb_ymin = atom->jclusters[cj].bbminy;
+                            jbb_ymax = atom->jclusters[cj].bbmaxy;
+                            jbb_zmin = atom->jclusters[cj].bbminz;
+                            jbb_zmax = atom->jclusters[cj].bbmaxz;
                         }
                     }
                 }
+            }
 
-                // Fill neighbor list with dummy values to fit vector width
-                if(CLUSTER_N < VECTOR_WIDTH) {
-                    while(n % (VECTOR_WIDTH / CLUSTER_N)) {
-                        neighptr[n++] = atom->dummy_cj; // Last cluster is always a dummy cluster
-                    }
+            // Fill neighbor list with dummy values to fit vector width
+            if(CLUSTER_N < VECTOR_WIDTH) {
+                while(n % (VECTOR_WIDTH / CLUSTER_N)) {
+                    neighptr[n++] = atom->dummy_cj; // Last cluster is always a dummy cluster
                 }
+            }
 
-                //neighbor->numneigh[sci] = n;
-                neighbor->numneigh[ci] = n;
-                if(n >= neighbor->maxneighs) {
-                    resize = 1;
+            neighbor->numneigh[sci] = n;
+            if(n >= neighbor->maxneighs) {
+                resize = 1;
 
-                    if(n >= new_maxneighs) {
-                        new_maxneighs = n;
-                    }
+                if(n >= new_maxneighs) {
+                    new_maxneighs = n;
                 }
+            }
+
+
+
+
+            for (int scii = 0; scii < atom->siclusters[sci].nclusters; scii++) {
+            //for(int ci = 0; ci < atom->Nclusters_local; ci++) {
+                //const int ci = atom->siclusters[sci].iclusters[scii];
+
             }
         }
 
@@ -954,6 +979,12 @@ void buildClustersGPU(Atom *atom) {
                         int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
                         MD_FLOAT *ci_x = &atom->cl_x[ci_vec_base];
                         MD_FLOAT *ci_v = &atom->cl_v[ci_vec_base];
+
+                        int sci_sca_base = SCI_SCALAR_BASE_INDEX(sci);
+                        int sci_vec_base = SCI_VECTOR_BASE_INDEX(sci);
+                        MD_FLOAT *sci_x = &atom->scl_x[sci_vec_base];
+                        MD_FLOAT *sci_v = &atom->scl_v[sci_vec_base];
+
                         int *ci_type = &atom->cl_type[ci_sca_base];
                         MD_FLOAT bbminx = INFINITY, bbmaxx = -INFINITY;
                         MD_FLOAT bbminy = INFINITY, bbmaxy = -INFINITY;
@@ -973,6 +1004,14 @@ void buildClustersGPU(Atom *atom) {
                                 ci_v[CL_X_OFFSET + cii] = atom->vx[i];
                                 ci_v[CL_Y_OFFSET + cii] = atom->vy[i];
                                 ci_v[CL_Z_OFFSET + cii] = atom->vz[i];
+
+                                sci_x[SCL_CL_X_OFFSET(atom->siclusters[sci].nclusters) + cii] = xtmp;
+                                sci_x[SCL_CL_Y_OFFSET(atom->siclusters[sci].nclusters) + cii] = ytmp;
+                                sci_x[SCL_CL_Z_OFFSET(atom->siclusters[sci].nclusters) + cii] = ztmp;
+
+                                sci_v[SCL_CL_X_OFFSET(atom->siclusters[sci].nclusters) + cii] = atom->vx[i];
+                                sci_v[SCL_CL_Y_OFFSET(atom->siclusters[sci].nclusters) + cii] = atom->vy[i];
+                                sci_v[SCL_CL_Z_OFFSET(atom->siclusters[sci].nclusters) + cii] = atom->vz[i];
 
                                 // TODO: To create the bounding boxes faster, we can use SIMD operations
                                 if(bbminx > xtmp) { bbminx = xtmp; }
