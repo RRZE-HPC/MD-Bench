@@ -288,7 +288,6 @@ int main(int argc, char** argv) {
                 #endif //defined(CUDA_TARGET) && defined(USE_SUPER_CLUSTERS)
             }
 
-
             copyDataFromCUDADevice(&atom);
             updatePbc(&atom, &param, 0);
             copyDataToCUDADevice(&atom);
@@ -333,9 +332,6 @@ int main(int argc, char** argv) {
         */
 
         finalIntegrate(&param, &atom);
-
-
-
 
         if(!((n + 1) % param.nstat) && (n+1) < param.ntimes) {
             computeThermo(n + 1, &param, &atom);
