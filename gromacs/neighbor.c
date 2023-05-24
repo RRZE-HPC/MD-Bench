@@ -192,7 +192,6 @@ int atomDistanceInRange(Atom *atom, int ci, int cj, MD_FLOAT rsq) {
 int atomDistanceInRangeGPU(Atom *atom, int sci, int cj, MD_FLOAT rsq) {
     for (int ci = 0; ci < atom->siclusters[sci].nclusters; ci++) {
         const int icluster_idx = atom->icluster_idx[SCLUSTER_SIZE * sci + ci];
-
         int ci_vec_base = CI_VECTOR_BASE_INDEX(icluster_idx);
         int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
         MD_FLOAT *ci_x = &atom->cl_x[ci_vec_base];
@@ -519,15 +518,6 @@ void buildNeighborGPU(Atom *atom, Neighbor *neighbor) {
                 if(n >= new_maxneighs) {
                     new_maxneighs = n;
                 }
-            }
-
-
-
-
-            for (int scii = 0; scii < atom->siclusters[sci].nclusters; scii++) {
-            //for(int ci = 0; ci < atom->Nclusters_local; ci++) {
-                //const int ci = atom->siclusters[sci].iclusters[scii];
-
             }
         }
 
@@ -907,6 +897,7 @@ void buildClusters(Atom *atom) {
 void buildClustersGPU(Atom *atom) {
     DEBUG_MESSAGE("buildClustersGPU start\n");
     atom->Nclusters_local = 0;
+    atom->Nsclusters_local = 0;
 
     /* bin local atoms */
     binAtoms(atom);
@@ -917,59 +908,33 @@ void buildClustersGPU(Atom *atom) {
         int ac = 0;
         int nclusters = ((c + CLUSTER_M - 1) / CLUSTER_M);
         if(CLUSTER_N > CLUSTER_M && nclusters % 2) { nclusters++; }
+        const int supercluster_size = SCLUSTER_SIZE_X * SCLUSTER_SIZE_Y * SCLUSTER_SIZE_Z;
+        int nsclusters = ((nclusters + supercluster_size - 1) / supercluster_size);
 
-        int n_super_clusters_xy = nclusters / (SCLUSTER_SIZE_X * SCLUSTER_SIZE_Y);
-        if (nclusters % (SCLUSTER_SIZE_X * SCLUSTER_SIZE_Y)) n_super_clusters_xy++;
-        int n_super_clusters =  n_super_clusters_xy / SCLUSTER_SIZE_Z;
-        if (n_super_clusters_xy % SCLUSTER_SIZE_Z) n_super_clusters++;
-
-        int cl_count = 0;
-        for (int scl = 0; scl < n_super_clusters; scl++) {
+        for(int scl = 0; scl < nsclusters; scl++) {
             const int sci = atom->Nsclusters_local;
             if(sci >= atom->Nsclusters_max) {
                 growSuperClusters(atom);
             }
 
-            if (cl_count >= nclusters) break;
-
             int scl_offset = scl * SCLUSTER_SIZE * CLUSTER_M;
-
             MD_FLOAT sc_bbminx = INFINITY, sc_bbmaxx = -INFINITY;
             MD_FLOAT sc_bbminy = INFINITY, sc_bbmaxy = -INFINITY;
             MD_FLOAT sc_bbminz = INFINITY, sc_bbmaxz = -INFINITY;
+            atom->siclusters[sci].nclusters = 0;
 
-            for (int scl_z = 0; scl_z < SCLUSTER_SIZE_Z; scl_z++) {
-
-                if (cl_count >= nclusters) break;
-
+            for(int scl_z = 0; scl_z < SCLUSTER_SIZE_Z; scl_z++) {
                 const int atom_scl_z_offset = scl_offset + scl_z * SCLUSTER_SIZE_Y * SCLUSTER_SIZE_X * CLUSTER_M;
-
-
-                const int atom_scl_z_end_idx = MIN(atom_scl_z_offset +
-                                        SCLUSTER_SIZE_Y * SCLUSTER_SIZE_X * CLUSTER_M - 1, c - 1);
-
+                const int atom_scl_z_end_idx = MIN(atom_scl_z_offset + SCLUSTER_SIZE_Y * SCLUSTER_SIZE_X * CLUSTER_M - 1, c - 1);
                 sortAtomsByCoord(atom, YY, bin, atom_scl_z_offset, atom_scl_z_end_idx);
 
-                for (int scl_y = 0; scl_y < SCLUSTER_SIZE_Y; scl_y++) {
-
-                    if (cl_count >= nclusters) break;
-
-                    const int atom_scl_y_offset = scl_offset +
-                            scl_z * SCLUSTER_SIZE_Y * SCLUSTER_SIZE_X * CLUSTER_M +
-                            scl_y * SCLUSTER_SIZE_Y * CLUSTER_M;
-
-                    const int atom_scl_y_end_idx = MIN(atom_scl_y_offset +
-                            SCLUSTER_SIZE_X * CLUSTER_M - 1, c - 1);
-
+                for(int scl_y = 0; scl_y < SCLUSTER_SIZE_Y; scl_y++) {
+                    const int atom_scl_y_offset = scl_offset + scl_z * SCLUSTER_SIZE_Y * SCLUSTER_SIZE_X * CLUSTER_M + scl_y * SCLUSTER_SIZE_Y * CLUSTER_M;
+                    const int atom_scl_y_end_idx = MIN(atom_scl_y_offset + SCLUSTER_SIZE_X * CLUSTER_M - 1, c - 1);
                     sortAtomsByCoord(atom, XX, bin, atom_scl_y_offset, atom_scl_y_end_idx);
 
-                    for (int scl_x = 0; scl_x < SCLUSTER_SIZE_X; scl_x++) {
-                        if (cl_count >= nclusters) break;
-                        cl_count++;
-
-                        const int cluster_sup_idx = scl_z * SCLUSTER_SIZE_Z * SCLUSTER_SIZE_Y +
-                                scl_y * SCLUSTER_SIZE_X + scl_x;
-
+                    for(int scl_x = 0; scl_x < SCLUSTER_SIZE_X; scl_x++) {
+                        const int cluster_sup_idx = scl_z * SCLUSTER_SIZE_Z * SCLUSTER_SIZE_Y + scl_y * SCLUSTER_SIZE_X + scl_x;
                         const int ci = atom->Nclusters_local;
                         if(ci >= atom->Nclusters_max) {
                             growClusters(atom);
@@ -1008,7 +973,6 @@ void buildClustersGPU(Atom *atom) {
                                 sci_x[SCL_CL_X_OFFSET(atom->siclusters[sci].nclusters) + cii] = xtmp;
                                 sci_x[SCL_CL_Y_OFFSET(atom->siclusters[sci].nclusters) + cii] = ytmp;
                                 sci_x[SCL_CL_Z_OFFSET(atom->siclusters[sci].nclusters) + cii] = ztmp;
-
                                 sci_v[SCL_CL_X_OFFSET(atom->siclusters[sci].nclusters) + cii] = atom->vx[i];
                                 sci_v[SCL_CL_Y_OFFSET(atom->siclusters[sci].nclusters) + cii] = atom->vy[i];
                                 sci_v[SCL_CL_Z_OFFSET(atom->siclusters[sci].nclusters) + cii] = atom->vz[i];
@@ -1027,6 +991,10 @@ void buildClustersGPU(Atom *atom) {
                                 ci_x[CL_X_OFFSET + cii] = INFINITY;
                                 ci_x[CL_Y_OFFSET + cii] = INFINITY;
                                 ci_x[CL_Z_OFFSET + cii] = INFINITY;
+
+                                sci_x[SCL_CL_X_OFFSET(atom->siclusters[sci].nclusters) + cii] = INFINITY;
+                                sci_x[SCL_CL_Y_OFFSET(atom->siclusters[sci].nclusters) + cii] = INFINITY;
+                                sci_x[SCL_CL_Z_OFFSET(atom->siclusters[sci].nclusters) + cii] = INFINITY;
                             }
 
                             ac++;
