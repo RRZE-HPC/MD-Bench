@@ -117,7 +117,7 @@ int main(int argc, char** argv) {
 
     initParameter(&param);
     for(int i = 0; i < argc; i++) {
-        if((strcmp(argv[i], "-p") == 0)) {
+        if((strcmp(argv[i], "-p") == 0) || (strcmp(argv[i], "--param") == 0)) {
             readParameter(&param, argv[++i]);
             continue;
         }
