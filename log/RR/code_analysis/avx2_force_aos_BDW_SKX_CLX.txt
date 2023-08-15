@@ -1,6 +1,0 @@
-Tool	    Broadwell	Skylake	    Cascade Lake
-uiCA 	    26.00 	    21.33 	    21.33
-IACA 3.0 	24.32 	    25.58
-IACA 2.3 	27.81 	    21.86
-llvm-mca 	25.54 	    25.65 	    24.51
-OSACA 	    16.00 	    13.70 	    13.70 
