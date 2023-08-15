@@ -1,9 +1,0 @@
-Duration,Size,Throughput,SrcMemType,DstMemType,Name
-354.67us,4.1199MB,11.344GB/s,Pinned,Device,[CUDA memcpy HtoD]
-3.3600us,1.0000MB,290.64GB/s,Device,-,[CUDA memset]
-3.2960us,1.0000MB,296.29GB/s,Device,-,[CUDA memset]
-2.9760us,1.0000MB,328.15GB/s,Device,-,[CUDA memset]
-1.4924ms,-,-,-,-,calcforce() [306]
-80.740us,1.0000MB,12.095GB/s,Device,Pinned,[CUDA memcpy DtoH]
-80.996us,1.0000MB,12.057GB/s,Device,Pinned,[CUDA memcpy DtoH]
-80.836us,1.0000MB,12.081GB/s,Device,Pinned,[CUDA memcpy DtoH]
