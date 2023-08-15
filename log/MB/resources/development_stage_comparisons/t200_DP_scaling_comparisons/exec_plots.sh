@@ -1,1 +1,0 @@
-gnuplot `ls | grep plotscript`

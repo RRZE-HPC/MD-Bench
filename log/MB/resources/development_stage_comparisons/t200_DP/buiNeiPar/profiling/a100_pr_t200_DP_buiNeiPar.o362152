@@ -1,68 +1,0 @@
-### Starting TaskPrologue of job 362152 on a0532 at Tue Jul 12 18:36:17 CEST 2022
-Running on cores 96-111 with govenor ondemand
-Tue Jul 12 18:36:17 2022       
-+-----------------------------------------------------------------------------+
-| NVIDIA-SMI 510.47.03    Driver Version: 510.47.03    CUDA Version: 11.6     |
-|-------------------------------+----------------------+----------------------+
-| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
-| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
-|                               |                      |               MIG M. |
-|===============================+======================+======================|
-|   0  NVIDIA A100-SXM...  On   | 00000000:CC:00.0 Off |                    0 |
-| N/A   31C    P0    65W / 400W |      0MiB / 81920MiB |      0%      Default |
-|                               |                      |             Disabled |
-+-------------------------------+----------------------+----------------------+
-                                                                               
-+-----------------------------------------------------------------------------+
-| Processes:                                                                  |
-|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |
-|        ID   ID                                                   Usage      |
-|=============================================================================|
-|  No running processes found                                                 |
-+-----------------------------------------------------------------------------+
-### Finished TaskPrologue
-
-NOTE: If and ONLY IF you want to use likwid-perfctr you have to add '--constraint=hwperf' to your batch jobs.
-      likwid-features and likwid-setFrequencies are not available. The frequency/governor can be set using SLURM features.
-Warning: LBR backtrace method is not supported on this platform. DWARF backtrace method will be used.
-Running without Marker API. Activate Marker API with -m on commandline.
-step	temp		pressure
-0	1.440000e+00	1.215639e+00
-100	8.200895e-01	6.923143e-01
-200	7.961495e-01	6.721043e-01
-----------------------------------------------------------------------------
-Force field: lj
-Data layout for positions: AoS
-Using double precision floating point.
-----------------------------------------------------------------------------
-System: 131072 atoms 47265 ghost atoms, Steps: 200
-TOTAL 0.33s FORCE 0.17s NEIGH 0.05s REST 0.11s
-----------------------------------------------------------------------------
-Performance: 79.56 million atom updates per second
-Generating '/tmp/362152.alex/nsys-report-e6e9.qdstrm'
-[1/1] [0%                          ] a100_profile.nsys-rep[1/1] [0%                          ] a100_profile.nsys-rep[1/1] [14%                         ] a100_profile.nsys-rep[1/1] [=====30%                    ] a100_profile.nsys-rep[1/1] [=========46%                ] a100_profile.nsys-rep[1/1] [==========47%               ] a100_profile.nsys-rep[1/1] [==========48%               ] a100_profile.nsys-rep[1/1] [==========49%               ] a100_profile.nsys-rep[1/1] [===========50%              ] a100_profile.nsys-rep[1/1] [==============61%           ] a100_profile.nsys-rep[1/1] [=====================86%    ] a100_profile.nsys-rep[1/1] [========================100%] a100_profile.nsys-rep[1/1] [========================100%] a100_profile.nsys-rep
-Generated:
-    /home/hpc/ptfs/ptfs176h/training/second_presentation/a100_profile.nsys-rep
-=== JOB_STATISTICS ===
-=== current date     : Tue Jul 12 18:36:24 CEST 2022
-= Job-ID             : 362152 on alex
-= Job-Name           : a100_pr.sh
-= Job-Command        : /home/hpc/ptfs/ptfs176h/training/second_presentation/a100_pr.sh
-= Initial workdir    : /home/hpc/ptfs/ptfs176h/training/second_presentation
-= Queue/Partition    : a100
-= Slurm account      : ptfs with QOS=normal
-= Requested resources: cpu=16,mem=120000M,node=1,billing=16,gres/gpu=1,gres/gpu:a100=1 for 01:00:00
-= Elapsed runtime    : 00:00:09
-= Total RAM usage    : 0.1 GiB of assigned 117 GiB (0.1%)   
-= Node list          : a0532
-= Subm/Elig/Start/End: 2022-07-12T18:36:14 / 2022-07-12T18:36:14 / 2022-07-12T18:36:15 / 2022-07-12T18:36:24
-======================
-=== Quota infos ======
-    Path              Used     SoftQ    HardQ    Gracetime  Filec    FileQ    FiHaQ    FileGrace    
-    /home/woody          4.0K   500.0G   999.0G        N/A       1                           N/A    
-    /home/hpc          174.1M    52.4G   104.9G        N/A   1,468      500K   1,000K        N/A    
-    /home/vault          0.0K   524.3G  1048.6G        N/A       1      200K     400K        N/A    
-======================
-=== GPU utilization ==
-gpu_name, gpu_bus_id, pid, gpu_utilization [%], mem_utilization [%], max_memory_usage [MiB], time [ms]
-NVIDIA A100-SXM4-80GB, 00000000:CC:00.0, 1805521, 0 %, 0 %, 501 MiB, 707 ms
