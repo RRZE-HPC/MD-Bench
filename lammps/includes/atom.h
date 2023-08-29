@@ -5,7 +5,6 @@
  * license that can be found in the LICENSE file.
  */
 #include <parameter.h>
-#include <comm.h>
 
 #ifndef __ATOM_H_
 #define __ATOM_H_
@@ -68,12 +67,12 @@ typedef struct {
 } Atom;
 
 extern void initAtom(Atom*);
-extern void createAtom(Comm*, Atom*, Parameter*);
-extern int readAtom(Comm*, Atom*, Parameter*);
+extern void createAtom(Atom*, Parameter*);
+extern int readAtom(Atom*, Parameter*);
 extern int readAtom_pdb(Atom*, Parameter*);
 extern int readAtom_gro(Atom*, Parameter*);
 extern int readAtom_dmp(Atom*, Parameter*);
-extern int readAtom_in(Comm*, Atom*, Parameter*);
+extern int readAtom_in(Atom*, Parameter*);
 extern void growAtom(Atom*);
 
 #ifdef AOS

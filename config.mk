@@ -1,11 +1,11 @@
 # Compiler tag (GCC/CLANG/ICC/ICX/ONEAPI/NVCC)
-TAG ?= MPI
+TAG ?= ICC
 # Instruction set (SSE/AVX/AVX_FMA/AVX2/AVX512)
-ISA ?= AVX
+ISA ?= AVX512
 # Optimization scheme (lammps/gromacs/clusters_per_bin)
 OPT_SCHEME ?= lammps
 # Enable likwid (true or false)
-ENABLE_LIKWID ?= false
+ENABLE_LIKWID ?= true
 # SP or DP
 DATA_TYPE ?= DP
 # AOS or SOA

@@ -12,34 +12,43 @@
 #define BUFFACTOR 1.5
 #define BUFMIN 1000
 #define BUFEXTRA 100
+#define ALIGNMENT 64
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 
-enum orientation {west=0, east, south, north, down, up};
-enum  axis {_x=0, _y=1, _z=2};
-static inline int index_pos(int i, int dim);
+static enum orientation {west=0, east, south, north, down, up};
+static enum  axis {_x=0, _y=1, _z=2};
+static inline int index (int i, int dim);
 static inline MD_FLOAT* ptrAtom(Atom* atom,int dim);
-static inline void initBuffers(Comm* comm);
-static inline void freeBuffers(Comm* comm);
+static inline void initBufers (Comm* comm, int maxswap);
 
-void initComm(int argc, char** argv, Comm* comm)
+void initComm(int argc, char** argv, Comm* comm, Parameter* param)
 {
   //MPI Initialize
   MPI_Init(&argc, &argv);
   MPI_Comm_size(MPI_COMM_WORLD, &(comm->numproc));
   MPI_Comm_rank(MPI_COMM_WORLD, &(comm->myproc));
+  //Initializing buffers
+  comm->maxsend = BUFMIN;
+  comm->maxrecv = BUFMIN;
+  comm->buf_send = (MD_FLOAT*) allocate(ALIGNMENT,(comm->maxsend + BUFMIN) * sizeof(MD_FLOAT));
+  comm->buf_recv = (MD_FLOAT*) allocate(ALIGNMENT, comm->maxrecv * sizeof(MD_FLOAT));
+   
+  comm->mybox.xprd = param->xprd;
+  comm->mybox.yprd = param->yprd;
+  comm->mybox.zprd = param->zprd;
 }
  
-void endComm(Comm* comm)
+void endComm()
 {
-   freeBuffers(comm);
    MPI_Finalize();
 }
 
-void setupComm(Comm* comm, Parameter* param)
+void setupComm(MD_FLOAT cutneigh, Comm* comm)
 {   
-  int coordSender,iswap, displ; 
+  int boxSender,iswap, displ; 
   MD_FLOAT hi,lo; 
+
   //Requiered variables to init mpi-cartesian
   MPI_Comm cartesian;
   int myproc=comm->myproc;
@@ -48,12 +57,7 @@ void setupComm(Comm* comm, Parameter* param)
   int reorder=0;
   int periods[3]={1,1,1}; 
   int mycoord[3]={0,0,0};
-  MD_FLOAT prd[3];
-  MD_FLOAT cutneigh = param->cutneigh; 
-
-  comm->mybox.xprd = param->xprd;
-  comm->mybox.yprd = param->yprd;
-  comm->mybox.zprd = param->zprd;
+  MD_FLOAT prd[3]; 
 
   prd[_x] = comm->mybox.xprd;
   prd[_y] = comm->mybox.yprd;
@@ -92,7 +96,7 @@ void setupComm(Comm* comm, Parameter* param)
   int maxswap = 2* (comm->numneigh[_x] + comm->numneigh[_y] + comm->numneigh[_z]); 
   comm->numswap = maxswap;
   //Allocate comm buffers memory
-  initBuffers(comm);
+  initBufers(comm, maxswap);
 
   //set up the dimension and displacement of the neighbours procs 
   iswap = 0; 
@@ -146,12 +150,12 @@ void setupComm(Comm* comm, Parameter* param)
       comm->sendproc[iswap] = comm->procneigh[sender];
       comm->recvproc[iswap] = comm->procneigh[receiv];
       
-      coordSender = mycoord[dim] - displ -1;
+      boxSender = mycoord[dim] - displ -1;
       
-      lo = coordSender * comm->mybox.len[dim];
+      lo = boxSender * comm->mybox.len[dim];
       hi = (dim == _x) ? comm->mybox.xlo : (dim == _y) ? comm->mybox.ylo : comm->mybox.zlo; 
       hi+= cutneigh; 
-      hi = MIN(hi, (coordSender + 1) * comm->mybox.len[dim]);
+      hi = MIN(hi, (boxSender + 1) * comm->mybox.len[dim]);
 
       //pbc flags       
       if (dim == _x) comm->pbc_flagx[iswap] = 1;
@@ -167,12 +171,12 @@ void setupComm(Comm* comm, Parameter* param)
       comm->sendproc[iswap] = comm->procneigh[sender];
       comm->recvproc[iswap] = comm->procneigh[receiv];
 
-      coordSender = mycoord[dim] - displ +1;
+      boxSender = mycoord[dim] - displ +1;
     
-      hi = (coordSender+1) * comm->mybox.len[dim];
+      hi = (boxSender+1) * comm->mybox.len[dim];
       lo = (dim == _x) ? comm->mybox.xhi : (dim == _y) ? comm->mybox.yhi : comm->mybox.yhi; 
       lo-= cutneigh;     
-      lo = MAX(lo, coordSender * comm->mybox.len[dim]);
+      lo = MAX(lo, boxSender * comm->mybox.len[dim]);
 
       //pbcflags
       comm->pbc_flagx[iswap+1] = -1;
@@ -241,7 +245,7 @@ void reverseComm(Comm* comm, Atom* atom)
     } else buf = comm->buf_send;
 
     /* unpack buffer */
-    unpackReverse(atom, comm->sendnum[iswap], comm->sendlist[iswap], buf);
+    unpack_reverse(atom, comm->sendnum[iswap], comm->sendlist[iswap], buf);
   }
 }
 
@@ -276,7 +280,7 @@ void exchange(Comm* comm, Atom* atom)
     x = ptrAtom(atom, dim);
 
     while(i < Nlocal) {
-      id =  index_pos(i,dim);
+      id =  index(i,dim);
       if(x[id] < lo || x[id] >= hi) {
         if(nsend > comm->maxsend) growSend(comm, nsend);
         nsend += packExchange(atom, i, &comm->buf_send[nsend]);
@@ -311,7 +315,7 @@ void exchange(Comm* comm, Atom* atom)
       pos = comm->buf_recv[m + dim];
 
       if(pos >= lo && pos < hi)
-        m+= unpackExchange(atom, Nlocal++, &comm->buf_recv[m]);
+        m+= unpack_exchange(atom, Nlocal++, &comm->buf_recv[m]);
       else m += 7; 
     }
 
@@ -332,9 +336,11 @@ void listComm(Comm* comm, Atom* atom)
 
   /* erase all ghost atoms */
   atom->Nghost = 0;
+
+  nlast = 0;
   
-  for(iswap = 0; iswap < comm->numswap; iswap++)
-  { 
+  for(iswap = 0; iswap < comm->numswap; iswap++) {
+
     // find atoms within slab boundaries lo/hi using <= and >=
     // check atoms between nfirst and nlast
     // store sent atom indices in list for use in future timesteps
@@ -350,9 +356,7 @@ void listComm(Comm* comm, Atom* atom)
     //   for first swaps in a dim, check owned and ghost
     //   for later swaps in a dim, only check newly arrived ghosts
 
-    if(displ < 0 ) {
-      // Every -1 displ is a new dimension 
-      if(displ == -1) nlast = 0; 
+    if(displ < 0 ) { 
       nfirst = nlast;
       nlast = atom->Nlocal + atom->Nghost;
     }
@@ -360,7 +364,7 @@ void listComm(Comm* comm, Atom* atom)
     nsend = 0;
 
     for(int i = nfirst; i < nlast; i++) {
-      id = index_pos(i, dim);
+      id = index(i, dim);
       if(px[id] >= lo && px[id] <= hi) {
         if(nsend >= comm->maxsendlist[iswap]) growList(comm, iswap, nsend);
         comm->sendlist[iswap][nsend++] = i;
@@ -370,41 +374,35 @@ void listComm(Comm* comm, Atom* atom)
     //Determine the number of elements to receive and send
     if (comm->sendproc[iswap] != comm->myproc) {
       MPI_Sendrecv(&nsend,1,MPI_INT,comm->sendproc[iswap],0,
-                   &nrecv,1,MPI_INT,comm->recvproc[iswap],0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+                    &nrecv,1,MPI_INT,comm->recvproc[iswap],0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
     } else {
       nrecv = nsend;
     }
 
     comm->sendnum[iswap] = nsend;
     comm->recvnum[iswap] = nrecv;
-    //Atoms forward send = Atoms Reverse Received
     comm->forward_send_size[iswap] = nsend * comm->atomSizeForward;
-    comm->reverse_recv_size[iswap] = nsend * comm->atomSizeReverse;
-    //Atoms forward received = Atoms send reverse 
-    comm->forward_recv_size[iswap] = nrecv * comm->atomSizeForward;
+    comm->forward_recv_size[iswap] = nrecv * comm->atomSizeReverse;
     comm->reverse_send_size[iswap] = nrecv * comm->atomSizeReverse;
-    
+    comm->reverse_recv_size[iswap] = nsend * comm->atomSizeReverse;
     comm->firstrecv[iswap] = atom->Nlocal + atom->Nghost;
     atom->Nghost += nrecv;
     
   }
   
-  /* assure buffers are large enough for forward and reverse comm */
+  /* assure buffers are large enough for reverse comm */
   int max1, max2, max3, max4;
   max1 = max2 = max3 = max4 = 0;
 
   for(iswap = 0; iswap < comm->numswap; iswap++) {
     max1 = MAX(max1, comm->forward_send_size[iswap]);
-    max4 = MAX(max4, comm->reverse_recv_size[iswap]);
     max2 = MAX(max2, comm->forward_recv_size[iswap]);
     max3 = MAX(max3, comm->reverse_send_size[iswap]);
-    
+    max4 = MAX(max4, comm->reverse_recv_size[iswap]);
   }
-  int maxsender = MAX(max1, max3);
-  int maxreceiv = MAX(max2, max4);
-  
-  if(maxsender > comm->maxsend) growSend(comm, max1);
-  if(maxreceiv > comm->maxrecv) growRecv(comm, max2);
+
+  if(max1 > comm->maxsend) growsend(comm, max1);
+  if(max2 > comm->maxrecv) growrecv(comm, max2);
 
 }
 
@@ -423,103 +421,63 @@ void growSend(Comm* comm, int n)
   comm -> maxsend = (int) (BUFFACTOR * n);
   comm -> buf_send = (MD_FLOAT*) reallocate(comm->buf_send, ALIGNMENT, (comm->maxsend + BUFEXTRA) * sizeof(MD_FLOAT), sizeof(comm->buf_send));
 }
-/* realloc the size of any list to send */
+
 void growList(Comm* comm, int iswap, int n)
 {
   comm->maxsendlist[iswap] = (int) (BUFFACTOR * n);
   comm->sendlist[iswap] = (int*) reallocate(comm->sendlist[iswap],ALIGNMENT, comm->maxsendlist[iswap] * sizeof(int), sizeof(comm->sendlist[iswap]));
 }
-/*Initialize all communication buffers*/
-static inline void  initBuffers(Comm* comm)
+
+static void  allocateMemory(Comm* comm, int maxswap)
 {  
-  comm->maxsend = BUFMIN;
-  comm->maxrecv = BUFMIN;
-  int nswap = comm->numswap; 
-  
-  //Unique buffer to send and receive every swap
-  comm->buf_send = (MD_FLOAT*) allocate(ALIGNMENT,(comm->maxsend + BUFMIN) * sizeof(MD_FLOAT));
-  comm->buf_recv = (MD_FLOAT*) allocate(ALIGNMENT, comm->maxrecv * sizeof(MD_FLOAT));  
-  
-  //Next buffers store information for each swap
-  comm->slablo = (MD_FLOAT*) allocate(ALIGNMENT, nswap * sizeof(MD_FLOAT)); 
-  comm->slabhi = (MD_FLOAT*) allocate(ALIGNMENT, nswap * sizeof(MD_FLOAT));
+  comm->slablo = (MD_FLOAT*) allocate(ALIGNMENT, maxswap * sizeof(MD_FLOAT)); 
+  comm->slabhi = (MD_FLOAT*) allocate(ALIGNMENT, maxswap * sizeof(MD_FLOAT));
 
-  comm->pbc_flagx = (int*) allocate(ALIGNMENT, nswap * sizeof(int));
-  comm->pbc_flagy = (int*) allocate(ALIGNMENT, nswap * sizeof(int));
-  comm->pbc_flagz = (int*) allocate(ALIGNMENT, nswap * sizeof(int));
+  comm->pbc_flagx = (int*) allocate(ALIGNMENT, maxswap * sizeof(int));
+  comm->pbc_flagy = (int*) allocate(ALIGNMENT, maxswap * sizeof(int));
+  comm->pbc_flagz = (int*) allocate(ALIGNMENT, maxswap * sizeof(int));
   
-  comm->sendnum = (int*) allocate(ALIGNMENT, nswap * sizeof(int));
-  comm->recvnum = (int*) allocate(ALIGNMENT, nswap * sizeof(int));
+  comm->sendnum = (int*) allocate(ALIGNMENT, maxswap * sizeof(int));
+  comm->recvnum = (int*) allocate(ALIGNMENT, maxswap * sizeof(int));
   
-  comm->forward_send_size = (int*) allocate(ALIGNMENT, nswap * sizeof(int));
-  comm->forward_recv_size = (int*) allocate(ALIGNMENT, nswap * sizeof(int));
-  comm->reverse_send_size = (int*) allocate(ALIGNMENT, nswap * sizeof(int));
-  comm->reverse_recv_size = (int*) allocate(ALIGNMENT, nswap * sizeof(int));
+  comm->forward_send_size = (int*) allocate(ALIGNMENT, maxswap * sizeof(int));
+  comm->forward_recv_size = (int*) allocate(ALIGNMENT, maxswap * sizeof(int));
+  comm->reverse_send_size = (int*) allocate(ALIGNMENT, maxswap * sizeof(int));
+  comm->reverse_recv_size = (int*) allocate(ALIGNMENT, maxswap * sizeof(int));
   
-  comm->sendproc = (int*) allocate(ALIGNMENT, nswap * sizeof(int));
-  comm->recvproc = (int*) allocate(ALIGNMENT, nswap * sizeof(int));
-  comm->sendproc_exc = (int*) allocate(ALIGNMENT, nswap * sizeof(int));
-  comm->recvproc_exc = (int*) allocate(ALIGNMENT, nswap * sizeof(int));
-  comm->swapdis      = (int*) allocate(ALIGNMENT, nswap * sizeof(int));
-  comm->swapdim      = (int*) allocate(ALIGNMENT, nswap * sizeof(int)); 
+  comm->sendproc = (int*) allocate(ALIGNMENT, maxswap * sizeof(int));
+  comm->recvproc = (int*) allocate(ALIGNMENT, maxswap * sizeof(int));
+  comm->sendproc_exc = (int*) allocate(ALIGNMENT, maxswap * sizeof(int));
+  comm->recvproc_exc = (int*) allocate(ALIGNMENT, maxswap * sizeof(int));
+  comm->swapdis      = (int*) allocate(ALIGNMENT, maxswap * sizeof(int));
+  comm->swapdim      = (int*) allocate(ALIGNMENT, maxswap * sizeof(int)); 
 
-  comm->firstrecv = (int*) allocate(ALIGNMENT, nswap * sizeof(int));
-  comm->maxsendlist = (int*) allocate(ALIGNMENT, nswap * sizeof(int));
-  
-  for(int i = 0; i < nswap; i++) 
-    comm->maxsendlist[i] = BUFMIN;
-  
-  comm->sendlist = (int**) allocate(ALIGNMENT, nswap * sizeof(int*));
-  
-  for(int i = 0; i < nswap; i++) 
-    comm->sendlist[i] = (int*) allocate(ALIGNMENT, BUFMIN * sizeof(int));
+  comm->firstrecv = (int*) allocate(ALIGNMENT, maxswap * sizeof(int));
+  comm->maxsendlist = (int*) allocate(ALIGNMENT, maxswap * sizeof(int));
+  for(int i = 0; i < maxswap; i++) comm->maxsendlist[i] = BUFMIN;
+  comm->sendlist = (int**) allocate(ALIGNMENT, maxswap * sizeof(int*));
+  for(int i = 0; i < maxswap; i++) comm->sendlist[i] = (int*) allocate(ALIGNMENT, BUFMIN * sizeof(int));
 }
-/*free all communication buffers*/
-static inline void freeBuffers(Comm* comm)
+
+static int index (int i, int dim)
 {
-  free(comm->buf_send);
-  free(comm->buf_recv); 
-  free(comm->slablo);  
-  free(comm->slabhi); 
-  free(comm->pbc_flagx);
-  free(comm->pbc_flagy);
-  free(comm->pbc_flagz);
-  free(comm->sendnum);
-  free(comm->recvnum);
-  free(comm->forward_send_size);
-  free(comm->forward_recv_size);
-  free(comm->reverse_send_size);
-  free(comm->reverse_recv_size);
-  free(comm->sendproc);
-  free(comm->recvproc);
-  free(comm->sendproc_exc);
-  free(comm->recvproc_exc);
-  free(comm->swapdis);     
-  free(comm->swapdim);     
-  free(comm->firstrecv); 
-  free(comm->maxsendlist); 
-  free(comm->maxsendlist);
-  for(int i = 0; i < comm->numswap; i++) 
-    free(comm->sendlist); 
-  free(comm->sendlist); 
-}
-/*Return the right index vector depending of AoS or SoA*/
-static inline int index_pos(int i, int dim)
-{
+  int index; 
 #ifdef AOS
-  return i * 3 + dim; 
+    index = i * 3 + dim; 
 #else
-  return i;
+    index = i;
 #endif
+  return index;
 }
-/*Return the right ptr vector depending of AoS or SoA*/
+
 static inline MD_FLOAT* ptrAtom(Atom* atom,int dim)
 {
+  MD_FLOAT* x;
 #ifdef AOS
-  return atom -> x;
+      x = atom -> x
 #else 
-  return (dim == _x) ? atom -> x : (dim == _y) ? atom -> y : atom -> z;
+      x =  (dim == _x) ? atom -> x : (dim == _y) ? atom -> y : atom -> z;
 #endif
+ return x;
 }
-
 
