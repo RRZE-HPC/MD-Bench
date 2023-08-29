@@ -53,12 +53,26 @@ void initAtom(Atom *atom) {
     d_atom->cutforcesq = NULL;
     d_atom->cutneighsq = NULL;
 }
-
-void createAtom(Atom *atom, Parameter *param) {
-    MD_FLOAT xlo = 0.0; MD_FLOAT xhi = param->xprd;
-    MD_FLOAT ylo = 0.0; MD_FLOAT yhi = param->yprd;
-    MD_FLOAT zlo = 0.0; MD_FLOAT zhi = param->zprd;
-    atom->Natoms = 4 * param->nx * param->ny * param->nz;
+    //MPI: Added new parameter comm
+void createAtom(Comm *comm, Atom *atom, Parameter *param) {
+    
+    MD_FLOAT xlo = 0; MD_FLOAT xhi = param->xprd;
+    MD_FLOAT ylo = 0; MD_FLOAT yhi = param->yprd;
+    MD_FLOAT zlo = 0; MD_FLOAT zhi = param->zprd;
+    //MPI: Local subdomain borders
+    MD_FLOAT _xlo = comm->mybox.xlo; MD_FLOAT _xhi = comm->mybox.xhi; 
+    MD_FLOAT _ylo = comm->mybox.ylo; MD_FLOAT _yhi = comm->mybox.yhi;
+    MD_FLOAT _zlo = comm->mybox.zlo; MD_FLOAT _zhi = comm->mybox.zhi;
+    //MPI: local subdomain dimensions
+    MD_FLOAT lenx = comm->mybox.len[_x];
+    MD_FLOAT leny = comm->mybox.len[_y];
+    MD_FLOAT lenz = comm->mybox.len[_z];
+    //MPI: # of linked cells per processor
+    int _nx = lenx/param->lattice; 
+    int _ny = leny/param->lattice;
+    int _nz = lenz/param->lattice; 
+    //MPI: modify parm->nx- to _nx; param->ny to _ny; param->nz to _nz
+    atom->Natoms = 4 * _nx * _ny * _nz;
     atom->Nlocal = 0;
     atom->ntypes = param->ntypes;
     atom->epsilon = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
@@ -107,10 +121,10 @@ void createAtom(Atom *atom, Parameter *param) {
             xtmp = 0.5 * alat * i;
             ytmp = 0.5 * alat * j;
             ztmp = 0.5 * alat * k;
-
-            if( xtmp >= xlo && xtmp < xhi &&
-                    ytmp >= ylo && ytmp < yhi &&
-                    ztmp >= zlo && ztmp < zhi ) {
+            //MPI: Change the evaluation condition Global-> Local, xlo->_xhi; xhi->_xhi ... 
+            if( xtmp >= _xlo && xtmp < _xhi &&
+                    ytmp >= _ylo && ytmp < _yhi &&
+                    ztmp >= _zlo && ztmp < _zhi ) {
 
                 n = k * (2 * param->ny) * (2 * param->nx) +
                     j * (2 * param->nx) +
@@ -163,24 +177,24 @@ int type_str2int(const char *type) {
     return -1;
 }
 
-int readAtom(Atom* atom, Parameter* param) {
+int readAtom(Comm* comm, Atom* atom, Parameter* param) {
     int len = strlen(param->input_file);
-    if(strncmp(&param->input_file[len - 4], ".pdb", 4) == 0) { return readAtom_pdb(atom, param); }
-    if(strncmp(&param->input_file[len - 4], ".gro", 4) == 0) { return readAtom_gro(atom, param); }
-    if(strncmp(&param->input_file[len - 4], ".dmp", 4) == 0) { return readAtom_dmp(atom, param); }
-    if(strncmp(&param->input_file[len - 3], ".in",  3) == 0) { return readAtom_in(atom, param); }
-    fprintf(stderr, "Invalid input file extension: %s\nValid choices are: pdb, gro, dmp, in\n", param->input_file);
+    if(strncmp(&param->input_file[len - 4], ".pdb", 4) == 0) { return readAtom_pdb(comm, atom, param); }
+    if(strncmp(&param->input_file[len - 4], ".gro", 4) == 0) { return readAtom_gro(comm, atom, param); }
+    if(strncmp(&param->input_file[len - 4], ".dmp", 4) == 0) { return readAtom_dmp(comm, atom, param); }
+    if(strncmp(&param->input_file[len - 3], ".in",  3) == 0) { return readAtom_in(comm ,atom, param); }
+    if(comm->myproc==0) fprintf(stderr, "Invalid input file extension: %s\nValid choices are: pdb, gro, dmp, in\n", param->input_file);
     exit(-1);
     return -1;
 }
 
-int readAtom_pdb(Atom* atom, Parameter* param) {
+int readAtom_pdb(Comm* comm, Atom* atom, Parameter* param) {
     FILE *fp = fopen(param->input_file, "r");
     char line[MAXLINE];
     int read_atoms = 0;
 
     if(!fp) {
-        fprintf(stderr, "Could not open input file: %s\n", param->input_file);
+        if(comm->myproc==0) fprintf(stderr, "Could not open input file: %s\n", param->input_file);
         exit(-1);
         return -1;
     }
@@ -429,15 +443,15 @@ int readAtom_dmp(Atom* atom, Parameter* param) {
     fprintf(stdout, "Read %d atoms from %s\n", natoms, param->input_file);
     return natoms;
 }
-
-int readAtom_in(Atom* atom, Parameter* param) {
+//MPI: Added new parameter comm
+int readAtom_in(Comm* comm, Atom* atom, Parameter* param) {
     FILE *fp = fopen(param->input_file, "r");
     char line[MAXLINE];
     int natoms = 0;
     int atom_id = 0;
 
     if(!fp) {
-        fprintf(stderr, "Could not open input file: %s\n", param->input_file);
+        if(comm->myproc == 0) fprintf(stderr, "Could not open input file: %s\n", param->input_file);
         exit(-1);
         return -1;
     }
@@ -450,39 +464,61 @@ int readAtom_in(Atom* atom, Parameter* param) {
     param->yhi = atof(strtok(NULL, " "));
     param->zlo = atof(strtok(NULL, " "));
     param->zhi = atof(strtok(NULL, " "));
-    atom->Natoms = natoms;
-    atom->Nlocal = natoms;
+    //MPI: Assuming same amount of atoms per processor.
+    atom->Natoms = natoms/comm->numproc;
+    atom->Nlocal = natoms/comm->numproc;
     atom->ntypes = 1;
 
     while(atom->Nlocal >= atom->Nmax) {
         growAtom(atom);
     }
+    
+    //TODO: fix the position of the borders
+    //MPI: local borders
+    MD_FLOAT _xlo = comm->mybox.xlo; MD_FLOAT _xhi = comm->mybox.xhi;  
+    MD_FLOAT _ylo = comm->mybox.ylo; MD_FLOAT _yhi = comm->mybox.yhi;
+    MD_FLOAT _zlo = comm->mybox.zlo; MD_FLOAT _zhi = comm->mybox.zhi;
 
     for(int i = 0; i < natoms; i++) {
         readline(line, fp);
+        char *s_mass = strtok(line, " ");        
+        MD_FLOAT radius = atof(strtok(NULL, " "));
+        MD_FLOAT _x = atof(strtok(NULL, " "));
+        MD_FLOAT _y = atof(strtok(NULL, " "));
+        MD_FLOAT _z = atof(strtok(NULL, " "));
+        MD_FLOAT _vx = atof(strtok(NULL, " "));
+        MD_FLOAT _vy = atof(strtok(NULL, " "));
+        MD_FLOAT _vz = atof(strtok(NULL, " "));
+        
+        if (atom_id>atom->Nmax) growAtom(atom);
 
-        // TODO: store mass per atom
-        char *s_mass = strtok(line, " ");
-        if(strncmp(s_mass, "inf", 3) == 0) {
-            // Set atom's mass to INFINITY
-        } else {
-            param->mass = atof(s_mass);
+        if( _x >= _xlo && _x < _xhi &&
+                    _y >= _ylo && _y < _yhi &&
+                    _z >= _zlo && _z < _zhi ) {
+        
+            // TODO: store mass per atom
+            if(strncmp(s_mass, "inf", 3) == 0) {
+                // Set atom's mass to INFINITY
+            } else {
+                param->mass = atof(s_mass);
+            }
+            atom->radius[atom_id] = atof(strtok(NULL, " "));
+            atom_x(atom_id) = atof(strtok(NULL, " "));
+            atom_y(atom_id) = atof(strtok(NULL, " "));
+            atom_z(atom_id) = atof(strtok(NULL, " "));
+            atom_vx(atom_id) = atof(strtok(NULL, " "));
+            atom_vy(atom_id) = atof(strtok(NULL, " "));
+            atom_vz(atom_id) = atof(strtok(NULL, " "));
+            atom->type[atom_id] = 0;
+            atom->ntypes = MAX(atom->type[atom_id], atom->ntypes);
+            atom_id++;
         }
-
-        atom->radius[atom_id] = atof(strtok(NULL, " "));
-        atom_x(atom_id) = atof(strtok(NULL, " "));
-        atom_y(atom_id) = atof(strtok(NULL, " "));
-        atom_z(atom_id) = atof(strtok(NULL, " "));
-        atom_vx(atom_id) = atof(strtok(NULL, " "));
-        atom_vy(atom_id) = atof(strtok(NULL, " "));
-        atom_vz(atom_id) = atof(strtok(NULL, " "));
-        atom->type[atom_id] = 0;
-        atom->ntypes = MAX(atom->type[atom_id], atom->ntypes);
-        atom_id++;
     }
+    
+    int nlocalAtom = atom_id;
 
     if(!natoms) {
-        fprintf(stderr, "Input error: atom data was not read!\n");
+        if (comm->myproc==0) fprintf(stderr, "Input error: atom data was not read!\n");
         exit(-1);
         return -1;
     }
@@ -498,8 +534,8 @@ int readAtom_in(Atom* atom, Parameter* param) {
         atom->cutforcesq[i] = param->cutforce * param->cutforce;
     }
 
-    fprintf(stdout, "Read %d atoms from %s\n", natoms, param->input_file);
-    return natoms;
+    fprintf(stdout, "Read %d atoms from %s by the processor%d\n", nlocalAtom, param->input_file, comm->myproc);
+    return nlocalAtom;
 }
 
 void growAtom(Atom *atom) {

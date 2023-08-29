@@ -29,7 +29,7 @@ typedef struct {
   int* sendproc_exc, *recvproc_exc; // proc to send/recv with at each swap for safe exchange (exchanging among all neighbour inside the cutneigh)
   
 	int* swapdim; 										// determine the direction of the swap (_x, _y or _z)
-	int* swapdis;										  // determine the displacement of the swap in (_x, _y or _z)
+	int* swapdis;										  // determine the distance of the swap in (_x, _y or _z)
 
 	int* 	firstrecv;                  // where to put 1st recv atom in each swap
   int** sendlist;                   // list of atoms to send in each swap
@@ -53,9 +53,9 @@ typedef struct {
 } Comm;
 
 
-void initComm(int, char**, Comm*, Parameter*); //Init MPI 
-void endComm();															   //End MPI
-void setupComm(MD_FLOAT,Comm*);				         //Creates a 3d grid
+void initComm(int, char**, Comm*); 						 //Init MPI 
+void endComm(Comm*);													 //End MPI
+void setupComm(Comm*,Parameter*);		 					 //Creates a 3d grid
 void forwardComm(Comm*,Atom*);							   //Send info in one direction
 void reverseComm(Comm*,Atom*);							   //Return info after forward communication
 void exchangeComm(Comm*,Atom*);							   //Exchange info between procs

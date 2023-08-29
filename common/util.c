@@ -86,6 +86,7 @@ int get_num_threads() {
 
 void readline(char *line, FILE *fp) {
     if(fgets(line, MAXLINE, fp) == NULL) {
+        printf("error %i\n",errno);
         if(errno != 0) {
             perror("readline()");
             exit(-1);
