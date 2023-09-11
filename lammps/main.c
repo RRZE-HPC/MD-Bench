@@ -11,9 +11,7 @@
 #include <limits.h>
 #include <math.h>
 #include <float.h>
-
 #include <likwid-marker.h>
-
 #include <allocate.h>
 #include <atom.h>
 #include <device.h>
@@ -28,6 +26,7 @@
 #include <timers.h>
 #include <util.h>
 #include <vtk.h>
+#include <comm.h>
 
 #define HLINE "----------------------------------------------------------------------------\n"
 
@@ -41,25 +40,24 @@ extern double computeForceDemFullNeigh(Parameter*, Atom*, Neighbor*, Stats*);
 extern double computeForceLJFullNeigh_cuda(Parameter*, Atom*, Neighbor*);
 #endif
 
-double setup(Parameter *param, Eam *eam, Atom *atom, Neighbor *neighbor, Stats *stats) {
+double setup(Comm* comm, Parameter *param, Eam *eam, Atom *atom, Neighbor *neighbor, Stats *stats) {
     if(param->force_field == FF_EAM) { initEam(eam, param); }
     double S, E;
     param->lattice = pow((4.0 / param->rho), (1.0 / 3.0));
     param->xprd = param->nx * param->lattice;
     param->yprd = param->ny * param->lattice;
     param->zprd = param->nz * param->lattice;
-
     S = getTimeStamp();
     initAtom(atom);
     initPbc(atom);
     initStats(stats);
     initNeighbor(neighbor, param);
-    if(param->input_file == NULL) {
-        createAtom(atom, param);
-    } else {
-        readAtom(atom, param);
-    }
 
+    if(param->input_file == NULL) {
+        createAtom(comm, atom, param);
+    } else {
+        readAtom(comm, atom, param);
+    }
     setupNeighbor(param);
     setupThermo(param, atom->Natoms);
     if(param->input_file == NULL) { adjustThermo(param, atom); }
@@ -67,7 +65,7 @@ double setup(Parameter *param, Eam *eam, Atom *atom, Neighbor *neighbor, Stats *
     atom->Nghost = 0;
     sortAtom(atom);
     #endif
-    setupPbc(atom, param);
+    //setupPbc(atom, param);
     initDevice(atom, neighbor);
     updatePbc(atom, param, true);
     buildNeighbor(atom, neighbor);
@@ -141,6 +139,7 @@ int main(int argc, char** argv) {
     Neighbor neighbor;
     Stats stats;
     Parameter param;
+    Comm comm; 
 
     LIKWID_MARKER_INIT;
 #pragma omp parallel
@@ -148,8 +147,7 @@ int main(int argc, char** argv) {
         LIKWID_MARKER_REGISTER("force");
         //LIKWID_MARKER_REGISTER("reneighbour");
         //LIKWID_MARKER_REGISTER("pbc");
-    }
-
+    } 
     initParameter(&param);
     for(int i = 0; i < argc; i++) {
         if((strcmp(argv[i], "-p") == 0)) {
@@ -226,7 +224,8 @@ int main(int argc, char** argv) {
     }
 
     param.cutneigh = param.cutforce + param.skin;
-    setup(&param, &eam, &atom, &neighbor, &stats);
+    initComm(argc, argv, &comm);
+    setup(&comm, &param, &eam, &atom, &neighbor, &stats);
     printParameter(&param);
     printf(HLINE);
 

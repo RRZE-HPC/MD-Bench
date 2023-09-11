@@ -59,7 +59,7 @@ void readParameter(Parameter *param, const char *filename) {
     FILE *fp = fopen(filename, "r");
     char line[MAXLINE];
     int i;
-
+    
     if(!fp) {
         fprintf(stderr, "Could not open parameter file: %s\n", filename);
         exit(-1);
@@ -118,7 +118,6 @@ void readParameter(Parameter *param, const char *filename) {
             PARSE_INT(half_neigh);
         }
     }
-
     // Update dtforce
     param->dtforce = 0.5 * param->dt;
 

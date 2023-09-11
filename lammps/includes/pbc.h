@@ -6,7 +6,7 @@
  */
 #include <stdbool.h>
 //---
-#include <atom.h>
+#include <atom.h>  
 #include <parameter.h>
 
 #ifndef __PBC_H_

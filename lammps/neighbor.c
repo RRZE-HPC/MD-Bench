@@ -11,6 +11,7 @@
 #include <neighbor.h>
 #include <parameter.h>
 #include <atom.h>
+#include <mpi.h>
 
 #define SMALL 1.0e-6
 #define FACTOR 0.999
@@ -155,6 +156,8 @@ void setupNeighbor(Parameter* param) {
 
 void buildNeighbor_cpu(Atom *atom, Neighbor *neighbor) {
     int nall = atom->Nlocal + atom->Nghost;
+    int me; 
+    MPI_Comm_rank(MPI_COMM_WORLD, &me);
 
     /* extend atom arrays if necessary */
     if(nall > nmax) {
@@ -173,7 +176,6 @@ void buildNeighbor_cpu(Atom *atom, Neighbor *neighbor) {
     while(resize) {
         int new_maxneighs = neighbor->maxneighs;
         resize = 0;
-
         for(int i = 0; i < atom->Nlocal; i++) {
             int* neighptr = &(neighbor->neighbors[i * neighbor->maxneighs]);
             int n = 0;
@@ -187,7 +189,6 @@ void buildNeighbor_cpu(Atom *atom, Neighbor *neighbor) {
             for(int k = 0; k < nstencil; k++) {
                 int jbin = ibin + stencil[k];
                 int* loc_bin = &bins[jbin * atoms_per_bin];
-
                 for(int m = 0; m < bincount[jbin]; m++) {
                     int j = loc_bin[m];
                     if((j == i) || (neighbor->half_neigh && (j < i))) {
@@ -222,7 +223,7 @@ void buildNeighbor_cpu(Atom *atom, Neighbor *neighbor) {
         }
 
         if(resize) {
-            printf("RESIZE %d\n", neighbor->maxneighs);
+            printf("RESIZE %d by processor %d\n", neighbor->maxneighs,me);
             neighbor->maxneighs = new_maxneighs * 1.2;
             free(neighbor->neighbors);
             neighbor->neighbors = (int*) malloc(atom->Nmax * neighbor->maxneighs * sizeof(int));

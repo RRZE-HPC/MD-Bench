@@ -5,6 +5,7 @@
  * license that can be found in the LICENSE file.
  */
 #include <parameter.h>
+#include <comm.h>
 
 #ifndef __ATOM_H_
 #define __ATOM_H_
@@ -33,6 +34,13 @@
 #endif
 
 typedef struct {
+  int xprd, yprd, zprd;           //Domain Dimensions
+  MD_FLOAT lo[3];               //smallest coordinate of my subdomain
+  MD_FLOAT hi[3];               //Highest coordinate of my subdomain
+  MD_FLOAT len[3];              //lenght subdomain in each dimmension
+} Box;
+
+typedef struct {
     MD_FLOAT *x, *y, *z;
     MD_FLOAT *vx, *vy, *vz;
     MD_FLOAT *fx, *fy, *fz;
@@ -56,6 +64,8 @@ typedef struct {
     MD_FLOAT *sigma6;
     MD_FLOAT *cutforcesq;
     MD_FLOAT *cutneighsq;
+    //TODO: insert the id number
+    //MD_FLOAT *Atom_id;
 
     // DEM
     MD_FLOAT *radius;
@@ -64,16 +74,27 @@ typedef struct {
 
     // Device data
     DeviceAtom d_atom;
+     
+    //Info Subdomain
+    Box mybox;                //spatial representation of my processor box
 } Atom;
 
 extern void initAtom(Atom*);
-extern void createAtom(Atom*, Parameter*);
-extern int readAtom(Atom*, Parameter*);
-extern int readAtom_pdb(Atom*, Parameter*);
-extern int readAtom_gro(Atom*, Parameter*);
-extern int readAtom_dmp(Atom*, Parameter*);
-extern int readAtom_in(Atom*, Parameter*);
+extern void createAtom(Grid*, Atom*, Parameter*);
+extern int readAtom(Grid*, Atom*, Parameter*);
+extern int readAtom_pdb(Grid*, Atom*, Parameter*);
+extern int readAtom_gro(Grid*, Atom*, Parameter*);
+extern int readAtom_dmp(Grid*, Atom*, Parameter*);
+extern int readAtom_in(Grid*, Atom*, Parameter*);
 extern void growAtom(Atom*);
+extern int packBorder(int, MD_FLOAT* , int* );
+extern int unpackBorder(Atom*, int, MD_FLOAT*);
+extern void packReverse(Atom* atom, int n, int first, MD_FLOAT* buf);
+extern void unpackReverse(Atom*, int, int*, MD_FLOAT*);
+extern int packExchange(Atom*, int, MD_FLOAT*);
+extern int unpackExchange(Atom*, int, MD_FLOAT*);
+extern void pbc(Atom*);
+extern void copy(Atom*, int, int);
 
 #ifdef AOS
 #   define POS_DATA_LAYOUT     "AoS"
@@ -98,5 +119,9 @@ extern void growAtom(Atom*);
 #   define atom_fy(i)          atom->fy[i]
 #   define atom_fz(i)          atom->fz[i]
 #endif
+
+#   define buf_x(i)  buf[3*(i)] 
+#   define buf_y(i)  buf[3*(i)+1]
+#   define buf_z(i)  buf[3*(i)+2]
 
 #endif
