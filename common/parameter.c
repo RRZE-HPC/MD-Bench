@@ -71,8 +71,8 @@ void readParameter(Parameter *param, const char *filename) {
         for(i = 0; line[i] != '\0' && line[i] != '#'; i++);
         line[i] = '\0';
 
-        char *tok = strtok(line, " ");
-        char *val = strtok(NULL, " ");
+        char *tok = strtok(line, "\t ");
+        char *val = strtok(NULL, "\t ");
 
         #define PARSE_PARAM(p,f)   if(strncmp(tok, #p, sizeof(#p) / sizeof(#p[0]) - 1) == 0) { param->p = f(val); }
         #define PARSE_STRING(p)    PARSE_PARAM(p, strdup)
@@ -116,6 +116,9 @@ void readParameter(Parameter *param, const char *filename) {
             PARSE_INT(x_out_every);
             PARSE_INT(v_out_every);
             PARSE_INT(half_neigh);
+            PARSE_INT(shell_method);
+            PARSE_INT(rcb);
+            PARSE_INT(rcb_ndim);
         }
     }
     // Update dtforce

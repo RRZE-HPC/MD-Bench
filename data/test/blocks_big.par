@@ -1,0 +1,39 @@
+force_field				#
+input_file      data/test/blocks_big.in  #
+eam_file				#
+vtk_file    	output/blocks_big	#
+xtc_file				#
+epsilon         1.	          	#
+sigma		0.3			#
+k_s					#
+k_dn					#
+reflect_x				#
+reflect_y				#
+reflect_z				#
+gx					#
+gy					#
+gz					#
+rho					#
+dt		0.001			#
+cutforce	2.5			#
+skin		0.05			#
+temp					#
+mass		1.0			#
+proc_freq				#
+ntypes		1			#
+ntimes		2000			#
+nx		40			#
+ny		40			#
+nz		3			#
+pbc_x		1			#
+pbc_y		1			#
+pbc_z		1			#
+nstat					#
+reneigh_every	10		#
+prune_every				#
+x_out_every				#
+v_out_every				#
+half_neigh				#
+rcb	        	1		#
+rcb_dim					  #			
+shell_method 				# 0 for full shell, 1 for half shell, 2 for hight shell

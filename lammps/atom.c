@@ -9,12 +9,12 @@
 #include <string.h>
 #include <math.h>
 
-#include <lammps/includes/atom.h>
+#include <parameter.h>
+#include <atom.h>
 #include <allocate.h>
 #include <device.h>
 #include <util.h>
 #include <mpi.h>
-#include <map.h>
 
 #define DELTA 20000
 
@@ -25,6 +25,8 @@
 #ifndef MAX
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 #endif
+
+static inline int isAtomInSubdomain(Box* atom, int x, int y, int z);
 
 void initAtom(Atom *atom){
     atom->x  = NULL; atom->y  = NULL; atom->z  = NULL;
@@ -58,18 +60,14 @@ void initAtom(Atom *atom){
     Box *mybox = &(atom->mybox);                  
     mybox->xprd = mybox->yprd = mybox->zprd = 0;          
     mybox->lo[0]  = mybox->lo[1]  = mybox->lo[2] = 0;             
-    mybox->hi[0]  = mybox->hi[1]  = mybox->hi[2] = 0;
-    mybox->len[0] = mybox->len[1] = mybox->len[2] = 0;               
+    mybox->hi[0]  = mybox->hi[1]  = mybox->hi[2] = 0;   
 }
 
-void createAtom(Grid *grid, Atom *atom, Parameter *param) {
+void createAtom(Atom *atom, Parameter *param) {
 
     MD_FLOAT xlo = 0; MD_FLOAT xhi = param->xprd;
     MD_FLOAT ylo = 0; MD_FLOAT yhi = param->yprd;
     MD_FLOAT zlo = 0; MD_FLOAT zhi = param->zprd;
-
-    //MPI: create the processor grid
-    setupGrid(grid, atom, (int[3]){param->xprd, param->yprd, param->zprd}, 0);
     
     atom->Natoms = 4 * param->nx * param->ny * param->nz;
     atom->Nlocal = 0;
@@ -121,7 +119,7 @@ void createAtom(Grid *grid, Atom *atom, Parameter *param) {
             ytmp = 0.5 * alat * j;
             ztmp = 0.5 * alat * k;
             
-            if(isAtomInSubdomain(atom, xtmp, ytmp, ztmp)){
+            if(isAtomInSubdomain(&atom->mybox, xtmp, ytmp, ztmp)){
 
                 n = k * (2 * param->ny) * (2 * param->nx) +
                     j * (2 * param->nx) +
@@ -142,7 +140,7 @@ void createAtom(Grid *grid, Atom *atom, Parameter *param) {
                 }
                 vztmp = myrandom(&n);
 
-                if(atom->Nlocal >= atom->Nmax) {
+                while(atom->Nlocal >= atom->Nmax) {
                     growAtom(atom);
                 }
 
@@ -176,85 +174,71 @@ int type_str2int(const char *type) {
     return -1;
 }
 
-int readAtom(Grid *grid, Atom *atom, Parameter *param) {
+int readAtom(Atom *atom, Parameter *param) {
     int me;
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
     int len = strlen(param->input_file);
-    if(strncmp(&param->input_file[len - 4], ".pdb", 4) == 0) { return readAtom_pdb(grid, atom, param); }
-    if(strncmp(&param->input_file[len - 4], ".gro", 4) == 0) { return readAtom_gro(grid, atom, param); }
-    if(strncmp(&param->input_file[len - 4], ".dmp", 4) == 0) { return readAtom_dmp(grid, atom, param); }
-    if(strncmp(&param->input_file[len - 3], ".in",  3) == 0) { return readAtom_in(grid, atom, param); }
+    if(strncmp(&param->input_file[len - 4], ".pdb", 4) == 0) { return readAtom_pdb(atom, param); }
+    if(strncmp(&param->input_file[len - 4], ".gro", 4) == 0) { return readAtom_gro(atom, param); }
+    if(strncmp(&param->input_file[len - 4], ".dmp", 4) == 0) { return readAtom_dmp(atom, param); }
+    if(strncmp(&param->input_file[len - 3], ".in",  3) == 0) { return readAtom_in(atom, param); }
     if(me==0) fprintf(stderr, "Invalid input file extension: %s\nValid choices are: pdb, gro, dmp, in\n", param->input_file);
     exit(-1);
     return -1;
 }
 
-int readAtom_pdb(Grid *grid, Atom *atom, Parameter *param) {
-    
+int readAtom_pdb(Atom* atom, Parameter* param) {
     int me;
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
-    
     FILE *fp = fopen(param->input_file, "r");
     char line[MAXLINE];
     int read_atoms = 0;
-    MD_FLOAT x,y,z;
 
     if(!fp) {
-        if(me==0) fprintf(stderr, "Could not open input file: %s\n", param->input_file);
+        if(me==0)fprintf(stderr, "Could not open input file: %s\n", param->input_file);
         exit(-1);
         return -1;
     }
 
     while(!feof(fp)) {
         readline(line, fp);
-        char *item = strtok(line, " ");
+        char *item = strtok(line, "\t ");
         if(strncmp(item, "CRYST1", 6) == 0) {
             param->xlo = 0.0;
-            param->xhi = atof(strtok(NULL, " "));
+            param->xhi = atof(strtok(NULL, "\t "));
             param->ylo = 0.0;
-            param->yhi = atof(strtok(NULL, " "));
+            param->yhi = atof(strtok(NULL, "\t "));
             param->zlo = 0.0;
-            param->zhi = atof(strtok(NULL, " "));
+            param->zhi = atof(strtok(NULL, "\t "));
             param->xprd = param->xhi - param->xlo;
             param->yprd = param->yhi - param->ylo;
             param->zprd = param->zhi - param->zlo;
             // alpha, beta, gamma, sGroup, z
-            
-            //MPI: create processor's grid
-            setupGrid(grid, atom, (int[3]){param->xprd, param->yprd, param->zprd}, 0);
-
         } else if(strncmp(item, "ATOM", 4) == 0) {
             char *label;
-            int atom_id, comp_id, type;
+            int atom_id, comp_id;
             MD_FLOAT occupancy, charge;
+            atom_id = atoi(strtok(NULL, "\t ")) - 1;
 
-            //TODO: Implemet item_id array for tracking
-            atom_id = atoi(strtok(NULL, " "));                 
-            type = type_str2int(strtok(NULL, " "));
-            label = strtok(NULL, " ");
-            comp_id = atoi(strtok(NULL, " "));
-            
-            //MPI: atom position respect to  new origen at (0,0,0)
-            x = atof(strtok(NULL, " ")) - param->xlo;   
-            y = atof(strtok(NULL, " ")) - param->ylo;
-            z = atof(strtok(NULL, " ")) - param->zlo;
-            
-            if(isAtomInSubdomain(atom,x,y,z)){
-                while(atom->Nlocal + 1 >= atom->Nmax) growAtom(atom);
-                atom->type[atom->Nlocal] = type; 
-                atom_x(atom->Nlocal) = x;
-                atom_y(atom->Nlocal) = y;
-                atom_z(atom->Nlocal) = z;
-                atom_vx(atom->Nlocal) = 0.0;
-                atom_vy(atom->Nlocal) = 0.0;
-                atom_vz(atom->Nlocal) = 0.0;
-                occupancy = atof(strtok(NULL, " "));
-                charge = atof(strtok(NULL, " "));
-                atom->ntypes = MAX(atom->type[atom->Nlocal] + 1, atom->ntypes);
-                atom->Nlocal++;
-                read_atoms++;    
+            while(atom_id + 1 >= atom->Nmax) {
+                growAtom(atom);
             }
 
+            atom->type[atom_id] = type_str2int(strtok(NULL, "\t "));
+            label = strtok(NULL, "\t ");
+            comp_id = atoi(strtok(NULL, "\t "));
+            atom_x(atom_id) = atof(strtok(NULL, "\t "));
+            atom_y(atom_id) = atof(strtok(NULL, "\t "));
+            atom_z(atom_id) = atof(strtok(NULL, "\t "));
+            atom_vx(atom_id) = 0.0;
+            atom_vy(atom_id) = 0.0;
+            atom_vz(atom_id) = 0.0;
+            occupancy = atof(strtok(NULL, "\t "));
+            charge = atof(strtok(NULL, "\t "));
+            atom->ntypes = MAX(atom->type[atom_id] + 1, atom->ntypes);
+            atom->Natoms++;
+            atom->Nlocal++;
+            read_atoms++;
         } else if(strncmp(item, "HEADER", 6) == 0 ||
                   strncmp(item, "REMARK", 6) == 0 ||
                   strncmp(item, "MODEL", 5) == 0 ||
@@ -262,16 +246,14 @@ int readAtom_pdb(Grid *grid, Atom *atom, Parameter *param) {
                   strncmp(item, "ENDMDL", 6) == 0) {
             // Do nothing
         } else {
-            if(me == 0)fprintf(stderr, "Invalid item: %s\n", item);
+            if(me==0)fprintf(stderr, "Invalid item: %s\n", item);
             exit(-1);
             return -1;
         }
     }
 
-    MPI_Allreduce(&(atom->Nlocal), &(atom->Natoms), 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-
-    if(!atom->Natoms) {
-        if(me == 0) fprintf(stderr, "Input error: No atoms read!\n");
+    if(!read_atoms) {
+        if(me==0)fprintf(stderr, "Input error: No atoms read!\n");
         exit(-1);
         return -1;
     }
@@ -286,98 +268,74 @@ int readAtom_pdb(Grid *grid, Atom *atom, Parameter *param) {
         atom->cutneighsq[i] = param->cutneigh * param->cutneigh;
         atom->cutforcesq[i] = param->cutforce * param->cutforce;
     }
-    fprintf(stdout, "Read %d atoms from %s by processor: %d\n", read_atoms, param->input_file, me);
+
+    if(me==0)fprintf(stdout, "Read %d atoms from %s\n", read_atoms, param->input_file);
     fclose(fp);
     return read_atoms;
 }
 
-int readAtom_gro(Grid *grid, Atom *atom, Parameter *param) {
-    
+int readAtom_gro(Atom* atom, Parameter* param) {
     int me;
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
 
     FILE *fp = fopen(param->input_file, "r");
-
     char line[MAXLINE];
     char desc[MAXLINE];
     int read_atoms = 0;
     int atoms_to_read = 0;
     int i = 0;
-    MD_FLOAT x,y,z;
-    long int line_id = 0; 
-    long int offset = 0; 
 
     if(!fp) {
-        if(me == 0) fprintf(stderr, "Could not open input file: %s\n", param->input_file);
+        if(me==0)fprintf(stderr, "Could not open input file: %s\n", param->input_file);
         exit(-1);
         return -1;
     }
-    
+
     readline(desc, fp);
     for(i = 0; desc[i] != '\n'; i++);
     desc[i] = '\0';
     readline(line, fp);
-    atoms_to_read = atoi(strtok(line, " "));
-    if(me == 0) fprintf(stdout, "System: %s with %d atoms\n", desc, atoms_to_read);
-    
-    //Store location of fisrt atom to read in the file
-    line_id = ftell(fp);
-    readline(line,fp); 
-    offset = atoms_to_read*strlen(line);
-    
-    if(fseek(fp,offset,line_id) !=0) {
-        fprintf(stderr, "Failed in fseek function, readAtom_gro \n");
-        exit(-1);
-        return -1;
-    }
-
-    readline(line, fp);
-    param->xlo = 0.0;
-    param->xhi = atof(strtok(line, " "));
-    param->ylo = 0.0;
-    param->yhi = atof(strtok(NULL, " "));
-    param->zlo = 0.0;
-    param->zhi = atof(strtok(NULL, " "));
-    param->xprd = param->xhi - param->xlo;
-    param->yprd = param->yhi - param->ylo;
-    param->zprd = param->zhi - param->zlo;
-    //MPI: create processor's grid
-    setupGrid(grid, atom, (int[3]){param->xprd, param->yprd, param->zprd}, 0);  
-    
-    fseek(fp,line_id,SEEK_SET);
+    atoms_to_read = atoi(strtok(line, "\t "));
+    if(me==0)fprintf(stdout, "System: %s with %d atoms\n", desc, atoms_to_read);
 
     while(!feof(fp) && read_atoms < atoms_to_read) {
-                
         readline(line, fp);
-        char *label = strtok(line, " ");
-        int type = type_str2int(strtok(NULL, " "));
-        //TODO: Implemet item_id array for tracking
-        int atom_id = atoi(strtok(NULL, " ")) - 1;
-
-        //MPI: atom position respect to  new origen at (0,0,0)
-        x = atof(strtok(NULL, " ")) - param->xlo;
-        y = atof(strtok(NULL, " ")) - param->ylo;
-        z = atof(strtok(NULL, " ")) - param->zlo;
-
-        if(isAtomInSubdomain(atom,x,y,z)){
-            while(atom->Nlocal + 1 >= atom->Nmax) growAtom(atom);
-            atom->type[atom->Nlocal] = type;
-            atom_x(atom->Nlocal) = x;
-            atom_y(atom->Nlocal) = y;
-            atom_z(atom->Nlocal) = z;
-            atom_vx(atom->Nlocal) = atof(strtok(NULL, " "));
-            atom_vy(atom->Nlocal) = atof(strtok(NULL, " "));
-            atom_vz(atom->Nlocal) = atof(strtok(NULL, " "));
-            atom->ntypes = MAX(atom->type[atom->Nlocal] + 1, atom->ntypes);
-            atom->Nlocal++;
-            read_atoms++;  
+        char *label = strtok(line, "\t ");
+        int type = type_str2int(strtok(NULL, "\t "));
+        int atom_id = atoi(strtok(NULL, "\t ")) - 1;
+        atom_id = read_atoms;
+        while(atom_id + 1 >= atom->Nmax) {
+            growAtom(atom);
         }
+
+        atom->type[atom_id] = type;
+        atom_x(atom_id) = atof(strtok(NULL, "\t "));
+        atom_y(atom_id) = atof(strtok(NULL, "\t "));
+        atom_z(atom_id) = atof(strtok(NULL, "\t "));
+        atom_vx(atom_id) = atof(strtok(NULL, "\t "));
+        atom_vy(atom_id) = atof(strtok(NULL, "\t "));
+        atom_vz(atom_id) = atof(strtok(NULL, "\t "));
+        atom->ntypes = MAX(atom->type[atom_id] + 1, atom->ntypes);
+        atom->Natoms++;
+        atom->Nlocal++;
+        read_atoms++;
     }
 
-    MPI_Allreduce(&(atom->Nlocal), &(atom->Natoms), 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    if(!feof(fp)) {
+        readline(line, fp);
+        param->xlo = 0.0;
+        param->xhi = atof(strtok(line, "\t "));
+        param->ylo = 0.0;
+        param->yhi = atof(strtok(NULL, "\t "));
+        param->zlo = 0.0;
+        param->zhi = atof(strtok(NULL, "\t "));
+        param->xprd = param->xhi - param->xlo;
+        param->yprd = param->yhi - param->ylo;
+        param->zprd = param->zhi - param->zlo;
+    }
 
-    if(atom->Natoms != atoms_to_read) {
-        if(me == 0) fprintf(stderr, "Input error: Number of atoms read do not match (%d/%d).\n", read_atoms, atoms_to_read);
+    if(read_atoms != atoms_to_read) {
+        if(me==0)fprintf(stderr, "Input error: Number of atoms read do not match (%d/%d).\n", read_atoms, atoms_to_read);
         exit(-1);
         return -1;
     }
@@ -393,27 +351,23 @@ int readAtom_gro(Grid *grid, Atom *atom, Parameter *param) {
         atom->cutforcesq[i] = param->cutforce * param->cutforce;
     }
 
-    fprintf(stdout, "Read %d atoms from %s by processor: %d\n", read_atoms, param->input_file, me);
+    if(me==0)fprintf(stdout, "Read %d atoms from %s\n", read_atoms, param->input_file);
     fclose(fp);
     return read_atoms;
 }
 
-int readAtom_dmp(Grid *grid, Atom* atom, Parameter* param) {
-    
+int readAtom_dmp(Atom* atom, Parameter* param) {
     int me;
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
-    
     FILE *fp = fopen(param->input_file, "r");
     char line[MAXLINE];
     int natoms = 0;
     int read_atoms = 0;
     int atom_id = -1;
     int ts = -1;
-    MD_FLOAT  x,y,z;
-    int type;
 
     if(!fp) {
-        if(me == 0) fprintf(stderr, "Could not open input file: %s\n", param->input_file);
+        if(me==0)fprintf(stderr, "Could not open input file: %s\n", param->input_file);
         exit(-1);
         return -1;
     }
@@ -429,66 +383,54 @@ int readAtom_dmp(Grid *grid, Atom* atom, Parameter* param) {
             } else if(strncmp(item, "NUMBER OF ATOMS", 15) == 0) {
                 readline(line, fp);
                 natoms = atoi(line);
+                atom->Natoms = natoms;
+                atom->Nlocal = natoms;
+                while(atom->Nlocal >= atom->Nmax) {
+                    growAtom(atom);
+                }
             } else if(strncmp(item, "BOX BOUNDS pp pp pp", 19) == 0) {
                 readline(line, fp);
-                param->xlo = atof(strtok(line, " "));
-                param->xhi = atof(strtok(NULL, " "));
+                param->xlo = atof(strtok(line, "\t "));
+                param->xhi = atof(strtok(NULL, "\t "));
                 param->xprd = param->xhi - param->xlo;
 
                 readline(line, fp);
-                param->ylo = atof(strtok(line, " "));
-                param->yhi = atof(strtok(NULL, " "));
+                param->ylo = atof(strtok(line, "\t "));
+                param->yhi = atof(strtok(NULL, "\t "));
                 param->yprd = param->yhi - param->ylo;
 
                 readline(line, fp);
-                param->zlo = atof(strtok(line, " "));
-                param->zhi = atof(strtok(NULL, " "));
+                param->zlo = atof(strtok(line, "\t "));
+                param->zhi = atof(strtok(NULL, "\t "));
                 param->zprd = param->zhi - param->zlo;
-                //MPI: create processor's grid
-                setupGrid(grid, atom,(int[3]){param->xprd, param->yprd, param->zprd}, 0);
-                
             } else if(strncmp(item, "ATOMS id type x y z vx vy vz", 28) == 0) {
                 for(int i = 0; i < natoms; i++) {
-                                 
                     readline(line, fp);
-                    //TODO: Implemet item_id array for tracking
-                    atom_id = atoi(strtok(line, " "));                     
-                    type = atoi(strtok(NULL, " "));
-                    // MPI: atom position respect to new origin at (0,0,0)
-                    x = atof(strtok(NULL, " ")) - param->xlo;   
-                    y = atof(strtok(NULL, " ")) - param->ylo;
-                    z = atof(strtok(NULL, " ")) - param->zlo;
-                                            
-                    if(isAtomInSubdomain(atom,x,y,z)){
-                        while(atom->Nlocal + 1 >= atom->Nmax) growAtom(atom);
-                        atom->type[atom->Nlocal] = type;
-                        atom_x(atom->Nlocal) = x;
-                        atom_y(atom->Nlocal) = y;
-                        atom_z(atom->Nlocal) = z;
-                        atom_vx(atom->Nlocal) = atof(strtok(NULL, " "));
-                        atom_vy(atom->Nlocal) = atof(strtok(NULL, " "));
-                        atom_vz(atom->Nlocal) = atof(strtok(NULL, " "));
-                        atom->ntypes = MAX(atom->type[atom->Nlocal], atom->ntypes);
-                        atom->Nlocal++;
-                        read_atoms++;      
-                    }
+                    atom_id = atoi(strtok(line, "\t ")) - 1;
+                    atom->type[atom_id] = atoi(strtok(NULL, "\t "));
+                    atom_x(atom_id) = atof(strtok(NULL, "\t "));
+                    atom_y(atom_id) = atof(strtok(NULL, "\t "));
+                    atom_z(atom_id) = atof(strtok(NULL, "\t "));
+                    atom_vx(atom_id) = atof(strtok(NULL, "\t "));
+                    atom_vy(atom_id) = atof(strtok(NULL, "\t "));
+                    atom_vz(atom_id) = atof(strtok(NULL, "\t "));
+                    atom->ntypes = MAX(atom->type[atom_id], atom->ntypes);
+                    read_atoms++;
                 }
             } else {
-                if(me == 0) fprintf(stderr, "Invalid item: %s\n", item);
+                if(me==0)fprintf(stderr, "Invalid item: %s\n", item);
                 exit(-1);
                 return -1;
             }
         } else {
-            if(me == 0) fprintf(stderr, "Invalid input from file, expected item reference but got:\n%s\n", line);
+            if(me==0)fprintf(stderr, "Invalid input from file, expected item reference but got:\n%s\n", line);
             exit(-1);
             return -1;
         }
     }
 
-    MPI_Allreduce(&(atom->Nlocal), &(atom->Natoms), 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-
-    if(ts < 0 || !natoms || !atom->Natoms) {
-        fprintf(stderr, "Input error: atom data was not read!\n");
+    if(ts < 0 || !natoms || !read_atoms) {
+        if(me==0)fprintf(stderr, "Input error: atom data was not read!\n");
         exit(-1);
         return -1;
     }
@@ -504,73 +446,66 @@ int readAtom_dmp(Grid *grid, Atom* atom, Parameter* param) {
         atom->cutforcesq[i] = param->cutforce * param->cutforce;
     }
 
-    fprintf(stdout, "Read %d atoms from %s by processor: %d\n", read_atoms, param->input_file, me);
-    return read_atoms;
+    if(me==0)fprintf(stdout, "Read %d atoms from %s\n", natoms, param->input_file);
+    return natoms;
 }
 
-int readAtom_in(Grid *grid, Atom* atom, Parameter* param) {
-    
+int readAtom_in(Atom* atom, Parameter* param) {
     int me;
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
-
     FILE *fp = fopen(param->input_file, "r");
     char line[MAXLINE];
     int natoms = 0;
     int atom_id = 0;
 
     if(!fp) {
-        if(me == 0) fprintf(stderr, "Could not open input file: %s\n", param->input_file);
+        if(me==0) fprintf(stderr, "Could not open input file: %s\n", param->input_file);
         exit(-1);
         return -1;
     }
-
     readline(line, fp);
-    natoms = atoi(strtok(line, " "));
-    param->xlo = atof(strtok(NULL, " "));
-    param->xhi = atof(strtok(NULL, " "));
-    param->ylo = atof(strtok(NULL, " "));
-    param->yhi = atof(strtok(NULL, " "));
-    param->zlo = atof(strtok(NULL, " "));
-    param->zhi = atof(strtok(NULL, " "));
-    //MPI: create processor's grid
-    setupGrid(grid, atom, (int[3]){param->xprd, param->yprd, param->zprd}, 0);
-    
-    for(int i = 0; i < natoms; i++) {
-                
-        readline(line, fp);
-        char *s_mass = strtok(line, " "); 
-        // TODO: store mass per atom
-        if(strncmp(s_mass, "inf", 3) == 0) {
-        // Set atom's mass to INFINITY
-        } else { param->mass = atof(s_mass);} 
-              
-        MD_FLOAT radius = atof(strtok(NULL, " "));
-        // MPI: atom position respect ot new origin at (0,0,0)
-        MD_FLOAT x = atof(strtok(NULL, " "))-param->xlo;      
-        MD_FLOAT y = atof(strtok(NULL, " "))-param->ylo;
-        MD_FLOAT z = atof(strtok(NULL, " "))-param->zlo;
-        //TODO: Implemet item_id array for tracking
-        atom_id = atom->Nlocal+1; 
+    natoms = atoi(strtok(line, "\t "));
+    param->xlo = atof(strtok(NULL, "\t "));
+    param->xhi = atof(strtok(NULL, "\t "));
+    param->ylo = atof(strtok(NULL, "\t "));
+    param->yhi = atof(strtok(NULL, "\t "));
+    param->zlo = atof(strtok(NULL, "\t "));
+    param->zhi = atof(strtok(NULL, "\t "));
+    param->xprd = param->xhi - param->xlo; 
+    param->yprd = param->yhi - param->ylo;
+    param->zprd = param->zhi - param->zlo;
+    atom->Natoms = natoms;
+    atom->Nlocal = natoms;
+    atom->ntypes = 1;
 
-        if(isAtomInSubdomain(atom, x, y, z)){
-            while(atom_id + 1 >= atom->Nmax) growAtom(atom);
-            atom->radius[atom->Nlocal] = radius;
-            atom_x(atom->Nlocal) = x;
-            atom_y(atom->Nlocal) = y;
-            atom_z(atom->Nlocal) = z;
-            atom_vx(atom->Nlocal) = atof(strtok(NULL, " "));
-            atom_vy(atom->Nlocal) = atof(strtok(NULL, " "));
-            atom_vz(atom->Nlocal) = atof(strtok(NULL, " "));
-            atom->type[atom->Nlocal] = 0;
-            atom->ntypes = MAX(atom->type[atom->Nlocal], atom->ntypes);
-            atom->Nlocal++; 
-        }
+    while(atom->Nlocal >= atom->Nmax) {
+        growAtom(atom);
     }
-    
-    MPI_Allreduce(&(atom->Nlocal), &(atom->Natoms), 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD); 
 
-    if(!natoms || !atom->Natoms) {
-        if (me==0) fprintf(stderr, "Input error: atom data was not read!\n");
+    for(int i = 0; i < natoms; i++) {
+        readline(line, fp);
+
+        // TODO: store mass per atom
+        char *s_mass = strtok(line, "\t ");
+        if(strncmp(s_mass, "inf", 3) == 0) {
+            // Set atom's mass to INFINITY
+        } else {
+            param->mass = atof(s_mass);
+        }
+    
+        atom->radius[atom_id] = atof(strtok(NULL, "\t "));
+        atom_x(atom_id) = atof(strtok(NULL, "\t "));
+        atom_y(atom_id) = atof(strtok(NULL, "\t "));
+        atom_z(atom_id) = atof(strtok(NULL, "\t "));
+        atom_vx(atom_id) = atof(strtok(NULL, "\t "));
+        atom_vy(atom_id) = atof(strtok(NULL, "\t "));
+        atom_vz(atom_id) = atof(strtok(NULL, "\t "));
+        atom->type[atom_id] = 0;
+        atom->ntypes = MAX(atom->type[atom_id], atom->ntypes);
+        atom_id++;
+    }
+    if(!natoms) {
+        if(me==0)fprintf(stderr, "Input error: atom data was not read!\n");
         exit(-1);
         return -1;
     }
@@ -586,8 +521,8 @@ int readAtom_in(Grid *grid, Atom* atom, Parameter* param) {
         atom->cutforcesq[i] = param->cutforce * param->cutforce;
     }
 
-    fprintf(stdout, "Read %d atoms from %s by processor: %d\n", atom->Nlocal, param->input_file, me);
-    return atom->Nlocal;
+    if(me==0)fprintf(stdout, "Read %d atoms from %s\n", natoms, param->input_file);
+    return natoms;
 }
 
 void growAtom(Atom *atom) {
@@ -623,51 +558,52 @@ void growAtom(Atom *atom) {
     atom->r  = (MD_FLOAT*) reallocate(atom->r,  ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT) * 4, nold * sizeof(MD_FLOAT) * 4);
 }
 
-static inline int isAtomInSubdomain(Atom *atom, int x, int y, int z) {
-    
-    //MPI: local borders
-    Box *mybox = &(atom->mybox);
-    MD_FLOAT xlo = mybox->lo[0]; MD_FLOAT xhi = mybox->hi[0];  
-    MD_FLOAT ylo = mybox->lo[1]; MD_FLOAT yhi = mybox->hi[1];
-    MD_FLOAT zlo = mybox->lo[2]; MD_FLOAT zhi = mybox->hi[2];
-
-        if(x >= xlo && x < xhi &&  
-                        y >= ylo && y < yhi &&  
-                                z >= zlo && z < zhi){
-            return 1;
-        
-        } else {
-
-            return 0;  
-        } 
+void packForward(Atom* atom, int n ,int* list, MD_FLOAT* buf, int* pbc)
+{
+  int i, j;
+    for(i = 0; i < n; i++) {
+      j = list[i];
+      buf_x(i) = atom_x(j) + pbc[0] * atom->mybox.xprd;
+      buf_y(i) = atom_y(j) + pbc[1] * atom->mybox.yprd;
+      buf_z(i) = atom_z(j) + pbc[2] * atom->mybox.zprd;
+    }
 }
 
-
-int packBorder(int i, MD_FLOAT* buf, int* pbc)
+void unpackForward(Atom* atom, int n, int first, MD_FLOAT* buf)
 {
-  int m = 0;
-    buf[m++] = atom_x(i) + pbc[0] * atom->box.xprd;
-    buf[m++] = atom_y(i) + pbc[1] * atom->box.yprd;
-    buf[m++] = atom_z(i) + pbc[2] * atom->box.zprd;
-    //buf[m++] = type[i];
-  return m;
+  for(int i = 0; i < n; i++) {
+    atom_x((first + i)) = buf_x(i);
+    atom_y((first + i)) = buf_y(i);
+    atom_z((first + i)) = buf_z(i);
+  }
 }
 
-int unpackBorder(Atom* atom, int i, MD_FLOAT* buf)
+int packGhost(Atom* atom, int i, MD_FLOAT* buf, int* pbc)
+{    
+    int m = 0;
+    buf[m++] = atom_x(i) + pbc[0] * atom->mybox.xprd;
+    buf[m++] = atom_y(i) + pbc[1] * atom->mybox.yprd;
+    buf[m++] = atom_z(i) + pbc[2] * atom->mybox.zprd;
+    buf[m++] = atom->type[i];
+    return m;
+}
+
+int unpackGhost(Atom* atom, int i, MD_FLOAT* buf)
 {
+  int me; 
+  MPI_Comm_rank(MPI_COMM_WORLD, &me); 
   int m = 0;
   atom_x(i) = buf[m++];
   atom_y(i) = buf[m++];
   atom_z(i) = buf[m++];
-  //type[i] = buf[m++];
+  atom->type[i] = buf[m++];
+  atom->Nghost++; 
   return m;
 }
 
 void packReverse(Atom* atom, int n, int first, MD_FLOAT* buf)
 {
-  int i;
-
-  for(i = 0; i < n; i++) {
+  for(int i = 0; i < n; i++) {
     buf_x(i) = atom_fx(first + i);
     buf_y(i) = atom_fy(first + i);
     buf_z(i) = atom_fz(first + i);
@@ -685,7 +621,6 @@ void unpackReverse(Atom* atom, int n, int* list, MD_FLOAT* buf)
   }
 }
 
-
 int packExchange(Atom* atom, int i, MD_FLOAT* buf)
 {
   int m = 0;
@@ -701,8 +636,7 @@ int packExchange(Atom* atom, int i, MD_FLOAT* buf)
 
 int unpackExchange(Atom* atom, int i, MD_FLOAT* buf)
 {
-  if(i >= atom->Nmax) growAtom(atom);
-
+  while(i >= atom->Nmax) growAtom(atom);
   int m = 0;
   atom_x(i) = buf[m++];
   atom_y(i) = buf[m++];
@@ -713,17 +647,15 @@ int unpackExchange(Atom* atom, int i, MD_FLOAT* buf)
   atom->type[i] = buf[m++];
   return m;
 }
-
-//Same function as updateAtomsPbc_cpu in neighbour.c 
+ 
 void pbc(Atom* atom)
 {
-  #pragma omp for
   for(int i = 0; i < atom->Nlocal; i++) {
     
-    int xprd = atom->mybox.xprd;
-    int yprd = atom->mybox.yprd;
-    int zprd = atom->mybox.zprd; 
-
+    MD_FLOAT xprd = atom->mybox.xprd;
+    MD_FLOAT yprd = atom->mybox.yprd;
+    MD_FLOAT zprd = atom->mybox.zprd; 
+    
     if(atom_x(i) < 0.0) atom_x(i) += xprd;
 
     if(atom_x(i) >= xprd) atom_x(i) -= xprd;
@@ -740,11 +672,26 @@ void pbc(Atom* atom)
 
 void copy(Atom* atom, int i, int j)
 {
-  atom_x(j) = atom_x(i);
-  atom_y(j) = atom_y(i);
-  atom_z(j) = atom_z(i);
-  atom_vx(j) = atom_vx(i);
-  atom_vy(j) = atom_vy(i);
-  atom_vx(j) = atom_vz(i);
-  atom->type[j] = atom->type[i];
+  atom_x(i) = atom_x(j);
+  atom_y(i) = atom_y(j);
+  atom_z(i) = atom_z(j);
+  atom_vx(i) = atom_vx(j);
+  atom_vy(i) = atom_vy(j);
+  atom_vz(i) = atom_vz(j);
+  atom->type[i] = atom->type[j];
+}
+
+static inline int isAtomInSubdomain(Box* box, int x, int y, int z) {
+    
+    MD_FLOAT xlo = box->lo[_x]; MD_FLOAT xhi = box->hi[_x];  
+    MD_FLOAT ylo = box->lo[_y]; MD_FLOAT yhi = box->hi[_y];
+    MD_FLOAT zlo = box->lo[_z]; MD_FLOAT zhi = box->hi[_z];
+
+        if(x >= xlo && x < xhi &&  
+                        y >= ylo && y < yhi &&  
+                                z >= zlo && z < zhi){
+            return 1;  
+        } else {
+            return 0;  
+        } 
 }

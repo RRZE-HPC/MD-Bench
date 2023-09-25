@@ -35,6 +35,7 @@
 #   define PRECISION_STRING     "double"
 #endif
 
+enum axis{_x=0, _y, _z}; 
 extern double myrandom(int*);
 extern void random_reset(int *seed, int ibase, double *coord);
 extern int str2ff(const char *string);

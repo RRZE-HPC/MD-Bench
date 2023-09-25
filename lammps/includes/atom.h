@@ -4,9 +4,9 @@
  * Use of this source code is governed by a LGPL-3.0
  * license that can be found in the LICENSE file.
  */
-#include <parameter.h>
-#include <comm.h>
 
+#include <box.h>
+#include <parameter.h>
 #ifndef __ATOM_H_
 #define __ATOM_H_
 
@@ -32,13 +32,6 @@
 #   define updatePbc                    updatePbc_cpu
 #   define updateAtomsPbc               updateAtomsPbc_cpu
 #endif
-
-typedef struct {
-  int xprd, yprd, zprd;           //Domain Dimensions
-  MD_FLOAT lo[3];               //smallest coordinate of my subdomain
-  MD_FLOAT hi[3];               //Highest coordinate of my subdomain
-  MD_FLOAT len[3];              //lenght subdomain in each dimmension
-} Box;
 
 typedef struct {
     MD_FLOAT *x, *y, *z;
@@ -80,21 +73,24 @@ typedef struct {
 } Atom;
 
 extern void initAtom(Atom*);
-extern void createAtom(Grid*, Atom*, Parameter*);
-extern int readAtom(Grid*, Atom*, Parameter*);
-extern int readAtom_pdb(Grid*, Atom*, Parameter*);
-extern int readAtom_gro(Grid*, Atom*, Parameter*);
-extern int readAtom_dmp(Grid*, Atom*, Parameter*);
-extern int readAtom_in(Grid*, Atom*, Parameter*);
+extern void createAtom(Atom*, Parameter*);
+extern int readAtom(Atom*, Parameter*);
+extern int readAtom_pdb(Atom*, Parameter*);
+extern int readAtom_gro(Atom*, Parameter*);
+extern int readAtom_dmp(Atom*, Parameter*);
+extern int readAtom_in(Atom*, Parameter*);
 extern void growAtom(Atom*);
-extern int packBorder(int, MD_FLOAT* , int* );
-extern int unpackBorder(Atom*, int, MD_FLOAT*);
-extern void packReverse(Atom* atom, int n, int first, MD_FLOAT* buf);
-extern void unpackReverse(Atom*, int, int*, MD_FLOAT*);
-extern int packExchange(Atom*, int, MD_FLOAT*);
-extern int unpackExchange(Atom*, int, MD_FLOAT*);
-extern void pbc(Atom*);
-extern void copy(Atom*, int, int);
+
+int  packGhost(Atom*, int, MD_FLOAT* , int* );
+int  unpackGhost(Atom*, int, MD_FLOAT*);
+int  packExchange(Atom*, int, MD_FLOAT*);
+int  unpackExchange(Atom*, int, MD_FLOAT*);
+void packForward(Atom*, int, int*, MD_FLOAT*, int*); 
+void unpackForward(Atom*, int, int, MD_FLOAT*);
+void packReverse(Atom* , int , int , MD_FLOAT*);
+void unpackReverse(Atom*, int, int*, MD_FLOAT*);
+void pbc(Atom*);
+void copy(Atom*, int, int);
 
 #ifdef AOS
 #   define POS_DATA_LAYOUT     "AoS"

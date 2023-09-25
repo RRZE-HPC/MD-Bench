@@ -54,6 +54,7 @@ void setupThermo(Parameter *param, int natoms)
 
 void computeThermo(int iflag, Parameter *param, Atom *atom)
 {
+    MPI_Datatype type;
     MD_FLOAT t_sum = 0.0, t = 0.0, p;
     int myproc; 
 
@@ -63,7 +64,8 @@ void computeThermo(int iflag, Parameter *param, Atom *atom)
         t += (atom_vx(i) * atom_vx(i) + atom_vy(i) * atom_vy(i) + atom_vz(i) * atom_vz(i)) * param->mass;
     }
     //MPI
-    MPI_Reduce(&t, &t_sum, 1, MPI_FLOAT, MPI_SUM, 0 ,MPI_COMM_WORLD);
+    type = sizeof(MD_FLOAT) == 4 ? MPI_FLOAT: MPI_DOUBLE;
+    MPI_Reduce(&t, &t_sum, 1, type, MPI_SUM, 0 ,MPI_COMM_WORLD);
     
     if(myproc == 0)
     {
@@ -91,7 +93,8 @@ void adjustThermo(Parameter *param, Atom *atom)
     /* zero center-of-mass motion */
     MD_FLOAT vxtot = 0.0; MD_FLOAT vytot = 0.0; MD_FLOAT vztot = 0.0;
     MD_FLOAT v_sum[3], vtot[3];
-
+    MPI_Datatype type;  
+    
     for(int i = 0; i < atom->Nlocal; i++) {
         vxtot += atom_vx(i);
         vytot += atom_vy(i);
@@ -101,7 +104,9 @@ void adjustThermo(Parameter *param, Atom *atom)
     vtot[0] = vxtot; vtot[1] = vytot; vtot[2] = vztot;  
 
     //MPI
-    MPI_Allreduce(vtot, v_sum, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+    
+    type = sizeof(MD_FLOAT) == 4 ? MPI_FLOAT: MPI_DOUBLE;
+    MPI_Allreduce(vtot, v_sum, 1, type, MPI_SUM, MPI_COMM_WORLD);
     
     vxtot = v_sum[0] / atom->Natoms;
     vytot = v_sum[1] / atom->Natoms;
@@ -122,7 +127,7 @@ void adjustThermo(Parameter *param, Atom *atom)
     }
 
     //MPI
-    MPI_AllReduce(&t, &t_sum, 1, MPI_FLOAT, MPI_SUM,MPI_COMM_WORLD);
+    MPI_Allreduce(&t, &t_sum, 1,type, MPI_SUM,MPI_COMM_WORLD);
 
     t = t_sum; 
     t *= t_scale;

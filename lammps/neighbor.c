@@ -158,7 +158,6 @@ void buildNeighbor_cpu(Atom *atom, Neighbor *neighbor) {
     int nall = atom->Nlocal + atom->Nghost;
     int me; 
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
-
     /* extend atom arrays if necessary */
     if(nall > nmax) {
         nmax = nall;
@@ -171,7 +170,6 @@ void buildNeighbor_cpu(Atom *atom, Neighbor *neighbor) {
     /* bin local & ghost atoms */
     binatoms(atom);
     int resize = 1;
-
     /* loop over each atom, storing neighbors */
     while(resize) {
         int new_maxneighs = neighbor->maxneighs;
@@ -221,7 +219,6 @@ void buildNeighbor_cpu(Atom *atom, Neighbor *neighbor) {
                 }
             }
         }
-
         if(resize) {
             printf("RESIZE %d by processor %d\n", neighbor->maxneighs,me);
             neighbor->maxneighs = new_maxneighs * 1.2;
@@ -295,7 +292,7 @@ int coord2bin(MD_FLOAT xin, MD_FLOAT yin, MD_FLOAT zin) {
 void binatoms(Atom *atom) {
     int nall = atom->Nlocal + atom->Nghost;
     int resize = 1;
-
+ 
     while(resize > 0) {
         resize = 0;
 

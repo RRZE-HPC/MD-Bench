@@ -65,3 +65,5 @@ todo.txt
 #NVCC-*/
 build-*/
 MDBench-*
+data/.DS_Store
+.DS_Store
