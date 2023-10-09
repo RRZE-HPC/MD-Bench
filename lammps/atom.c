@@ -26,7 +26,7 @@
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 #endif
 
-static inline int isAtomInSubdomain(Box* atom, int x, int y, int z);
+static inline int isAtomInSubdomain(Box*, MD_FLOAT, MD_FLOAT, MD_FLOAT);
 
 void initAtom(Atom *atom){
     atom->x  = NULL; atom->y  = NULL; atom->z  = NULL;
@@ -45,6 +45,7 @@ void initAtom(Atom *atom){
     atom->radius = NULL;
     atom->av = NULL;
     atom->r = NULL;
+    atom->border_map = NULL;
 
     DeviceAtom *d_atom = &(atom->d_atom);
     d_atom->x  = NULL; d_atom->y  = NULL; d_atom->z  = NULL;
@@ -64,7 +65,9 @@ void initAtom(Atom *atom){
 }
 
 void createAtom(Atom *atom, Parameter *param) {
-
+    int me; 
+    MPI_Comm_rank(MPI_COMM_WORLD,&me);
+    
     MD_FLOAT xlo = 0; MD_FLOAT xhi = param->xprd;
     MD_FLOAT ylo = 0; MD_FLOAT yhi = param->yprd;
     MD_FLOAT zlo = 0; MD_FLOAT zhi = param->zprd;
@@ -120,11 +123,10 @@ void createAtom(Atom *atom, Parameter *param) {
             ztmp = 0.5 * alat * k;
             
             if(isAtomInSubdomain(&atom->mybox, xtmp, ytmp, ztmp)){
-
                 n = k * (2 * param->ny) * (2 * param->nx) +
                     j * (2 * param->nx) +
                     i + 1;
-
+                
                 for(m = 0; m < 5; m++) {
                     myrandom(&n);
                 }
@@ -163,8 +165,9 @@ void createAtom(Atom *atom, Parameter *param) {
         if(ox * subboxdim > ihi) { ox = 0; oy++; }
         if(oy * subboxdim > jhi) { oy = 0; oz++; }
     }
-
     MPI_Allreduce(&(atom->Nlocal), &(atom->Natoms), 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    printf("Processor:%d Local Atoms:%d Total atoms:%d\n",me, atom->Nlocal, atom->Natoms);
+    MPI_Barrier(MPI_COMM_WORLD);
 }
 
 int type_str2int(const char *type) {
@@ -556,6 +559,9 @@ void growAtom(Atom *atom) {
     atom->radius = (MD_FLOAT *) reallocate(atom->radius, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
     atom->av = (MD_FLOAT*) reallocate(atom->av, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT) * 3, nold * sizeof(MD_FLOAT) * 3);
     atom->r  = (MD_FLOAT*) reallocate(atom->r,  ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT) * 4, nold * sizeof(MD_FLOAT) * 4);
+
+    //MPI
+    atom->border_map = (int *) reallocate(atom->border_map, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));  
 }
 
 void packForward(Atom* atom, int n ,int* list, MD_FLOAT* buf, int* pbc)
@@ -580,34 +586,33 @@ void unpackForward(Atom* atom, int n, int first, MD_FLOAT* buf)
 
 int packGhost(Atom* atom, int i, MD_FLOAT* buf, int* pbc)
 {    
-    int m = 0;
-    buf[m++] = atom_x(i) + pbc[0] * atom->mybox.xprd;
-    buf[m++] = atom_y(i) + pbc[1] * atom->mybox.yprd;
-    buf[m++] = atom_z(i) + pbc[2] * atom->mybox.zprd;
+    int m = 0; 
+    buf[m++] = atom_x(i) + pbc[_x] * atom->mybox.xprd;
+    buf[m++] = atom_y(i) + pbc[_y] * atom->mybox.yprd;
+    buf[m++] = atom_z(i) + pbc[_z] * atom->mybox.zprd;
     buf[m++] = atom->type[i];
     return m;
 }
 
 int unpackGhost(Atom* atom, int i, MD_FLOAT* buf)
 {
-  int me; 
-  MPI_Comm_rank(MPI_COMM_WORLD, &me); 
+  while (i>=atom->Nmax) growAtom(atom);
   int m = 0;
   atom_x(i) = buf[m++];
   atom_y(i) = buf[m++];
   atom_z(i) = buf[m++];
   atom->type[i] = buf[m++];
-  atom->Nghost++; 
+  atom->Nghost++;
   return m;
 }
 
 void packReverse(Atom* atom, int n, int first, MD_FLOAT* buf)
 {
-  for(int i = 0; i < n; i++) {
-    buf_x(i) = atom_fx(first + i);
-    buf_y(i) = atom_fy(first + i);
-    buf_z(i) = atom_fz(first + i);
-  }
+    for(int i = 0; i < n; i++) {
+        buf_x(i) = atom_fx(first + i);
+        buf_y(i) = atom_fy(first + i);
+        buf_z(i) = atom_fz(first + i);
+    }
 }
 
 void unpackReverse(Atom* atom, int n, int* list, MD_FLOAT* buf)
@@ -647,11 +652,11 @@ int unpackExchange(Atom* atom, int i, MD_FLOAT* buf)
   atom->type[i] = buf[m++];
   return m;
 }
- 
+
 void pbc(Atom* atom)
 {
   for(int i = 0; i < atom->Nlocal; i++) {
-    
+   
     MD_FLOAT xprd = atom->mybox.xprd;
     MD_FLOAT yprd = atom->mybox.yprd;
     MD_FLOAT zprd = atom->mybox.zprd; 
@@ -667,6 +672,7 @@ void pbc(Atom* atom)
     if(atom_z(i) < 0.0)  atom_z(i)+= zprd;
 
     if(atom_z(i) >= zprd) atom_z(i) -= zprd;
+
   }
 }
 
@@ -681,12 +687,12 @@ void copy(Atom* atom, int i, int j)
   atom->type[i] = atom->type[j];
 }
 
-static inline int isAtomInSubdomain(Box* box, int x, int y, int z) {
+static inline int isAtomInSubdomain(Box* box, MD_FLOAT x, MD_FLOAT y, MD_FLOAT z) {
     
     MD_FLOAT xlo = box->lo[_x]; MD_FLOAT xhi = box->hi[_x];  
     MD_FLOAT ylo = box->lo[_y]; MD_FLOAT yhi = box->hi[_y];
     MD_FLOAT zlo = box->lo[_z]; MD_FLOAT zhi = box->hi[_z];
-
+        
         if(x >= xlo && x < xhi &&  
                         y >= ylo && y < yhi &&  
                                 z >= zlo && z < zhi){

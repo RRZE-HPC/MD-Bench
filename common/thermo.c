@@ -25,6 +25,7 @@ static MD_FLOAT t_act;
 static MD_FLOAT p_act;
 static MD_FLOAT e_act;
 static int mstat;
+static MPI_Datatype type = (sizeof(MD_FLOAT) == 4) ? MPI_FLOAT : MPI_DOUBLE;
 
 /* exported subroutines */
 void setupThermo(Parameter *param, int natoms)
@@ -54,20 +55,17 @@ void setupThermo(Parameter *param, int natoms)
 
 void computeThermo(int iflag, Parameter *param, Atom *atom)
 {
-    MPI_Datatype type;
     MD_FLOAT t_sum = 0.0, t = 0.0, p;
-    int myproc; 
+    int me; 
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &myproc);
+    MPI_Comm_rank(MPI_COMM_WORLD, &me);
 
     for(int i = 0; i < atom->Nlocal; i++) {
         t += (atom_vx(i) * atom_vx(i) + atom_vy(i) * atom_vy(i) + atom_vz(i) * atom_vz(i)) * param->mass;
     }
-    //MPI
-    type = sizeof(MD_FLOAT) == 4 ? MPI_FLOAT: MPI_DOUBLE;
+
     MPI_Reduce(&t, &t_sum, 1, type, MPI_SUM, 0 ,MPI_COMM_WORLD);
-    
-    if(myproc == 0)
+    if(me == 0)
     {
         t = t_sum * t_scale;
         p = (t * dof_boltz) * p_scale;
@@ -92,8 +90,7 @@ void adjustThermo(Parameter *param, Atom *atom)
 {
     /* zero center-of-mass motion */
     MD_FLOAT vxtot = 0.0; MD_FLOAT vytot = 0.0; MD_FLOAT vztot = 0.0;
-    MD_FLOAT v_sum[3], vtot[3];
-    MPI_Datatype type;  
+    MD_FLOAT v_sum[3], vtot[3];  
     
     for(int i = 0; i < atom->Nlocal; i++) {
         vxtot += atom_vx(i);
@@ -103,10 +100,7 @@ void adjustThermo(Parameter *param, Atom *atom)
     
     vtot[0] = vxtot; vtot[1] = vytot; vtot[2] = vztot;  
 
-    //MPI
-    
-    type = sizeof(MD_FLOAT) == 4 ? MPI_FLOAT: MPI_DOUBLE;
-    MPI_Allreduce(vtot, v_sum, 1, type, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(vtot, v_sum, 3, type, MPI_SUM, MPI_COMM_WORLD);
     
     vxtot = v_sum[0] / atom->Natoms;
     vytot = v_sum[1] / atom->Natoms;
@@ -126,7 +120,6 @@ void adjustThermo(Parameter *param, Atom *atom)
         t += (atom_vx(i) * atom_vx(i) + atom_vy(i) * atom_vy(i) + atom_vz(i) * atom_vz(i)) * param->mass;
     }
 
-    //MPI
     MPI_Allreduce(&t, &t_sum, 1,type, MPI_SUM,MPI_COMM_WORLD);
 
     t = t_sum; 

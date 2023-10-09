@@ -23,27 +23,28 @@ int overlapBox(int dim, int dir, const Box* mybox, const Box* other, Box* cut, M
   
   //Intersection no periodic case
   if(!same){
-    if (dir ==  0)  min[dim] = MAX(mybox->lo[dim] - cutneigh, other->lo[dim]);
-    if (dir ==  1)  max[dim] = MIN(mybox->hi[dim] + cutneigh, other->hi[dim]);
+    if (dir ==  0)  max[dim] = MIN(mybox->hi[dim], other->hi[dim]+ cutneigh);
+    if (dir ==  1)  min[dim] = MAX(mybox->lo[dim], other->lo[dim]- cutneigh);
     if ((min[_x]<max[_x]) && (min[_y]<max[_y]) && (min[_z]<max[_z])) pbc = 0;
   }
-  
+
   //Intersection periodic case
   if(pbc < 0)
   {
     if(dir == 0){
-      min[dim] = MAX(mybox->lo[dim] - cutneigh + xprd, other->lo[dim]);
-      max[dim] = MIN(mybox->hi[dim] + xprd, other->hi[dim]); 
+      min[dim] = MAX(mybox->lo[dim] , other->lo[dim]- xprd);
+      max[dim] = MIN(mybox->hi[dim] , other->hi[dim]- xprd + cutneigh);
 
     } else {
-      min[dim] = MAX(mybox->lo[dim] - xprd, other->lo[dim]);
-      max[dim] = MIN(mybox->hi[dim] + cutneigh - xprd, other->hi[dim]);
+      min[dim] = MAX(mybox->lo[dim], other->lo[dim]+ xprd - cutneigh);
+      max[dim] = MIN(mybox->hi[dim], other->hi[dim]+ xprd); 
+
     } 
     if((min[_x]<max[_x]) && (min[_y]<max[_y]) && (min[_z]<max[_z])) 
       pbc = (dir == 0) ? 1:-1;
   }   
   
-  //store the cuts
+  //storing the cuts
   cut->lo[_x] = min[_x]; cut->hi[_x] = max[_x]; 
   cut->lo[_y] = min[_y]; cut->hi[_y] = max[_y];
   cut->lo[_z] = min[_z]; cut->hi[_z] = max[_z];
@@ -51,45 +52,18 @@ int overlapBox(int dim, int dir, const Box* mybox, const Box* other, Box* cut, M
   return pbc;
 }
 
-void expandBox(int iswap, const Box* me, const Box* other, Box* tile, MD_FLOAT cutneigh)
+void expandBox(int iswap, const Box* me, const Box* other, Box* mycut, MD_FLOAT cutneigh)
  {
-  switch (iswap) {
-  case 0:
-      tile->lo[_x] = me->lo[_x]; 
-      tile->hi[_x] = me->lo[_x]+cutneigh;
-      break;
-  case 1: 
-      tile->lo[_x] = me->hi[_x]-cutneigh; 
-      tile->hi[_x] = me->hi[_x];
-      break;
-  case 2:
-      tile->lo[_y] = me->lo[_y]; 
-      tile->hi[_y] = me->lo[_y]+cutneigh;
-      if(me->lo[_x] < other->lo[_x]) tile->lo[_x] -= cutneigh;
-      if(me->hi[_x] > other->hi[_x]) tile->lo[_x] += cutneigh;
-      break;
-  case 3:
-      tile->lo[_y] = me->hi[_y]-cutneigh; 
-      tile->hi[_y] = me->hi[_y];
-      if(me->lo[_x] < other->lo[_x]) tile->lo[_x] -= cutneigh;
-      if(me->hi[_x] > other->hi[_x]) tile->lo[_x] += cutneigh;
-      break;
-  case 4: 
-      tile->lo[_z] = me->lo[_z]; 
-      tile->hi[_z] = me->lo[_z]+cutneigh;
-      if(me->lo[_x] < other->lo[_x]) tile->lo[_x] -= cutneigh;
-      if(me->hi[_x] > other->hi[_x]) tile->lo[_x] += cutneigh;
-      if(me->lo[_y] < other->lo[_y]) tile->lo[_y] -= cutneigh;
-      if(me->hi[_y] > other->hi[_y]) tile->lo[_y] += cutneigh;
-      break;
-  case 5: 
-      tile->lo[_z] = me->hi[_z]-cutneigh; 
-      tile->hi[_z] = me->hi[_z];
-      if(me->lo[_x] < other->lo[_x]) tile->lo[_x] -= cutneigh;
-      if(me->hi[_x] > other->hi[_x]) tile->lo[_x] += cutneigh;
-      if(me->lo[_y] < other->lo[_y]) tile->lo[_y] -= cutneigh;
-      if(me->hi[_y] > other->hi[_y]) tile->lo[_y] += cutneigh;
-      break;
-  }
+    if(iswap==2 || iswap==3){
+      if(me->lo[_x] <= other->lo[_x]) mycut->lo[_x] -= cutneigh;
+      if(me->hi[_x] >= other->hi[_x]) mycut->hi[_x] += cutneigh;
+    }
+
+    if(iswap==4 || iswap==5){
+      if(me->lo[_x] <= other->lo[_x]) mycut->lo[_x] -= cutneigh;
+      if(me->hi[_x] >= other->hi[_x]) mycut->hi[_x] += cutneigh;
+      if(me->lo[_y] <= other->lo[_y]) mycut->lo[_y] -= cutneigh;
+      if(me->hi[_y] >= other->hi[_y]) mycut->hi[_y] += cutneigh;
+    }
 }
 

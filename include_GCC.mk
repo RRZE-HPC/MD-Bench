@@ -15,7 +15,7 @@ ifeq ($(ISA),AVX2)
 #CFLAGS   = -Ofast -march=native -mavx2  -ffast-math -funroll-loops # -fopenmp
 #CFLAGS   = -O3 -march=znver1  -ffast-math -funroll-loops # -fopenmp
 #CFLAGS   = -Ofast -mavx2 -ffast-math -funroll-loops # -fopenmp
-CFLAGS   = -Ofast -mavx2 -mfma -ffast-math -funroll-loops # -fopenmp
+CFLAGS   =-Ofast -mavx2 -mfma -ffast-math -funroll-loops # -fopenmp
 endif
 
 ifeq ($(ISA),AVX)

@@ -11,14 +11,16 @@
 #include <neighbor.h>
 #include <parameter.h>
 #include <atom.h>
+#include <util.h>
 #include <mpi.h>
+#include <sort.h>
 
 #define SMALL 1.0e-6
 #define FACTOR 0.999
-
+static enum {fullShell=0, halfShell, eightShell};
 MD_FLOAT xprd, yprd, zprd;
 MD_FLOAT bininvx, bininvy, bininvz;
-int mbinxlo, mbinylo, mbinzlo;
+int pad_x, pad_y, pad_z;
 int nbinx, nbiny, nbinz;
 int mbinx, mbiny, mbinz; // n bins in x, y, z
 int *bincount;
@@ -37,6 +39,7 @@ static MD_FLOAT bindist(int, int, int);
 /* exported subroutines */
 void initNeighbor(Neighbor *neighbor, Parameter *param) {
     MD_FLOAT neighscale = 5.0 / 6.0;
+    //MD_FLOAT neighscale = 1.0;
     xprd = param->nx * param->lattice;
     yprd = param->ny * param->lattice;
     zprd = param->nz * param->lattice;
@@ -53,6 +56,8 @@ void initNeighbor(Neighbor *neighbor, Parameter *param) {
     neighbor->numneigh = NULL;
     neighbor->neighbors = NULL;
     neighbor->half_neigh = param->half_neigh;
+    neighbor->shell = param->shell_method;
+    neighbor->accuracy = param->accuracy;
 }
 
 void setupNeighbor(Parameter* param) {
@@ -95,35 +100,16 @@ void setupNeighbor(Parameter* param) {
         bininvz = 1.0 / binsizez;
     }
 
-    coord = xlo - cutneigh - SMALL * xprd;
-    mbinxlo = (int) (coord * bininvx);
-    if (coord < 0.0) { mbinxlo = mbinxlo - 1; }
-    coord = xhi + cutneigh + SMALL * xprd;
-    mbinxhi = (int) (coord * bininvx);
+    pad_x = (int)(cutneigh*bininvx);
+    if(pad_x * binsizex < FACTOR * cutneigh) pad_x++;
+    pad_y = (int)(cutneigh*bininvy);
+    if(pad_y * binsizey < FACTOR * cutneigh) pad_y++;
+    pad_z = (int)(cutneigh*bininvz);
+    if(pad_z * binsizez < FACTOR * cutneigh) pad_z++;
 
-    coord = ylo - cutneigh - SMALL * yprd;
-    mbinylo = (int) (coord * bininvy);
-    if (coord < 0.0) { mbinylo = mbinylo - 1; }
-    coord = yhi + cutneigh + SMALL * yprd;
-    mbinyhi = (int) (coord * bininvy);
-
-    coord = zlo - cutneigh - SMALL * zprd;
-    mbinzlo = (int) (coord * bininvz);
-    if (coord < 0.0) { mbinzlo = mbinzlo - 1; }
-    coord = zhi + cutneigh + SMALL * zprd;
-    mbinzhi = (int) (coord * bininvz);
-
-    mbinxlo = mbinxlo - 1;
-    mbinxhi = mbinxhi + 1;
-    mbinx = mbinxhi - mbinxlo + 1;
-
-    mbinylo = mbinylo - 1;
-    mbinyhi = mbinyhi + 1;
-    mbiny = mbinyhi - mbinylo + 1;
-
-    mbinzlo = mbinzlo - 1;
-    mbinzhi = mbinzhi + 1;
-    mbinz = mbinzhi - mbinzlo + 1;
+    mbinx = nbinx+2*pad_x;
+    mbiny = nbiny+2*pad_y;
+    mbinz = nbinz+2*pad_z;
 
     nextx = (int) (cutneigh * bininvx);
     if(nextx * binsizex < FACTOR * cutneigh) nextx++;
@@ -136,7 +122,7 @@ void setupNeighbor(Parameter* param) {
     stencil = (int*) malloc((2 * nextz + 1) * (2 * nexty + 1) * (2 * nextx + 1) * sizeof(int));
     nstencil = 0;
     int kstart = -nextz;
-
+    
     for(int k = kstart; k <= nextz; k++) {
         for(int j = -nexty; j <= nexty; j++) {
             for(int i = -nextx; i <= nextx; i++) {
@@ -146,7 +132,7 @@ void setupNeighbor(Parameter* param) {
             }
         }
     }
-
+    
     mbins = mbinx * mbiny * mbinz;
     if (bincount) { free(bincount); }
     bincount = (int*) malloc(mbins * sizeof(int));
@@ -166,7 +152,6 @@ void buildNeighbor_cpu(Atom *atom, Neighbor *neighbor) {
         neighbor->numneigh = (int*) malloc(nmax * sizeof(int));
         neighbor->neighbors = (int*) malloc(nmax * neighbor->maxneighs * sizeof(int*));
     }
-
     /* bin local & ghost atoms */
     binatoms(atom);
     int resize = 1;
@@ -184,20 +169,33 @@ void buildNeighbor_cpu(Atom *atom, Neighbor *neighbor) {
             #ifdef EXPLICIT_TYPES
             int type_i = atom->type[i];
             #endif
+
             for(int k = 0; k < nstencil; k++) {
                 int jbin = ibin + stencil[k];
+
+                if(ibin>jbin && neighbor->shell == halfShell) 
+                    continue;
+             
                 int* loc_bin = &bins[jbin * atoms_per_bin];
                 for(int m = 0; m < bincount[jbin]; m++) {
                     int j = loc_bin[m];
-                    if((j == i) || (neighbor->half_neigh && (j < i))) {
-                        continue;
-                    }
-
+                    
+                    if((j == i) || (neighbor->half_neigh && (j < i))) 
+                        continue;      
+                    if(neighbor->shell && (ibin == jbin)) 
+                    {
+                        if (j < i)
+                            continue;
+                        if(atom_x(j)<atom->mybox.lo[_x] || 
+                           atom_y(j)<atom->mybox.lo[_y] ||
+                           atom_z(j)<atom->mybox.lo[_z])
+                            continue;    
+                    } 
+    
                     MD_FLOAT delx = xtmp - atom_x(j);
-                    MD_FLOAT dely = ytmp - atom_y(j);
+                    MD_FLOAT dely = ytmp - atom_y(j);  
                     MD_FLOAT delz = ztmp - atom_z(j);
                     MD_FLOAT rsq = delx * delx + dely * dely + delz * delz;
-
                     #ifdef EXPLICIT_TYPES
                     int type_j = atom->type[j];
                     const MD_FLOAT cutoff = atom->cutneighsq[type_i * atom->ntypes + type_j];
@@ -218,6 +216,8 @@ void buildNeighbor_cpu(Atom *atom, Neighbor *neighbor) {
                     new_maxneighs = n;
                 }
             }
+            
+            if(!resize && neighbor->accuracy) sortNeighbors(atom, neighptr, n, i);  
         }
         if(resize) {
             printf("RESIZE %d by processor %d\n", neighbor->maxneighs,me);
@@ -255,44 +255,27 @@ MD_FLOAT bindist(int i, int j, int k) {
     } else {
         delz = (k + 1) * binsizez;
     }
-
     return (delx * delx + dely * dely + delz * delz);
 }
 
 int coord2bin(MD_FLOAT xin, MD_FLOAT yin, MD_FLOAT zin) {
     int ix, iy, iz;
-
-    if(xin >= xprd) {
-        ix = (int)((xin - xprd) * bininvx) + nbinx - mbinxlo;
-    } else if(xin >= 0.0) {
-        ix = (int)(xin * bininvx) - mbinxlo;
-    } else {
-        ix = (int)(xin * bininvx) - mbinxlo - 1;
-    }
-
-    if(yin >= yprd) {
-        iy = (int)((yin - yprd) * bininvy) + nbiny - mbinylo;
-    } else if(yin >= 0.0) {
-        iy = (int)(yin * bininvy) - mbinylo;
-    } else {
-        iy = (int)(yin * bininvy) - mbinylo - 1;
-    }
-
-    if(zin >= zprd) {
-        iz = (int)((zin - zprd) * bininvz) + nbinz - mbinzlo;
-    } else if(zin >= 0.0) {
-        iz = (int)(zin * bininvz) - mbinzlo;
-    } else {
-        iz = (int)(zin * bininvz) - mbinzlo - 1;
-    }
-
-    return (iz * mbiny * mbinx + iy * mbinx + ix + 1);
+   MD_FLOAT xlo=0.0; MD_FLOAT ylo=0.0; MD_FLOAT zlo=0.0;
+   xlo = xlo - pad_x*binsizex;
+   ylo = ylo - pad_y*binsizey;
+   zlo = zlo - pad_z*binsizez;
+   ix = (int) (fabs(xin - xlo)*bininvx);
+   iy = (int) (fabs(yin - ylo)*bininvy);
+   iz = (int) (fabs(zin - zlo)*bininvz);
+    
+    return (iz * mbiny * mbinx + iy * mbinx + ix);
+    //return (iz * mbiny * mbinx + iy * mbinx + ix + 1);
 }
 
-void binatoms(Atom *atom) {
+void binatoms(Atom *atom) {    
     int nall = atom->Nlocal + atom->Nghost;
     int resize = 1;
- 
+
     while(resize > 0) {
         resize = 0;
 
@@ -302,7 +285,6 @@ void binatoms(Atom *atom) {
 
         for(int i = 0; i < nall; i++) {
             int ibin = coord2bin(atom_x(i), atom_y(i), atom_z(i));
-
             if(bincount[ibin] < atoms_per_bin) {
                 int ac = bincount[ibin]++;
                 bins[ibin * atoms_per_bin + ac] = i;
@@ -323,11 +305,9 @@ void sortAtom(Atom* atom) {
     binatoms(atom);
     int Nmax = atom->Nmax;
     int* binpos = bincount;
-
     for(int i = 1; i < mbins; i++) {
         binpos[i] += binpos[i - 1];
     }
-
     #ifdef AOS
     MD_FLOAT* new_x = (MD_FLOAT*) malloc(Nmax * sizeof(MD_FLOAT) * 3);
     MD_FLOAT* new_vx = (MD_FLOAT*) malloc(Nmax * sizeof(MD_FLOAT) * 3);
@@ -341,7 +321,6 @@ void sortAtom(Atom* atom) {
     #endif
     MD_FLOAT* old_x = atom->x; MD_FLOAT* old_y = atom->y; MD_FLOAT* old_z = atom->z;
     MD_FLOAT* old_vx = atom->vx; MD_FLOAT* old_vy = atom->vy; MD_FLOAT* old_vz = atom->vz;
-
     for(int mybin = 0; mybin < mbins; mybin++) {
         int start = mybin > 0 ? binpos[mybin - 1] : 0;
         int count = binpos[mybin] - start;
@@ -365,7 +344,6 @@ void sortAtom(Atom* atom) {
             #endif
         }
     }
-
     free(atom->x);
     free(atom->vx);
     atom->x = new_x;

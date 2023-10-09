@@ -12,7 +12,7 @@
 
 void cpuInitialIntegrate(Parameter *param, Atom *atom) {
     DEBUG_MESSAGE("cpuInitialIntegrate start\n");
-
+    
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
         int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
         MD_FLOAT *ci_x = &atom->cl_x[ci_vec_base];

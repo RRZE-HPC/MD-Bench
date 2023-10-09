@@ -53,6 +53,11 @@ void initParameter(Parameter *param) {
     param->reflect_x = 0.0;
     param->reflect_y = 0.0;
     param->reflect_z = 0.0;
+    //MPI
+    param->rcb = 0;
+    param->shell_method = 0;
+    param->rcb_ndim = 2;
+    param->accuracy = 0;
 }
 
 void readParameter(Parameter *param, const char *filename) {
@@ -119,6 +124,7 @@ void readParameter(Parameter *param, const char *filename) {
             PARSE_INT(shell_method);
             PARSE_INT(rcb);
             PARSE_INT(rcb_ndim);
+            PARSE_INT(accuracy);
         }
     }
     // Update dtforce
@@ -183,5 +189,13 @@ void printParameter(Parameter *param) {
     printf("\tCutoff radius: %e\n", param->cutforce);
     printf("\tSkin: %e\n", param->skin);
     printf("\tHalf neighbor lists: %d\n", param->half_neigh);
+    char str[20]; 
+    strcpy(str, (param->shell_method == 1) ? "Half Shell" :
+                (param->shell_method == 2) ? "Eight Shell":
+                                             "Full Shell");
+    printf("\tShell method: %s\n", str);
+    printf("\tAccuracy: %d\n", param->accuracy);
+    strcpy(str, (param->rcb) ? "rcb" :"cartisian");
+    printf("\tPartition: %s\n", str);
     printf("\tProcessor frequency (GHz): %.4f\n", param->proc_freq);
 }

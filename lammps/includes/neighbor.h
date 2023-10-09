@@ -22,6 +22,9 @@ typedef struct {
     int half_neigh;
     int *neighbors;
     int *numneigh;
+    //MPI
+    int shell;
+    int accuracy;
 
     // Device data
     DeviceNeighbor d_neighbor;

@@ -24,7 +24,7 @@ double forward(Comm* comm, Atom *atom, Parameter* param){
         for(int iswap = 0; iswap < 5; iswap++) 
             forwardComm(comm, atom, iswap);
     } else if(param->shell_method == eightShell){
-        for(int iswap = 0; iswap < 2; iswap+=2) 
+        for(int iswap = 0; iswap < 6; iswap+=2) 
             forwardComm(comm, atom, iswap);
     } else {
         for(int iswap = 0; iswap < 6; iswap++) 
@@ -38,13 +38,13 @@ double reverse(Comm* comm, Atom *atom, Parameter* param){
     double S, E;    
     S = getTimeStamp(); 
     if(param->shell_method == halfShell){
-        for(int iswap = 0; iswap < 5; iswap++) 
+        for(int iswap = 4; iswap >= 0; iswap--) 
             reverseComm(comm, atom, iswap);
     } else if(param->shell_method == eightShell){
-        for(int iswap = 0; iswap < 2; iswap+=2) 
+        for(int iswap = 4; iswap >= 0; iswap-=2) 
             reverseComm(comm, atom, iswap);
     } else {
-        for(int iswap = 0; iswap < 6; iswap++) 
+        for(int iswap = 5; iswap >= 0; iswap--) 
             reverseComm(comm, atom, iswap);
     }
     E = getTimeStamp();
@@ -53,13 +53,13 @@ double reverse(Comm* comm, Atom *atom, Parameter* param){
 
 void ghostNeighbour(Comm* comm, Atom* atom, Parameter* param)
 {   
-    atom->Nghost = 0;
+    atom->Nghost = 0;    
     if(param->shell_method == halfShell){
         for(int iswap=0; iswap<5; iswap++) 
             ghostComm(comm,atom,iswap);
     } else if(param->shell_method == eightShell){
         for(int iswap = 0; iswap<6; iswap+=2)
-            ghostComm(comm, atom, iswap);
+            ghostComm(comm, atom,iswap);
     } else {
         for(int iswap=0; iswap<6; iswap++) 
             ghostComm(comm,atom,iswap);

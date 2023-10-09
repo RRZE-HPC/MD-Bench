@@ -56,6 +56,7 @@ typedef struct {
     int rcb;
     int shell_method;
     int rcb_ndim;
+    int accuracy;
 } Parameter;
 
 void initParameter(Parameter*);

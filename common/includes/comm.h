@@ -36,7 +36,7 @@ typedef struct {
   int swap[3][2];                   // given a dim and dir, knows the swap
   int othersend[6];                 // Determine if a proc interact with more procs in a given swap
 
-	int* firstrecv[6];                   // where to put 1st recv atom in each swap
+	int firstrecv[6];                 // where to put 1st recv atom in each swap
   int** sendlist;                   // list of atoms to send in each swap   
   int* maxsendlist;								  // max # of atoms send in each list-swap
 
@@ -44,19 +44,20 @@ typedef struct {
 	int maxrecv;											// max elements in buff receiver
   MD_FLOAT* buf_send;               // sender buffer for all comm
 	MD_FLOAT* buf_recv;               // receicer buffer for all comm
-	 	
+	 	  
 	int forwardSize;					        // # of paramaters per atom in forward comm.
 	int reverseSize;			        		// # of parameters per atom in reverse
   int exchangeSize;                 // # of parameters per atom in exchange
 	int ghostSize;                    // # of parameters per atom in ghost list                               
 
+  int  iterAtom;                     //last atom to iterate in each swap.
   Box* boxes; 											 // Boundaries to  be sent to other procs as ghost.
 } Comm;
 
 
-void initComm(int, char**, Comm*); 						      //Init MPI 
+void initComm(int*, char***, Comm*); 						    //Init MPI 
 void endComm(Comm*);													      //End MPI
-void setupComm(Comm*,Parameter*,Atom*,MD_FLOAT*);   //Creates a 3d grid
+void setupComm(Comm*,Parameter*,MD_FLOAT*);         //Creates a 3d grid
 void forwardComm(Comm*,Atom*,int);							    //Send info in one direction
 void reverseComm(Comm*,Atom*,int);							    //Return info after forward communication
 void exchangeComm(Comm*,Atom*);							        //Exchange info between procs
@@ -64,5 +65,4 @@ void ghostComm(Comm*, Atom*,int);                   //Build the ghost neighbours
 void growSend(Comm*,int);										        //Grows the size of the buffer sender
 void growRecv(Comm*,int);										        //Grows the size of the buffer receiver
 void growList(Comm*, int, int);                     //Grows the size of the list to send
-
 #endif

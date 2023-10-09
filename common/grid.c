@@ -11,7 +11,7 @@ static enum {_xlo=0, _ylo, _zlo, _xhi, _yhi, _zhi};
 MD_FLOAT meanBisect(Atom* atom, MD_FLOAT* box, int dim)
 {  
     int Natoms = 0;
-    MD_FLOAT sum, mean; 
+    MD_FLOAT sum=0, mean=0; 
     
     for(int i=0; i<atom->Nlocal; i++){
         if (atom_x(i) >= box[_xlo] && atom_x(i) < box[_xhi] &&
@@ -27,7 +27,7 @@ MD_FLOAT meanBisect(Atom* atom, MD_FLOAT* box, int dim)
 
 int nextBisectionLevel(Grid* grid, Atom* atom, RCB_Method method, int dim ,int nboxes)
 { 
-  int nprocs, ndomains, index1, index2, index;
+  int nprocs, index1, index2, index;
   int size = 6, finish = 0; //xlo, ylo, zlo, xhi, yhi, zhi 
   MD_FLOAT* map = grid->map;
   MD_FLOAT readmap[size*nboxes]; 
@@ -44,7 +44,6 @@ int nextBisectionLevel(Grid* grid, Atom* atom, RCB_Method method, int dim ,int n
         root[i] = readmap[ibox*size+i];
         branch1[i] = readmap[ibox*size+i];
         branch2[i] = readmap[ibox*size+i];
-   
     }      
     
     bisection = method(atom,root,dim);
@@ -104,8 +103,6 @@ void RCB(Grid* grid, Atom* atom, Parameter* param, RCB_Method method, int ndim)
     grid->map[_xhi]=atom->mybox.xprd; 
     grid->map[_yhi]=atom->mybox.yprd; 
     grid->map[_zhi]=atom->mybox.zprd;
-    
-    if(ndim!=2 && ndim!=3) ndim=2; 
     
     while(nboxes<nprocs)
     { 
@@ -215,8 +212,9 @@ void setupGrid(Grid* grid, Atom* atom, Parameter* param)
     }
     atom->Nlocal = nlocal; 
   } 
-  MPI_Allreduce(&(atom->Nlocal), &(atom->Natoms), 1, MPI_INT, MPI_SUM, world);
-  printf("Processor:%i, Local atoms:%i, Total atoms:%i\n",me, atom->Nlocal,atom->Natoms);
+  MPI_Allreduce(&atom->Nlocal, &atom->Natoms, 1, MPI_INT, MPI_SUM, world);
+  if(param->input_file != NULL) printf("Processor:%i, Local atoms:%i, Total atoms:%i\n",me, atom->Nlocal,atom->Natoms);
+  MPI_Barrier(world);
 }
  
 void printGrid(Grid* grid)
@@ -234,6 +232,7 @@ void printGrid(Grid* grid)
       printf("Box processor:%i\n xlo:%.4f\txhi:%.4f\n ylo:%.4f\tyhi:%.4f\n zlo:%.4f\tzhi:%.4f\n", i,map[6*i],map[6*i+3],map[6*i+1],map[6*i+4],map[6*i+2],map[6*i+5]);
     printf("=====================================\n");
   }
+  MPI_Barrier(world);
 }
 
 

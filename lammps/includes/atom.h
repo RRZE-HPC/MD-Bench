@@ -81,7 +81,7 @@ extern int readAtom_dmp(Atom*, Parameter*);
 extern int readAtom_in(Atom*, Parameter*);
 extern void growAtom(Atom*);
 
-int  packGhost(Atom*, int, MD_FLOAT* , int* );
+int  packGhost(Atom*, int, MD_FLOAT* , int*);
 int  unpackGhost(Atom*, int, MD_FLOAT*);
 int  packExchange(Atom*, int, MD_FLOAT*);
 int  unpackExchange(Atom*, int, MD_FLOAT*);
