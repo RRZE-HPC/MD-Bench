@@ -125,7 +125,7 @@ void setupPbc(Atom *atom, Parameter *param) {
         if(param->pbc_x != 0 && param->pbc_y != 0 && param->pbc_z != 0) {
             if (x < Cutneigh         && y < Cutneigh         && z < Cutneigh)         { ADDGHOST(+1,+1,+1); }
             if (x < Cutneigh         && y >= (yprd-Cutneigh) && z < Cutneigh)         { ADDGHOST(+1,-1,+1); }
-            if (x < Cutneigh         && y >= Cutneigh        && z >= (zprd-Cutneigh)) { ADDGHOST(+1,+1,-1); }
+            if (x < Cutneigh         && y < Cutneigh        && z >= (zprd-Cutneigh))  { ADDGHOST(+1,+1,-1); }
             if (x < Cutneigh         && y >= (yprd-Cutneigh) && z >= (zprd-Cutneigh)) { ADDGHOST(+1,-1,-1); }
             if (x >= (xprd-Cutneigh) && y < Cutneigh         && z < Cutneigh)         { ADDGHOST(-1,+1,+1); }
             if (x >= (xprd-Cutneigh) && y >= (yprd-Cutneigh) && z < Cutneigh)         { ADDGHOST(-1,-1,+1); }
