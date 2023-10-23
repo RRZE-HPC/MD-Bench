@@ -57,7 +57,7 @@ void initAtom(Atom *atom){
     d_atom->sigma6 = NULL;
     d_atom->cutforcesq = NULL;
     d_atom->cutneighsq = NULL;
-
+    //MPI
     Box *mybox = &(atom->mybox);                  
     mybox->xprd = mybox->yprd = mybox->zprd = 0;          
     mybox->lo[0]  = mybox->lo[1]  = mybox->lo[2] = 0;             
@@ -65,9 +65,9 @@ void initAtom(Atom *atom){
 }
 
 void createAtom(Atom *atom, Parameter *param) {
-    int me; 
-    MPI_Comm_rank(MPI_COMM_WORLD,&me);
-    
+    int me = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &me);
+
     MD_FLOAT xlo = 0; MD_FLOAT xhi = param->xprd;
     MD_FLOAT ylo = 0; MD_FLOAT yhi = param->yprd;
     MD_FLOAT zlo = 0; MD_FLOAT zhi = param->zprd;
@@ -178,7 +178,7 @@ int type_str2int(const char *type) {
 }
 
 int readAtom(Atom *atom, Parameter *param) {
-    int me;
+    int me = 0;
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
     int len = strlen(param->input_file);
     if(strncmp(&param->input_file[len - 4], ".pdb", 4) == 0) { return readAtom_pdb(atom, param); }
@@ -191,7 +191,7 @@ int readAtom(Atom *atom, Parameter *param) {
 }
 
 int readAtom_pdb(Atom* atom, Parameter* param) {
-    int me;
+    int me = 0;
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
     FILE *fp = fopen(param->input_file, "r");
     char line[MAXLINE];
@@ -278,7 +278,7 @@ int readAtom_pdb(Atom* atom, Parameter* param) {
 }
 
 int readAtom_gro(Atom* atom, Parameter* param) {
-    int me;
+    int me = 0;
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
 
     FILE *fp = fopen(param->input_file, "r");
@@ -360,7 +360,7 @@ int readAtom_gro(Atom* atom, Parameter* param) {
 }
 
 int readAtom_dmp(Atom* atom, Parameter* param) {
-    int me;
+    int me = 0;
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
     FILE *fp = fopen(param->input_file, "r");
     char line[MAXLINE];
@@ -454,7 +454,7 @@ int readAtom_dmp(Atom* atom, Parameter* param) {
 }
 
 int readAtom_in(Atom* atom, Parameter* param) {
-    int me;
+    int me = 0;
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
     FILE *fp = fopen(param->input_file, "r");
     char line[MAXLINE];
@@ -559,9 +559,6 @@ void growAtom(Atom *atom) {
     atom->radius = (MD_FLOAT *) reallocate(atom->radius, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
     atom->av = (MD_FLOAT*) reallocate(atom->av, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT) * 3, nold * sizeof(MD_FLOAT) * 3);
     atom->r  = (MD_FLOAT*) reallocate(atom->r,  ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT) * 4, nold * sizeof(MD_FLOAT) * 4);
-
-    //MPI
-    atom->border_map = (int *) reallocate(atom->border_map, ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));  
 }
 
 void packForward(Atom* atom, int n ,int* list, MD_FLOAT* buf, int* pbc)

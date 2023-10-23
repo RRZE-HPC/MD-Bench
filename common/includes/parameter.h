@@ -54,8 +54,7 @@ typedef struct {
     MD_FLOAT reflect_x, reflect_y, reflect_z;
     //MPI implementation
     int rcb;
-    int shell_method;
-    int rcb_ndim;
+    int method;
     int accuracy;
 } Parameter;
 

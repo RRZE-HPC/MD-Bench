@@ -17,7 +17,7 @@
 
 #define SMALL 1.0e-6
 #define FACTOR 0.999
-static enum {fullShell=0, halfShell, eightShell};
+static enum {fullShell=0, halfShell, eightShell, halfStencil};
 MD_FLOAT xprd, yprd, zprd;
 MD_FLOAT bininvx, bininvy, bininvz;
 int pad_x, pad_y, pad_z;
@@ -33,8 +33,16 @@ int nmax;
 int nstencil;      // # of bins in stencil
 int* stencil;      // stencil list of bin offsets
 MD_FLOAT binsizex, binsizey, binsizez;
+int method;         // method
+int half_stencil;   //If half stencil exist 
+int shellMethod;    //If shell method exist    
+int accuracy;       //If local neighbour list are sorted       
 static int coord2bin(MD_FLOAT, MD_FLOAT , MD_FLOAT);
 static MD_FLOAT bindist(int, int, int);
+static int ghostZone(Atom*, int);
+static int eightZone(Atom*, int);
+static int halfZone(Atom*, int);
+static void neighborGhost(Atom*, Neighbor*);
 
 /* exported subroutines */
 void initNeighbor(Neighbor *neighbor, Parameter *param) {
@@ -55,9 +63,24 @@ void initNeighbor(Neighbor *neighbor, Parameter *param) {
     neighbor->maxneighs = 100;
     neighbor->numneigh = NULL;
     neighbor->neighbors = NULL;
+    //MPI
+    shellMethod = 0;
+    half_stencil = 0;
+    method = param->method;
+    if(method == halfShell || method == eightShell){ 
+        param->half_neigh = 1;
+        shellMethod = 1;
+    }
+    if(method == halfStencil){
+        param->half_neigh = 0;
+        half_stencil = 1;
+    }
     neighbor->half_neigh = param->half_neigh;
-    neighbor->shell = param->shell_method;
-    neighbor->accuracy = param->accuracy;
+    accuracy = param->accuracy;
+    neighbor->Nshell = 0;  
+    neighbor->numNeighShell = NULL;
+    neighbor->neighshell = NULL;
+    neighbor->listshell = NULL;
 }
 
 void setupNeighbor(Parameter* param) {
@@ -70,7 +93,6 @@ void setupNeighbor(Parameter* param) {
         yprd = param->yprd;
         zprd = param->zprd;
     }
-
     // TODO: update lo and hi for standard case and use them here instead
     MD_FLOAT xlo = 0.0; MD_FLOAT xhi = xprd;
     MD_FLOAT ylo = 0.0; MD_FLOAT yhi = yprd;
@@ -99,40 +121,46 @@ void setupNeighbor(Parameter* param) {
         bininvy = 1.0 / binsizey;
         bininvz = 1.0 / binsizez;
     }
-
+  
     pad_x = (int)(cutneigh*bininvx);
-    if(pad_x * binsizex < FACTOR * cutneigh) pad_x++;
+    while(pad_x * binsizex < FACTOR * cutneigh) pad_x++;
     pad_y = (int)(cutneigh*bininvy);
-    if(pad_y * binsizey < FACTOR * cutneigh) pad_y++;
+    while(pad_y * binsizey < FACTOR * cutneigh) pad_y++;
     pad_z = (int)(cutneigh*bininvz);
-    if(pad_z * binsizez < FACTOR * cutneigh) pad_z++;
+    while(pad_z * binsizez < FACTOR * cutneigh) pad_z++;
 
     mbinx = nbinx+2*pad_x;
     mbiny = nbiny+2*pad_y;
     mbinz = nbinz+2*pad_z;
 
     nextx = (int) (cutneigh * bininvx);
-    if(nextx * binsizex < FACTOR * cutneigh) nextx++;
+    while(nextx * binsizex < FACTOR * cutneigh) nextx++;
     nexty = (int) (cutneigh * bininvy);
-    if(nexty * binsizey < FACTOR * cutneigh) nexty++;
+    while(nexty * binsizey < FACTOR * cutneigh) nexty++;
     nextz = (int) (cutneigh * bininvz);
-    if(nextz * binsizez < FACTOR * cutneigh) nextz++;
+    while(nextz * binsizez < FACTOR * cutneigh) nextz++;
 
     if (stencil) { free(stencil); }
     stencil = (int*) malloc((2 * nextz + 1) * (2 * nexty + 1) * (2 * nextx + 1) * sizeof(int));
     nstencil = 0;
+ 
     int kstart = -nextz;
-    
+    int jstart = -nexty; 
+    int istart = -nextx;
+    int ibin = 0;
+
     for(int k = kstart; k <= nextz; k++) {
-        for(int j = -nexty; j <= nexty; j++) {
-            for(int i = -nextx; i <= nextx; i++) {
-                if(bindist(i, j, k) < cutneighsq) {
-                    stencil[nstencil++] = k * mbiny * mbinx + j * mbinx + i;
+        for(int j = jstart; j <= nexty; j++) {
+            for(int i = istart; i <= nextx; i++) {
+                if(bindist(i, j, k) < cutneighsq) {     
+                    int jbin = k * mbiny * mbinx + j * mbinx + i;
+                    if(ibin>jbin && half_stencil) continue;                    
+                    stencil[nstencil++] = jbin;
                 }
             }
         }
     }
-    
+
     mbins = mbinx * mbiny * mbinz;
     if (bincount) { free(bincount); }
     bincount = (int*) malloc(mbins * sizeof(int));
@@ -142,7 +170,7 @@ void setupNeighbor(Parameter* param) {
 
 void buildNeighbor_cpu(Atom *atom, Neighbor *neighbor) {
     int nall = atom->Nlocal + atom->Nghost;
-    int me; 
+    int me = 0; 
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
     /* extend atom arrays if necessary */
     if(nall > nmax) {
@@ -172,26 +200,17 @@ void buildNeighbor_cpu(Atom *atom, Neighbor *neighbor) {
 
             for(int k = 0; k < nstencil; k++) {
                 int jbin = ibin + stencil[k];
-
-                if(ibin>jbin && neighbor->shell == halfShell) 
-                    continue;
-             
                 int* loc_bin = &bins[jbin * atoms_per_bin];
+                
                 for(int m = 0; m < bincount[jbin]; m++) {
                     int j = loc_bin[m];
-                    
-                    if((j == i) || (neighbor->half_neigh && (j < i))) 
-                        continue;      
-                    if(neighbor->shell && (ibin == jbin)) 
-                    {
-                        if (j < i)
-                            continue;
-                        if(atom_x(j)<atom->mybox.lo[_x] || 
-                           atom_y(j)<atom->mybox.lo[_y] ||
-                           atom_z(j)<atom->mybox.lo[_z])
-                            continue;    
+                 
+                    if((j==i) || neighbor->half_neigh && (j<i)) continue;              
+                    if(half_stencil && ibin==jbin){
+                        if(j<i || atom_x(j)<atom->mybox.lo[_x] || atom_y(j)<atom->mybox.lo[_y]) 
+                            continue;      
                     } 
-    
+                
                     MD_FLOAT delx = xtmp - atom_x(j);
                     MD_FLOAT dely = ytmp - atom_y(j);  
                     MD_FLOAT delz = ztmp - atom_z(j);
@@ -207,8 +226,8 @@ void buildNeighbor_cpu(Atom *atom, Neighbor *neighbor) {
                     }
                 }
             }
-
             neighbor->numneigh[i] = n;
+            
             if(n >= neighbor->maxneighs) {
                 resize = 1;
 
@@ -217,7 +236,7 @@ void buildNeighbor_cpu(Atom *atom, Neighbor *neighbor) {
                 }
             }
             
-            if(!resize && neighbor->accuracy) sortNeighbors(atom, neighptr, n, i);  
+            if(!resize && accuracy) sortNeighbors(atom, neighptr, n, i);  
         }
         if(resize) {
             printf("RESIZE %d by processor %d\n", neighbor->maxneighs,me);
@@ -226,6 +245,8 @@ void buildNeighbor_cpu(Atom *atom, Neighbor *neighbor) {
             neighbor->neighbors = (int*) malloc(atom->Nmax * neighbor->maxneighs * sizeof(int));
         }
     }
+
+    if(method == eightShell) neighborGhost(atom, neighbor);
 }
 
 /* internal subroutines */
@@ -285,6 +306,7 @@ void binatoms(Atom *atom) {
 
         for(int i = 0; i < nall; i++) {
             int ibin = coord2bin(atom_x(i), atom_y(i), atom_z(i));
+            if(shellMethod && !ghostZone(atom, i)) continue; 
             if(bincount[ibin] < atoms_per_bin) {
                 int ac = bincount[ibin]++;
                 bins[ibin * atoms_per_bin + ac] = i;
@@ -359,3 +381,134 @@ void sortAtom(Atom* atom) {
     atom->vz = new_vz;
     #endif
 }
+
+/* internal subroutines 
+Added with MPI*/
+
+static int ghostZone(Atom* atom, int i){
+    if(i<atom->Nlocal)  return 1;
+    if(method == halfShell)  return halfZone(atom,i);
+    if(method == eightShell) return eightZone(atom,i);   
+}
+
+static int eightZone(Atom* atom, int i)
+{   
+    //Mapping: 0->0, 1->1, 2->2, 3->6, 4->3, 5->5, 6->4, 7->7
+    int zoneMapping[] = {0, 1, 2, 6, 3, 5, 4, 7};
+    MD_FLOAT *hi = atom->mybox.hi;
+    int zone = 0;
+
+    if (atom_x(i) >= hi[_x]) {
+        zone += 1;
+    }
+    if (atom_y(i) >= hi[_y]) {
+        zone += 2;
+    }
+    if (atom_z(i) >= hi[_z]) {
+        zone += 4;
+    }
+   
+    return zoneMapping[zone];
+}
+
+static int halfZone(Atom* atom, int i)
+{   
+    MD_FLOAT *hi = atom->mybox.hi;
+    MD_FLOAT *lo = atom->mybox.lo;
+    int zone = 0;
+
+    if(atom_z(i) >= hi[_z] ||
+      (atom_z(i) >= lo[_z] && atom_y(i) >= hi[_y]) || 
+      (atom_z(i) >= lo[_z] && atom_y(i) >= lo[_y] && atom_x(i) >= lo[_x])) 
+       zone++;
+
+    return zone;
+}
+
+static void neighborGhost(Atom *atom, Neighbor *neighbor) {
+    int Nshell=0;
+    int Nlocal = atom->Nlocal;
+    int Nghost = atom->Nghost;
+    if(neighbor->listshell) free(neighbor->listshell);
+    neighbor->listshell = (int*) malloc(Nghost * sizeof(int));
+    int* listzone  = (int*) malloc(8 * Nghost * sizeof(int));
+    int countAtoms[8] = {0,0,0,0,0,0,0,0};
+ 
+    //Selecting ghost atoms for interaction
+   for(int i = Nlocal; i < Nlocal+Nghost; i++) {
+        int izone = ghostZone(atom,i);
+        int *list = &listzone[Nghost*izone];
+        int n  = countAtoms[izone];
+        list[n] = i;
+        countAtoms[izone]++;     
+        if(izone == 1 || izone == 2 || izone == 3)
+            neighbor->listshell[Nshell++] = i;  
+    }
+
+    neighbor->Nshell = Nshell;
+    if(neighbor->numNeighShell) free(neighbor->numNeighShell);
+    if(neighbor->neighshell) free(neighbor->neighshell);
+    neighbor->neighshell = (int*) malloc(Nshell * neighbor->maxneighs * sizeof(int));
+    neighbor->numNeighShell = (int*) malloc(Nshell * sizeof(int));
+    int resize = 1;
+
+    while(resize)
+    {
+        resize = 0;
+        for(int i = 0; i < Nshell; i++) {   
+            int *neighshell = &(neighbor->neighshell[i*neighbor->maxneighs]); 
+            int n = 0;  
+            int iatom = neighbor->listshell[i];
+            int izone = ghostZone(atom, iatom);
+            MD_FLOAT xtmp = atom_x(iatom);
+            MD_FLOAT ytmp = atom_y(iatom);
+            MD_FLOAT ztmp = atom_z(iatom);
+           
+            #ifdef EXPLICIT_TYPES
+            int type_i = atom->type[iatom];
+            #endif
+
+            for(int jzone=0; jzone<8; jzone++){
+                
+                if(jzone <=izone) continue;
+                if(izone == 1 && (jzone==5||jzone==6||jzone==7)) continue;
+                if(izone == 2 && (jzone==4||jzone==6||jzone==7)) continue;
+                if(izone == 3 && (jzone==4||jzone==5||jzone==7)) continue;
+                
+                int natoms = countAtoms[jzone];
+                int* loc_zone = &listzone[jzone * Nghost];
+            
+                for(int k = 0; k < natoms ; k++) {
+                    int jatom = loc_zone[k];               
+                    MD_FLOAT delx = xtmp - atom_x(jatom);
+                    MD_FLOAT dely = ytmp - atom_y(jatom);  
+                    MD_FLOAT delz = ztmp - atom_z(jatom);
+                    MD_FLOAT rsq = delx * delx + dely * dely + delz * delz;
+                    #ifdef EXPLICIT_TYPES
+                    int type_j = atom->type[jatom];
+                    const MD_FLOAT cutoff = atom->cutneighsq[type_i * atom->ntypes + type_j];
+                    #else
+                    const MD_FLOAT cutoff = cutneighsq;
+                    #endif
+                    if(rsq <= cutoff) {
+                        neighshell[n++] = jatom;
+                    }
+                }
+            }
+            neighbor->numNeighShell[i] = n; 
+            
+            if(n >= neighbor->maxneighs){
+                resize = 1;
+                neighbor->maxneighs = n * 1.2;
+                break;
+            }  
+        }
+
+        if(resize) {
+            free(neighbor->neighshell);
+            neighbor->neighshell = (int*) malloc(Nshell * neighbor->maxneighs * sizeof(int));
+        }
+    }  
+    free(listzone); 
+}
+

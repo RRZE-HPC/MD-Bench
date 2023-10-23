@@ -6,7 +6,6 @@
 #include <mpi.h>
 #include <util.h>
 
-
 #define NEIGHMIN  8       
 #define BUFFACTOR 1.5
 #define BUFMIN    1000
@@ -90,6 +89,26 @@ void initComm(int* argc, char*** argv, Comm* comm)
   MPI_Init(argc, argv);
   MPI_Comm_size(MPI_COMM_WORLD, &comm->numproc);
   MPI_Comm_rank(MPI_COMM_WORLD, &comm->myproc);
+  comm->numneigh = 0;
+  comm->nrecv=NULL;
+  comm->nsend=NULL;
+  comm->nexch=NULL;  
+  comm->pbc_x=NULL; 
+  comm->pbc_y=NULL;  
+  comm->pbc_z=NULL;  
+  comm->boxes=NULL;  
+  comm->atom_send=NULL;     
+  comm->atom_recv=NULL;   
+  comm->off_atom_send=NULL; 
+  comm->off_atom_recv=NULL;
+  comm->maxsendlist=NULL; 
+ 
+  for(int i = 0; i < comm->numneigh; i++) 
+    comm->sendlist[i]=NULL; 
+  comm->sendlist=NULL;
+
+  comm->buf_send=NULL; 
+  comm->buf_recv=NULL; 
 }
  
 void endComm(Comm* comm)
@@ -117,8 +136,6 @@ void setupComm(Comm* comm, Parameter* param, MD_FLOAT* map){
   comm->swapdir[0] = comm->swapdir[2] = comm->swapdir[4] = 0;
   comm->swapdir[1] = comm->swapdir[3] = comm->swapdir[5] = 1;
   
-  comm->numneigh = 0;
-
   for(int i = 0;  i<6; i++){
     comm->sendfrom[i] = 0;
     comm->sendtill[i] = 0;
@@ -126,15 +143,15 @@ void setupComm(Comm* comm, Parameter* param, MD_FLOAT* map){
     comm->recvtill[i] = 0;  
   }
 
-    for(int dim = 0;  dim<3; dim++){
+  for(int dim = 0;  dim<3; dim++){
     comm->exchfrom[i] = 0;
     comm->exchtill[i] = 0; 
   }
 
-  comm->forwardSize = 3;      //send coordiantes x,y,z
-  comm->reverseSize = 3;      //return forces fx, fy, fz
-  comm->ghostSize = 4;        //send x,y,z,type;
-  comm->exchangeSize =7;     //send x,y,z,vx,vy,vz,type
+  comm->forwardSize   = FORWARD_SIZE;      //send coordiantes x,y,z
+  comm->reverseSize   = REVERSE_SIZE;      //return forces fx, fy, fz
+  comm->ghostSize     = GHOST_SIZE;        //send x,y,z,type;
+  comm->exchangeSize  = EXCHANGE_SIZE;     //send x,y,z,vx,vy,vz,type
   
   comm->maxneigh = NEIGHMIN;
   comm->maxsend = BUFMIN; 
@@ -284,7 +301,8 @@ void ghostComm(Comm* comm, Atom* atom,int iswap){
   int maxrqrst = comm->numneigh;
   MPI_Request requests[maxrqrst];
   
-  if(iswap%2==0) comm->iterAtom = atom->Nlocal+atom->Nghost; 
+  if(iswap%2==0) comm->iterAtom = LOCAL+GHOST;
+ 
  
   for(int ineigh = comm->sendfrom[iswap]; ineigh< comm->sendtill[iswap]; ineigh++)
       {          
@@ -296,10 +314,8 @@ void ghostComm(Comm* comm, Atom* atom,int iswap){
         nsend = 0; 
 
         for(int i = 0; i < comm->iterAtom ; i++) 
-        {
-          if (atom_x(i) >= xlo && atom_x(i) < xhi &&
-              atom_y(i) >= ylo && atom_y(i) < yhi &&
-              atom_z(i) >= zlo && atom_z(i) < zhi ) {  
+        { 
+          if(IsinRegionToSend(i)){
                 if(nsend >= comm->maxsendlist[ineigh]) growList(comm,ineigh,nsend);
                 if(ghostSize >= comm->maxsend) growSend(comm,ghostSize); 
                 comm->sendlist[ineigh][nsend++] = i;
@@ -350,9 +366,9 @@ void ghostComm(Comm* comm, Atom* atom,int iswap){
   if(comm->othersend[iswap]) buf = comm->buf_recv;
   else buf = comm->buf_send; 
 
-  comm->firstrecv[iswap] = atom->Nlocal + atom->Nghost; 
+  comm->firstrecv[iswap] = LOCAL+GHOST; 
   for(int i = 0; i < all_recv; i++)
-    unpackGhost(atom, atom->Nlocal+atom->Nghost, &buf[i*size]);
+    unpackGhost(atom, LOCAL+GHOST, &buf[i*size]);
 }
 
 void exchangeComm(Comm* comm, Atom* atom){
@@ -476,25 +492,25 @@ static inline void  initBuffers(Comm* comm)
 
 static inline void freeBuffers(Comm* comm)
 {
-  free(comm->nrecv);
-  free(comm->nsend);
-  free(comm->nexch);  
-  free(comm->pbc_x); 
-  free(comm->pbc_y);  
-  free(comm->pbc_z);  
-  free(comm->boxes);  
-  free(comm->atom_send);     
-  free(comm->atom_recv);   
-  free(comm->off_atom_send); 
-  free(comm->off_atom_recv);
-  free(comm->maxsendlist); 
+  if(comm->nrecv) free(comm->nrecv);
+  if(comm->nsend) free(comm->nsend);
+  if(comm->nexch) free(comm->nexch);  
+  if(comm->pbc_x) free(comm->pbc_x); 
+  if(comm->pbc_y) free(comm->pbc_y);  
+  if(comm->pbc_z) free(comm->pbc_z);  
+  if(comm->boxes) free(comm->boxes);  
+  if(comm->atom_send) free(comm->atom_send);     
+  if(comm->atom_recv) free(comm->atom_recv);   
+  if(comm->off_atom_send) free(comm->off_atom_send); 
+  if(comm->off_atom_recv) free(comm->off_atom_recv);
+  if(comm->maxsendlist) free(comm->maxsendlist); 
  
   for(int i = 0; i < comm->numneigh; i++) 
-    free(comm->sendlist[i]); 
-  free(comm->sendlist);
+    if(comm->sendlist[i]) free(comm->sendlist[i]); 
+  if(comm->sendlist) free(comm->sendlist);
 
-  free(comm->buf_send); 
-  free(comm->buf_recv);   
+  if(comm->buf_send) free(comm->buf_send); 
+  if(comm->buf_recv) free(comm->buf_recv);   
 }
 
 

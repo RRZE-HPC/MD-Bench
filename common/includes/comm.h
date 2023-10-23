@@ -5,6 +5,38 @@
 #ifndef COMM_H
 #define COMM_H
 
+#ifdef GROMACS
+#define FORWARD_SIZE  (3*CLUSTER_N)   
+#define REVERSE_SIZE  (3*CLUSTER_N)
+#define GHOST_SIZE    (4*CLUSTER_N+10)
+#define EXCHANGE_SIZE 7
+
+#define JFAC MAX(1, CLUSTER_N / CLUSTER_M)
+#define LOCAL atom->Nclusters_local / JFAC
+#define GHOST atom->Nclusters_ghost
+
+#define  IsinRegionToSend(cj)                                                                  \                                                                                                          
+           ((atom->jclusters[(cj)].bbminx >= xlo || atom->jclusters[(cj)].bbmaxx >= xlo)  &&  \
+            (atom->jclusters[(cj)].bbminx  < xhi || atom->jclusters[(cj)].bbmaxx  < xhi)  &&  \
+            (atom->jclusters[(cj)].bbminy >= ylo || atom->jclusters[(cj)].bbmaxy >= ylo)  &&  \
+            (atom->jclusters[(cj)].bbminy  < yhi || atom->jclusters[(cj)].bbmaxy  < yhi)  &&  \
+            (atom->jclusters[(cj)].bbminz >= zlo || atom->jclusters[(cj)].bbmaxz >= zlo)  &&  \
+            (atom->jclusters[(cj)].bbminz  < zhi || atom->jclusters[(cj)].bbmaxz  < zhi))  
+#else
+#define FORWARD_SIZE  3   
+#define REVERSE_SIZE  3
+#define GHOST_SIZE    4
+#define EXCHANGE_SIZE 7
+#define LOCAL atom->Nlocal
+#define GHOST atom->Nghost
+
+#define  IsinRegionToSend(i)                                \
+           ((atom_x((i)) >= xlo && atom_x((i)) < xhi) &&    \
+            (atom_y((i)) >= ylo && atom_y((i)) < yhi) &&    \
+            (atom_z((i)) >= zlo && atom_z((i)) < zhi)) 
+
+#endif
+
 typedef struct {
   int myproc;                       // my proc ID
   int numproc;                      // # of processors

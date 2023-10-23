@@ -69,7 +69,7 @@ typedef struct {
     DeviceAtom d_atom;
      
     //Info Subdomain
-    Box mybox;                //spatial representation of my processor box
+    Box mybox;            
 } Atom;
 
 extern void initAtom(Atom*);
@@ -81,7 +81,7 @@ extern int readAtom_dmp(Atom*, Parameter*);
 extern int readAtom_in(Atom*, Parameter*);
 extern void growAtom(Atom*);
 
-int  packGhost(Atom*, int, MD_FLOAT* , int*);
+int  packGhost(Atom*, int, MD_FLOAT*, int*);
 int  unpackGhost(Atom*, int, MD_FLOAT*);
 int  packExchange(Atom*, int, MD_FLOAT*);
 int  unpackExchange(Atom*, int, MD_FLOAT*);
@@ -116,8 +116,8 @@ void copy(Atom*, int, int);
 #   define atom_fz(i)          atom->fz[i]
 #endif
 
-#   define buf_x(i)  buf[3*(i)] 
-#   define buf_y(i)  buf[3*(i)+1]
-#   define buf_z(i)  buf[3*(i)+2]
+#   define buf_x(i)            buf[3*(i)] 
+#   define buf_y(i)            buf[3*(i)+1]
+#   define buf_z(i)            buf[3*(i)+2]
 
 #endif

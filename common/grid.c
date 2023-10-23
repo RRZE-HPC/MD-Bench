@@ -104,6 +104,7 @@ void RCB(Grid* grid, Atom* atom, Parameter* param, RCB_Method method, int ndim)
     grid->map[_yhi]=atom->mybox.yprd; 
     grid->map[_zhi]=atom->mybox.zprd;
     
+    ndim = MAX(ndim,2);
     while(nboxes<nprocs)
     { 
       index = (ilevel++)%ndim;
@@ -186,7 +187,7 @@ void setupGrid(Grid* grid, Atom* atom, Parameter* param)
   }
 
   if(param->rcb && param->input_file != NULL) {
-    RCB(grid, atom, param, meanBisect, param->rcb_ndim);
+    RCB(grid, atom, param, meanBisect, param->rcb);
   } else{
     cartisian3d(grid, param, &atom->mybox);
   }

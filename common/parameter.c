@@ -55,8 +55,7 @@ void initParameter(Parameter *param) {
     param->reflect_z = 0.0;
     //MPI
     param->rcb = 0;
-    param->shell_method = 0;
-    param->rcb_ndim = 2;
+    param->method = 0;
     param->accuracy = 0;
 }
 
@@ -121,9 +120,8 @@ void readParameter(Parameter *param, const char *filename) {
             PARSE_INT(x_out_every);
             PARSE_INT(v_out_every);
             PARSE_INT(half_neigh);
-            PARSE_INT(shell_method);
+            PARSE_INT(method);
             PARSE_INT(rcb);
-            PARSE_INT(rcb_ndim);
             PARSE_INT(accuracy);
         }
     }
@@ -190,10 +188,11 @@ void printParameter(Parameter *param) {
     printf("\tSkin: %e\n", param->skin);
     printf("\tHalf neighbor lists: %d\n", param->half_neigh);
     char str[20]; 
-    strcpy(str, (param->shell_method == 1) ? "Half Shell" :
-                (param->shell_method == 2) ? "Eight Shell":
-                                             "Full Shell");
-    printf("\tShell method: %s\n", str);
+    strcpy(str, (param->method == 1) ? "Half Shell" :
+                (param->method == 2) ? "Eight Shell":
+                (param->method == 3) ? "Half Stencil":                      
+                                        "Full Shell");
+    printf("\tMethod: %s\n", str);
     printf("\tAccuracy: %d\n", param->accuracy);
     strcpy(str, (param->rcb) ? "rcb" :"cartisian");
     printf("\tPartition: %s\n", str);

@@ -1,7 +1,7 @@
 # Compiler tag (GCC/CLANG/ICC/ICX/ONEAPI/NVCC)
 TAG ?= MPICC
 # Instruction set (SSE/AVX/AVX_FMA/AVX2/AVX512)
-ISA ?= AVX
+ISA ?= AVX2
 # Optimization scheme (lammps/gromacs/clusters_per_bin)
 OPT_SCHEME ?= lammps
 # Enable likwid (true or false)
@@ -38,7 +38,7 @@ USE_REFERENCE_VERSION ?= false
 # Enable XTC output
 XTC_OUTPUT ?= false
 # Check if cj is local when decreasing reaction force
-HALF_NEIGHBOR_LISTS_CHECK_CJ ?= true
+HALF_NEIGHBOR_LISTS_CHECK_CJ ?= false
 
 # Configurations for CUDA
 # Use CUDA host memory to optimize transfers

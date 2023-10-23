@@ -13,6 +13,6 @@ CFLAGS   = -Ofast -march=native $(ANSI_CFLAGS) #-Xpreprocessor -fopenmp -g
 #CFLAGS   = -Ofast $(ANSI_CFLAGS) -g #-Xpreprocessor -fopenmp -g
 ASFLAGS  = -masm=intel
 LFLAGS   =
-DEFINES  = -D_GNU_SOURCE
+DEFINES  = -D_GNU_SOURCE -DNO_ZMM_INTRIN
 INCLUDES =
 LIBS     = -lm #-lomp

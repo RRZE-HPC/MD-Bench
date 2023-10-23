@@ -75,7 +75,7 @@ double computeForce(Eam *eam, Parameter *param, Atom *atom, Neighbor *neighbor, 
         }
     }
 
-    if(param->half_neigh || param->shell_method) {
+    if(param->half_neigh || param->method) {
         return computeForceLJHalfNeigh(param, atom, neighbor, stats);
     }
 
@@ -105,7 +105,7 @@ double setup(Parameter *param, Eam *eam, Atom *atom, Neighbor *neighbor, Stats *
         readAtom(atom, param);
         setupGrid(grid,atom,param);
     }
-    printGrid(grid);
+    //printGrid(grid);
     setupComm(comm, param, grid->map);
     setupNeighbor(param);
     setupThermo(param, atom->Natoms);
@@ -115,13 +115,13 @@ double setup(Parameter *param, Eam *eam, Atom *atom, Neighbor *neighbor, Stats *
     sortAtom(atom);
     #endif
     initDevice(atom, neighbor);
-    ghostNeighbour(comm, atom, param);
+    ghostNeighbor(comm, atom, param);
     buildNeighbor(atom, neighbor); 
     E = getTimeStamp();
     return E-S;
 }
 
-double reneighbour(Comm* comm, Parameter *param, Atom *atom, Neighbor *neighbor,int time) {
+double reneighbour(Comm* comm, Parameter *param, Atom *atom, Neighbor *neighbor) {
     double S, E;
     S = getTimeStamp();
     LIKWID_MARKER_START("reneighbour");
@@ -130,7 +130,7 @@ double reneighbour(Comm* comm, Parameter *param, Atom *atom, Neighbor *neighbor,
     atom->Nghost = 0;
     sortAtom(atom);
     #endif
-    ghostNeighbour(comm, atom, param);
+    ghostNeighbor(comm, atom, param);
     buildNeighbor(atom, neighbor);
     LIKWID_MARKER_STOP("reneighbour");
     E = getTimeStamp();
@@ -214,8 +214,13 @@ int main(int argc, char** argv) {
             param.half_neigh = atoi(argv[++i]);
             continue;
         }
-        if((strcmp(argv[i], "-shell") == 0)) {
-            param.shell_method = atoi(argv[++i]);
+        if((strcmp(argv[i], "-method") == 0)) {
+            param.method = atoi(argv[++i]);
+            if (param.method>3 || param.method< 0){
+                if(comm.myproc == 0) fprintf(stderr, "Method does not exist!\n");
+                endComm(&comm);   
+                exit(0);
+            }
             continue;
         }
         if((strcmp(argv[i], "-ac") == 0)) {
@@ -240,6 +245,7 @@ int main(int argc, char** argv) {
         }
         if((strcmp(argv[i], "-h") == 0) || (strcmp(argv[i], "--help") == 0)) {
             if(comm.myproc ==0 ){
+                //TODO: add the shell and ac print options
                 printf("MD Bench: A minimalistic re-implementation of miniMD\n");
                 printf(HLINE);
                 printf("-p <string>:          file to read parameters from (can be specified more than once)\n");
@@ -282,7 +288,7 @@ int main(int argc, char** argv) {
         bool reneigh = (n + 1) % param.reneigh_every == 0;
         initialIntegrate(reneigh, &param, &atom);
         if(reneigh) {
-            timer[NEIGH] += reneighbour(&comm, &param, &atom, &neighbor,n+1);
+            timer[NEIGH] += reneighbour(&comm, &param, &atom, &neighbor);
         } else {
             timer[FORWARD] += forward(&comm, &atom, &param);
         }

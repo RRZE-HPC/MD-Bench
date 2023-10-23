@@ -15,7 +15,7 @@
 
 #define SMALL 1.0e-6
 #define FACTOR 0.999
-
+static enum {fullShell=0, halfShell, eightShell, halfStencil};
 static MD_FLOAT xprd, yprd, zprd;
 static MD_FLOAT bininvx, bininvy;
 static int mbinxlo, mbinylo;
@@ -34,9 +34,15 @@ static int nmax;
 static int nstencil;      // # of bins in stencil
 static int* stencil;      // stencil list of bin offsets
 static MD_FLOAT binsizex, binsizey;
+int method;         // method
+int half_stencil;   //If half stencil exist 
+int shellMethod;    //If shell method exist  
 
 static int coord2bin(MD_FLOAT, MD_FLOAT);
 static MD_FLOAT bindist(int, int);
+static int ghostZone(Atom*, int);
+static int eightZone(Atom*, int);
+static int halfZone(Atom*, int);
 
 /* exported subroutines */
 void initNeighbor(Neighbor *neighbor, Parameter *param) {
@@ -53,12 +59,24 @@ void initNeighbor(Neighbor *neighbor, Parameter *param) {
     bincount = NULL;
     bin_clusters = NULL;
     bin_nclusters = NULL;
-    neighbor->half_neigh = param->half_neigh;
     neighbor->maxneighs = 100;
     neighbor->numneigh = NULL;
     neighbor->numneigh_masked = NULL;
     neighbor->neighbors = NULL;
     neighbor->neighbors_imask = NULL;
+    //MPI
+    shellMethod = 0;
+    half_stencil = 0;
+    method = param->method;
+    if(method == halfShell || method == eightShell){ 
+        param->half_neigh = 1;
+        shellMethod = 1;
+    }
+    if(method == halfStencil){
+        param->half_neigh = 0;
+        half_stencil = 1;
+    }
+    neighbor->half_neigh = param->half_neigh;
 }
 
 void setupNeighbor(Parameter *param, Atom *atom) {
@@ -525,7 +543,7 @@ int coord2bin(MD_FLOAT xin, MD_FLOAT yin) {
     } else {
         iy = (int)(yin * bininvy) - mbinylo - 1;
     }
-
+ 
     return (iy * mbinx + ix + 1);
 }
 
@@ -550,7 +568,6 @@ void coord2bin2D(MD_FLOAT xin, MD_FLOAT yin, int *ix, int *iy) {
 void binAtoms(Atom *atom) {
     DEBUG_MESSAGE("binAtoms start\n");
     int resize = 1;
-
     while(resize > 0) {
         resize = 0;
 
@@ -560,6 +577,7 @@ void binAtoms(Atom *atom) {
 
         for(int i = 0; i < atom->Nlocal; i++) {
             int ibin = coord2bin(atom_x(i), atom_y(i));
+            //printf("atom:%i, bin:%i, x:%f y:%f\n",i,ibin, atom_x(i), atom_y(i));
             if(bincount[ibin] < atoms_per_bin) {
                 int ac = bincount[ibin]++;
                 bins[ibin * atoms_per_bin + ac] = i;
@@ -687,6 +705,9 @@ void buildClusters(Atom *atom) {
 
 void defineJClusters(Atom *atom) {
     DEBUG_MESSAGE("defineJClusters start\n");
+
+    const int jfac = MAX(1, CLUSTER_N / CLUSTER_M);
+    atom->ncj = atom->Nclusters_local / jfac;   
 
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
         int cj0 = CJ0_FROM_CI(ci);
@@ -837,6 +858,7 @@ void binClusters(Atom *atom) {
             MD_FLOAT xtmp, ytmp;
 
             if(atom->jclusters[cj].natoms > 0) {
+                if(shellMethod && !ghostZone(atom, cj)) continue;
                 int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
                 MD_FLOAT *cj_x = &atom->cl_x[cj_vec_base];
                 MD_FLOAT cj_minz = atom->jclusters[cj].bbminz;
@@ -846,6 +868,7 @@ void binClusters(Atom *atom) {
                 coord2bin2D(xtmp, ytmp, &ix, &iy);
                 ix = MAX(MIN(ix, mbinx - 1), 0);
                 iy = MAX(MIN(iy, mbiny - 1), 0);
+            
                 for(int cjj = 1; cjj < atom->jclusters[cj].natoms; cjj++) {
                     int nix, niy;
                     xtmp = cj_x[CL_X_OFFSET + cjj];
@@ -853,7 +876,7 @@ void binClusters(Atom *atom) {
                     coord2bin2D(xtmp, ytmp, &nix, &niy);
                     nix = MAX(MIN(nix, mbinx - 1), 0);
                     niy = MAX(MIN(niy, mbiny - 1), 0);
-
+            
                     // Always put the cluster on the bin of its innermost atom so
                     // the cluster should be closer to local clusters
                     if(atom->PBCx[cg] > 0 && ix > nix) { ix = nix; }
@@ -861,7 +884,6 @@ void binClusters(Atom *atom) {
                     if(atom->PBCy[cg] > 0 && iy > niy) { iy = niy; }
                     if(atom->PBCy[cg] < 0 && iy < niy) { iy = niy; }
                 }
-
                 int bin = iy * mbinx + ix + 1;
                 int c = bin_nclusters[bin];
                 if(c < clusters_per_bin) {
@@ -883,25 +905,21 @@ void binClusters(Atom *atom) {
                             break;
                         }
                     }
-
                     if(!inserted) {
                         bin_clusters[bin * clusters_per_bin + c] = cj;
                     }
-
                     bin_nclusters[bin]++;
                 } else {
                     resize = 1;
                 }
             }
         }
-
         if(resize) {
             free(bin_clusters);
             clusters_per_bin *= 2;
             bin_clusters = (int*) malloc(mbins * clusters_per_bin * sizeof(int));
         }
     }
-
     /*
     DEBUG_MESSAGE("bin_nclusters\n");
     for(int i = 0; i < mbins; i++) { DEBUG_MESSAGE("%d, ", bin_nclusters[i]); }
@@ -919,7 +937,6 @@ void updateSingleAtoms(Atom *atom) {
         int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
         MD_FLOAT *ci_x = &atom->cl_x[ci_vec_base];
         MD_FLOAT *ci_v = &atom->cl_v[ci_vec_base];
-
         for(int cii = 0; cii < atom->iclusters[ci].natoms; cii++) {
             atom_x(Natom) = ci_x[CL_X_OFFSET + cii];
             atom_y(Natom) = ci_x[CL_Y_OFFSET + cii];
@@ -929,11 +946,50 @@ void updateSingleAtoms(Atom *atom) {
             atom->vz[Natom] = ci_v[CL_Z_OFFSET + cii];
             Natom++;
         }
+        
     }
-
     if(Natom != atom->Nlocal) {
         fprintf(stderr, "updateSingleAtoms(): Number of atoms changed!\n");
     }
 
     DEBUG_MESSAGE("updateSingleAtoms stop\n");
+}
+
+
+static int ghostZone(Atom* atom, int cj){
+    if(method == halfShell)  return halfZone(atom,cj);
+    if(method == eightShell) return eightZone(atom,cj);   
+}
+
+static int eightZone(Atom* atom, int cj)
+{   
+    //Mapping: 0->0, 1->1, 2->2, 3->6, 4->3, 5->5, 6->4, 7->7
+    int zoneMapping[] = {0, 1, 2, 6, 3, 5, 4, 7};
+    MD_FLOAT *hi = atom->mybox.hi;
+    int zone = 0;
+
+    if ( atom->jclusters[cj].bbminz >= hi[_x]) {
+        zone += 1;
+    }
+    if (atom->jclusters[cj].bbminz >= hi[_y]) {
+        zone += 2;
+    }
+    if (atom->jclusters[cj].bbminz >= hi[_z]) {
+        zone += 4;
+    }
+   
+    return zoneMapping[zone];
+}
+
+static int halfZone(Atom* atom, int cj)
+{   
+    MD_FLOAT *hi = atom->mybox.hi;
+    MD_FLOAT *lo = atom->mybox.lo;
+    int zone = 0;
+
+    if(atom->jclusters[cj].bbminz >= hi[_z] ||
+      (atom->jclusters[cj].bbminz >= lo[_z] && atom->jclusters[cj].bbminy >= hi[_y]) || 
+      (atom->jclusters[cj].bbminz >= lo[_z] && atom->jclusters[cj].bbminy >= lo[_y] && atom->jclusters[cj].bbminx >= hi[_x])) 
+       zone++;
+    return zone;
 }
