@@ -605,9 +605,9 @@ void unpackForward(Atom* atom, int nc, int c0, MD_FLOAT* buf)
         int displ = i*CLUSTER_N;
 
         for(int cjj = 0; cjj < atom->jclusters[cj].natoms; cjj++) {
-            cj_x[CL_X_OFFSET + cjj] = buf[3*(displ+cjj)+0];
-            cj_x[CL_Y_OFFSET + cjj] = buf[3*(displ+cjj)+1]; 
-            cj_x[CL_Z_OFFSET + cjj] = buf[3*(displ+cjj)+2];
+            if(cj_x[CL_X_OFFSET + cjj]<INFINITY) cj_x[CL_X_OFFSET + cjj] = buf[3*(displ+cjj)+0];
+            if(cj_x[CL_Y_OFFSET + cjj]<INFINITY) cj_x[CL_Y_OFFSET + cjj] = buf[3*(displ+cjj)+1]; 
+            if(cj_x[CL_Z_OFFSET + cjj]<INFINITY) cj_x[CL_Z_OFFSET + cjj] = buf[3*(displ+cjj)+2];
         }
     }
 }

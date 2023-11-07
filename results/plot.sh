@@ -22,7 +22,7 @@ cd ..
 rm -r results/*.dat
 rm -r results/*.png
 
-size=20
+size=8
 nmethods=5
 List=(0 1 1 1 0)
 Method=(0 0 1 2 3)
@@ -30,12 +30,18 @@ file=("fulllist" "halflist" "halfshell" "eightshell" "halfstencil")
 for ((i = 0; i < nmethods; i++)); do
     l=${List[i]}
     m=${Method[i]}
-    for processes in {1..2}; do
-        #srun -n $processes --cpu_bind=ldoms,verbose ./MDBench-lammps-MPICC-AVX-DP -nx 20 -ny 20 -nz 20 >>  out.txt 
-        mpirun -n $processes  ./MDBench-lammps-MPICC-AVX2-DP -nx $size -ny $size -nz $size -half $l -method $m  >>  out.txt  
+    #iterate along procs
+    for proc in {1..2}; do
+        #iterate stats
+        for iter in {1..10}; do
+            mpirun -n $proc  ./MDBench-lammps-MPICC-AVX2-DP -nx $size -ny $size -nz $size -half $l -method $m  >>  out.txt 
+        done
+        echo -n "$proc " >> out_stats.txt
+        python3 results/stats.py >> out_stats.txt
     done
-    python3 results/macro.py >> "results/${file[i]}.dat"
+    python3 results/speed.py >> "results/${file[i]}.dat"
     rm out.txt
+    rm out_stats.txt
 done
 
 gnuplot results/performance.plot

@@ -41,32 +41,32 @@ void debug(Atom* atom, Comm* comm)
     
             printf("ci:%i  natoms:%i, bbminx:%f, bbmaxx:%f, bbminy:%f, bbmaxy:%f bbminz:%f, bbmaxz:%f\n",ci,natoms,bbminx,bbmaxx,bbminy,bbmaxy,bbminz,bbmaxz);
 
-            int cj_vec_base = CJ_VECTOR_BASE_INDEX(ci);
-            int cj_sca_base = CJ_SCALAR_BASE_INDEX(ci); 
-            MD_FLOAT *cj_x = &atom->cl_x[cj_vec_base];
-            MD_FLOAT *cj_v = &atom->cl_v[cj_vec_base];
-            MD_FLOAT *cj_f = &atom->cl_f[cj_vec_base];
+            int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
+            int ci_sca_base = CI_SCALAR_BASE_INDEX(ci); 
+            MD_FLOAT *ci_x = &atom->cl_x[ci_vec_base];
+            MD_FLOAT *ci_v = &atom->cl_v[ci_vec_base];
+            MD_FLOAT *ci_f = &atom->cl_f[ci_vec_base];
 
             for(int cii= 0; cii < atom->iclusters[ci].natoms; cii++){
-                MD_FLOAT x = cj_x[CL_X_OFFSET + cii]; 
-                MD_FLOAT y = cj_x[CL_Y_OFFSET + cii];
-                MD_FLOAT z = cj_x[CL_Z_OFFSET + cii];
-                MD_FLOAT vx = cj_v[CL_X_OFFSET + cii]; 
-                MD_FLOAT vy = cj_v[CL_Y_OFFSET + cii];
-                MD_FLOAT vz = cj_v[CL_Z_OFFSET + cii];
-                MD_FLOAT fx = cj_f[CL_X_OFFSET + cii]; 
-                MD_FLOAT fy = cj_f[CL_Y_OFFSET + cii];
-                MD_FLOAT fz = cj_f[CL_Z_OFFSET + cii];
+                MD_FLOAT x = ci_x[CL_X_OFFSET + cii]; 
+                MD_FLOAT y = ci_x[CL_Y_OFFSET + cii];
+                MD_FLOAT z = ci_x[CL_Z_OFFSET + cii];
+                MD_FLOAT vx = ci_v[CL_X_OFFSET + cii]; 
+                MD_FLOAT vy = ci_v[CL_Y_OFFSET + cii];
+                MD_FLOAT vz = ci_v[CL_Z_OFFSET + cii];
+                MD_FLOAT fx = ci_f[CL_X_OFFSET + cii]; 
+                MD_FLOAT fy = ci_f[CL_Y_OFFSET + cii];
+                MD_FLOAT fz = ci_f[CL_Z_OFFSET + cii];
                 printf("\tatom:%i x:%f y:%f z:%f vx:%f vy:%f vz:%f fx:%f fy:%f fz:%f\n",cii,x,y,z,vx,vy,vz,fx,fy,fz);
             }
         }
         printf("Ghost atoms ===========\n");
-        for(int cg=atom->Nclusters_local; cg<atom->Nclusters_local+atom->Nclusters_ghost;cg++)
+        for(int cg=atom->ncj; cg<atom->ncj+atom->Nclusters_ghost;cg++)
         {
             int natoms = atom->jclusters[cg].natoms;
-            MD_FLOAT bbminx = atom->jclusters[cg].bbminx;    MD_FLOAT bbmaxx = atom->iclusters[cg].bbmaxx;
-            MD_FLOAT bbminy = atom->jclusters[cg].bbminy;    MD_FLOAT bbmaxy = atom->iclusters[cg].bbmaxy;
-            MD_FLOAT bbminz = atom->jclusters[cg].bbminz;    MD_FLOAT bbmaxz = atom->iclusters[cg].bbmaxz;
+            MD_FLOAT bbminx = atom->jclusters[cg].bbminx;    MD_FLOAT bbmaxx = atom->jclusters[cg].bbmaxx;
+            MD_FLOAT bbminy = atom->jclusters[cg].bbminy;    MD_FLOAT bbmaxy = atom->jclusters[cg].bbmaxy;
+            MD_FLOAT bbminz = atom->jclusters[cg].bbminz;    MD_FLOAT bbmaxz = atom->jclusters[cg].bbmaxz;
     
             printf("cg:%i  natoms:%i, bbminx:%f, bbmaxx:%f, bbminy:%f, bbmaxy:%f bbminz:%f, bbmaxz:%f\n",cg,natoms,bbminx,bbmaxx,bbminy,bbmaxy,bbminz,bbmaxz);
 
@@ -89,7 +89,7 @@ void debug(Atom* atom, Comm* comm)
                 printf("\tghost:%i x:%f y:%f z:%f vx:%f vy:%f vz:%f fx:%f fy:%f fz:%f\n",cii,x,y,z,vx,vy,vz,fx,fy,fz);
             }
         }
- //exit(0); 
+ exit(0); 
 }
 
 #define HLINE "----------------------------------------------------------------------------\n"
@@ -120,7 +120,7 @@ double setup(Parameter *param, Eam *eam, Atom *atom, Neighbor *neighbor, Stats *
     //initPbc(atom);
     initStats(stats);
     initNeighbor(neighbor, param);
-    initGrid(grid); //change
+    initGrid(grid); //changed
     if(param->input_file == NULL) {
         setupGrid(grid,atom,param);
         createAtom(atom, param);
@@ -148,20 +148,45 @@ double reneighbour(Comm* comm, Parameter *param, Atom *atom, Neighbor *neighbor)
     double S, E;
     S = getTimeStamp();
     LIKWID_MARKER_START("reneighbour");
-    updateSingleAtoms(atom);
-    exchangeComm(comm, atom);
     //printf("atom->Nocal:%i \n",atom->Nlocal);
     //updateAtomsPbc(atom, param);
     buildClusters(atom);
     defineJClusters(atom);
     //setupPbc(atom, param);
-    ghostNeighbor(comm, atom, param); //change
+    ghostNeighbor(comm, atom, param);
     binClusters(atom);
     buildNeighbor(atom, neighbor);
     LIKWID_MARKER_STOP("reneighbour");
     E = getTimeStamp();
     return E-S;
 }
+
+double updateAtoms(Comm* comm, Atom* atom){
+    double S,E;
+    S = getTimeStamp();
+        updateSingleAtoms(atom);
+        exchangeComm(comm, atom);
+    E = getTimeStamp();
+    return E-S;
+}
+
+double dynamicBalance(Comm* comm, Grid* grid, Atom* atom, Parameter* param, double time)
+{
+  double S, E;
+  int dims = 3; //TODO: Adjust to do in 3d and 2d
+  S = getTimeStamp();
+  if(param->balance == 1) {
+    rcbBalance(grid, atom, param, meanBisect, dims);
+  } else if(param->balance ==2) {
+    staggeredBalance(grid, atom, param, time);
+  }else{ 
+   //Do nothing
+  }
+  neighComm(comm, grid->map, param->cutneigh, (MD_FLOAT[3]){param->xprd, param->yprd, param->zprd});
+  exchangeComm(comm,atom);
+  E = getTimeStamp();
+  return E-S;
+} 
 
 void printAtomState(Atom *atom) {
     printf("Atom counts: Natoms=%d Nlocal=%d Nghost=%d Nmax=%d\n",
@@ -234,8 +259,17 @@ int main(int argc, char** argv) {
         }
         if((strcmp(argv[i], "-method") == 0)) {
             param.method = atoi(argv[++i]);
-            if (param.method>3 || param.method< 0){
+            if (param.method>2 || param.method< 0){
                 if(comm.myproc == 0) fprintf(stderr, "Method does not exist!\n");
+                endComm(&comm);   
+                exit(0);
+            }
+            continue;
+        }
+        if((strcmp(argv[i], "-b") == 0)) {
+            param.balance = atoi(argv[++i]);
+            if (param.method>2 || param.method< 0){
+                if(comm.myproc == 0) fprintf(stderr, "Load balance does not exist!\n");
                 endComm(&comm);   
                 exit(0);
             }
@@ -292,30 +326,28 @@ int main(int argc, char** argv) {
 
     param.cutneigh = param.cutforce + param.skin;
     setup(&param, &eam, &atom, &neighbor, &stats, &comm, &grid);
-    //debug(&atom,&comm);
     if(comm.myproc == 0) printParameter(&param);
     if(comm.myproc == 0) printf(HLINE);
     if(comm.myproc == 0) printf("step\ttemp\t\tpressure\n");
+
     computeThermo(0, &param, &atom);
     #if defined(MEM_TRACER) || defined(INDEX_TRACER)
     traceAddresses(&param, &atom, &neighbor, n + 1);
     #endif
-
     #ifdef CUDA_TARGET
     copyDataToCUDADevice(&atom);
     #endif
-
     if(param.force_field == FF_EAM) {
         timer[FORCE] = computeForceEam(&eam, &param, &atom, &neighbor, &stats);
     } else {
         timer[FORCE] = computeForceLJ(&param, &atom, &neighbor, &stats);
     }
-
     timer[NEIGH]    = 0.0;
     timer[FORWARD]  = 0.0;
+    timer[UPDATE]   = 0.0;
+    timer[BALANCE]  = 0.0;
     timer[REVERSE]  = reverse(&comm, &atom, &param);
     timer[TOTAL] = getTimeStamp();
-
     if(param.vtk_file != NULL) {
         //write_data_to_vtk_file(param.vtk_file, &comm ,&atom, 0);
         printvtk(param.vtk_file, &comm, &atom, &param, 0); 
@@ -327,7 +359,6 @@ int main(int argc, char** argv) {
 
     for(int n = 0; n < param.ntimes; n++) {
         initialIntegrate(&param, &atom);
-
         if((n + 1) % param.reneigh_every) {
             if(!((n + 1) % param.prune_every)) {
                 pruneNeighbor(&param, &atom, &neighbor);
@@ -338,31 +369,30 @@ int main(int argc, char** argv) {
             #ifdef CUDA_TARGET
             copyDataFromCUDADevice(&atom);
             #endif
-
-            timer[NEIGH] += reneighbour(&comm, &param, &atom, &neighbor);
+            timer[UPDATE] +=updateAtoms(&comm,&atom);
+            if(param.balance && !((n+1)%grid.balance_every))
+                timer[BALANCE] +=dynamicBalance(&grid, &grid, &atom , &param, timer[FORCE]);
+            timer[NEIGH]  += reneighbour(&comm, &param, &atom, &neighbor);
 
             #ifdef CUDA_TARGET
             copyDataToCUDADevice(&atom);
             isReneighboured = 1;
             #endif
         }
-
         #if defined(MEM_TRACER) || defined(INDEX_TRACER)
         traceAddresses(&param, &atom, &neighbor, n + 1);
         #endif
-
+        grid.Timer = timer[FORCE];
         if(param.force_field == FF_EAM) {
             timer[FORCE] += computeForceEam(&eam, &param, &atom, &neighbor, &stats);
         } else {
             timer[FORCE] += computeForceLJ(&param, &atom, &neighbor, &stats);
-        }
+        } 
         timer[REVERSE] += reverse(&comm, &atom, &param);
         finalIntegrate(&param, &atom);
-
         if(!((n + 1) % param.nstat) && (n+1) < param.ntimes) {
             computeThermo(n + 1, &param, &atom);
         }
-
         int write_pos = !((n + 1) % param.x_out_every);
         int write_vel = !((n + 1) % param.v_out_every);
         if(write_pos || write_vel) {
@@ -382,9 +412,7 @@ int main(int argc, char** argv) {
     #endif
 
     timer[TOTAL] = getTimeStamp() - timer[TOTAL];
-    
-    updateSingleAtoms(&atom);
-    exchangeComm(&comm, &atom);
+    updateAtoms(&comm,&atom);
     computeThermo(-1, &param, &atom);
     //TODO:
     if(param.xtc_file != NULL) {
@@ -397,9 +425,9 @@ int main(int argc, char** argv) {
     if(comm.myproc == 0){
         printf(HLINE);
         printf("System: %d atoms %d ghost atoms, Steps: %d\n", atom.Natoms, atom.Nghost, param.ntimes);
-        printf("TOTAL %.2fs FORCE %.2fs NEIGH %.2fs FORWARD %.2fs REVERSE %.2fs REST %.2fs\n",
-                timer[TOTAL], timer[FORCE], timer[NEIGH], timer[FORWARD], timer[REVERSE], 
-                timer[TOTAL]-timer[FORCE]-timer[NEIGH]-timer[FORWARD]-timer[REVERSE]);
+        printf("TOTAL %.2fs FORCE %.2fs NEIGH %.2fs BALANCE %.2fs FORWARD %.2fs REVERSE %.2fs REST %.2fs\n",
+                timer[TOTAL], timer[FORCE], timer[NEIGH], timer[BALANCE], timer[FORWARD], timer[REVERSE], 
+                timer[TOTAL]-timer[FORCE]-timer[NEIGH]-timer[BALANCE]-timer[FORWARD]-timer[REVERSE]);
         printf(HLINE);
         printf("Performance: %.2f million atom updates per second\n",
                 1e-6 * (double) atom.Natoms * param.ntimes / timer[TOTAL]);

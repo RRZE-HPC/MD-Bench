@@ -34,6 +34,11 @@ typedef struct {
     int half_neigh;
     int* neighbors;
     unsigned int* neighbors_imask;
+    //MPI
+    int Nshell;         //# of cluster in listShell(Cluster here cover all possible ghost interactions)
+    int *numNeighShell; //# of neighs for each atom in listShell
+    int *neighshell;    //list of neighs for each atom in listShell
+    int *listshell;     //Atoms to compute the force
 } Neighbor;
 
 extern void initNeighbor(Neighbor*, Parameter*);

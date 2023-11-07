@@ -21,6 +21,8 @@ typedef enum {
     NEIGH,
     FORWARD,
     REVERSE,
+    UPDATE,
+    BALANCE,
     NUMTIMER
  } timerComm;
 

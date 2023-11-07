@@ -17,6 +17,9 @@ include $(MAKE_DIR)/include_ISA.mk
 include $(MAKE_DIR)/include_GROMACS.mk
 INCLUDES  += -I./$(SRC_DIR)/includes -I./$(COMMON_DIR)/includes
 
+ifeq ($(strip $(OPT_SCHEME)),gromacs)
+    DEFINES +=  -DGROMACS
+endif
 ifeq ($(strip $(DATA_LAYOUT)),AOS)
     DEFINES +=  -DAOS
 endif

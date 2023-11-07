@@ -43,6 +43,7 @@ static int ghostZone(Atom*, int);
 static int eightZone(Atom*, int);
 static int halfZone(Atom*, int);
 static void neighborGhost(Atom*, Neighbor*);
+static inline int isOutsideLowerBoundary(Atom* atom, int j);
 
 /* exported subroutines */
 void initNeighbor(Neighbor *neighbor, Parameter *param) {
@@ -205,11 +206,10 @@ void buildNeighbor_cpu(Atom *atom, Neighbor *neighbor) {
                 for(int m = 0; m < bincount[jbin]; m++) {
                     int j = loc_bin[m];
                  
-                    if((j==i) || neighbor->half_neigh && (j<i)) continue;              
-                    if(half_stencil && ibin==jbin){
-                        if(j<i || atom_x(j)<atom->mybox.lo[_x] || atom_y(j)<atom->mybox.lo[_y]) 
-                            continue;      
-                    } 
+                    if((j==i) || neighbor->half_neigh && (j<i)) 
+                        continue;              
+                    if((half_stencil && ibin==jbin) && (j<i || isOutsideLowerBoundary(atom,j)))
+                        continue;          
                 
                     MD_FLOAT delx = xtmp - atom_x(j);
                     MD_FLOAT dely = ytmp - atom_y(j);  
@@ -419,7 +419,7 @@ static int halfZone(Atom* atom, int i)
 
     if(atom_z(i) >= hi[_z] ||
       (atom_z(i) >= lo[_z] && atom_y(i) >= hi[_y]) || 
-      (atom_z(i) >= lo[_z] && atom_y(i) >= lo[_y] && atom_x(i) >= lo[_x])) 
+      (atom_z(i) >= lo[_z] && atom_y(i) >= lo[_y] && atom_x(i) >= hi[_x])) 
        zone++;
 
     return zone;
@@ -441,9 +441,16 @@ static void neighborGhost(Atom *atom, Neighbor *neighbor) {
         int n  = countAtoms[izone];
         list[n] = i;
         countAtoms[izone]++;     
-        if(izone == 1 || izone == 2 || izone == 3)
-            neighbor->listshell[Nshell++] = i;  
+        //if(izone == 1 || izone == 2 || izone == 3)
+        //    neighbor->listshell[Nshell++] = i;  
     }
+
+    for(int zone = 1; zone<=3; zone++){
+        int *list = &listzone[Nghost*zone];
+        for(int n=0; n<countAtoms[zone]; n++)
+            neighbor->listshell[Nshell++] = list[n]; 
+    }
+
 
     neighbor->Nshell = Nshell;
     if(neighbor->numNeighShell) free(neighbor->numNeighShell);
@@ -511,4 +518,12 @@ static void neighborGhost(Atom *atom, Neighbor *neighbor) {
     }  
     free(listzone); 
 }
+
+static inline int isOutsideLowerBoundary(Atom* atom, int j) {
+    
+    return (atom_x(j)<atom->mybox.lo[_x] || 
+            atom_y(j)<atom->mybox.lo[_y] ||
+            atom_z(j)<atom->mybox.lo[_z]);  
+}                          
+                                   
 

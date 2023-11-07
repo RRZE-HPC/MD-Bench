@@ -53,7 +53,7 @@ typedef struct {
     MD_FLOAT gx, gy, gz;
     MD_FLOAT reflect_x, reflect_y, reflect_z;
     //MPI implementation
-    int rcb;
+    int balance;
     int method;
     int accuracy;
 } Parameter;

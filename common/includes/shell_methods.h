@@ -65,10 +65,9 @@ void ghostNeighbor(Comm* comm, Atom* atom, Parameter* param)
         for(int iswap=0; iswap<6; iswap++) 
             ghostComm(comm,atom,iswap);
     }
-#ifdef GROMACS 
-    addDummyCluster(atom);
-#endif
 }
+
+/*
 #ifdef GROMACS 
 void addDummyCluster(Atom* atom)
 {
@@ -91,4 +90,4 @@ void addDummyCluster(Atom* atom)
     atom->Nclusters = atom->Nclusters_local + Nghost + 1;
 }
 #endif
-  
+*/

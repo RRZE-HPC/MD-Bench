@@ -54,7 +54,7 @@ void initParameter(Parameter *param) {
     param->reflect_y = 0.0;
     param->reflect_z = 0.0;
     //MPI
-    param->rcb = 0;
+    param->balance = 0;
     param->method = 0;
     param->accuracy = 0;
 }
@@ -121,7 +121,7 @@ void readParameter(Parameter *param, const char *filename) {
             PARSE_INT(v_out_every);
             PARSE_INT(half_neigh);
             PARSE_INT(method);
-            PARSE_INT(rcb);
+            PARSE_INT(balance);
             PARSE_INT(accuracy);
         }
     }
@@ -194,7 +194,9 @@ void printParameter(Parameter *param) {
                                         "Full Shell");
     printf("\tMethod: %s\n", str);
     printf("\tAccuracy: %d\n", param->accuracy);
-    strcpy(str, (param->rcb) ? "rcb" :"cartisian");
+    strcpy(str, (param->balance == 1) ? "rcb"     : 
+                (param->balance == 2) ? "Staggered":
+                                          "cartisian");
     printf("\tPartition: %s\n", str);
     printf("\tProcessor frequency (GHz): %.4f\n", param->proc_freq);
 }

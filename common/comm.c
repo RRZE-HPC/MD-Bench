@@ -23,6 +23,49 @@ int isInSwap(Comm* comm, int swap, int proc)
   return 0;
 }
 
+void defineReverseandExchangeLists(Comm* comm){
+  int index = 0; 
+  int dim = 0;
+  int me = comm->myproc;
+//Set the inverse neighbour list
+  for(int iswap = 0; iswap<6; iswap++){
+    int dim = comm->swapdim[iswap]; 
+    int dir = comm->swapdir[iswap];
+    int invswap = comm->swap[dim][(dir+1)%2];   
+    
+    for(int i = comm->sendfrom[invswap]; i< comm->sendtill[invswap]; i++)
+      comm->nrecv[index++] = comm->nsend[i];  
+    
+    comm->recvfrom[iswap] = (iswap == 0) ? 0: comm->recvtill[iswap-1];
+    comm->recvtill[iswap] = index;
+  }
+
+  //Set the exchange neighbour list
+  for(index = 0, dim = 0; dim<3; dim++)
+  {
+    int iswap0 = comm->swap[dim][0];  int iswap1 = comm->swap[dim][1];
+    
+    for (int ineigh = comm->sendfrom[iswap0]; ineigh<comm->sendtill[iswap0]; ineigh++)
+      if(comm->nsend[ineigh]!= me) 
+        comm->nexch[index++] = comm->nsend[ineigh];
+
+    for(int ineigh = comm->sendfrom[iswap1]; ineigh<comm->sendtill[iswap1]; ineigh++)
+      if(!isInSwap(comm,iswap0,comm->nsend[ineigh]) && comm->nsend[ineigh]!= me) 
+        comm->nexch[index++] = comm->nsend[ineigh];
+
+    comm->exchfrom[dim] = (dim == _x) ? 0: comm->exchtill[dim-1];
+    comm->exchtill[dim] = index;
+  }
+  
+  //set if myproc is unique in the swap 
+  for(int iswap =0; iswap<6; iswap++){
+    int sizeswap = comm->sendtill[iswap]-comm->sendfrom[iswap]; 
+    int index = comm->sendfrom[iswap];
+    int myneigh = comm->nsend[index];
+    comm->othersend[iswap] = (sizeswap != 1 || comm->myproc != myneigh) ?  1 : 0;
+  }
+}
+
 void neighComm(Comm *comm, MD_FLOAT *map, MD_FLOAT cutneigh, MD_FLOAT *prd)
 {
   int me = comm->myproc; 
@@ -81,6 +124,9 @@ void neighComm(Comm *comm, MD_FLOAT *map, MD_FLOAT cutneigh, MD_FLOAT *prd)
   comm->sendtill[iswap] = ineigh;
   comm->numneigh = ineigh; 
   }
+  initBuffers(comm);
+  defineReverseandExchangeLists(comm);
+  
 }
     
 void initComm(int* argc, char*** argv, Comm* comm)
@@ -152,11 +198,14 @@ void setupComm(Comm* comm, Parameter* param, MD_FLOAT* map){
   comm->reverseSize   = REVERSE_SIZE;      //return forces fx, fy, fz
   comm->ghostSize     = GHOST_SIZE;        //send x,y,z,type;
   comm->exchangeSize  = EXCHANGE_SIZE;     //send x,y,z,vx,vy,vz,type
-  
-  comm->maxneigh = NEIGHMIN;
+ 
+  //Allocate memory for recv buffer and recv buffer
   comm->maxsend = BUFMIN; 
   comm->maxrecv = BUFMIN;
+  comm->buf_send = (MD_FLOAT*) allocate(ALIGNMENT,(comm->maxsend + BUFMIN) * sizeof(MD_FLOAT));
+  comm->buf_recv = (MD_FLOAT*) allocate(ALIGNMENT, comm->maxrecv * sizeof(MD_FLOAT)); 
 
+  comm->maxneigh = NEIGHMIN;
   comm->nsend  = (int*) allocate(ALIGNMENT,  comm->maxneigh * sizeof(int));
   comm->nrecv  = (int*) allocate(ALIGNMENT,  comm->maxneigh * sizeof(int));
   comm->nexch  = (int*) allocate(ALIGNMENT,  comm->maxneigh * sizeof(int));
@@ -166,45 +215,6 @@ void setupComm(Comm* comm, Parameter* param, MD_FLOAT* map){
   comm->boxes  = (Box*) allocate(ALIGNMENT,  comm->maxneigh * sizeof(Box));
   
   neighComm(comm, map, param->cutneigh, (MD_FLOAT[3]){param->xprd, param->yprd, param->zprd}); 
-  initBuffers(comm);  
-
-  //Set the inverse neighbour list
-  for(iswap = 0; iswap<6; iswap++){
-    dim = comm->swapdim[iswap]; 
-    dir = comm->swapdir[iswap];
-    invswap = comm->swap[dim][(dir+1)%2];   
-    
-    for(i = comm->sendfrom[invswap]; i< comm->sendtill[invswap]; i++)
-      comm->nrecv[index++] = comm->nsend[i];  
-    
-    comm->recvfrom[iswap] = (iswap == 0) ? 0: comm->recvtill[iswap-1];
-    comm->recvtill[iswap] = index;
-  }
-
-  //Set the exchange neighbour list
-  for(index = 0, dim = 0; dim<3; dim++)
-  {
-    int iswap0 = comm->swap[dim][0];  int iswap1 = comm->swap[dim][1];
-    
-    for (ineigh = comm->sendfrom[iswap0]; ineigh<comm->sendtill[iswap0]; ineigh++)
-      if(comm->nsend[ineigh]!= me) 
-        comm->nexch[index++] = comm->nsend[ineigh];
-
-    for(ineigh = comm->sendfrom[iswap1]; ineigh<comm->sendtill[iswap1]; ineigh++)
-      if(!isInSwap(comm,iswap0,comm->nsend[ineigh]) && comm->nsend[ineigh]!= me) 
-        comm->nexch[index++] = comm->nsend[ineigh];
-
-    comm->exchfrom[dim] = (dim == _x) ? 0: comm->exchtill[dim-1];
-    comm->exchtill[dim] = index;
-  }
-  
-  //set if myproc is unique in the swap 
-  for(int iswap =0; iswap<6; iswap++){
-    int sizeswap = comm->sendtill[iswap]-comm->sendfrom[iswap]; 
-    int index = comm->sendfrom[iswap];
-    int myneigh = comm->nsend[index];
-    comm->othersend[iswap] = (sizeswap != 1 || comm->myproc != myneigh) ?  1 : 0;
-  }
 }
 
 void forwardComm(Comm* comm, Atom* atom, int iswap)
@@ -471,8 +481,18 @@ inline void growList(Comm* comm, int ineigh, int n)
 static inline void  initBuffers(Comm* comm)
 {  
   //Buffers depending on the # of my neighs 
-  int numneigh = comm->numneigh;
-    
+  int numneigh = comm->numneigh; 
+  if(comm->atom_send) free(comm->atom_send);
+  if(comm->atom_recv) free(comm->atom_recv);
+  if(comm->off_atom_send) free(comm->off_atom_send);
+  if(comm->maxsendlist) free(comm->maxsendlist);
+  
+  if(comm->sendlist){
+    for(int i = 0; i < numneigh; i++) 
+      if(comm->sendlist[i]) free(comm->sendlist[i]);
+  } 
+  if(comm->sendlist) free(comm->sendlist);
+
   comm->atom_send   = (int*) allocate(ALIGNMENT,  numneigh  * sizeof(int));
   comm->atom_recv   = (int*) allocate(ALIGNMENT,  numneigh * sizeof(int));
   comm->off_atom_send = (int*) allocate(ALIGNMENT,numneigh * sizeof(int));
@@ -485,9 +505,6 @@ static inline void  initBuffers(Comm* comm)
   comm->sendlist = (int**) allocate(ALIGNMENT, numneigh * sizeof(int*));
   for(int i = 0; i < numneigh; i++) 
     comm->sendlist[i] = (int*) allocate(ALIGNMENT, BUFMIN * sizeof(int));
-
-  comm->buf_send = (MD_FLOAT*) allocate(ALIGNMENT,(comm->maxsend + BUFMIN) * sizeof(MD_FLOAT));
-  comm->buf_recv = (MD_FLOAT*) allocate(ALIGNMENT, comm->maxrecv * sizeof(MD_FLOAT));  
 }
 
 static inline void freeBuffers(Comm* comm)
@@ -504,9 +521,11 @@ static inline void freeBuffers(Comm* comm)
   if(comm->off_atom_send) free(comm->off_atom_send); 
   if(comm->off_atom_recv) free(comm->off_atom_recv);
   if(comm->maxsendlist) free(comm->maxsendlist); 
- 
-  for(int i = 0; i < comm->numneigh; i++) 
-    if(comm->sendlist[i]) free(comm->sendlist[i]); 
+  
+  if(comm->sendlist){
+    for(int i = 0; i < comm->numneigh; i++) 
+      if(comm->sendlist[i]) free(comm->sendlist[i]); 
+  }
   if(comm->sendlist) free(comm->sendlist);
 
   if(comm->buf_send) free(comm->buf_send); 

@@ -43,12 +43,12 @@ typedef struct {
 	
   int numneigh;                     // # of all my neighs along all swaps 
   int maxneigh;										  // Buffer size for my neighs
-	int sendfrom[6];                  //return the lowest neigh index to send
-  int sendtill[6];                  //return the highest neigh index to send
-  int recvfrom[6];                  //return the lowest neigh index to recv 
-  int recvtill[6];                  //return the highest neigh index to recv
-  int* nsend;											  // neigh to send
-  int* nrecv;                       // neigh to recv
+	int sendfrom[6];                  //return the lowest neigh index to send in each swap
+  int sendtill[6];                  //return the highest neigh index to send in each swao
+  int recvfrom[6];                  //return the lowest neigh index to recv in each swap
+  int recvtill[6];                  //return the highest neigh index to recv in each swap
+  int* nsend;											  // neigh whose I want to send
+  int* nrecv;                       // neigh whose I want to recv
 
 	int* pbc_x;                       // if pbc in x
 	int* pbc_y;                       // if pbc in y
@@ -89,7 +89,8 @@ typedef struct {
 
 void initComm(int*, char***, Comm*); 						    //Init MPI 
 void endComm(Comm*);													      //End MPI
-void setupComm(Comm*,Parameter*,MD_FLOAT*);         //Creates a 3d grid
+void setupComm(Comm*,Parameter*,MD_FLOAT*);         //Creates a 3d grid or rcb grid
+void neighComm(Comm*,MD_FLOAT*,MD_FLOAT,MD_FLOAT*); //Find neighbours within cut-off and defines ghost regions
 void forwardComm(Comm*,Atom*,int);							    //Send info in one direction
 void reverseComm(Comm*,Atom*,int);							    //Return info after forward communication
 void exchangeComm(Comm*,Atom*);							        //Exchange info between procs
