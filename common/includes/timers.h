@@ -23,6 +23,7 @@ typedef enum {
     REVERSE,
     UPDATE,
     BALANCE,
+    REST,
     NUMTIMER
  } timerComm;
 

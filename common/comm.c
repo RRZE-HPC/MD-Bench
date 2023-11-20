@@ -79,7 +79,7 @@ void neighComm(Comm *comm, MD_FLOAT *map, MD_FLOAT cutneigh, MD_FLOAT *prd)
   mybox.lo[_x] = map[me*PAD+0];  mybox.hi[_x] = map[me*PAD+3];
   mybox.lo[_y] = map[me*PAD+1];  mybox.hi[_y] = map[me*PAD+4];
   mybox.lo[_z] = map[me*PAD+2];  mybox.hi[_z] = map[me*PAD+5];
- 
+
   //MAP is stored as follows: xlo,ylo,zlo,xhi,yhi,zhi
   for(int iswap = 0; iswap <6; iswap++)
   {
@@ -105,13 +105,13 @@ void neighComm(Comm *comm, MD_FLOAT *map, MD_FLOAT cutneigh, MD_FLOAT *prd)
           comm -> maxneigh  = (int) 2*ineigh;  
           comm -> nsend     = (int*) reallocate(comm->nsend, ALIGNMENT,  comm->maxneigh * sizeof(int), oldByteSize);
           comm -> nrecv     = (int*) reallocate(comm->nrecv, ALIGNMENT,  comm->maxneigh * sizeof(int), oldByteSize);
-          comm -> nexch     = (int*) reallocate(comm->nrecv, ALIGNMENT,  comm->maxneigh * sizeof(int), oldByteSize);
+          comm -> nexch     = (int*) reallocate(comm->nexch, ALIGNMENT,  comm->maxneigh * sizeof(int), oldByteSize);
           comm -> pbc_x     = (int*) reallocate(comm->pbc_x, ALIGNMENT,  comm->maxneigh * sizeof(int), oldByteSize);
           comm -> pbc_y     = (int*) reallocate(comm->pbc_y, ALIGNMENT,  comm->maxneigh * sizeof(int), oldByteSize);
           comm -> pbc_z     = (int*) reallocate(comm->pbc_z, ALIGNMENT,  comm->maxneigh * sizeof(int), oldByteSize);
           comm -> boxes     = (Box*) reallocate(comm->boxes, ALIGNMENT,  comm->maxneigh * sizeof(Box), oldBoxSize);
         }
-     
+
       comm->boxes[ineigh] = cut;  
       comm->nsend[ineigh] = proc;
       comm->pbc_x[ineigh] = (dim == _x) ? pbc : 0;
@@ -168,8 +168,7 @@ void endComm(Comm* comm)
 
 void setupComm(Comm* comm, Parameter* param, MD_FLOAT* map){
  
-  int me = comm->myproc;
-  int index=0, iswap=0, dim=0, dir=0, invswap=0, ineigh=0, i=0; 
+  int i=0; 
 
   comm->swap[_x][0] = 0; comm->swap[_x][1] =1;
   comm->swap[_y][0] = 2; comm->swap[_y][1] =3;
@@ -305,8 +304,7 @@ void ghostComm(Comm* comm, Atom* atom,int iswap){
   MD_FLOAT xlo, xhi, ylo, yhi, zlo, zhi; 
   MD_FLOAT* buf;
   int nrqst=0, nsend=0, nrecv=0, offset=0, ineigh=0, pbc[3];
-  int all_recv=0, all_send=0, ghostSize=0, visitor=0; 
-  int me = comm->myproc;
+  int all_recv=0, all_send=0, ghostSize=0; 
   int size = comm->ghostSize; 
   int maxrqrst = comm->numneigh;
   MPI_Request requests[maxrqrst];
@@ -413,7 +411,7 @@ void exchangeComm(Comm* comm, Atom* atom){
     }
     atom->Nlocal = nlocal;
 
-    /* send/recv atoms in both directions */
+    /* send/recv number of to share atoms with neighbouring procs*/
     for(int ineigh = comm->exchfrom[dim]; ineigh < comm->exchtill[dim]; ineigh++) 
       MPI_Irecv(&size_recv[ineigh],1,MPI_INT,comm->nexch[ineigh],0,world,&requests[nrqst++]);
 
@@ -486,22 +484,21 @@ static inline void  initBuffers(Comm* comm)
   if(comm->atom_recv) free(comm->atom_recv);
   if(comm->off_atom_send) free(comm->off_atom_send);
   if(comm->maxsendlist) free(comm->maxsendlist);
-  
   if(comm->sendlist){
     for(int i = 0; i < numneigh; i++) 
       if(comm->sendlist[i]) free(comm->sendlist[i]);
   } 
   if(comm->sendlist) free(comm->sendlist);
-
+  
   comm->atom_send   = (int*) allocate(ALIGNMENT,  numneigh  * sizeof(int));
   comm->atom_recv   = (int*) allocate(ALIGNMENT,  numneigh * sizeof(int));
   comm->off_atom_send = (int*) allocate(ALIGNMENT,numneigh * sizeof(int));
   comm->off_atom_recv = (int*) allocate(ALIGNMENT,numneigh * sizeof(int));
   comm->maxsendlist   = (int*) allocate(ALIGNMENT,numneigh * sizeof(int));
-
+ 
   for(int i = 0; i < numneigh; i++) 
     comm->maxsendlist[i] = BUFMIN;
-  
+ 
   comm->sendlist = (int**) allocate(ALIGNMENT, numneigh * sizeof(int*));
   for(int i = 0; i < numneigh; i++) 
     comm->sendlist[i] = (int*) allocate(ALIGNMENT, BUFMIN * sizeof(int));

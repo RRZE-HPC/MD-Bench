@@ -14,10 +14,11 @@
 #include <stats.h>
 #include <timing.h>
 #include <mpi.h>
+#include <util.h>
 #ifdef __SIMD_KERNEL__
 #include <simd.h>
 #endif
-static enum {fullShell=0, halfShell, eightShell, halfStencil};
+
 void computeForceGhostShell(Parameter*, Atom*, Neighbor*);
 
 double computeForceLJFullNeigh_plain_c(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *stats) {

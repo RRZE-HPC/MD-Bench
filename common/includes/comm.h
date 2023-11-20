@@ -15,7 +15,7 @@
 #define LOCAL atom->Nclusters_local / JFAC
 #define GHOST atom->Nclusters_ghost
 
-#define  IsinRegionToSend(cj)                                                                  \                                                                                                          
+#define IsinRegionToSend(cj)                                                                  \
            ((atom->jclusters[(cj)].bbminx >= xlo || atom->jclusters[(cj)].bbmaxx >= xlo)  &&  \
             (atom->jclusters[(cj)].bbminx  < xhi || atom->jclusters[(cj)].bbmaxx  < xhi)  &&  \
             (atom->jclusters[(cj)].bbminy >= ylo || atom->jclusters[(cj)].bbmaxy >= ylo)  &&  \
@@ -30,12 +30,12 @@
 #define LOCAL atom->Nlocal
 #define GHOST atom->Nghost
 
-#define  IsinRegionToSend(i)                                \
+#define IsinRegionToSend(i)                                 \
            ((atom_x((i)) >= xlo && atom_x((i)) < xhi) &&    \
             (atom_y((i)) >= ylo && atom_y((i)) < yhi) &&    \
             (atom_z((i)) >= zlo && atom_z((i)) < zhi)) 
 
-#endif
+#endif 
 
 typedef struct {
   int myproc;                       // my proc ID

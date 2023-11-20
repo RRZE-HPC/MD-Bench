@@ -14,9 +14,9 @@
 #include <atom.h>
 #include <timing.h>
 #include <parameter.h>
+#include <util.h>
 
-static enum {fullShell=0, halfShell, eightShell, halfStencil};
-static void addDummyCluster(Atom*);
+//static void addDummyCluster(Atom*);
 
 double forward(Comm* comm, Atom *atom, Parameter* param){
     double S, E;    

@@ -12,10 +12,10 @@
 #include <parameter.h>
 #include <atom.h>
 #include <util.h>
+#include <mpi.h>
 
 #define SMALL 1.0e-6
 #define FACTOR 0.999
-static enum {fullShell=0, halfShell, eightShell, halfStencil};
 static MD_FLOAT xprd, yprd, zprd;
 static MD_FLOAT bininvx, bininvy;
 static int mbinxlo, mbinylo;
@@ -34,9 +34,9 @@ static int nmax;
 static int nstencil;      // # of bins in stencil
 static int* stencil;      // stencil list of bin offsets
 static MD_FLOAT binsizex, binsizey;
+int me;             //rank
 int method;         // method 
 int shellMethod;    //If shell method exist  
-int accuracy;
 
 static int coord2bin(MD_FLOAT, MD_FLOAT);
 static MD_FLOAT bindist(int, int);
@@ -45,7 +45,7 @@ static int eightZoneCluster(Atom*, int);
 static int halfZoneCluster(Atom*, int);
 static int ghostClusterinRange(Atom*, int, int, MD_FLOAT);
 static void neighborGhost(Atom*, Neighbor*);
-static inline int isOutsideLowerBoundary(Atom*, int);
+
 /* exported subroutines */
 void initNeighbor(Neighbor *neighbor, Parameter *param) {
     MD_FLOAT neighscale = 5.0 / 6.0;
@@ -73,8 +73,9 @@ void initNeighbor(Neighbor *neighbor, Parameter *param) {
         param->half_neigh = 1;
         shellMethod = 1;
     }
+    me = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &me);
     neighbor->half_neigh = param->half_neigh;
-    accuracy = param->accuracy;
     neighbor->Nshell = 0;  
     neighbor->numNeighShell = NULL;
     neighbor->neighshell = NULL;
@@ -404,7 +405,7 @@ void buildNeighbor(Atom *atom, Neighbor *neighbor) {
 
         if(resize) {
             neighbor->maxneighs = new_maxneighs * 1.2;
-            fprintf(stdout, "RESIZE %d\n", neighbor->maxneighs);
+            fprintf(stdout, "RESIZE %d, PROC %d\n", neighbor->maxneighs,me);
             free(neighbor->neighbors);
             free(neighbor->neighbors_imask);
             neighbor->neighbors = (int *) malloc(nmax * neighbor->maxneighs * sizeof(int));
@@ -986,7 +987,6 @@ static int halfZoneCluster(Atom* atom, int cj)
     MD_FLOAT *hi = atom->mybox.hi;
     MD_FLOAT *lo = atom->mybox.lo;
     int zone = 0;
-
     if(atom->jclusters[cj].bbminz >= hi[_z] ||
       (atom->jclusters[cj].bbminz >= lo[_z] && atom->jclusters[cj].bbminy >= hi[_y]) || 
       (atom->jclusters[cj].bbminz >= lo[_z] && atom->jclusters[cj].bbminy >= lo[_y] && atom->jclusters[cj].bbminx >= hi[_x])) 

@@ -55,7 +55,7 @@ typedef struct {
     //MPI implementation
     int balance;
     int method;
-    int accuracy;
+    int balance_every;
 } Parameter;
 
 void initParameter(Parameter*);

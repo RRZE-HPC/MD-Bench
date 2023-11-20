@@ -13,26 +13,7 @@
 #include <allocate.h>
 #include <util.h>
 #include <mpi.h>
-
-static inline int isAtomInSubdomain(Box*, MD_FLOAT, MD_FLOAT, MD_FLOAT);
-
-
-/* internal subroutines */
-void growPbc(Atom* atom) {
-    int nold = atom->NmaxGhost;
-    atom->NmaxGhost += DELTA;
-
-    if (atom->PBCx){
-        atom->PBCx = (int*) reallocate(atom->PBCx, ALIGNMENT, atom->NmaxGhost * sizeof(int), nold * sizeof(int));
-        atom->PBCy = (int*) reallocate(atom->PBCy, ALIGNMENT, atom->NmaxGhost * sizeof(int), nold * sizeof(int));
-        atom->PBCz = (int*) reallocate(atom->PBCz, ALIGNMENT, atom->NmaxGhost * sizeof(int), nold * sizeof(int));
-    } else {
-        atom->PBCx = (int*) malloc(atom->NmaxGhost * sizeof(int));
-        atom->PBCy = (int*) malloc(atom->NmaxGhost * sizeof(int));
-        atom->PBCz = (int*) malloc(atom->NmaxGhost * sizeof(int));
-    } 
-}
-
+ 
 void initAtom(Atom *atom) {
     atom->x  = NULL; atom->y  = NULL; atom->z  = NULL;
     atom->vx = NULL; atom->vy = NULL; atom->vz = NULL;
@@ -70,8 +51,7 @@ void initAtom(Atom *atom) {
 }
 
 void createAtom(Atom *atom, Parameter *param) {
-    int me = 0;
-    MPI_Comm_rank(MPI_COMM_WORLD, &me);
+    
     MD_FLOAT xlo = 0.0; MD_FLOAT xhi = param->xprd;
     MD_FLOAT ylo = 0.0; MD_FLOAT yhi = param->yprd;
     MD_FLOAT zlo = 0.0; MD_FLOAT zhi = param->zprd;
@@ -121,7 +101,7 @@ void createAtom(Atom *atom, Parameter *param) {
             ytmp = 0.5 * alat * j;
             ztmp = 0.5 * alat * k;
 
-            if(isAtomInSubdomain(&atom->mybox, xtmp, ytmp, ztmp)){    
+            if(xtmp >= xlo && xtmp < xhi && ytmp >= ylo && ytmp < yhi && ztmp >= zlo && ztmp < zhi ) {        
                 n = k * (2 * param->ny) * (2 * param->nx) + j * (2 * param->nx) + i + 1;
                 for(m = 0; m < 5; m++) { myrandom(&n); }
                 vxtmp = myrandom(&n);
@@ -149,9 +129,6 @@ void createAtom(Atom *atom, Parameter *param) {
         if(ox * subboxdim > ihi) { ox = 0; oy++; }
         if(oy * subboxdim > jhi) { oy = 0; oz++; }
     }
-    MPI_Allreduce(&(atom->Nlocal), &(atom->Natoms), 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-    printf("Processor:%d Local Atoms:%d Total atoms:%d\n",me, atom->Nlocal, atom->Natoms);
-    MPI_Barrier(MPI_COMM_WORLD);
 }
 
 int type_str2int(const char *type) {
@@ -574,6 +551,22 @@ void growClusters(Atom *atom) {
     atom->cl_type = (int*) reallocate(atom->cl_type, ALIGNMENT, atom->Nclusters_max * CLUSTER_M * sizeof(int), nold * CLUSTER_M * sizeof(int));
 }
 
+/* MPI added*/
+void growPbc(Atom* atom) {
+    int nold = atom->NmaxGhost;
+    atom->NmaxGhost += DELTA;
+
+    if (atom->PBCx){
+        atom->PBCx = (int*) reallocate(atom->PBCx, ALIGNMENT, atom->NmaxGhost * sizeof(int), nold * sizeof(int));
+        atom->PBCy = (int*) reallocate(atom->PBCy, ALIGNMENT, atom->NmaxGhost * sizeof(int), nold * sizeof(int));
+        atom->PBCz = (int*) reallocate(atom->PBCz, ALIGNMENT, atom->NmaxGhost * sizeof(int), nold * sizeof(int));
+    } else {
+        atom->PBCx = (int*) malloc(atom->NmaxGhost * sizeof(int));
+        atom->PBCy = (int*) malloc(atom->NmaxGhost * sizeof(int));
+        atom->PBCz = (int*) malloc(atom->NmaxGhost * sizeof(int));
+    } 
+}
+
 void packForward(Atom* atom, int nc, int* list, MD_FLOAT* buf, int* pbc)
 {
     for(int i = 0; i < nc; i++) {
@@ -813,19 +806,4 @@ void copy(Atom* atom, int i, int j)
   atom_vy(i) = atom_vy(j);
   atom_vz(i) = atom_vz(j);
   atom->type[i] = atom->type[j];
-}
-
-static inline int isAtomInSubdomain(Box* box, MD_FLOAT x, MD_FLOAT y, MD_FLOAT z) {
-    
-    MD_FLOAT xlo = box->lo[_x]; MD_FLOAT xhi = box->hi[_x];  
-    MD_FLOAT ylo = box->lo[_y]; MD_FLOAT yhi = box->hi[_y];
-    MD_FLOAT zlo = box->lo[_z]; MD_FLOAT zhi = box->hi[_z];
-        
-        if(x >= xlo && x < xhi &&  
-                        y >= ylo && y < yhi &&  
-                                z >= zlo && z < zhi){
-            return 1;  
-        } else {
-            return 0;  
-        } 
 }

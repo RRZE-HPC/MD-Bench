@@ -17,7 +17,7 @@
 
 #define SMALL 1.0e-6
 #define FACTOR 0.999
-static enum {fullShell=0, halfShell, eightShell, halfStencil};
+
 MD_FLOAT xprd, yprd, zprd;
 MD_FLOAT bininvx, bininvy, bininvz;
 int pad_x, pad_y, pad_z;
@@ -33,10 +33,11 @@ int nmax;
 int nstencil;      // # of bins in stencil
 int* stencil;      // stencil list of bin offsets
 MD_FLOAT binsizex, binsizey, binsizez;
+int me;             //rank
 int method;         // method
 int half_stencil;   //If half stencil exist 
-int shellMethod;    //If shell method exist    
-int accuracy;       //If local neighbour list are sorted       
+int shellMethod;    //If shell method exist   
+
 static int coord2bin(MD_FLOAT, MD_FLOAT , MD_FLOAT);
 static MD_FLOAT bindist(int, int, int);
 static int ghostZone(Atom*, int);
@@ -48,7 +49,6 @@ static inline int isOutsideLowerBoundary(Atom* atom, int j);
 /* exported subroutines */
 void initNeighbor(Neighbor *neighbor, Parameter *param) {
     MD_FLOAT neighscale = 5.0 / 6.0;
-    //MD_FLOAT neighscale = 1.0;
     xprd = param->nx * param->lattice;
     yprd = param->ny * param->lattice;
     zprd = param->nz * param->lattice;
@@ -64,7 +64,7 @@ void initNeighbor(Neighbor *neighbor, Parameter *param) {
     neighbor->maxneighs = 100;
     neighbor->numneigh = NULL;
     neighbor->neighbors = NULL;
-    //MPI
+    //========== MPI =============
     shellMethod = 0;
     half_stencil = 0;
     method = param->method;
@@ -76,8 +76,9 @@ void initNeighbor(Neighbor *neighbor, Parameter *param) {
         param->half_neigh = 0;
         half_stencil = 1;
     }
+    me = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD,&me);
     neighbor->half_neigh = param->half_neigh;
-    accuracy = param->accuracy;
     neighbor->Nshell = 0;  
     neighbor->numNeighShell = NULL;
     neighbor->neighshell = NULL;
@@ -124,22 +125,22 @@ void setupNeighbor(Parameter* param) {
     }
   
     pad_x = (int)(cutneigh*bininvx);
-    while(pad_x * binsizex < FACTOR * cutneigh) pad_x++;
+    if(pad_x * binsizex < FACTOR * cutneigh) pad_x++;
     pad_y = (int)(cutneigh*bininvy);
-    while(pad_y * binsizey < FACTOR * cutneigh) pad_y++;
+    if(pad_y * binsizey < FACTOR * cutneigh) pad_y++;
     pad_z = (int)(cutneigh*bininvz);
-    while(pad_z * binsizez < FACTOR * cutneigh) pad_z++;
+    if(pad_z * binsizez < FACTOR * cutneigh) pad_z++;
 
     mbinx = nbinx+2*pad_x;
     mbiny = nbiny+2*pad_y;
     mbinz = nbinz+2*pad_z;
 
     nextx = (int) (cutneigh * bininvx);
-    while(nextx * binsizex < FACTOR * cutneigh) nextx++;
+    if(nextx * binsizex < FACTOR * cutneigh) nextx++;
     nexty = (int) (cutneigh * bininvy);
-    while(nexty * binsizey < FACTOR * cutneigh) nexty++;
+    if(nexty * binsizey < FACTOR * cutneigh) nexty++;
     nextz = (int) (cutneigh * bininvz);
-    while(nextz * binsizez < FACTOR * cutneigh) nextz++;
+    if(nextz * binsizez < FACTOR * cutneigh) nextz++;
 
     if (stencil) { free(stencil); }
     stencil = (int*) malloc((2 * nextz + 1) * (2 * nexty + 1) * (2 * nextx + 1) * sizeof(int));
@@ -170,9 +171,7 @@ void setupNeighbor(Parameter* param) {
 }
 
 void buildNeighbor_cpu(Atom *atom, Neighbor *neighbor) {
-    int nall = atom->Nlocal + atom->Nghost;
-    int me = 0; 
-    MPI_Comm_rank(MPI_COMM_WORLD, &me);
+    int nall = atom->Nlocal + atom->Nghost;  
     /* extend atom arrays if necessary */
     if(nall > nmax) {
         nmax = nall;
@@ -206,7 +205,7 @@ void buildNeighbor_cpu(Atom *atom, Neighbor *neighbor) {
                 for(int m = 0; m < bincount[jbin]; m++) {
                     int j = loc_bin[m];
                  
-                    if((j==i) || neighbor->half_neigh && (j<i)) 
+                    if((j==i) || (neighbor->half_neigh && (j<i))) 
                         continue;              
                     if((half_stencil && ibin==jbin) && (j<i || isOutsideLowerBoundary(atom,j)))
                         continue;          
@@ -236,10 +235,10 @@ void buildNeighbor_cpu(Atom *atom, Neighbor *neighbor) {
                 }
             }
             
-            if(!resize && accuracy) sortNeighbors(atom, neighptr, n, i);  
+            //if(!resize && accuracy) sortNeighbors(atom, neighptr, n, i);  
         }
         if(resize) {
-            printf("RESIZE %d by processor %d\n", neighbor->maxneighs,me);
+            printf("RESIZE %d, PROC %d\n", neighbor->maxneighs,me);
             neighbor->maxneighs = new_maxneighs * 1.2;
             free(neighbor->neighbors);
             neighbor->neighbors = (int*) malloc(atom->Nmax * neighbor->maxneighs * sizeof(int));
@@ -387,8 +386,9 @@ Added with MPI*/
 
 static int ghostZone(Atom* atom, int i){
     if(i<atom->Nlocal)  return 1;
-    if(method == halfShell)  return halfZone(atom,i);
-    if(method == eightShell) return eightZone(atom,i);   
+    else if(method == halfShell)  return halfZone(atom,i);
+    else if(method == eightShell) return eightZone(atom,i); 
+    else return 0;  
 }
 
 static int eightZone(Atom* atom, int i)

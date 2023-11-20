@@ -15,7 +15,7 @@
 #include <util.h>
 #include <simd.h>
 #include <math.h>
-static enum {fullShell=0, halfShell, eightShell};
+
 void computeForceGhostShell(Parameter*, Atom*, Neighbor*);
 /*
 static inline void gmx_load_simd_2xnn_interactions(
@@ -408,7 +408,7 @@ double computeForceLJ_2xnn_half(Parameter *param, Atom *atom, Neighbor *neighbor
         addStat(stats->num_neighs, numneighs);
         addStat(stats->force_iters, (long long int)((double)numneighs * CLUSTER_M / CLUSTER_N));
     }
-
+    if(param->method == eightShell) computeForceGhostShell(param, atom, neighbor); 
     LIKWID_MARKER_STOP("force");
     }
 

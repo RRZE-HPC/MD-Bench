@@ -21,9 +21,6 @@ static MD_FLOAT dof_boltz;
 static MD_FLOAT t_scale;
 static MD_FLOAT p_scale;
 static MD_FLOAT e_scale;
-static MD_FLOAT t_act;
-static MD_FLOAT p_act;
-static MD_FLOAT e_act;
 static int mstat;
 static MPI_Datatype type = (sizeof(MD_FLOAT) == 4) ? MPI_FLOAT : MPI_DOUBLE;
 
@@ -112,7 +109,6 @@ void adjustThermo(Parameter *param, Atom *atom)
         atom_vz(i) -= vztot;
     }
    
-    t_act = 0;
     MD_FLOAT t = 0.0;
     MD_FLOAT t_sum = 0.0;
 

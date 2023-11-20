@@ -1,17 +1,17 @@
 import sys
+import numpy as np
 
 file = open('out.txt', 'r')
-
-pressure=""
-temp=""
-str_time=""
 performance=""
-time0=0.0
-cores=1
-perform_list=[]
-time_list =[]
-pressure_list =[]
-temp_list =[]
+time=""
+temp=""
+pressure=""
+
+perform_list= np.array([])
+time_list = np.array([])
+pressure_list = np.array([])
+temp_list =np.array([])
+
 while True:
     line = file.readline()
     if (line.find("TOTAL")>-1 or line.find("Performance:")>-1 or line.find("200")>-1):
@@ -33,17 +33,47 @@ while True:
       performance = line[start:end].strip() 
                 
       if(line.find("Performance:")>-1):
-         perform_list.append(float(performance))
-         time_list.append(float(time))
-         pressure_list.append(float(pressure))
-         temp_list.append(float(temp))        
+         perform_list = np.append(perform_list, float(performance))
+         time_list = np.append(time_list, float(time))
+         temp_list = np.append(temp_list, float(temp))
+         pressure_list =np.append(pressure_list, float(pressure))
     if not line:
         break
 file.close()
-performance = sum(perform_list) / len(perform_list)
-time = sum(time_list) / len(time_list)
-pressure_list = sum(pressure_list) / len(pressure_list)
-temp_list = sum(temp_list) / len(temp_list)
-print(performance,time,temp,pressure)
+
+# Calculate t-critical value for a 95% confidence interval with 4 degrees of freedom
+#t-student Distribution sample of 5 
+t_critical = 2.2622 
+
+perf_mean = np.mean(perform_list)
+perf_max = np.max(perform_list)
+perf_min = np.min(perform_list)
+#perf_dev = np.std(perform_list, ddof=1)
+#perf_err = t_critical * (perf_dev / np.sqrt(5))
+
+time_mean = np.mean(time_list)
+time_max = np.max(time_list)
+time_min = np.min(time_list)
+#time_dev = np.std(time_list, ddof=1)
+#time_err = t_critical * (time_dev / np.sqrt(5))
+
+temp_mean = np.mean(temp_list)
+temp_max = np.max(temp_list)
+temp_min = np.min(temp_list)
+
+#temp_dev = np.std(temp_list, ddof=1)
+#temp_err = t_critical * (temp_dev / np.sqrt(5))
+
+press_mean = np.mean(pressure_list)
+press_max = np.max(pressure_list)
+press_min = np.min(pressure_list)
+#press_dev = np.std(pressure_list, ddof=1)
+#press_err = t_critical * (press_dev / np.sqrt(5))
+
+print("%.4f" % perf_mean, "%.4f" % perf_max, "%.4f" % perf_min,
+      "%.4f" % time_mean, "%.4f" % time_max, "%.4f" % time_min,
+      "%.4f" % temp_mean, "%.4f" % temp_max, "%.4f" % temp_min,
+      "%.4f" % press_mean,"%.4f" % press_max,"%.4f" % press_min,)
+
 
  

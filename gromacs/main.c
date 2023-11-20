@@ -29,6 +29,21 @@
 #include <shell_methods.h>
 #include <mpi.h>
 
+#define HLINE "----------------------------------------------------------------------------\n"
+
+extern double computeForceLJ_ref(Parameter*, Atom*, Neighbor*, Stats*);
+extern double computeForceLJ_4xn(Parameter*, Atom*, Neighbor*, Stats*);
+extern double computeForceLJ_2xnn(Parameter*, Atom*, Neighbor*, Stats*);
+extern double computeForceEam(Eam*, Parameter*, Atom*, Neighbor*, Stats*);
+
+#ifdef CUDA_TARGET
+extern int isReneighboured;
+extern double computeForceLJ_cuda(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *stats);
+extern void copyDataToCUDADevice(Atom *atom);
+extern void copyDataFromCUDADevice(Atom *atom);
+extern void cudaDeviceFree();
+#endif
+
 void debug(Atom* atom, Comm* comm)
 {
     printf("Local:%i, ghost:%i\n",atom->Nclusters_local,atom->Nclusters_ghost);
@@ -60,7 +75,7 @@ void debug(Atom* atom, Comm* comm)
                 printf("\tatom:%i x:%f y:%f z:%f vx:%f vy:%f vz:%f fx:%f fy:%f fz:%f\n",cii,x,y,z,vx,vy,vz,fx,fy,fz);
             }
         }
-        printf("Ghost atoms ===========\n");
+        printf("============= Ghost atoms ===========\n");
         for(int cg=atom->ncj; cg<atom->ncj+atom->Nclusters_ghost;cg++)
         {
             int natoms = atom->jclusters[cg].natoms;
@@ -92,20 +107,54 @@ void debug(Atom* atom, Comm* comm)
  exit(0); 
 }
 
-#define HLINE "----------------------------------------------------------------------------\n"
+double dynamicBalance(Comm* comm, Grid* grid, Atom* atom, Parameter* param, double time)
+{
+    double S, E;
+    MD_FLOAT prd[3] = {param->xprd, param->yprd, param->zprd};
+    int dims = 3;   //TODO: Adjust to do in 3d and 2d
+    S = getTimeStamp();
+    if(param->balance == RCB) {
+        rcbBalance(grid, atom, param, meanBisect,dims,0);
+        neighComm(comm, grid->map, param->cutneigh, prd);
+    }else if(param->balance == meanTimeRCB){
+        rcbBalance(grid, atom, param, meanTimeBisect,dims,time);
+        neighComm(comm, grid->map, param->cutneigh, prd);
+    }else if(param->balance == Staggered) {
+        staggeredBalance(grid, atom, param, time);
+        neighComm(comm, grid->map, param->cutneigh, prd);
+        exchangeComm(comm,atom);
+    }else { } //Do nothing
+    //printGrid(grid);
+    E = getTimeStamp();
 
-extern double computeForceLJ_ref(Parameter*, Atom*, Neighbor*, Stats*);
-extern double computeForceLJ_4xn(Parameter*, Atom*, Neighbor*, Stats*);
-extern double computeForceLJ_2xnn(Parameter*, Atom*, Neighbor*, Stats*);
-extern double computeForceEam(Eam*, Parameter*, Atom*, Neighbor*, Stats*);
+    return E-S;
+} 
 
-#ifdef CUDA_TARGET
-extern int isReneighboured;
-extern double computeForceLJ_cuda(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *stats);
-extern void copyDataToCUDADevice(Atom *atom);
-extern void copyDataFromCUDADevice(Atom *atom);
-extern void cudaDeviceFree();
-#endif
+double initialBalance(Parameter *param, Eam *eam, Atom *atom, Neighbor *neighbor, Stats *stats, Comm *comm, Grid *grid)
+{      
+    double E,S,time;
+    int me;
+    MPI_Comm_rank(world,&me);
+    S = getTimeStamp();
+    if(param->balance == Staggered || param->balance == meanTimeRCB){
+        buildClusters(atom);
+        defineJClusters(atom);
+        binClusters(atom);
+        buildNeighbor(atom, neighbor);
+        
+        if(param->force_field == FF_EAM) {
+            time = computeForceEam(eam, param, atom, neighbor, stats);
+        } else {
+            time = computeForceLJ(param, atom, neighbor, stats);
+        }
+    }
+    dynamicBalance(comm,grid,atom,param,time);
+    MPI_Allreduce(&atom->Nlocal, &atom->Natoms, 1, MPI_INT, MPI_SUM, world); 
+    printf("Processor:%i, Local atoms:%i, Total atoms:%i\n",me, atom->Nlocal,atom->Natoms);
+    MPI_Barrier(world);
+    E = getTimeStamp();
+    return E-S;
+}
 
 double setup(Parameter *param, Eam *eam, Atom *atom, Neighbor *neighbor, Stats *stats, Comm *comm, Grid *grid) {
     if(param->force_field == FF_EAM) { initEam(eam, param); }
@@ -120,17 +169,17 @@ double setup(Parameter *param, Eam *eam, Atom *atom, Neighbor *neighbor, Stats *
     //initPbc(atom);
     initStats(stats);
     initNeighbor(neighbor, param);
-    initGrid(grid); //changed
     if(param->input_file == NULL) {
-        setupGrid(grid,atom,param);
         createAtom(atom, param);
     } else {
         readAtom(atom, param);
-        setupGrid(grid,atom,param);
     }
-    //printGrid(grid);
-    setupComm(comm, param, grid->map);
+    setupGrid(grid,atom,param);
     setupNeighbor(param, atom);
+    setupComm(comm, param, grid->map);
+    if(param->balance){  
+        initialBalance(param, eam, atom, neighbor, stats, comm, grid);
+    }
     setupThermo(param, atom->Natoms);
     if(param->input_file == NULL) { adjustThermo(param, atom); }
     buildClusters(atom);
@@ -148,7 +197,6 @@ double reneighbour(Comm* comm, Parameter *param, Atom *atom, Neighbor *neighbor)
     double S, E;
     S = getTimeStamp();
     LIKWID_MARKER_START("reneighbour");
-    //printf("atom->Nocal:%i \n",atom->Nlocal);
     //updateAtomsPbc(atom, param);
     buildClusters(atom);
     defineJClusters(atom);
@@ -169,24 +217,6 @@ double updateAtoms(Comm* comm, Atom* atom){
     E = getTimeStamp();
     return E-S;
 }
-
-double dynamicBalance(Comm* comm, Grid* grid, Atom* atom, Parameter* param, double time)
-{
-  double S, E;
-  int dims = 3; //TODO: Adjust to do in 3d and 2d
-  S = getTimeStamp();
-  if(param->balance == 1) {
-    rcbBalance(grid, atom, param, meanBisect, dims);
-  } else if(param->balance ==2) {
-    staggeredBalance(grid, atom, param, time);
-  }else{ 
-   //Do nothing
-  }
-  neighComm(comm, grid->map, param->cutneigh, (MD_FLOAT[3]){param->xprd, param->yprd, param->zprd});
-  exchangeComm(comm,atom);
-  E = getTimeStamp();
-  return E-S;
-} 
 
 void printAtomState(Atom *atom) {
     printf("Atom counts: Natoms=%d Nlocal=%d Nghost=%d Nmax=%d\n",
@@ -266,9 +296,9 @@ int main(int argc, char** argv) {
             }
             continue;
         }
-        if((strcmp(argv[i], "-b") == 0)) {
+        if((strcmp(argv[i], "-bal") == 0)) {
             param.balance = atoi(argv[++i]);
-            if (param.method>2 || param.method< 0){
+            if (param.balance>3 || param.balance< 0){
                 if(comm.myproc == 0) fprintf(stderr, "Load balance does not exist!\n");
                 endComm(&comm);   
                 exit(0);
@@ -329,7 +359,6 @@ int main(int argc, char** argv) {
     if(comm.myproc == 0) printParameter(&param);
     if(comm.myproc == 0) printf(HLINE);
     if(comm.myproc == 0) printf("step\ttemp\t\tpressure\n");
-
     computeThermo(0, &param, &atom);
     #if defined(MEM_TRACER) || defined(INDEX_TRACER)
     traceAddresses(&param, &atom, &neighbor, n + 1);
@@ -347,6 +376,7 @@ int main(int argc, char** argv) {
     timer[UPDATE]   = 0.0;
     timer[BALANCE]  = 0.0;
     timer[REVERSE]  = reverse(&comm, &atom, &param);
+    MPI_Barrier(world);
     timer[TOTAL] = getTimeStamp();
     if(param.vtk_file != NULL) {
         //write_data_to_vtk_file(param.vtk_file, &comm ,&atom, 0);
@@ -370,10 +400,10 @@ int main(int argc, char** argv) {
             copyDataFromCUDADevice(&atom);
             #endif
             timer[UPDATE] +=updateAtoms(&comm,&atom);
-            if(param.balance && !((n+1)%grid.balance_every))
-                timer[BALANCE] +=dynamicBalance(&grid, &grid, &atom , &param, timer[FORCE]);
+            if(param.balance && !((n+1)%param.balance_every))
+                timer[BALANCE] +=dynamicBalance(&comm, &grid, &atom , &param, timer[FORCE]);
             timer[NEIGH]  += reneighbour(&comm, &param, &atom, &neighbor);
-
+    
             #ifdef CUDA_TARGET
             copyDataToCUDADevice(&atom);
             isReneighboured = 1;
@@ -382,7 +412,6 @@ int main(int argc, char** argv) {
         #if defined(MEM_TRACER) || defined(INDEX_TRACER)
         traceAddresses(&param, &atom, &neighbor, n + 1);
         #endif
-        grid.Timer = timer[FORCE];
         if(param.force_field == FF_EAM) {
             timer[FORCE] += computeForceEam(&eam, &param, &atom, &neighbor, &stats);
         } else {
@@ -410,7 +439,7 @@ int main(int argc, char** argv) {
     #ifdef CUDA_TARGET
     copyDataFromCUDADevice(&atom);
     #endif
-
+    MPI_Barrier(world);
     timer[TOTAL] = getTimeStamp() - timer[TOTAL];
     updateAtoms(&comm,&atom);
     computeThermo(-1, &param, &atom);
@@ -422,12 +451,25 @@ int main(int argc, char** argv) {
     #ifdef CUDA_TARGET
     cudaDeviceFree();
     #endif
+
+    double mint[NUMTIMER];
+    double maxt[NUMTIMER];
+    double sumt[NUMTIMER];
+    timer[REST] = timer[TOTAL]-timer[FORCE]-timer[NEIGH]-timer[BALANCE]-timer[FORWARD]-timer[REVERSE];
+    MPI_Reduce(timer,mint,NUMTIMER,MPI_DOUBLE,MPI_MIN,0,world);
+    MPI_Reduce(timer,maxt,NUMTIMER,MPI_DOUBLE,MPI_MAX,0,world);
+    MPI_Reduce(timer,sumt,NUMTIMER,MPI_DOUBLE,MPI_SUM,0,world);
+
     if(comm.myproc == 0){
+        int n = comm.numproc;
         printf(HLINE);
         printf("System: %d atoms %d ghost atoms, Steps: %d\n", atom.Natoms, atom.Nghost, param.ntimes);
-        printf("TOTAL %.2fs FORCE %.2fs NEIGH %.2fs BALANCE %.2fs FORWARD %.2fs REVERSE %.2fs REST %.2fs\n",
-                timer[TOTAL], timer[FORCE], timer[NEIGH], timer[BALANCE], timer[FORWARD], timer[REVERSE], 
-                timer[TOTAL]-timer[FORCE]-timer[NEIGH]-timer[BALANCE]-timer[FORWARD]-timer[REVERSE]);
+        printf("TOTAL %.2fs\n\n",timer[TOTAL]);
+        printf("%4s|%7s|%7s|%7s|%7s|%7s|%7s|%7s|\n","","FORCE ", "NEIGH ", "BALANCE", "FORWARD", "REVERSE","UPDATE","REST ");
+        printf("----|-------|-------|-------|-------|-------|-------|-------|\n");
+        printf("%4s|%7.2f|%7.2f|%7.2f|%7.2f|%7.2f|%7.2f|%7.2f|\n", "AVG", sumt[FORCE]/n,sumt[NEIGH]/n,sumt[BALANCE]/n,sumt[FORWARD]/n,sumt[REVERSE]/n,sumt[UPDATE]/n,sumt[REST]/n);
+        printf("%4s|%7.2f|%7.2f|%7.2f|%7.2f|%7.2f|%7.2f|%7.2f|\n", "MIN", mint[FORCE],mint[NEIGH],mint[BALANCE],mint[FORWARD],mint[REVERSE],mint[UPDATE],mint[REST]);
+        printf("%4s|%7.2f|%7.2f|%7.2f|%7.2f|%7.2f|%7.2f|%7.2f|\n", "MAX", maxt[FORCE],maxt[NEIGH],maxt[BALANCE],maxt[FORWARD],maxt[REVERSE],maxt[UPDATE],maxt[REST]);
         printf(HLINE);
         printf("Performance: %.2f million atom updates per second\n",
                 1e-6 * (double) atom.Natoms * param.ntimes / timer[TOTAL]);

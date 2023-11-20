@@ -3,7 +3,7 @@ TAG ?= MPICC
 # Instruction set (SSE/AVX/AVX_FMA/AVX2/AVX512)
 ISA ?= AVX2
 # Optimization scheme (lammps/gromacs/clusters_per_bin)
-OPT_SCHEME ?= lammps
+OPT_SCHEME ?= gromacs
 # Enable likwid (true or false)
 ENABLE_LIKWID ?= false
 # SP or DP

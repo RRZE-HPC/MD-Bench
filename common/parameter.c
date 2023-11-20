@@ -56,7 +56,7 @@ void initParameter(Parameter *param) {
     //MPI
     param->balance = 0;
     param->method = 0;
-    param->accuracy = 0;
+    param->balance_every =1*param->reneigh_every;
 }
 
 void readParameter(Parameter *param, const char *filename) {
@@ -122,7 +122,7 @@ void readParameter(Parameter *param, const char *filename) {
             PARSE_INT(half_neigh);
             PARSE_INT(method);
             PARSE_INT(balance);
-            PARSE_INT(accuracy);
+            PARSE_INT(balance_every);
         }
     }
     // Update dtforce
@@ -131,6 +131,9 @@ void readParameter(Parameter *param, const char *filename) {
     // Update sigma6 parameter
     MD_FLOAT s2 = param->sigma * param->sigma;
     param->sigma6 = s2 * s2 * s2;
+    
+    //Update balance parameter, 10 could be change
+    param->balance_every *=param->reneigh_every;
     fclose(fp);
 }
 
@@ -187,16 +190,20 @@ void printParameter(Parameter *param) {
     printf("\tCutoff radius: %e\n", param->cutforce);
     printf("\tSkin: %e\n", param->skin);
     printf("\tHalf neighbor lists: %d\n", param->half_neigh);
-    char str[20]; 
-    strcpy(str, (param->method == 1) ? "Half Shell" :
-                (param->method == 2) ? "Eight Shell":
-                (param->method == 3) ? "Half Stencil":                      
-                                        "Full Shell");
-    printf("\tMethod: %s\n", str);
-    printf("\tAccuracy: %d\n", param->accuracy);
-    strcpy(str, (param->balance == 1) ? "rcb"     : 
-                (param->balance == 2) ? "Staggered":
-                                          "cartisian");
-    printf("\tPartition: %s\n", str);
     printf("\tProcessor frequency (GHz): %.4f\n", param->proc_freq);
+
+    // ================ New MPI features =============
+    char str[20]; 
+    strcpy(str, (param->method == 1) ? "Half Shell"  :
+                (param->method == 2) ? "Eight Shell" :
+                (param->method == 3) ? "Half Stencil":                      
+                                       "Full Shell");
+    printf("\tMethod: %s\n", str);
+    strcpy(str, (param->balance == 1) ? "mean RCB"     : 
+                (param->balance == 2) ? "mean Time RCB" :
+                (param->balance == 3) ? "Staggered"   :
+                                        "cartisian");
+    printf("\tPartition: %s\n", str);
+    if(param->balance) 
+        printf("\tRebalancing every (timesteps): %d\n",param->balance_every); 
 }
