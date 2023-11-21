@@ -79,7 +79,7 @@ const char* ff2str(int ff) {
     return "invalid";
 }
 
-int get_num_threads() {
+int get_cuda_num_threads() {
     const char *num_threads_env = getenv("NUM_THREADS");
     return (num_threads_env == NULL) ? 32 : atoi(num_threads_env);
 }
