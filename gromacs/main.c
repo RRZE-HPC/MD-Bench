@@ -6,6 +6,7 @@
  */
 #include <stdio.h>
 #include <math.h>
+#include <omp.h>
 //--
 #include <likwid-marker.h>
 //--
@@ -308,6 +309,15 @@ int main(int argc, char** argv) {
     printf("TOTAL %.2fs FORCE %.2fs NEIGH %.2fs REST %.2fs\n",
             timer[TOTAL], timer[FORCE], timer[NEIGH], timer[TOTAL]-timer[FORCE]-timer[NEIGH]);
     printf(HLINE);
+    
+    int nthreads = 0;
+#pragma omp parallel
+    {
+    	nthreads = omp_get_num_threads();
+    }
+
+    printf("Num threads: %d\n", nthreads);
+
     printf("Performance: %.2f million atom updates per second\n",
             1e-6 * (double) atom.Natoms * param.ntimes / timer[TOTAL]);
     #ifdef COMPUTE_STATS
