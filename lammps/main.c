@@ -152,7 +152,7 @@ int main(int argc, char** argv) {
 
     initParameter(&param);
     for(int i = 0; i < argc; i++) {
-        if((strcmp(argv[i], "-p") == 0)) {
+        if((strcmp(argv[i], "-p") == 0) || strcmp(argv[i], "--params") == 0) {
             readParameter(&param, argv[++i]);
             continue;
         }
@@ -210,16 +210,17 @@ int main(int argc, char** argv) {
         if((strcmp(argv[i], "-h") == 0) || (strcmp(argv[i], "--help") == 0)) {
             printf("MD Bench: A minimalistic re-implementation of miniMD\n");
             printf(HLINE);
-            printf("-p <string>:          file to read parameters from (can be specified more than once)\n");
-            printf("-f <string>:          force field (lj, eam or dem), default lj\n");
-            printf("-i <string>:          input file with atom positions (dump)\n");
-            printf("-e <string>:          input file for EAM\n");
-            printf("-n / --nsteps <int>:  set number of timesteps for simulation\n");
-            printf("-nx/-ny/-nz <int>:    set linear dimension of systembox in x/y/z direction\n");
-            printf("-r / --radius <real>: set cutoff radius\n");
-            printf("-s / --skin <real>:   set skin (verlet buffer)\n");
-            printf("--freq <real>:        processor frequency (GHz)\n");
-            printf("--vtk <string>:       VTK file for visualization\n");
+            printf("-p / --params <string>:     file to read parameters from (can be specified more than once)\n");
+            printf("-f <string>:                force field (lj, eam or dem), default lj\n");
+            printf("-i <string>:                input file with atom positions (dump)\n");
+            printf("-e <string>:                input file for EAM\n");
+            printf("-n / --nsteps <int>:        set number of timesteps for simulation\n");
+            printf("-nx/-ny/-nz <int>:          set linear dimension of systembox in x/y/z direction\n");
+            printf("-half <int>:                use half (1) or full (0) neighbor lists\n");
+            printf("-r / --radius <real>:       set cutoff radius\n");
+            printf("-s / --skin <real>:         set skin (verlet buffer)\n");
+            printf("--freq <real>:              processor frequency (GHz)\n");
+            printf("--vtk <string>:             VTK file for visualization\n");
             printf(HLINE);
             exit(EXIT_SUCCESS);
         }
