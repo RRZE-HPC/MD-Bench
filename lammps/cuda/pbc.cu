@@ -65,7 +65,7 @@ __global__ void computePbcUpdate(DeviceAtom a, int nlocal, int nghost, int* PBCx
 /* update coordinates of ghost atoms */
 /* uses mapping created in setupPbc */
 void updatePbc_cuda(Atom *atom, Parameter *param, bool reneigh) {
-    const int num_threads_per_block = get_num_threads();
+    const int num_threads_per_block = get_cuda_num_threads();
 
     if(reneigh) {
         memcpyToGPU(atom->d_atom.x,     atom->x,    sizeof(MD_FLOAT) * atom->Nmax * 3);
@@ -98,7 +98,7 @@ void updatePbc_cuda(Atom *atom, Parameter *param, bool reneigh) {
 }
 
 void updateAtomsPbc_cuda(Atom* atom, Parameter *param) {
-    const int num_threads_per_block = get_num_threads();
+    const int num_threads_per_block = get_cuda_num_threads();
     MD_FLOAT xprd = param->xprd;
     MD_FLOAT yprd = param->yprd;
     MD_FLOAT zprd = param->zprd;

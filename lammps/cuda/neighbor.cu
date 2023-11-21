@@ -206,7 +206,7 @@ void binatoms_cuda(Atom *atom, Binning *c_binning, int *c_resize_needed, Neighbo
 
 void buildNeighbor_cuda(Atom *atom, Neighbor *neighbor) {
     DeviceNeighbor *d_neighbor = &(neighbor->d_neighbor);
-    const int num_threads_per_block = get_num_threads();
+    const int num_threads_per_block = get_cuda_num_threads();
     int nall = atom->Nlocal + atom->Nghost;
 
     cudaProfilerStart();

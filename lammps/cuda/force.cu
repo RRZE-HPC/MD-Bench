@@ -109,7 +109,7 @@ extern "C" {
 
 void finalIntegrate_cuda(bool reneigh, Parameter *param, Atom *atom) {
     const int Nlocal = atom->Nlocal;
-    const int num_threads_per_block = get_num_threads();
+    const int num_threads_per_block = get_cuda_num_threads();
     const int num_blocks = ceil((float)Nlocal / (float)num_threads_per_block);
 
     kernel_final_integrate <<< num_blocks, num_threads_per_block >>> (param->dtforce, Nlocal, atom->d_atom);
@@ -123,7 +123,7 @@ void finalIntegrate_cuda(bool reneigh, Parameter *param, Atom *atom) {
 
 void initialIntegrate_cuda(bool reneigh, Parameter *param, Atom *atom) {
     const int Nlocal = atom->Nlocal;
-    const int num_threads_per_block = get_num_threads();
+    const int num_threads_per_block = get_cuda_num_threads();
     const int num_blocks = ceil((float)Nlocal / (float)num_threads_per_block);
 
     kernel_initial_integrate <<< num_blocks, num_threads_per_block >>> (param->dtforce, param->dt, Nlocal, atom->d_atom);
@@ -136,7 +136,7 @@ void initialIntegrate_cuda(bool reneigh, Parameter *param, Atom *atom) {
 }
 
 double computeForceLJFullNeigh_cuda(Parameter *param, Atom *atom, Neighbor *neighbor) {
-    const int num_threads_per_block = get_num_threads();
+    const int num_threads_per_block = get_cuda_num_threads();
     int Nlocal = atom->Nlocal;
 #ifndef EXPLICIT_TYPES
     MD_FLOAT cutforcesq = param->cutforce * param->cutforce;
