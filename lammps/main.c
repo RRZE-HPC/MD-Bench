@@ -207,6 +207,10 @@ int main(int argc, char** argv) {
             param.vtk_file = strdup(argv[++i]);
             continue;
         }
+        if((strcmp(argv[i], "-w") == 0)) {
+            param.write_atom_file = strdup(argv[++i]);
+            continue;
+        }
         if((strcmp(argv[i], "-h") == 0) || (strcmp(argv[i], "--help") == 0)) {
             printf("MD Bench: A minimalistic re-implementation of miniMD\n");
             printf(HLINE);
@@ -219,6 +223,7 @@ int main(int argc, char** argv) {
             printf("-half <int>:                use half (1) or full (0) neighbor lists\n");
             printf("-r / --radius <real>:       set cutoff radius\n");
             printf("-s / --skin <real>:         set skin (verlet buffer)\n");
+            printf("-w <file>:                  write input atoms to file\n");
             printf("--freq <real>:              processor frequency (GHz)\n");
             printf("--vtk <string>:             VTK file for visualization\n");
             printf(HLINE);
@@ -236,6 +241,10 @@ int main(int argc, char** argv) {
     #if defined(MEM_TRACER) || defined(INDEX_TRACER)
     traceAddresses(&param, &atom, &neighbor, n + 1);
     #endif
+
+    if(param.write_atom_file != NULL) {
+        writeAtom(&atom, &param);
+    }
 
     //writeInput(&param, &atom);
 

@@ -14,6 +14,7 @@ void initDevice(Atom *atom, Neighbor *neighbor) {
 
     d_atom->epsilon         =   (MD_FLOAT *) allocateGPU(sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes);
     d_atom->sigma6          =   (MD_FLOAT *) allocateGPU(sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes);
+    d_atom->cutneighsq      =   (MD_FLOAT *) allocateGPU(sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes);
     d_atom->cutforcesq      =   (MD_FLOAT *) allocateGPU(sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes);
     d_neighbor->neighbors   =   (int *) allocateGPU(sizeof(int) * atom->Nmax * neighbor->maxneighs);
     d_neighbor->numneigh    =   (int *) allocateGPU(sizeof(int) * atom->Nmax);
@@ -22,6 +23,7 @@ void initDevice(Atom *atom, Neighbor *neighbor) {
     memcpyToGPU(d_atom->vx,             atom->vx,         sizeof(MD_FLOAT) * atom->Nmax * 3);
     memcpyToGPU(d_atom->sigma6,         atom->sigma6,     sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes);
     memcpyToGPU(d_atom->epsilon,        atom->epsilon,    sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes);
+    memcpyToGPU(d_atom->cutneighsq,     atom->cutneighsq, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes);
     memcpyToGPU(d_atom->cutforcesq,     atom->cutforcesq, sizeof(MD_FLOAT) * atom->ntypes * atom->ntypes);
     memcpyToGPU(d_atom->type,           atom->type,       sizeof(int) * atom->Nmax);
 }

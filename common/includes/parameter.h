@@ -21,6 +21,7 @@ typedef struct {
     char* input_file;
     char* vtk_file;
     char* xtc_file;
+    char* write_atom_file;
     MD_FLOAT epsilon;
     MD_FLOAT sigma;
     MD_FLOAT sigma6;

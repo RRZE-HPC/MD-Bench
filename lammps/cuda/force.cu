@@ -29,7 +29,7 @@ extern "C" {
 }
 
 // cuda kernel
-__global__ void calc_force(DeviceAtom a, MD_FLOAT cutforcesq, MD_FLOAT sigma6, MD_FLOAT epsilon, int Nlocal, int neigh_maxneighs, int *neigh_neighbors, int *neigh_numneigh) {
+__global__ void calc_force(DeviceAtom a, MD_FLOAT cutforcesq, MD_FLOAT sigma6, MD_FLOAT epsilon, int Nlocal, int neigh_maxneighs, int *neigh_neighbors, int *neigh_numneigh, int ntypes) {
     const int i = blockIdx.x * blockDim.x + threadIdx.x;
     if(i >= Nlocal) {
         return;
@@ -46,6 +46,10 @@ __global__ void calc_force(DeviceAtom a, MD_FLOAT cutforcesq, MD_FLOAT sigma6, M
     MD_FLOAT fiy = 0;
     MD_FLOAT fiz = 0;
 
+#ifdef EXPLICIT_TYPES
+    const int type_i = atom->type[i];
+#endif
+
     for(int k = 0; k < numneighs; k++) {
         int j = neigh_neighbors[Nlocal * k + i];
         MD_FLOAT delx = xtmp - atom_x(j);
@@ -55,7 +59,7 @@ __global__ void calc_force(DeviceAtom a, MD_FLOAT cutforcesq, MD_FLOAT sigma6, M
 
 #ifdef EXPLICIT_TYPES
         const int type_j = atom->type[j];
-        const int type_ij = type_i * atom->ntypes + type_j;
+        const int type_ij = type_i * ntypes + type_j;
         const MD_FLOAT cutforcesq = atom->cutforcesq[type_ij];
         const MD_FLOAT sigma6 = atom->sigma6[type_ij];
         const MD_FLOAT epsilon = atom->epsilon[type_ij];
@@ -138,11 +142,9 @@ void initialIntegrate_cuda(bool reneigh, Parameter *param, Atom *atom) {
 double computeForceLJFullNeigh_cuda(Parameter *param, Atom *atom, Neighbor *neighbor) {
     const int num_threads_per_block = get_cuda_num_threads();
     int Nlocal = atom->Nlocal;
-#ifndef EXPLICIT_TYPES
     MD_FLOAT cutforcesq = param->cutforce * param->cutforce;
     MD_FLOAT sigma6 = param->sigma6;
     MD_FLOAT epsilon = param->epsilon;
-#endif
 
     /*
     int nDevices;
@@ -165,7 +167,7 @@ double computeForceLJFullNeigh_cuda(Parameter *param, Atom *atom, Neighbor *neig
     double S = getTimeStamp();
     LIKWID_MARKER_START("force");
 
-    calc_force <<< num_blocks, num_threads_per_block >>> (atom->d_atom, cutforcesq, sigma6, epsilon, Nlocal, neighbor->maxneighs, neighbor->d_neighbor.neighbors, neighbor->d_neighbor.numneigh);
+    calc_force <<< num_blocks, num_threads_per_block >>> (atom->d_atom, cutforcesq, sigma6, epsilon, Nlocal, neighbor->maxneighs, neighbor->d_neighbor.neighbors, neighbor->d_neighbor.numneigh, atom->ntypes);
     cuda_assert("calc_force", cudaPeekAtLastError());
     cuda_assert("calc_force", cudaDeviceSynchronize());
     cudaProfilerStop();

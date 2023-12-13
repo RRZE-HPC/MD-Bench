@@ -7,8 +7,8 @@
 #ifndef __TIMING_H_
 #define __TIMING_H_
 
-extern double getTimeStamp();
-extern double getTimeResolution();
-extern double getTimeStamp_();
+extern double getTimeStamp(void);
+extern double getTimeResolution(void);
+extern double getTimeStamp_(void);
 
 #endif

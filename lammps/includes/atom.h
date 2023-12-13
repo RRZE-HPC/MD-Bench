@@ -73,6 +73,7 @@ extern int readAtom_pdb(Atom*, Parameter*);
 extern int readAtom_gro(Atom*, Parameter*);
 extern int readAtom_dmp(Atom*, Parameter*);
 extern int readAtom_in(Atom*, Parameter*);
+extern void writeAtom(Atom*, Parameter*);
 extern void growAtom(Atom*);
 
 #ifdef AOS
