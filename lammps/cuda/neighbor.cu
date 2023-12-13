@@ -120,7 +120,7 @@ __global__ void binatoms_kernel(DeviceAtom a, int nall, int* bincount, int* bins
 
 __global__ void compute_neighborhood(
     DeviceAtom a, DeviceNeighbor neigh, Neighbor_params np, int nlocal, int maxneighs, int nstencil, int* stencil,
-    int* bins, int atoms_per_bin, int *bincount, int *new_maxneighs, MD_FLOAT cutneighsq) {
+    int* bins, int atoms_per_bin, int *bincount, int *new_maxneighs, MD_FLOAT cutneighsq, int ntypes) {
 
     const int i = blockIdx.x * blockDim.x + threadIdx.x;
     if(i >= nlocal) {
@@ -157,7 +157,7 @@ __global__ void compute_neighborhood(
 
 #ifdef EXPLICIT_TYPES
             int type_j = atom->type[j];
-            const MD_FLOAT cutoff = atom->cutneighsq[type_i * atom->ntypes + type_j];
+            const MD_FLOAT cutoff = atom->cutneighsq[type_i * ntypes + type_j];
 #else
             const MD_FLOAT cutoff = cutneighsq;
 #endif
@@ -269,7 +269,7 @@ void buildNeighbor_cuda(Atom *atom, Neighbor *neighbor) {
                                                                     np, atom->Nlocal, neighbor->maxneighs, nstencil, c_stencil,
                                                                     c_binning.bins, c_binning.atoms_per_bin, c_binning.bincount,
                                                                     c_new_maxneighs,
-								                                    cutneighsq);
+								                                    cutneighsq, atom->ntypes);
 
         cuda_assert("compute_neighborhood", cudaPeekAtLastError());
         cuda_assert("compute_neighborhood", cudaDeviceSynchronize());

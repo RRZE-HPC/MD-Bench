@@ -502,6 +502,21 @@ int readAtom_in(Atom* atom, Parameter* param) {
     return natoms;
 }
 
+void writeAtom(Atom *atom, Parameter *param) {
+    FILE *fp = fopen(param->write_atom_file, "w");
+
+    for(int i = 0; i < atom->Nlocal; i++) {
+        fprintf(fp, "%d,%f,%f,%f,%f,%f,%f,%f,0\n",
+            atom->type[i], 1.0,
+            atom_x(i), atom_y(i), atom_z(i),
+            atom_vx(i), atom_vy(i), atom_vz(i));
+    }
+
+    fclose(fp);
+    fprintf(stdout, "Wrote input data to %s, grid size: %f, %f, %f\n",
+        param->write_atom_file, param->xprd, param->yprd, param->zprd);
+}
+
 void growAtom(Atom *atom) {
     DeviceAtom *d_atom = &(atom->d_atom);
     int nold = atom->Nmax;

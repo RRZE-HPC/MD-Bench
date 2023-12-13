@@ -17,6 +17,7 @@ void initParameter(Parameter *param) {
     param->vtk_file = NULL;
     param->xtc_file = NULL;
     param->eam_file = NULL;
+    param->write_atom_file = NULL;
     param->force_field = FF_LJ;
     param->epsilon = 1.0;
     param->sigma = 1.0;
