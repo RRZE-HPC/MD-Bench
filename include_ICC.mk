@@ -1,7 +1,7 @@
 CC  = icc
 LINKER = $(CC)
 
-OPENMP  = #-qopenmp
+OPENMP  = -qopenmp
 PROFILE  = #-profile-functions -g  -pg
 
 ifeq ($(ISA),AVX512)
