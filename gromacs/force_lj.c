@@ -66,7 +66,7 @@ double computeForceLJ_ref(Parameter *param, Atom *atom, Neighbor *neighbor, Stat
     {
     LIKWID_MARKER_START("force");
 
-    #pragma omp for
+    #pragma omp for schedule(runtime)
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
         int ci_cj0 = CJ0_FROM_CI(ci);
         int ci_cj1 = CJ1_FROM_CI(ci);
@@ -213,7 +213,7 @@ double computeForceLJ_2xnn_half(Parameter *param, Atom *atom, Neighbor *neighbor
     #endif
     */
 
-    #pragma omp for
+    #pragma omp for schedule(runtime)
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
         int ci_cj0 = CJ0_FROM_CI(ci);
         #if CLUSTER_M > CLUSTER_N
@@ -427,7 +427,7 @@ double computeForceLJ_2xnn_full(Parameter *param, Atom *atom, Neighbor *neighbor
     {
     LIKWID_MARKER_START("force");
 
-    #pragma omp for
+    #pragma omp for schedule(runtime)
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
         int ci_cj0 = CJ0_FROM_CI(ci);
         #if CLUSTER_M > CLUSTER_N
@@ -595,7 +595,7 @@ double computeForceLJ_4xn_half(Parameter *param, Atom *atom, Neighbor *neighbor,
     {
     LIKWID_MARKER_START("force");
 
-    #pragma omp for
+    #pragma omp for schedule(runtime)
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
         int ci_cj0 = CJ0_FROM_CI(ci);
         #if CLUSTER_M > CLUSTER_N
@@ -869,7 +869,7 @@ double computeForceLJ_4xn_full(Parameter *param, Atom *atom, Neighbor *neighbor,
     {
     LIKWID_MARKER_START("force");
 
-    #pragma omp for
+    #pragma omp for schedule(runtime)
     for(int ci = 0; ci < atom->Nclusters_local; ci++) {
         int ci_cj0 = CJ0_FROM_CI(ci);
         #if CLUSTER_M > CLUSTER_N
