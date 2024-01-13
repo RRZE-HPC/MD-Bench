@@ -311,7 +311,7 @@ int main(int argc, char** argv) {
         	case omp_sched_auto:    strcpy(schedType, "auto"); break;
     	}
 	
-	nthreads = omp_get_num_threads();
+	nthreads = omp_get_max_threads();
     }
 
     printf("Num threads: %d\n", nthreads);
