@@ -5,6 +5,7 @@
  * license that can be found in the LICENSE file.
  */
 #include <stdio.h>
+#include <string.h>
 #include <math.h>
 #include <omp.h>
 //--
@@ -311,12 +312,27 @@ int main(int argc, char** argv) {
     printf(HLINE);
     
     int nthreads = 0;
+    int chunkSize = 0;
+    omp_sched_t schedKind;
+    char schedType[10];
 #pragma omp parallel
+#pragma omp master
     {
-    	nthreads = omp_get_num_threads();
+	omp_get_schedule(&schedKind, &chunkSize);
+
+    	switch (schedKind)
+    	{
+        	case omp_sched_static:  strcpy(schedType, "static"); break;
+        	case omp_sched_dynamic: strcpy(schedType, "dynamic"); break;
+        	case omp_sched_guided:  strcpy(schedType, "guided"); break;
+        	case omp_sched_auto:    strcpy(schedType, "auto"); break;
+    	}
+
+    	nthreads = omp_get_max_threads();
     }
 
     printf("Num threads: %d\n", nthreads);
+    printf("Schedule: (%s,%d)\n", schedType, chunkSize);
 
     printf("Performance: %.2f million atom updates per second\n",
             1e-6 * (double) atom.Natoms * param.ntimes / timer[TOTAL]);

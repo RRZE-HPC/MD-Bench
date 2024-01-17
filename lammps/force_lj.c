@@ -41,7 +41,7 @@ double computeForceLJFullNeigh_plain_c(Parameter *param, Atom *atom, Neighbor *n
     {
     LIKWID_MARKER_START("force");
 
-    #pragma omp for
+    #pragma omp for schedule(runtime)
     for(int i = 0; i < Nlocal; i++) {
         neighs = &neighbor->neighbors[i * neighbor->maxneighs];
         int numneighs = neighbor->numneigh[i];
@@ -131,7 +131,7 @@ double computeForceLJHalfNeigh(Parameter *param, Atom *atom, Neighbor *neighbor,
     {
     LIKWID_MARKER_START("forceLJ-halfneigh");
 
-    #pragma omp for
+    #pragma omp for schedule(runtime)
     for(int i = 0; i < Nlocal; i++) {
         neighs = &neighbor->neighbors[i * neighbor->maxneighs];
         int numneighs = neighbor->numneigh[i];
@@ -227,7 +227,7 @@ double computeForceLJFullNeigh_simd(Parameter *param, Atom *atom, Neighbor *neig
     {
     LIKWID_MARKER_START("force");
 
-    #pragma omp for
+    #pragma omp for schedule(runtime)
     for(int i = 0; i < Nlocal; i++) {
         neighs = &neighbor->neighbors[i * neighbor->maxneighs];
         int numneighs = neighbor->numneigh[i];
