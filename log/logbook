@@ -1,0 +1,8 @@
+Project agenda - Look at the cc Backend, get used to the applicaiton envoirnment 
+
+MD benchmark agend Agenda: 
+
+Running benchmarks on differen processors with AVX2-256 and AVX512 
+Understanding the thread pinning affinit
+Running the simulations multiple times for stats-which affect the run on different architectures and load on the node - 15 runs 
+
