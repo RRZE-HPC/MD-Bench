@@ -1,17 +1,17 @@
 # Compiler tag (GCC/CLANG/ICC/ICX/ONEAPI/NVCC)
-TAG ?= ICC
+TAG ?= CLANG
 # Instruction set (SSE/AVX/AVX_FMA/AVX2/AVX512)
-ISA ?= AVX512
-# Optimization scheme (lammps/gromacs/clusters_per_bin)
-OPT_SCHEME ?= lammps
+ISA ?= SSE
+# Optimization scheme (verletlist/clusterpair/clusters_per_bin)
+OPT_SCHEME ?= verletlist
 # Enable likwid (true or false)
-ENABLE_LIKWID ?= true
+ENABLE_LIKWID ?= false
 # SP or DP
 DATA_TYPE ?= DP
 # AOS or SOA
 DATA_LAYOUT ?= AOS
 # Assembly syntax to generate (ATT/INTEL)
-ASM_SYNTAX ?= ATT
+ASM_SYNTAX ?= INTEL
 # Debug
 DEBUG ?= false
 
@@ -28,7 +28,7 @@ COMPUTE_STATS ?= true
 
 # Configurations for lammps optimization scheme
 # Use omp simd pragma when running with half neighbor-lists
-ENABLE_OMP_SIMD ?= true
+ENABLE_OMP_SIMD ?= false
 # Use kernel with explicit SIMD intrinsics
 USE_SIMD_KERNEL ?= false
 

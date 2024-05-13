@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 NHR@FAU, University Erlangen-Nuremberg.
+ * Copyright (C)  NHR@FAU, University Erlangen-Nuremberg.
  * All rights reserved. This file is part of MD-Bench.
  * Use of this source code is governed by a LGPL-3.0
  * license that can be found in the LICENSE file.
@@ -7,40 +7,41 @@
 #ifndef __UTIL_H_
 #define __UTIL_H_
 
+#include <stdio.h>
 #ifndef MIN
-#   define MIN(x,y) ((x)<(y)?(x):(y))
+#define MIN(x, y) ((x) < (y) ? (x) : (y))
 #endif
 
 #ifndef MAX
-#   define MAX(x,y) ((x)>(y)?(x):(y))
+#define MAX(x, y) ((x) > (y) ? (x) : (y))
 #endif
 
 #ifndef ABS
-#   define ABS(a) ((a) >= 0 ? (a) : -(a))
+#define ABS(a) ((a) >= 0 ? (a) : -(a))
 #endif
 
 #define DEBUG_MESSAGE debug_printf
 
 #ifndef MAXLINE
-#   define MAXLINE 4096
+#define MAXLINE 4096
 #endif
 
-#define FF_LJ   0
-#define FF_EAM  1
-#define FF_DEM  2
+#define FF_LJ 0
+#define FF_EAM 1
+#define FF_DEM 2
 
 #if PRECISION == 1
-#   define PRECISION_STRING     "single"
+#define PRECISION_STRING "single"
 #else
-#   define PRECISION_STRING     "double"
+#define PRECISION_STRING "double"
 #endif
 
-extern double myrandom(int*);
+extern double myrandom(int *);
 extern void random_reset(int *seed, int ibase, double *coord);
 extern int str2ff(const char *string);
-extern const char* ff2str(int ff);
+extern const char *ff2str(int ff);
 extern void readline(char *line, FILE *fp);
 extern void debug_printf(const char *format, ...);
-extern int get_cuda_num_threads();
+extern int get_cuda_num_threads(void);
 
 #endif

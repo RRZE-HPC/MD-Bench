@@ -98,10 +98,6 @@ ifeq ($(strip $(ENABLE_OMP_SIMD)),true)
     DEFINES += -DENABLE_OMP_SIMD
 endif
 
-ifeq ($(strip $(USE_SIMD_KERNEL)),true)
-    DEFINES += -DUSE_SIMD_KERNEL
-endif
-
 VPATH     = $(SRC_DIR) $(ASM_DIR) $(CUDA_DIR)
 ASM       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.s,$(wildcard $(SRC_DIR)/*.c))
 OVERWRITE:= $(patsubst $(ASM_DIR)/%-new.s, $(BUILD_DIR)/%.o,$(wildcard $(ASM_DIR)/*-new.s))
