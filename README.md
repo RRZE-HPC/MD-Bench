@@ -1,34 +1,14 @@
 # MD-Bench
 
-![Image](figures/features-v3.png "MD-Bench Features")
-
-MD-Bench is a toolbox for the performance engineering of short-range force calculation kernels on molecular-dynamics applications.
-It aims at covering all available state-of-the-art algorithms from different community codes such as LAMMPS and GROMACS.
-
-Apart from that, many tools to study and evaluate the in-depth performance of such kernels on distinct hardware are offered, like gather-bench, a standalone benchmark that mimics the data movement from MD kernels and the stubbed force calculation cases that focus on isolating the impacts caused by memory latencies and control flow divergence contributions in the overall performance.
-
-<table>
-    <thead>
-        <tr>
-            <th>Verlet Lists</th>
-            <th>GROMACS MxN</th>
-            <th>Stubbed cases</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td><a target="_blank" rel="noopener noreferrer" href="figures/verlet_v2.png"><img src="figures/verlet_v2.png" alt="Image" title="Verlet Lists" style="width: 100%;"></a></td>
-            <td><a target="_blank" rel="noopener noreferrer" href="figures/gromacs_mxn_v2.png"><img src="figures/gromacs_mxn_v2.png" alt="Image" title="GROMACS MxN" style="width: 90%;"></a></td>
-            <td><a target="_blank" rel="noopener noreferrer" href="figures/stub_new_v3.png"><img src="figures/stub_new_v3.png" alt="Image" title="Stubbed cases" style="width: 100%;"></a></td>
-        </tr>
-    </tbody>
-</table>
-
-<!-- ![Image](figures/gather_bench.png "gather-bench") -->
+MD-Bench is a toolbox for the performance engineering of short-range force
+calculation kernels on molecular-dynamics applications. It aims at covering all
+available state-of-the-art algorithms from different community codes such as
+LAMMPS and GROMACS.
 
 ## Build instructions
 
-Properly configure your building by changing `config.mk` file. The following options are available:
+Properly configure your building by changing `config.mk` file. The following
+options are available:
 
 - **TAG:** Compiler tag (available options: GCC, CLANG, ICC, ONEAPI, NVCC).
 - **ISA:** Instruction set (available options: SSE, AVX, AVX\_FMA, AVX2, AVX512).
@@ -45,15 +25,18 @@ Properly configure your building by changing `config.mk` file. The following opt
 - **COMPUTE\_STATS:** Compute statistics.
 
 Configurations for LAMMPS Verlet Lists optimization scheme:
+
 - **ENABLE\_OMP\_SIMD:** Use omp simd pragma on half neighbor-lists kernels.
 - **USE\_SIMD\_KERNEL:** Compile kernel with explicit SIMD intrinsics.
 
 Configurations for GROMACS MxN optimization scheme:
+
 - **USE\_REFERENCE\_VERSION:** Use reference version (only for correction purposes).
 - **XTC\_OUTPUT:** Enable XTC output.
 - **HALF\_NEIGHBOR\_LISTS\_CHECK\_CJ:** Check if j-clusters are local when decreasing the reaction force.
 
 Configurations for CUDA:
+
 - **USE\_CUDA\_HOST\_MEMORY:** Use CUDA host memory to optimize host-device transfers.
 
 When done, just use `make` to compile the code.
@@ -68,11 +51,14 @@ Use the following command to run a simulation:
 ./MD-Bench-<TAG>-<OPT_SCHEME> [OPTION]...
 ```
 
-Where `TAG` and `OPT_SCHEME` correspond to the building options with the same name.
-Without any options, a Copper FCC lattice system with size 32x32x32 (131072 atoms) over 200 time-steps using the Lennard-Jones potential (sigma=1.0, epsilon=1.0) is simulated.
+Where `TAG` and `OPT_SCHEME` correspond to the building options with the same
+name. Without any options, a Copper FCC lattice system with size 32x32x32
+(131072 atoms) over 200 time-steps using the Lennard-Jones potential (sigma=1.0,
+epsilon=1.0) is simulated.
 
 The default behavior and other options can be changed using the following parameters:
-```
+
+```sh
 -p <string>:          file to read parameters from (can be specified more than once)
 -f <string>:          force field (lj or eam), default lj
 -i <string>:          input file with atom positions (dump)
@@ -92,11 +78,17 @@ TBD
 
 ## Citations
 
-Rafael Ravedutti Lucio Machado, Jan Eitzinger, Harald Köstler, and Gerhard Wellein: MD-Bench: A generic proxy-app toolbox for state-of-the-art molecular dynamics algorithms. Accepted for [PPAM](https://ppam.edu.pl/) 2022, the 14th International Conference on Parallel Processing and Applied Mathematics, Gdansk, Poland, September 11-14, 2022. PPAM 2022 Best Paper Award. Preprint: [arXiv:2207.13094](https://arxiv.org/abs/2207.13094)
+Rafael Ravedutti Lucio Machado, Jan Eitzinger, Harald Köstler, and Gerhard
+Wellein: MD-Bench: A generic proxy-app toolbox for state-of-the-art molecular
+dynamics algorithms. Accepted for [PPAM](https://ppam.edu.pl/) 2022, the 14th
+International Conference on Parallel Processing and Applied Mathematics, Gdansk,
+Poland, September 11-14, 2022. PPAM 2022 Best Paper Award. Preprint:
+[arXiv:2207.13094](https://arxiv.org/abs/2207.13094)
 
 ## Credits
 
-MD-Bench is developed by the Erlangen National High Performance Computing Center ([NHR@FAU](https://hpc.fau.de/)) at the University of Erlangen-Nürnberg.
+MD-Bench is developed by the Erlangen National High Performance Computing Center
+([NHR@FAU](https://hpc.fau.de/)) at the University of Erlangen-Nürnberg.
 
 ## License
 
