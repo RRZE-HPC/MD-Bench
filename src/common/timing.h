@@ -9,6 +9,5 @@
 
 extern double getTimeStamp(void);
 extern double getTimeResolution(void);
-extern double getTimeStamp_(void);
 
 #endif

@@ -10,8 +10,8 @@
 #include <string.h>
 #include <unistd.h>
 
-// #include <omp.h>
 #include <likwid-marker.h>
+#include <omp.h>
 
 #include <allocate.h>
 #include <atom.h>
@@ -30,8 +30,8 @@
 
 #define HLINE "------------------------------------------------------------------\n"
 
-extern double computeForceLJFullNeigh_plain_c(Parameter*, Atom*, Neighbor*, Stats*);
 extern double computeForceLJHalfNeigh(Parameter*, Atom*, Neighbor*, Stats*);
+extern double computeForceLJFullNeigh(Parameter*, Atom*, Neighbor*, Stats*);
 extern double computeForceEam(Eam*, Parameter*, Atom*, Neighbor*, Stats*);
 extern double computeForceDemFullNeigh(Parameter*, Atom*, Neighbor*, Stats*);
 
@@ -325,35 +325,38 @@ int main(int argc, char** argv)
         timer[TOTAL] - timer[FORCE] - timer[NEIGH]);
     printf(HLINE);
 
-    //   int nthreads = 0;
-    //   int chunkSize = 0;
-    //   omp_sched_t schedKind;
-    //   char schedType[10];
-    // #pragma omp parallel
-    // #pragma omp master
-    //   {
-    //     omp_get_schedule(&schedKind, &chunkSize);
-    //
-    //     switch (schedKind) {
-    //     case omp_sched_static:
-    //       strcpy(schedType, "static");
-    //       break;
-    //     case omp_sched_dynamic:
-    //       strcpy(schedType, "dynamic");
-    //       break;
-    //     case omp_sched_guided:
-    //       strcpy(schedType, "guided");
-    //       break;
-    //     case omp_sched_auto:
-    //       strcpy(schedType, "auto");
-    //       break;
-    //     }
-    //
-    //     nthreads = omp_get_max_threads();
-    //   }
-    //
-    //   printf("Num threads: %d\n", nthreads);
-    //   printf("Schedule: (%s,%d)\n", schedType, chunkSize);
+    int nthreads  = 0;
+    int chunkSize = 0;
+    omp_sched_t schedKind;
+    char schedType[10];
+#pragma omp parallel
+#pragma omp master
+    {
+        omp_get_schedule(&schedKind, &chunkSize);
+
+        switch (schedKind) {
+        case omp_sched_static:
+            strcpy(schedType, "static");
+            break;
+        case omp_sched_dynamic:
+            strcpy(schedType, "dynamic");
+            break;
+        case omp_sched_guided:
+            strcpy(schedType, "guided");
+            break;
+        case omp_sched_auto:
+            strcpy(schedType, "auto");
+            break;
+        case omp_sched_monotonic:
+            strcpy(schedType, "auto");
+            break;
+        }
+
+        nthreads = omp_get_max_threads();
+    }
+
+    printf("Num threads: %d\n", nthreads);
+    printf("Schedule: (%s,%d)\n", schedType, chunkSize);
 
     printf("Performance: %.2f million atom updates per second\n",
         1e-6 * (double)atom.Natoms * param.ntimes / timer[TOTAL]);
