@@ -232,7 +232,8 @@ int main(int argc, char** argv)
             continue;
         }
         if ((strcmp(argv[i], "-h") == 0) || (strcmp(argv[i], "--help") == 0)) {
-            printf("MD Bench: A minimalistic re-implementation of miniMD\n");
+            printf("MD Bench: A performance-oriented prototyping harness for MD "
+                   "algorithms\n");
             printf(HLINE);
             printf("-p / --params <string>:     file to read parameters from (can be "
                    "specified more than once)\n");
