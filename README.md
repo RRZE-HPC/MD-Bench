@@ -1,5 +1,8 @@
 # MD-Bench
 
+| :exclamation:  The repository was restructured and cleaned up and in this process the history was rewritten. Please make fresh forks and clones.   |
+|-----------------------------------------|
+
 MD-Bench is a toolbox for the performance engineering of short-range force
 calculation kernels on molecular-dynamics applications. It aims at covering all
 available state-of-the-art algorithms from different community codes such as
