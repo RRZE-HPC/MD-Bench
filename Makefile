@@ -2,7 +2,7 @@
 TAG = $(OPT_TAG)-$(TOOLCHAIN)-$(DATA_TYPE)
 TARGET	   = MDBench-$(TAG)
 BUILD_DIR  = ./build/build-$(TAG)
-SRC_ROOT   = ./src
+SRC_ROOT   = src
 SRC_DIR    = $(SRC_ROOT)/$(OPT_SCHEME)
 COMMON_DIR = $(SRC_ROOT)/common
 CUDA_DIR   = $(SRC_DIR)/cuda
@@ -16,7 +16,7 @@ include $(MAKE_DIR)/include_LIKWID.mk
 ifneq ($(strip $(ISA)),NONE)
 include $(MAKE_DIR)/include_ISA.mk
 endif
-INCLUDES  += -I./$(SRC_DIR) -I./$(COMMON_DIR)
+INCLUDES  += -I$(CURDIR)/$(SRC_DIR) -I$(CURDIR)/$(COMMON_DIR)
 
 VPATH     = $(SRC_DIR) $(COMMON_DIR) $(CUDA_DIR)
 ASM       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.s,$(wildcard $(SRC_DIR)/*.c))
@@ -27,13 +27,21 @@ OBJ      += $(patsubst $(CUDA_DIR)/%.cu, $(BUILD_DIR)/%-cuda.o,$(wildcard $(CUDA
 endif
 SOURCES   =  $(wildcard $(SRC_DIR)/*.h $(SRC_DIR)/*.c $(COMMON_DIR)/*.c $(COMMON_DIR)/*.h)
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(OPTIONS) $(INCLUDES)
+c := ,
+clist = $(subst $(eval) ,$c,$(strip $1))
+
+define CLANGD_TEMPLATE
+CompileFlags:
+  Add: [$(call clist,$(INCLUDES)), -DALIGNMENT=64]
+  Compiler: clang
+endef
 
 ifneq ($(VARIANT),)
 	.DEFAULT_GOAL := ${TARGET}-$(VARIANT)
     DEFINES += -DVARIANT=$(VARIANT)
 endif
 
-${TARGET}: $(BUILD_DIR) $(OBJ) $(SRC_DIR)/main.c
+${TARGET}: $(BUILD_DIR) .clangd $(OBJ) $(SRC_DIR)/main.c
 	@echo "===>  LINKING  $(TARGET)"
 	$(Q)${LINKER} $(CPPFLAGS) ${LFLAGS} -o $(TARGET) $(SRC_DIR)/main.c $(OBJ) $(LIBS)
 
@@ -59,7 +67,7 @@ $(BUILD_DIR)/%.o:  %.s
 	$(info ===>  ASSEMBLE  $@)
 	$(Q)$(AS) $< -o $@
 
-.PHONY: clean distclean tags info asm
+.PHONY: clean distclean tags format info asm
 
 clean:
 	$(info ===>  CLEAN)
@@ -69,12 +77,12 @@ cleanall:
 	$(info ===>  CLEAN)
 	@rm -rf build
 	@rm -rf MDBench-*
-	@rm -f tags
+	@rm -f tags .clangd
 
 distclean: clean
 	$(info ===>  DIST CLEAN)
 	@rm -f $(TARGET)
-	@rm -f tags
+	@rm -f tags .clangd
 
 info:
 	$(info $(CFLAGS))
@@ -95,5 +103,8 @@ format:
 
 $(BUILD_DIR):
 	@mkdir -p $(BUILD_DIR)
+
+.clangd:
+	$(file > .clangd,$(CLANGD_TEMPLATE))
 
 -include $(OBJ:.o=.d)

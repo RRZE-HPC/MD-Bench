@@ -1,3 +1,0 @@
-CompileFlags:
-  Add: [-I/Users/jan/prg/MD-Bench/src/verletlist/, -I/Users/jan/prg/MD-Bench/src/common/, -DALIGNMENT=64]
-  Compiler: clang
