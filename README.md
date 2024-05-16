@@ -13,7 +13,7 @@ LAMMPS and GROMACS.
 Properly configure your building by changing `config.mk` file. The following
 options are available:
 
-- **TOOLCHAIN:** Compiler tag (available options: GCC, CLANG, ICC, ONEAPI, NVCC).
+- **TOOLCHAIN:** Compiler toolchain (available options: GCC, CLANG, ICC, ONEAPI, NVCC).
 - **ISA:** Instruction set (available options: ARM, X86). Only relevant with
 SIMD other than NONE.
 - **SIMD:** Instruction set (available options: NONE, SSE, AVX, AVX\_FMA, AVX2, AVX512).
