@@ -12,75 +12,81 @@
 #include <parameter.h>
 #include <util.h>
 
-void initParameter(Parameter *param) {
-    param->input_file = NULL;
-    param->vtk_file = NULL;
-    param->xtc_file = NULL;
-    param->eam_file = NULL;
+void initParameter(Parameter* param)
+{
+    param->input_file      = NULL;
+    param->vtk_file        = NULL;
+    param->xtc_file        = NULL;
+    param->eam_file        = NULL;
     param->write_atom_file = NULL;
-    param->force_field = FF_LJ;
-    param->epsilon = 1.0;
-    param->sigma = 1.0;
-    param->sigma6 = 1.0;
-    param->rho = 0.8442;
-    param->ntypes = 4;
-    param->ntimes = 200;
-    param->dt = 0.005;
-    param->nx = 32;
-    param->ny = 32;
-    param->nz = 32;
-    param->pbc_x = 1;
-    param->pbc_y = 1;
-    param->pbc_z = 1;
-    param->cutforce = 2.5;
-    param->skin = 0.3;
-    param->cutneigh = param->cutforce + param->skin;
-    param->temp = 1.44;
-    param->nstat = 100;
-    param->mass = 1.0;
-    param->dtforce = 0.5 * param->dt;
-    param->reneigh_every = 20;
-    param->prune_every = 1000;
-    param->x_out_every = 20;
-    param->v_out_every = 5;
-    param->half_neigh = 0;
-    param->proc_freq = 2.4;
+    param->force_field     = FF_LJ;
+    param->epsilon         = 1.0;
+    param->sigma           = 1.0;
+    param->sigma6          = 1.0;
+    param->rho             = 0.8442;
+    param->ntypes          = 4;
+    param->ntimes          = 200;
+    param->dt              = 0.005;
+    param->nx              = 32;
+    param->ny              = 32;
+    param->nz              = 32;
+    param->pbc_x           = 1;
+    param->pbc_y           = 1;
+    param->pbc_z           = 1;
+    param->cutforce        = 2.5;
+    param->skin            = 0.3;
+    param->cutneigh        = param->cutforce + param->skin;
+    param->temp            = 1.44;
+    param->nstat           = 100;
+    param->mass            = 1.0;
+    param->dtforce         = 0.5 * param->dt;
+    param->reneigh_every   = 20;
+    param->prune_every     = 1000;
+    param->x_out_every     = 20;
+    param->v_out_every     = 5;
+    param->half_neigh      = 0;
+    param->proc_freq       = 2.4;
     // DEM
-    param->k_s = 1.0;
-    param->k_dn = 1.0;
-    param->gx = 0.0;
-    param->gy = 0.0;
-    param->gz = 0.0;
+    param->k_s       = 1.0;
+    param->k_dn      = 1.0;
+    param->gx        = 0.0;
+    param->gy        = 0.0;
+    param->gz        = 0.0;
     param->reflect_x = 0.0;
     param->reflect_y = 0.0;
     param->reflect_z = 0.0;
 }
 
-void readParameter(Parameter *param, const char *filename) {
-    FILE *fp = fopen(filename, "r");
+void readParameter(Parameter* param, const char* filename)
+{
+    FILE* fp = fopen(filename, "r");
     char line[MAXLINE];
     int i;
 
-    if(!fp) {
+    if (!fp) {
         fprintf(stderr, "Could not open parameter file: %s\n", filename);
         exit(-1);
     }
 
-    while(!feof(fp)) {
+    while (!feof(fp)) {
         line[0] = '\0';
         readline(line, fp);
-        for(i = 0; line[i] != '\0' && line[i] != '#'; i++);
+        for (i = 0; line[i] != '\0' && line[i] != '#'; i++)
+            ;
         line[i] = '\0';
 
-        char *tok = strtok(line, " ");
-        char *val = strtok(NULL, " ");
+        char* tok = strtok(line, " ");
+        char* val = strtok(NULL, " ");
 
-        #define PARSE_PARAM(p,f)   if(strncmp(tok, #p, sizeof(#p) / sizeof(#p[0]) - 1) == 0) { param->p = f(val); }
-        #define PARSE_STRING(p)    PARSE_PARAM(p, strdup)
-        #define PARSE_INT(p)       PARSE_PARAM(p, atoi)
-        #define PARSE_REAL(p)      PARSE_PARAM(p, atof)
+#define PARSE_PARAM(p, f)                                                                \
+    if (strncmp(tok, #p, sizeof(#p) / sizeof(#p[0]) - 1) == 0) {                         \
+        param->p = f(val);                                                               \
+    }
+#define PARSE_STRING(p) PARSE_PARAM(p, strdup)
+#define PARSE_INT(p)    PARSE_PARAM(p, atoi)
+#define PARSE_REAL(p)   PARSE_PARAM(p, atof)
 
-        if(tok != NULL && val != NULL) {
+        if (tok != NULL && val != NULL) {
             PARSE_PARAM(force_field, str2ff);
             PARSE_STRING(input_file);
             PARSE_STRING(eam_file);
@@ -124,40 +130,51 @@ void readParameter(Parameter *param, const char *filename) {
     param->dtforce = 0.5 * param->dt;
 
     // Update sigma6 parameter
-    MD_FLOAT s2 = param->sigma * param->sigma;
+    MD_FLOAT s2   = param->sigma * param->sigma;
     param->sigma6 = s2 * s2 * s2;
     fclose(fp);
 }
 
-void printParameter(Parameter *param) {
+void printParameter(Parameter* param)
+{
     printf("Parameters:\n");
-    if(param->input_file != NULL) {
+    if (param->input_file != NULL) {
         printf("\tInput file: %s\n", param->input_file);
     }
 
-    if(param->vtk_file != NULL) {
+    if (param->vtk_file != NULL) {
         printf("\tVTK file: %s\n", param->vtk_file);
     }
 
-    if(param->xtc_file != NULL) {
+    if (param->xtc_file != NULL) {
         printf("\tXTC file: %s\n", param->xtc_file);
     }
 
-    if(param->eam_file != NULL) {
+    if (param->eam_file != NULL) {
         printf("\tEAM file: %s\n", param->eam_file);
     }
 
     printf("\tForce field: %s\n", ff2str(param->force_field));
-    #ifdef CLUSTER_M
-    printf("\tKernel: %s, MxN: %dx%d, Vector width: %d\n", KERNEL_NAME, CLUSTER_M, CLUSTER_N, VECTOR_WIDTH);
-    #else
+#ifdef CLUSTER_M
+    printf("\tKernel: %s, MxN: %dx%d, Vector width: %d\n",
+        KERNEL_NAME,
+        CLUSTER_M,
+        CLUSTER_N,
+        VECTOR_WIDTH);
+#else
     printf("\tKernel: %s\n", KERNEL_NAME);
-    #endif
+#endif
     printf("\tData layout: %s\n", POS_DATA_LAYOUT);
     printf("\tFloating-point precision: %s\n", PRECISION_STRING);
     printf("\tUnit cells (nx, ny, nz): %d, %d, %d\n", param->nx, param->ny, param->nz);
-    printf("\tDomain box sizes (x, y, z): %e, %e, %e\n", param->xprd, param->yprd, param->zprd);
-    printf("\tPeriodic (x, y, z): %d, %d, %d\n", param->pbc_x, param->pbc_y, param->pbc_z);
+    printf("\tDomain box sizes (x, y, z): %e, %e, %e\n",
+        param->xprd,
+        param->yprd,
+        param->zprd);
+    printf("\tPeriodic (x, y, z): %d, %d, %d\n",
+        param->pbc_x,
+        param->pbc_y,
+        param->pbc_z);
     printf("\tLattice size: %e\n", param->lattice);
     printf("\tEpsilon: %e\n", param->epsilon);
     printf("\tSigma: %e\n", param->sigma);
@@ -170,11 +187,11 @@ void printParameter(Parameter *param) {
     printf("\tNumber of timesteps: %d\n", param->ntimes);
     printf("\tReport stats every (timesteps): %d\n", param->nstat);
     printf("\tReneighbor every (timesteps): %d\n", param->reneigh_every);
-    #ifdef SORT_ATOMS
+#ifdef SORT_ATOMS
     printf("\tSort atoms when reneighboring: yes\n");
-    #else
+#else
     printf("\tSort atoms when reneighboring: no\n");
-    #endif
+#endif
     printf("\tPrune every (timesteps): %d\n", param->prune_every);
     printf("\tOutput positions every (timesteps): %d\n", param->x_out_every);
     printf("\tOutput velocities every (timesteps): %d\n", param->v_out_every);

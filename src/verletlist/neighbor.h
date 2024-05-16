@@ -11,8 +11,8 @@
 #define __NEIGHBOR_H_
 
 typedef struct {
-    int *neighbors;
-    int *numneigh;
+    int* neighbors;
+    int* numneigh;
 } DeviceNeighbor;
 
 typedef struct {
@@ -20,19 +20,29 @@ typedef struct {
     int ncalls;
     int maxneighs;
     int half_neigh;
-    int *neighbors;
-    int *numneigh;
+    int* neighbors;
+    int* numneigh;
 
     // Device data
     DeviceNeighbor d_neighbor;
 } Neighbor;
 
 typedef struct {
-    MD_FLOAT xprd; MD_FLOAT yprd; MD_FLOAT zprd;
-    MD_FLOAT bininvx; MD_FLOAT bininvy; MD_FLOAT bininvz;
-    int mbinxlo; int mbinylo; int mbinzlo;
-    int nbinx; int nbiny; int nbinz;
-    int mbinx; int mbiny; int mbinz;
+    MD_FLOAT xprd;
+    MD_FLOAT yprd;
+    MD_FLOAT zprd;
+    MD_FLOAT bininvx;
+    MD_FLOAT bininvy;
+    MD_FLOAT bininvz;
+    int mbinxlo;
+    int mbinylo;
+    int mbinzlo;
+    int nbinx;
+    int nbiny;
+    int nbinz;
+    int mbinx;
+    int mbiny;
+    int mbinz;
 } Neighbor_params;
 
 typedef struct {

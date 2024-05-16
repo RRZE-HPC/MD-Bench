@@ -10,12 +10,12 @@
 #define __XTC_H_
 
 #ifdef XTC_OUTPUT
-void xtc_init(const char *, Atom*, int);
+void xtc_init(const char*, Atom*, int);
 void xtc_write(Atom*, int, int, int);
 void xtc_end();
 #else
-#define xtc_init(a,b,c)
-#define xtc_write(a,b,c,d)
+#define xtc_init(a, b, c)
+#define xtc_write(a, b, c, d)
 #define xtc_end()
 #endif
 #endif

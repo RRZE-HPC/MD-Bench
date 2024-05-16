@@ -6,11 +6,12 @@
  */
 #include <stdbool.h>
 //---
-#include <parameter.h>
 #include <atom.h>
+#include <parameter.h>
 
-void initialIntegrate_cpu(bool reneigh, Parameter *param, Atom *atom) {
-    for(int i = 0; i < atom->Nlocal; i++) {
+void initialIntegrate_cpu(bool reneigh, Parameter* param, Atom* atom)
+{
+    for (int i = 0; i < atom->Nlocal; i++) {
         atom_vx(i) += param->dtforce * atom_fx(i);
         atom_vy(i) += param->dtforce * atom_fy(i);
         atom_vz(i) += param->dtforce * atom_fz(i);
@@ -20,8 +21,9 @@ void initialIntegrate_cpu(bool reneigh, Parameter *param, Atom *atom) {
     }
 }
 
-void finalIntegrate_cpu(bool reneigh, Parameter *param, Atom *atom) {
-    for(int i = 0; i < atom->Nlocal; i++) {
+void finalIntegrate_cpu(bool reneigh, Parameter* param, Atom* atom)
+{
+    for (int i = 0; i < atom->Nlocal; i++) {
         atom_vx(i) += param->dtforce * atom_fx(i);
         atom_vy(i) += param->dtforce * atom_fy(i);
         atom_vz(i) += param->dtforce * atom_fz(i);

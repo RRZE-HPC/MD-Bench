@@ -8,11 +8,11 @@
 #define __PARAMETER_H_
 
 #if PRECISION == 1
-#   define MD_FLOAT float
-#   define MD_UINT  unsigned int
+#define MD_FLOAT float
+#define MD_UINT  unsigned int
 #else
-#   define MD_FLOAT double
-#   define MD_UINT  unsigned long long int
+#define MD_FLOAT double
+#define MD_UINT  unsigned long long int
 #endif
 
 typedef struct {

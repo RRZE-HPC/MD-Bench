@@ -8,15 +8,17 @@
 #include <math.h>
 
 #include <allocate.h>
-#include <timing.h>
+#include <atom.h>
+#include <eam.h>
 #include <neighbor.h>
 #include <parameter.h>
-#include <atom.h>
 #include <stats.h>
-#include <eam.h>
+#include <timing.h>
 #include <util.h>
 
-double computeForceEam(Eam* eam, Parameter* param, Atom *atom, Neighbor *neighbor, Stats *stats) {
+double computeForceEam(
+    Eam* eam, Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
+{
     /*
     if(eam->nmax < atom->Nmax) {
         eam->nmax = atom->Nmax;
@@ -26,10 +28,11 @@ double computeForceEam(Eam* eam, Parameter* param, Atom *atom, Neighbor *neighbo
 
     int Nlocal = atom->Nlocal;
     int* neighs;
-    MD_FLOAT* fx = atom->fx; MD_FLOAT* fy = atom->fy; MD_FLOAT* fz = atom->fz; int ntypes = atom->ntypes; MD_FLOAT* fp = eam->fp;
-    MD_FLOAT* rhor_spline = eam->rhor_spline; MD_FLOAT* frho_spline = eam->frho_spline; MD_FLOAT* z2r_spline = eam->z2r_spline;
-    MD_FLOAT rdr = eam->rdr; int nr = eam->nr; int nr_tot = eam->nr_tot; MD_FLOAT rdrho = eam->rdrho;
-    int nrho = eam->nrho; int nrho_tot = eam->nrho_tot;
+    MD_FLOAT* fx = atom->fx; MD_FLOAT* fy = atom->fy; MD_FLOAT* fz = atom->fz; int ntypes
+    = atom->ntypes; MD_FLOAT* fp = eam->fp; MD_FLOAT* rhor_spline = eam->rhor_spline;
+    MD_FLOAT* frho_spline = eam->frho_spline; MD_FLOAT* z2r_spline = eam->z2r_spline;
+    MD_FLOAT rdr = eam->rdr; int nr = eam->nr; int nr_tot = eam->nr_tot; MD_FLOAT rdrho =
+    eam->rdrho; int nrho = eam->nrho; int nrho_tot = eam->nrho_tot;
     */
     double S = getTimeStamp();
 
@@ -93,8 +96,8 @@ double computeForceEam(Eam* eam, Parameter* param, Atom *atom, Neighbor *neighbo
                  frho_spline[type_ii * nrho_tot + m * 7 + 1]) * p +
                  frho_spline[type_ii * nrho_tot + m * 7 + 2];
 #else
-        fp[i] = (frho_spline[m * 7 + 0] * p + frho_spline[m * 7 + 1]) * p + frho_spline[m * 7 + 2];
-#endif
+        fp[i] = (frho_spline[m * 7 + 0] * p + frho_spline[m * 7 + 1]) * p + frho_spline[m
+* 7 + 2]; #endif
     }
 
     LIKWID_MARKER_STOP("force_eam_fp");
@@ -166,13 +169,10 @@ double computeForceEam(Eam* eam, Parameter* param, Atom *atom, Neighbor *neighbo
                                 z2r_spline[type_ij * nr_tot + m * 7 + 5]) * p +
                                 z2r_spline[type_ij * nr_tot + m * 7 + 6];
 #else
-                MD_FLOAT rhoip = (rhor_spline[m * 7 + 0] * p + rhor_spline[m * 7 + 1]) * p + rhor_spline[m * 7 + 2];
-                MD_FLOAT z2p = (z2r_spline[m * 7 + 0] * p + z2r_spline[m * 7 + 1]) * p + z2r_spline[m * 7 + 2];
-                MD_FLOAT z2 = ((z2r_spline[m * 7 + 3] * p +
-                                z2r_spline[m * 7 + 4]) * p +
-                                z2r_spline[m * 7 + 5]) * p +
-                                z2r_spline[m * 7 + 6];
-#endif
+                MD_FLOAT rhoip = (rhor_spline[m * 7 + 0] * p + rhor_spline[m * 7 + 1]) * p
++ rhor_spline[m * 7 + 2]; MD_FLOAT z2p = (z2r_spline[m * 7 + 0] * p + z2r_spline[m * 7 +
+1]) * p + z2r_spline[m * 7 + 2]; MD_FLOAT z2 = ((z2r_spline[m * 7 + 3] * p + z2r_spline[m
+* 7 + 4]) * p + z2r_spline[m * 7 + 5]) * p + z2r_spline[m * 7 + 6]; #endif
 
                 MD_FLOAT recip = 1.0 / r;
                 MD_FLOAT phi = z2 * recip;
@@ -197,5 +197,5 @@ double computeForceEam(Eam* eam, Parameter* param, Atom *atom, Neighbor *neighbo
     */
     LIKWID_MARKER_STOP("force_eam");
     double E = getTimeStamp();
-    return E-S;
+    return E - S;
 }

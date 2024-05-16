@@ -30,7 +30,7 @@ typedef struct {
 
 void initEam(Eam* eam, Parameter* param);
 void coeff(Eam* eam, Parameter* param);
-void init_style(Eam* eam, Parameter *param);
+void init_style(Eam* eam, Parameter* param);
 void read_eam_file(Funcfl* file, const char* filename);
 void file2array(Eam* eam);
 void array2spline(Eam* eam, Parameter* param);

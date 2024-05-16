@@ -25,6 +25,7 @@ OBJ      += $(patsubst $(COMMON_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(COMMON_D
 ifeq ($(strip $(TAG)),NVCC)
 OBJ      += $(patsubst $(CUDA_DIR)/%.cu, $(BUILD_DIR)/%-cuda.o,$(wildcard $(CUDA_DIR)/*.cu))
 endif
+SOURCES   =  $(wildcard $(SRC_DIR)/*.h $(SRC_DIR)/*.c $(COMMON_DIR)/*.c $(COMMON_DIR)/*.h)
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(OPTIONS) $(INCLUDES)
 
 ifneq ($(VARIANT),)
@@ -84,6 +85,13 @@ asm:  $(BUILD_DIR) $(ASM)
 tags:
 	$(info ===>  GENERATE  TAGS)
 	$(Q)ctags -R
+
+format:
+	@for src in $(SOURCES) ; do \
+		echo "Formatting $$src" ; \
+		clang-format -i $$src ; \
+	done
+	@echo "Done"
 
 $(BUILD_DIR):
 	@mkdir -p $(BUILD_DIR)
