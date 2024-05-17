@@ -6,23 +6,23 @@ ANSI_CFLAGS += -std=c99
 ANSI_CFLAGS += -pedantic
 ANSI_CFLAGS += -Wextra
 
-ifeq ($(ISA),AVX512)
+ifeq ($(SIMD),AVX512)
 CFLAGS   = -Ofast -mavx512f -mavx512vl -mavx512bw -mavx512dq -mavx512cd -ffast-math -funroll-loops # -fopenmp
 #CFLAGS   = -O3 -march=cascadelake  -ffast-math -funroll-loops # -fopenmp
 endif
 
-ifeq ($(ISA),AVX2)
+ifeq ($(SIMD),AVX2)
 #CFLAGS   = -Ofast -march=native -mavx2  -ffast-math -funroll-loops # -fopenmp
 #CFLAGS   = -O3 -march=znver1  -ffast-math -funroll-loops # -fopenmp
 #CFLAGS   = -Ofast -mavx2 -ffast-math -funroll-loops # -fopenmp
 CFLAGS   = -Ofast -mavx2 -mfma -ffast-math -funroll-loops # -fopenmp
 endif
 
-ifeq ($(ISA),AVX)
+ifeq ($(SIMD),AVX)
 CFLAGS   = -Ofast -mavx -ffast-math -funroll-loops # -fopenmp
 endif
 
-ifeq ($(ISA),SSE)
+ifeq ($(SIMD),SSE)
 CFLAGS   = -Ofast -msse4.2 -ffast-math -funroll-loops # -fopenmp
 endif
 
