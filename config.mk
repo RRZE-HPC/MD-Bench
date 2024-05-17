@@ -1,10 +1,10 @@
 # Compiler tool chain (GCC/CLANG/ICC/ICX/ONEAPI/NVCC)
 TOOLCHAIN ?= CLANG
 # Instruction set for instrinsic kernels (NONE/SSE/AVX/AVX_FMA/AVX2/AVX512)
-ISA ?= ARM
-SIMD ?= NONE
+ISA ?= X86
+SIMD ?= AVX2
 # Optimization scheme (verletlist/clusterpair/clusters_per_bin)
-OPT_SCHEME ?= verletlist
+OPT_SCHEME ?= clusterpair
 # Enable likwid (true or false)
 ENABLE_LIKWID ?= false
 # SP or DP
@@ -30,8 +30,6 @@ COMPUTE_STATS ?= true
 # Configurations for lammps optimization scheme
 # Use omp simd pragma when running with half neighbor-lists
 ENABLE_OMP_SIMD ?= false
-# Use kernel with explicit SIMD intrinsics
-USE_SIMD_KERNEL ?= false
 
 # Configurations for gromacs optimization scheme
 # Use reference version
@@ -49,7 +47,39 @@ USE_CUDA_HOST_MEMORY ?= false
 OPTIONS =  -DALIGNMENT=64
 #OPTIONS +=  More options
 
-#DO NOT EDIT BELOW
+################################################################
+# DO NOT EDIT BELOW !!!
+################################################################
+ifeq ($(strip $(SIMD)), SSE)
+    __ISA_SSE__=true
+    __SIMD_WIDTH_DBL__=2
+else ifeq ($(strip $(SIMD)), AVX)
+    __ISA_AVX__=true
+    __SIMD_WIDTH_DBL__=4
+else ifeq ($(strip $(SIMD)), AVX_FMA)
+    __ISA_AVX__=true
+    __ISA_AVX_FMA__=true
+    __SIMD_WIDTH_DBL__=4
+else ifeq ($(strip $(SIMD)), AVX2)
+    #__SIMD_KERNEL__=true
+    __ISA_AVX2__=true
+    __SIMD_WIDTH_DBL__=4
+else ifeq ($(strip $(SIMD)), AVX512)
+    __ISA_AVX512__=true
+    __SIMD_WIDTH_DBL__=8
+    ifeq ($(strip $(DATA_TYPE)), DP)
+        __SIMD_KERNEL__=true
+    endif
+endif
+
+DEFINES =
+# SIMD width is specified in double-precision, hence it may
+# need to be adjusted for single-precision
+ifeq ($(strip $(DATA_TYPE)), SP)
+    VECTOR_WIDTH=$(shell echo $$(( $(__SIMD_WIDTH_DBL__) * 2 )))
+else
+    VECTOR_WIDTH=$(__SIMD_WIDTH_DBL__)
+endif
 ifeq ($(strip $(DATA_LAYOUT)),AOS)
     DEFINES +=  -DAOS
 endif
@@ -136,5 +166,5 @@ ifeq ($(strip $(OPT_SCHEME)),verletlist)
 endif
 
 ifneq ($(strip $(SIMD)),NONE)
-		TOOLCHAIN = $(TOOLCHAIN)-$(ISA)-$(SIMD)
+		TOOL_TAG = $(TOOLCHAIN)-$(ISA)-$(SIMD)
 endif

@@ -5,12 +5,14 @@
  * license that can be found in the LICENSE file.
  */
 #include <math.h>
-#include <omp.h>
 #include <stdio.h>
 #include <string.h>
-//--
+
 #include <likwid-marker.h>
-//--
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 #include <allocate.h>
 #include <atom.h>
 #include <device.h>
@@ -27,8 +29,7 @@
 #include <vtk.h>
 #include <xtc.h>
 
-#define HLINE                                                                            \
-    "----------------------------------------------------------------------------\n"
+#define HLINE "------------------------------------------------------------------\n"
 
 extern double computeForceLJ_ref(Parameter*, Atom*, Neighbor*, Stats*);
 extern double computeForceLJ_4xn(Parameter*, Atom*, Neighbor*, Stats*);
@@ -49,13 +50,13 @@ double setup(Parameter* param, Eam* eam, Atom* atom, Neighbor* neighbor, Stats* 
     if (param->force_field == FF_EAM) {
         initEam(eam, param);
     }
-    double S, E;
+    double timeStart, timeStop;
     param->lattice = pow((4.0 / param->rho), (1.0 / 3.0));
     param->xprd    = param->nx * param->lattice;
     param->yprd    = param->ny * param->lattice;
     param->zprd    = param->nz * param->lattice;
 
-    S = getTimeStamp();
+    timeStart = getTimeStamp();
     initAtom(atom);
     initPbc(atom);
     initStats(stats);
@@ -77,14 +78,14 @@ double setup(Parameter* param, Eam* eam, Atom* atom, Neighbor* neighbor, Stats* 
     binClusters(atom);
     buildNeighbor(atom, neighbor);
     initDevice(atom, neighbor);
-    E = getTimeStamp();
-    return E - S;
+    timeStop = getTimeStamp();
+    return timeStop - timeStart;
 }
 
 double reneighbour(Parameter* param, Atom* atom, Neighbor* neighbor)
 {
-    double S, E;
-    S = getTimeStamp();
+    double timeStart, timeStop;
+    timeStart = getTimeStamp();
     LIKWID_MARKER_START("reneighbour");
     updateSingleAtoms(atom);
     updateAtomsPbc(atom, param);
@@ -94,8 +95,8 @@ double reneighbour(Parameter* param, Atom* atom, Neighbor* neighbor)
     binClusters(atom);
     buildNeighbor(atom, neighbor);
     LIKWID_MARKER_STOP("reneighbour");
-    E = getTimeStamp();
-    return E - S;
+    timeStop = getTimeStamp();
+    return timeStop - timeStart;
 }
 
 void printAtomState(Atom* atom)
@@ -334,6 +335,7 @@ int main(int argc, char** argv)
         timer[TOTAL] - timer[FORCE] - timer[NEIGH]);
     printf(HLINE);
 
+#ifdef _OPENMP
     int nthreads  = 0;
     int chunkSize = 0;
     omp_sched_t schedKind;
@@ -363,6 +365,7 @@ int main(int argc, char** argv)
 
     printf("Num threads: %d\n", nthreads);
     printf("Schedule: (%s,%d)\n", schedType, chunkSize);
+#endif
 
     printf("Performance: %.2f million atom updates per second\n",
         1e-6 * (double)atom.Natoms * param.ntimes / timer[TOTAL]);

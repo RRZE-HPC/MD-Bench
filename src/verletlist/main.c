@@ -11,7 +11,9 @@
 #include <unistd.h>
 
 #include <likwid-marker.h>
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 
 #include <allocate.h>
 #include <atom.h>
@@ -326,6 +328,7 @@ int main(int argc, char** argv)
         timer[TOTAL] - timer[FORCE] - timer[NEIGH]);
     printf(HLINE);
 
+#ifdef _OPENMP
     int nthreads  = 0;
     int chunkSize = 0;
     omp_sched_t schedKind;
@@ -358,6 +361,7 @@ int main(int argc, char** argv)
 
     printf("Num threads: %d\n", nthreads);
     printf("Schedule: (%s,%d)\n", schedType, chunkSize);
+#endif
 
     printf("Performance: %.2f million atom updates per second\n",
         1e-6 * (double)atom.Natoms * param.ntimes / timer[TOTAL]);

@@ -9,7 +9,7 @@
 
 #ifndef __PBC_H_
 #define __PBC_H_
-extern void initPbc();
+extern void initPbc(Atom*);
 extern void cpuUpdatePbc(Atom*, Parameter*, int);
 extern void updateAtomsPbc(Atom*, Parameter*);
 extern void setupPbc(Atom*, Parameter*);

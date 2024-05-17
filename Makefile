@@ -1,5 +1,5 @@
 #CONFIGURE BUILD SYSTEM
-TAG = $(OPT_TAG)-$(TOOLCHAIN)-$(DATA_TYPE)
+TAG = $(OPT_TAG)-$(TOOL_TAG)-$(DATA_TYPE)
 TARGET	   = MDBench-$(TAG)
 BUILD_DIR  = ./build/build-$(TAG)
 SRC_ROOT   = src
@@ -13,9 +13,6 @@ Q         ?= @
 include config.mk
 include $(MAKE_DIR)/include_$(TOOLCHAIN).mk
 include $(MAKE_DIR)/include_LIKWID.mk
-ifneq ($(strip $(ISA)),NONE)
-include $(MAKE_DIR)/include_ISA.mk
-endif
 INCLUDES  += -I$(CURDIR)/$(SRC_DIR) -I$(CURDIR)/$(COMMON_DIR)
 
 VPATH     = $(SRC_DIR) $(COMMON_DIR) $(CUDA_DIR)
@@ -32,7 +29,7 @@ clist = $(subst $(eval) ,$c,$(strip $1))
 
 define CLANGD_TEMPLATE
 CompileFlags:
-  Add: [$(call clist,$(INCLUDES)), -DALIGNMENT=64]
+  Add: [$(call clist,$(INCLUDES)), $(call clist,$(DEFINES))]
   Compiler: clang
 endef
 

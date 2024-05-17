@@ -18,6 +18,6 @@ CFLAGS   = -O3 -arch=sm_80 -march=native -ffast-math -funroll-loops --forward-un
 #CFLAGS   = -O3 -g -arch=sm_61 # -fopenmp
 ASFLAGS  =  -masm=intel
 LFLAGS   =
-DEFINES  = -D_GNU_SOURCE -DCUDA_TARGET -DNO_ZMM_INTRIN #-DLIKWID_PERFMON
+DEFINES  += -D_GNU_SOURCE -DCUDA_TARGET -DNO_ZMM_INTRIN #-DLIKWID_PERFMON
 INCLUDES = $(LIKWID_INC)
 LIBS     = -lm $(LIKWID_LIB) -lcuda -lcudart #-llikwid

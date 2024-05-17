@@ -27,6 +27,6 @@ endif
 CFLAGS   = $(PROFILE) -restrict $(OPENMP) $(OPTS)
 ASFLAGS  = #-masm=intel
 LFLAGS   = $(PROFILE) $(OPTS) $(OPENMP)
-DEFINES  = -std=c11 -pedantic-errors -D_GNU_SOURCE
+DEFINES  += -std=c11 -pedantic-errors -D_GNU_SOURCE
 INCLUDES =
 LIBS     = -lm

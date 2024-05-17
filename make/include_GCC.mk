@@ -31,6 +31,6 @@ endif
 #CFLAGS   = -O3 -march=native  -ffast-math -funroll-loops # -fopenmp
 ASFLAGS  =  #-masm=intel
 LFLAGS   =
-DEFINES  = -D_GNU_SOURCE -DNO_ZMM_INTRIN
+DEFINES  += -D_GNU_SOURCE -DNO_ZMM_INTRIN
 INCLUDES = $(LIKWID_INC)
 LIBS     = -lm

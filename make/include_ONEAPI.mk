@@ -12,6 +12,6 @@ OPTS     = -Ofast -xCORE-AVX512 -qopt-zmm-usage=high
 CFLAGS   = $(PROFILE) $(OPTS) $(OPENMP)
 ASFLAGS  = -masm=intel
 LFLAGS   = $(PROFILE) $(OPTS)
-DEFINES  = -D_GNU_SOURCE  -DNOCHUNK
+DEFINES  += -D_GNU_SOURCE  -DNOCHUNK
 INCLUDES = 
 LIBS     = -lm 

@@ -58,20 +58,18 @@
 #if CLUSTER_M == CLUSTER_N
 #define CJ0_FROM_CI(a)      (a)
 #define CJ1_FROM_CI(a)      (a)
-#define CI_BASE_INDEX(a, b) ((a) * CLUSTER_N * (b))
-#define CJ_BASE_INDEX(a, b) ((a) * CLUSTER_N * (b))
+#define CI_BASE_INDEX(a, b) ((a)*CLUSTER_N * (b))
+#define CJ_BASE_INDEX(a, b) ((a)*CLUSTER_N * (b))
 #elif CLUSTER_M == CLUSTER_N * 2 // M > N
 #define CJ0_FROM_CI(a)      ((a) << 1)
 #define CJ1_FROM_CI(a)      (((a) << 1) | 0x1)
-#define CI_BASE_INDEX(a, b) ((a) * CLUSTER_M * (b))
-#define CJ_BASE_INDEX(a, b)                                                              \
-    (((a) >> 1) * CLUSTER_M * (b) + ((a) & 0x1) * (CLUSTER_M >> 1))
+#define CI_BASE_INDEX(a, b) ((a)*CLUSTER_M * (b))
+#define CJ_BASE_INDEX(a, b) (((a) >> 1) * CLUSTER_M * (b) + ((a)&0x1) * (CLUSTER_M >> 1))
 #elif CLUSTER_M == CLUSTER_N / 2 // M < N
-#define CJ0_FROM_CI(a) ((a) >> 1)
-#define CJ1_FROM_CI(a) ((a) >> 1)
-#define CI_BASE_INDEX(a, b)                                                              \
-    (((a) >> 1) * CLUSTER_N * (b) + ((a) & 0x1) * (CLUSTER_N >> 1))
-#define CJ_BASE_INDEX(a, b) ((a) * CLUSTER_N * (b))
+#define CJ0_FROM_CI(a)      ((a) >> 1)
+#define CJ1_FROM_CI(a)      ((a) >> 1)
+#define CI_BASE_INDEX(a, b) (((a) >> 1) * CLUSTER_N * (b) + ((a)&0x1) * (CLUSTER_N >> 1))
+#define CJ_BASE_INDEX(a, b) ((a)*CLUSTER_N * (b))
 #else
 #error "Invalid cluster configuration!"
 #endif
@@ -144,9 +142,9 @@ extern void growClusters(Atom*);
 
 #ifdef AOS
 #define POS_DATA_LAYOUT "AoS"
-#define atom_x(i)       atom->x[(i) * 3 + 0]
-#define atom_y(i)       atom->x[(i) * 3 + 1]
-#define atom_z(i)       atom->x[(i) * 3 + 2]
+#define atom_x(i)       atom->x[(i)*3 + 0]
+#define atom_y(i)       atom->x[(i)*3 + 1]
+#define atom_z(i)       atom->x[(i)*3 + 2]
 /*
 #   define atom_vx(i)          atom->vx[(i) * 3 + 0]
 #   define atom_vy(i)          atom->vx[(i) * 3 + 1]
