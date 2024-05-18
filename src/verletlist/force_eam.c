@@ -16,31 +16,30 @@
 #include <timing.h>
 #include <util.h>
 
-double computeForceEam(
-    Eam* eam, Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
+double computeForceEam(Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
 {
-    if (eam->nmax < atom->Nmax) {
-        eam->nmax = atom->Nmax;
-        if (eam->fp != NULL) {
-            free(eam->fp);
+    if (eam.nmax < atom->Nmax) {
+        eam.nmax = atom->Nmax;
+        if (eam.fp != NULL) {
+            free(eam.fp);
         }
-        eam->fp = (MD_FLOAT*)allocate(ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT));
+        eam.fp = (MD_FLOAT*)allocate(ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT));
     }
 
     int Nlocal = atom->Nlocal;
     int* neighs;
     int ntypes            = atom->ntypes;
-    MD_FLOAT* fp          = eam->fp;
-    MD_FLOAT* rhor_spline = eam->rhor_spline;
-    MD_FLOAT* frho_spline = eam->frho_spline;
-    MD_FLOAT* z2r_spline  = eam->z2r_spline;
-    MD_FLOAT rdr          = eam->rdr;
-    int nr                = eam->nr;
-    int nr_tot            = eam->nr_tot;
-    MD_FLOAT rdrho        = eam->rdrho;
-    int nrho              = eam->nrho;
-    int nrho_tot          = eam->nrho_tot;
-    double S              = getTimeStamp();
+    MD_FLOAT* fp          = eam.fp;
+    MD_FLOAT* rhor_spline = eam.rhor_spline;
+    MD_FLOAT* frho_spline = eam.frho_spline;
+    MD_FLOAT* z2r_spline  = eam.z2r_spline;
+    MD_FLOAT rdr          = eam.rdr;
+    int nr                = eam.nr;
+    int nr_tot            = eam.nr_tot;
+    MD_FLOAT rdrho        = eam.rdrho;
+    int nrho              = eam.nrho;
+    int nrho_tot          = eam.nrho_tot;
+    double timeStart      = getTimeStamp();
 
 #pragma omp parallel
     {
@@ -227,6 +226,6 @@ double computeForceEam(
         LIKWID_MARKER_STOP("force_eam");
     }
 
-    double E = getTimeStamp();
-    return E - S;
+    double timeStop = getTimeStamp();
+    return timeStop - timeStart;
 }

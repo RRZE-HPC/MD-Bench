@@ -4,7 +4,7 @@ TOOLCHAIN ?= CLANG
 ISA ?= X86
 SIMD ?= AVX2
 # Optimization scheme (verletlist/clusterpair/clusters_per_bin)
-OPT_SCHEME ?= clusterpair
+OPT_SCHEME ?= verletlist
 # Enable likwid (true or false)
 ENABLE_LIKWID ?= false
 # SP or DP

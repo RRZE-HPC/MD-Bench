@@ -26,10 +26,6 @@
 #define MAXLINE 4096
 #endif
 
-#define FF_LJ  0
-#define FF_EAM 1
-#define FF_DEM 2
-
 #if PRECISION == 1
 #define PRECISION_STRING "single"
 #else

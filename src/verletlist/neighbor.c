@@ -15,6 +15,12 @@
 #define SMALL  1.0e-6
 #define FACTOR 0.999
 
+#ifdef CUDA_TARGET
+BuildNeighborFunction buildNeighbor = buildNeighborCUDA;
+#else
+BuildNeighborFunction buildNeighbor = buildNeighborCPU;
+#endif
+
 MD_FLOAT xprd, yprd, zprd;
 MD_FLOAT bininvx, bininvy, bininvz;
 int mbinxlo, mbinylo, mbinzlo;
@@ -177,7 +183,7 @@ void setupNeighbor(Parameter* param)
     bins = (int*)malloc(mbins * atoms_per_bin * sizeof(int));
 }
 
-void buildNeighbor_cpu(Atom* atom, Neighbor* neighbor)
+void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
 {
     int nall = atom->Nlocal + atom->Nghost;
 

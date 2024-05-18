@@ -5,32 +5,18 @@
  * license that can be found in the LICENSE file.
  */
 #include <stdbool.h>
-//---
+
 #include <atom.h>
 #include <parameter.h>
 
-void initialIntegrate_cpu(bool reneigh, Parameter* param, Atom* atom)
-{
-    for (int i = 0; i < atom->Nlocal; i++) {
-        atom_vx(i) += param->dtforce * atom_fx(i);
-        atom_vy(i) += param->dtforce * atom_fy(i);
-        atom_vz(i) += param->dtforce * atom_fz(i);
-        atom_x(i) = atom_x(i) + param->dt * atom_vx(i);
-        atom_y(i) = atom_y(i) + param->dt * atom_vy(i);
-        atom_z(i) = atom_z(i) + param->dt * atom_vz(i);
-    }
-}
+typedef void (*IntegrationFunction)(bool, Parameter*, Atom*);
+extern IntegrationFunction initialIntegrate;
+extern IntegrationFunction finalIntegrate;
 
-void finalIntegrate_cpu(bool reneigh, Parameter* param, Atom* atom)
-{
-    for (int i = 0; i < atom->Nlocal; i++) {
-        atom_vx(i) += param->dtforce * atom_fx(i);
-        atom_vy(i) += param->dtforce * atom_fy(i);
-        atom_vz(i) += param->dtforce * atom_fz(i);
-    }
-}
+extern void initialIntegrateCPU(bool reneigh, Parameter* param, Atom* atom);
+extern void finalIntegrateCPU(bool reneigh, Parameter* param, Atom* atom);
 
 #ifdef CUDA_TARGET
-void initialIntegrate_cuda(bool, Parameter*, Atom*);
-void finalIntegrate_cuda(bool, Parameter*, Atom*);
+extern void initialIntegrateCUDA(bool, Parameter*, Atom*);
+extern void finalIntegrateCUDA(bool, Parameter*, Atom*);
 #endif

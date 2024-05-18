@@ -7,7 +7,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-//---
+
 #include <allocate.h>
 #include <atom.h>
 #include <pbc.h>
@@ -16,6 +16,14 @@
 
 int nmaxGhost;
 int *PBCx, *PBCy, *PBCz;
+
+#ifdef CUDA_TARGET
+UpdatePbcFunction updatePbc      = updaupdateAtomsPbcCUDA;
+UpdatePbcFunction updateAtomsPbc = updateAtomsPbcCUDA;
+#else
+UpdatePbcFunction updatePbc      = updatePbcCPU;
+UpdatePbcFunction updateAtomsPbc = updateAtomsPbcCPU;
+#endif
 
 static void growPbc(Atom*);
 
@@ -31,7 +39,7 @@ void initPbc(Atom* atom)
 
 /* update coordinates of ghost atoms */
 /* uses mapping created in setupPbc */
-void updatePbc_cpu(Atom* atom, Parameter* param, bool doReneighbor)
+void updatePbcCPU(Atom* atom, Parameter* param, bool doReneighbor)
 {
     int* borderMap = atom->border_map;
     int nlocal     = atom->Nlocal;
@@ -48,7 +56,7 @@ void updatePbc_cpu(Atom* atom, Parameter* param, bool doReneighbor)
 
 /* relocate atoms that have left domain according
  * to periodic boundary conditions */
-void updateAtomsPbc_cpu(Atom* atom, Parameter* param)
+void updateAtomsPbcCPU(Atom* atom, Parameter* param, bool doReneighbor)
 {
     MD_FLOAT xprd = param->xprd;
     MD_FLOAT yprd = param->yprd;

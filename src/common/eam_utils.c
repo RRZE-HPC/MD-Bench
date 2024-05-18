@@ -17,36 +17,29 @@
 #ifndef MAXLINE
 #define MAXLINE 4096
 #endif
+Eam eam;
 
-void initEam(Eam* eam, Parameter* param)
+void initEam(Parameter* param)
 {
     int ntypes = param->ntypes;
-    eam->nmax  = 0;
-    eam->fp    = NULL;
-    coeff(eam, param);
-    init_style(eam, param);
-}
+    eam.nmax   = 0;
+    eam.fp     = NULL;
 
-void coeff(Eam* eam, Parameter* param)
-{
-    read_eam_file(&eam->file, param->eam_file);
-    param->mass     = eam->file.mass;
-    param->cutforce = eam->file.cut;
+    readEamFile(&eam.file, param->eam_file);
+    param->mass     = eam.file.mass;
+    param->cutforce = eam.file.cut;
     param->cutneigh = param->cutforce + 1.0;
     param->temp     = 600.0;
     param->dt       = 0.001;
     param->rho      = 0.07041125;
     param->dtforce  = 0.5 * param->dt / param->mass;
-}
 
-void init_style(Eam* eam, Parameter* param)
-{
     // convert read-in file(s) to arrays and spline them
-    file2array(eam);
-    array2spline(eam, param);
+    file2array(&eam);
+    array2spline(&eam, param);
 }
 
-void read_eam_file(Funcfl* file, const char* filename)
+void readEamFile(Funcfl* file, const char* filename)
 {
     FILE* fptr;
     char line[MAXLINE];

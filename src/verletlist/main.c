@@ -19,6 +19,7 @@
 #include <atom.h>
 #include <device.h>
 #include <eam.h>
+#include <force.h>
 #include <integrate.h>
 #include <neighbor.h>
 #include <parameter.h>
@@ -32,19 +33,10 @@
 
 #define HLINE "------------------------------------------------------------------\n"
 
-extern double computeForceLJHalfNeigh(Parameter*, Atom*, Neighbor*, Stats*);
-extern double computeForceLJFullNeigh(Parameter*, Atom*, Neighbor*, Stats*);
-extern double computeForceEam(Eam*, Parameter*, Atom*, Neighbor*, Stats*);
-extern double computeForceDemFullNeigh(Parameter*, Atom*, Neighbor*, Stats*);
-
-#ifdef CUDA_TARGET
-extern double computeForceLJFullNeigh_cuda(Parameter*, Atom*, Neighbor*);
-#endif
-
 double setup(Parameter* param, Eam* eam, Atom* atom, Neighbor* neighbor, Stats* stats)
 {
     if (param->force_field == FF_EAM) {
-        initEam(eam, param);
+        initEam(param);
     }
     double timeStart, timeStop;
     param->lattice = pow((4.0 / param->rho), (1.0 / 3.0));
@@ -76,6 +68,7 @@ double setup(Parameter* param, Eam* eam, Atom* atom, Neighbor* neighbor, Stats* 
     initDevice(atom, neighbor);
     updatePbc(atom, param, true);
     buildNeighbor(atom, neighbor);
+    initForce(param);
     timeStop = getTimeStamp();
     return timeStop - timeStart;
 }
@@ -85,7 +78,7 @@ double reneighbour(Parameter* param, Atom* atom, Neighbor* neighbor)
     double timeStart, timeStop;
     timeStart = getTimeStamp();
     LIKWID_MARKER_START("reneighbour");
-    updateAtomsPbc(atom, param);
+    updateAtomsPbc(atom, param, true);
 #ifdef SORT_ATOMS
     atom->Nghost = 0;
     sortAtom(atom);
@@ -111,31 +104,6 @@ void printAtomState(Atom* atom)
     // }
 }
 
-double computeForce(
-    Eam* eam, Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
-{
-    if (param->force_field == FF_EAM) {
-        return computeForceEam(eam, param, atom, neighbor, stats);
-    } else if (param->force_field == FF_DEM) {
-        if (param->half_neigh) {
-            fprintf(stderr, "Error: DEM cannot use half neighbor-lists!\n");
-            return 0.0;
-        } else {
-            return computeForceDemFullNeigh(param, atom, neighbor, stats);
-        }
-    }
-
-    if (param->half_neigh) {
-        return computeForceLJHalfNeigh(param, atom, neighbor, stats);
-    }
-
-#ifdef CUDA_TARGET
-    return computeForceLJFullNeigh(param, atom, neighbor);
-#else
-    return computeForceLJFullNeigh(param, atom, neighbor, stats);
-#endif
-}
-
 void writeInput(Parameter* param, Atom* atom)
 {
     FILE* fpin = fopen("input.in", "w");
@@ -158,7 +126,6 @@ void writeInput(Parameter* param, Atom* atom)
 int main(int argc, char** argv)
 {
     double timer[NUMTIMER];
-    Eam eam;
     Atom atom;
     Neighbor neighbor;
     Stats stats;
@@ -168,7 +135,7 @@ int main(int argc, char** argv)
 #pragma omp parallel
     {
         LIKWID_MARKER_REGISTER("force");
-        // LIKWID_MARKER_REGISTER("reneighbour");
+        LIKWID_MARKER_REGISTER("reneighbour");
         // LIKWID_MARKER_REGISTER("pbc");
     }
 
@@ -277,7 +244,7 @@ int main(int argc, char** argv)
 
     // writeInput(&param, &atom);
 
-    timer[FORCE] = computeForce(&eam, &param, &atom, &neighbor, &stats);
+    timer[FORCE] = computeForce(&param, &atom, &neighbor, &stats);
     timer[NEIGH] = 0.0;
     timer[TOTAL] = getTimeStamp();
 
@@ -298,7 +265,7 @@ int main(int argc, char** argv)
         traceAddresses(&param, &atom, &neighbor, n + 1);
 #endif
 
-        timer[FORCE] += computeForce(&eam, &param, &atom, &neighbor, &stats);
+        timer[FORCE] += computeForce(&param, &atom, &neighbor, &stats);
         finalIntegrate(reneigh, &param, &atom);
 
         if (!((n + 1) % param.nstat) && (n + 1) < param.ntimes) {

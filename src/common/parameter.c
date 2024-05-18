@@ -7,8 +7,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-//---
+
 #include <atom.h>
+#include <force.h>
 #include <parameter.h>
 #include <util.h>
 

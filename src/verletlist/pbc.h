@@ -5,20 +5,25 @@
  * license that can be found in the LICENSE file.
  */
 #include <stdbool.h>
-//---
+
 #include <atom.h>
 #include <parameter.h>
 
 #ifndef __PBC_H_
 #define __PBC_H_
+
+typedef void (*UpdatePbcFunction)(Atom*, Parameter*, bool);
+extern UpdatePbcFunction updatePbc;
+extern UpdatePbcFunction updateAtomsPbc;
+
 extern void initPbc(Atom*);
-extern void updatePbc_cpu(Atom*, Parameter*, bool);
-extern void updateAtomsPbc_cpu(Atom*, Parameter*);
+extern void updatePbcCPU(Atom*, Parameter*, bool);
+extern void updateAtomsPbcCPU(Atom*, Parameter*, bool);
 extern void setupPbc(Atom*, Parameter*);
 
 #ifdef CUDA_TARGET
-extern void updatePbc_cuda(Atom*, Parameter*, bool);
-extern void updateAtomsPbc_cuda(Atom*, Parameter*);
+extern void updatePbcCUDA(Atom*, Parameter*, bool);
+extern void updateAtomsPbcCUDA(Atom*, Parameter*, bool);
 #endif
 
-#endif
+#endif // __PBC_H_

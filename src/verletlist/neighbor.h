@@ -52,14 +52,12 @@ typedef struct {
     int atoms_per_bin;
 } Binning;
 
+typedef void (*BuildNeighborFunction)(Atom*, Neighbor*);
+extern BuildNeighborFunction buildNeighbor;
+
 extern void initNeighbor(Neighbor*, Parameter*);
 extern void setupNeighbor(Parameter*);
 extern void binatoms(Atom*);
-extern void buildNeighbor_cpu(Atom*, Neighbor*);
+extern void buildNeighborCPU(Atom*, Neighbor*);
 extern void sortAtom(Atom*);
-
-#ifdef CUDA_TARGET
-extern void buildNeighbor_cuda(Atom*, Neighbor*);
-#endif
-
-#endif
+#endif //__NEIGHBOR_H_

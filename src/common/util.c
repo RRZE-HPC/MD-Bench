@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <force.h>
 #include <util.h>
 
 /* Park/Miller RNG w/out MASKING, so as to be like f90s version */

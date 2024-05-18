@@ -28,10 +28,10 @@ typedef struct {
     Funcfl file;
 } Eam;
 
-void initEam(Eam* eam, Parameter* param);
-void coeff(Eam* eam, Parameter* param);
-void init_style(Eam* eam, Parameter* param);
-void read_eam_file(Funcfl* file, const char* filename);
+extern Eam eam;
+
+void initEam(Parameter* param);
+void readEamFile(Funcfl* file, const char* filename);
 void file2array(Eam* eam);
 void array2spline(Eam* eam, Parameter* param);
 void interpolate(int n, MD_FLOAT delta, MD_FLOAT* f, MD_FLOAT* spline);
