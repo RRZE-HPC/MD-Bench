@@ -2,7 +2,7 @@
 TOOLCHAIN ?= CLANG
 # Instruction set for instrinsic kernels (NONE/SSE/AVX/AVX_FMA/AVX2/AVX512)
 ISA ?= X86
-SIMD ?= AVX2
+SIMD ?= AVX
 # Optimization scheme (verletlist/clusterpair/clusters_per_bin)
 OPT_SCHEME ?= verletlist
 # Enable likwid (true or false)
@@ -163,6 +163,8 @@ endif
 
 ifeq ($(strip $(OPT_SCHEME)),verletlist)
 		OPT_TAG = VL
+else ifeq ($(strip $(OPT_SCHEME)),clusterpair)
+		OPT_TAG = CP
 endif
 
 ifneq ($(strip $(SIMD)),NONE)

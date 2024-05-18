@@ -4,21 +4,21 @@ LINKER = $(CC)
 OPENMP  = -qopenmp
 PROFILE  = #-profile-functions -g  -pg
 
-ifeq ($(ISA),AVX512)
+ifeq ($(SIMD),AVX512)
 OPTS      = -Ofast -xCORE-AVX512 -qopt-zmm-usage=high $(PROFILE)
 endif
 
-ifeq ($(ISA),AVX2)
+ifeq ($(SIMD),AVX2)
 OPTS     = -Ofast -xCORE-AVX2  $(PROFILE)
 #OPTS     = -Ofast -xAVX2  $(PROFILE)
 #OPTS     = -Ofast -march=core-avx2 $(PROFILE)
 endif
 
-ifeq ($(ISA),AVX)
+ifeq ($(SIMD),AVX)
 OPTS     = -Ofast -xAVX  $(PROFILE)
 endif
 
-ifeq ($(ISA),SSE)
+ifeq ($(SIMD),SSE)
 OPTS     = -Ofast -xSSE4.2 $(PROFILE)
 endif
 
