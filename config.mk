@@ -2,7 +2,7 @@
 TOOLCHAIN ?= CLANG
 # Instruction set for instrinsic kernels (NONE/SSE/AVX/AVX_FMA/AVX2/AVX512)
 ISA ?= X86
-SIMD ?= AVX
+SIMD ?= AVX2
 # Optimization scheme (verletlist/clusterpair/clusters_per_bin)
 OPT_SCHEME ?= verletlist
 # Enable likwid (true or false)
