@@ -63,5 +63,6 @@ todo.txt
 #ICX-*/
 #CLANG-*/
 #NVCC-*/
-build-*/
+build/*
 MDBench-*
+.clangd
