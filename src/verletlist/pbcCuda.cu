@@ -13,7 +13,6 @@ extern "C" {
 #include <device.h>
 #include <pbc.h>
 #include <util.h>
-}
 
 extern int NmaxGhost;
 extern int *PBCx, *PBCy, *PBCz;
@@ -131,4 +130,5 @@ void updateAtomsPbcCUDA(Atom* atom, Parameter* param, bool reneigh)
     cuda_assert("computeAtomsPbcUpdate", cudaPeekAtLastError());
     cuda_assert("computeAtomsPbcUpdate", cudaDeviceSynchronize());
     memcpyFromGPU(atom->x, atom->d_atom.x, sizeof(MD_FLOAT) * atom->Nlocal * 3);
+}
 }
