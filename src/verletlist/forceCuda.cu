@@ -19,6 +19,7 @@ extern "C" {
 #include <allocate.h>
 #include <atom.h>
 #include <device.h>
+#include <force.h>
 #include <neighbor.h>
 #include <parameter.h>
 #include <timing.h>
@@ -155,7 +156,8 @@ void initialIntegrate_cuda(bool reneigh, Parameter* param, Atom* atom)
     }
 }
 
-double computeForceLJFullNeigh_cuda(Parameter* param, Atom* atom, Neighbor* neighbor)
+double computeForceLJFullNeigh_cuda(
+    Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
 {
     const int num_threads_per_block = get_cuda_num_threads();
     int Nlocal                      = atom->Nlocal;

@@ -24,7 +24,7 @@ extern double computeForceEam(Parameter*, Atom*, Neighbor*, Stats*);
 extern double computeForceDemFullNeigh(Parameter*, Atom*, Neighbor*, Stats*);
 
 #ifdef CUDA_TARGET
-extern double computeForceLJFullNeighCUDA(Parameter*, Atom*, Neighbor*);
+extern double computeForceLJFullNeighCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #define KERNEL_NAME "CUDA"
 #else
 #ifdef USE_SIMD_KERNEL
