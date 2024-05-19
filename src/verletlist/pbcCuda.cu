@@ -72,7 +72,7 @@ __global__ void computePbcUpdate(DeviceAtom a,
 
 /* update coordinates of ghost atoms */
 /* uses mapping created in setupPbc */
-void updatePbc_cuda(Atom* atom, Parameter* param, bool reneigh)
+void updatePbcCUDA(Atom* atom, Parameter* param, bool reneigh)
 {
     const int num_threads_per_block = get_cuda_num_threads();
 
@@ -115,7 +115,7 @@ void updatePbc_cuda(Atom* atom, Parameter* param, bool reneigh)
     cuda_assert("updatePbc", cudaDeviceSynchronize());
 }
 
-void updateAtomsPbc_cuda(Atom* atom, Parameter* param)
+void updateAtomsPbcCUDA(Atom* atom, Parameter* param, bool reneigh)
 {
     const int num_threads_per_block = get_cuda_num_threads();
     MD_FLOAT xprd                   = param->xprd;

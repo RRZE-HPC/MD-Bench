@@ -237,7 +237,7 @@ void binatoms_cuda(Atom* atom,
     cuda_assert("sort_bin", cudaDeviceSynchronize());
 }
 
-void buildNeighbor_cuda(Atom* atom, Neighbor* neighbor)
+void buildNeighborCUDA(Atom* atom, Neighbor* neighbor)
 {
     DeviceNeighbor* d_neighbor      = &(neighbor->d_neighbor);
     const int num_threads_per_block = get_cuda_num_threads();

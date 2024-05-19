@@ -121,7 +121,7 @@ __global__ void kernel_final_integrate(MD_FLOAT dtforce, int Nlocal, DeviceAtom 
 
 extern "C" {
 
-void finalIntegrate_cuda(bool reneigh, Parameter* param, Atom* atom)
+void finalIntegrateCUDA(bool reneigh, Parameter* param, Atom* atom)
 {
     const int Nlocal                = atom->Nlocal;
     const int num_threads_per_block = get_cuda_num_threads();
@@ -138,7 +138,7 @@ void finalIntegrate_cuda(bool reneigh, Parameter* param, Atom* atom)
     }
 }
 
-void initialIntegrate_cuda(bool reneigh, Parameter* param, Atom* atom)
+void initialIntegrateCUDA(bool reneigh, Parameter* param, Atom* atom)
 {
     const int Nlocal                = atom->Nlocal;
     const int num_threads_per_block = get_cuda_num_threads();
@@ -156,7 +156,7 @@ void initialIntegrate_cuda(bool reneigh, Parameter* param, Atom* atom)
     }
 }
 
-double computeForceLJFullNeigh_cuda(
+double computeForceLJFullNeighCUDA(
     Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
 {
     const int num_threads_per_block = get_cuda_num_threads();
