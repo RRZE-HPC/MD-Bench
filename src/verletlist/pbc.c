@@ -14,7 +14,7 @@
 
 #define DELTA 20000
 
-int nmaxGhost;
+int NmaxGhost;
 int *PBCx, *PBCy, *PBCz;
 
 #ifdef CUDA_TARGET
@@ -30,7 +30,7 @@ static void growPbc(Atom*);
 /* exported subroutines */
 void initPbc(Atom* atom)
 {
-    nmaxGhost        = 0;
+    NmaxGhost        = 0;
     atom->border_map = NULL;
     PBCx             = NULL;
     PBCy             = NULL;
@@ -109,7 +109,7 @@ void setupPbc(Atom* atom, Parameter* param)
             growAtom(atom);
         }
 
-        if (Nghost + 7 >= nmaxGhost) {
+        if (Nghost + 7 >= NmaxGhost) {
             growPbc(atom);
             border_map = atom->border_map;
         }
@@ -229,8 +229,8 @@ void setupPbc(Atom* atom, Parameter* param)
 /* internal subroutines */
 void growPbc(Atom* atom)
 {
-    int nold = nmaxGhost;
-    nmaxGhost += DELTA;
+    int nold = NmaxGhost;
+    NmaxGhost += DELTA;
 
     atom->border_map = (int*)reallocate(atom->border_map,
         ALIGNMENT,
