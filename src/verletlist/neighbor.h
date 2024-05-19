@@ -58,6 +58,9 @@ extern BuildNeighborFunction buildNeighbor;
 extern void initNeighbor(Neighbor*, Parameter*);
 extern void setupNeighbor(Parameter*);
 extern void binatoms(Atom*);
-extern void buildNeighborCPU(Atom*, Neighbor*);
 extern void sortAtom(Atom*);
+extern void buildNeighborCPU(Atom*, Neighbor*);
+#ifdef CUDA_TARGET
+extern void buildNeighborCUDA(Atom*, Neighbor*);
+#endif
 #endif //__NEIGHBOR_H_
