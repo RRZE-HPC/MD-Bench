@@ -234,9 +234,9 @@ void growPbc(Atom* atom)
 
     atom->border_map = (int*)reallocate(atom->border_map,
         ALIGNMENT,
-        nmaxGhost * sizeof(int),
+        NmaxGhost * sizeof(int),
         nold * sizeof(int));
-    PBCx = (int*)reallocate(PBCx, ALIGNMENT, nmaxGhost * sizeof(int), nold * sizeof(int));
-    PBCy = (int*)reallocate(PBCy, ALIGNMENT, nmaxGhost * sizeof(int), nold * sizeof(int));
-    PBCz = (int*)reallocate(PBCz, ALIGNMENT, nmaxGhost * sizeof(int), nold * sizeof(int));
+    PBCx = (int*)reallocate(PBCx, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));
+    PBCy = (int*)reallocate(PBCy, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));
+    PBCz = (int*)reallocate(PBCz, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));
 }
