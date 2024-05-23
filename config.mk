@@ -11,8 +11,6 @@ ENABLE_LIKWID ?= false
 DATA_TYPE ?= DP
 # AOS or SOA
 DATA_LAYOUT ?= AOS
-# Assembly syntax to generate (ATT/INTEL)
-ASM_SYNTAX ?= INTEL
 # Debug
 DEBUG ?= false
 
@@ -27,20 +25,20 @@ INDEX_TRACER ?= false
 # Compute statistics
 COMPUTE_STATS ?= true
 
-# Configurations for lammps optimization scheme
+# Configurations for verletlist optimization scheme
 # Use omp simd pragma when running with half neighbor-lists
 ENABLE_OMP_SIMD ?= false
 
-# Configurations for gromacs optimization scheme
+# Configurations for clusterpair optimization scheme
 # Use reference version
 USE_REFERENCE_VERSION ?= false
-# Enable XTC output
+# Enable XTC output (a GROMACS file format for trajectories)
 XTC_OUTPUT ?= false
 # Check if cj is local when decreasing reaction force
 HALF_NEIGHBOR_LISTS_CHECK_CJ ?= true
 
 # Configurations for CUDA
-# Use CUDA host memory to optimize transfers
+# Use CUDA pinned memory to optimize transfers
 USE_CUDA_HOST_MEMORY ?= false
 
 #Feature options
