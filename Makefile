@@ -45,7 +45,7 @@ ${TARGET}-%: $(BUILD_DIR) $(OBJ) $(SRC_DIR)/main-%.c
 	@echo "===>  LINKING  $(TARGET)-$* "
 	$(Q)${LINKER} $(CPPFLAGS) ${LFLAGS} -o $(TARGET)-$* $(SRC_DIR)/main-$*.c $(OBJ) $(LIBS)
 
-$(BUILD_DIR)/%.o:  %.c
+$(BUILD_DIR)/%.o:  %.c $(MAKE_DIR)/include_$(TOOLCHAIN).mk
 	$(info ===>  COMPILE  $@)
 	$(Q)$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
 	$(Q)$(CC) $(CPPFLAGS) -MT $@ -MM  $< > $(BUILD_DIR)/$*.d
@@ -70,7 +70,7 @@ clean:
 	@rm -rf $(BUILD_DIR)
 
 cleanall:
-	$(info ===>  CLEAN)
+	$(info ===>  CLEAN ALL)
 	@rm -rf build
 	@rm -rf MDBench-*
 	@rm -f tags .clangd
