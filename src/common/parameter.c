@@ -25,7 +25,7 @@ void initParameter(Parameter* param)
     param->sigma           = 1.0;
     param->sigma6          = 1.0;
     param->rho             = 0.8442;
-    param->ntypes          = 4;
+    param->ntypes          = 1;
     param->ntimes          = 200;
     param->dt              = 0.005;
     param->nx              = 32;
@@ -47,15 +47,6 @@ void initParameter(Parameter* param)
     param->v_out_every     = 5;
     param->half_neigh      = 0;
     param->proc_freq       = 2.4;
-    // DEM
-    param->k_s       = 1.0;
-    param->k_dn      = 1.0;
-    param->gx        = 0.0;
-    param->gy        = 0.0;
-    param->gz        = 0.0;
-    param->reflect_x = 0.0;
-    param->reflect_y = 0.0;
-    param->reflect_z = 0.0;
 }
 
 void readParameter(Parameter* param, const char* filename)
@@ -95,14 +86,6 @@ void readParameter(Parameter* param, const char* filename)
             PARSE_STRING(xtc_file);
             PARSE_REAL(epsilon);
             PARSE_REAL(sigma);
-            PARSE_REAL(k_s);
-            PARSE_REAL(k_dn);
-            PARSE_REAL(reflect_x);
-            PARSE_REAL(reflect_y);
-            PARSE_REAL(reflect_z);
-            PARSE_REAL(gx);
-            PARSE_REAL(gy);
-            PARSE_REAL(gz);
             PARSE_REAL(rho);
             PARSE_REAL(dt);
             PARSE_REAL(cutforce);
@@ -179,8 +162,6 @@ void printParameter(Parameter* param)
     printf("\tLattice size: %e\n", param->lattice);
     printf("\tEpsilon: %e\n", param->epsilon);
     printf("\tSigma: %e\n", param->sigma);
-    printf("\tSpring constant: %e\n", param->k_s);
-    printf("\tDamping constant: %e\n", param->k_dn);
     printf("\tTemperature: %e\n", param->temp);
     printf("\tRHO: %e\n", param->rho);
     printf("\tMass: %e\n", param->mass);

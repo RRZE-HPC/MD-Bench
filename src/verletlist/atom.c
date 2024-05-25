@@ -45,9 +45,6 @@ void initAtom(Atom* atom)
     atom->sigma6     = NULL;
     atom->cutforcesq = NULL;
     atom->cutneighsq = NULL;
-    atom->radius     = NULL;
-    atom->av         = NULL;
-    atom->r          = NULL;
 
     DeviceAtom* d_atom = &(atom->d_atom);
     d_atom->x          = NULL;
@@ -530,15 +527,14 @@ int readAtom_in(Atom* atom, Parameter* param)
             param->mass = atof(s_mass);
         }
 
-        atom->radius[atom_id] = atof(strtok(NULL, " "));
-        atom_x(atom_id)       = atof(strtok(NULL, " "));
-        atom_y(atom_id)       = atof(strtok(NULL, " "));
-        atom_z(atom_id)       = atof(strtok(NULL, " "));
-        atom_vx(atom_id)      = atof(strtok(NULL, " "));
-        atom_vy(atom_id)      = atof(strtok(NULL, " "));
-        atom_vz(atom_id)      = atof(strtok(NULL, " "));
-        atom->type[atom_id]   = 0;
-        atom->ntypes          = MAX(atom->type[atom_id], atom->ntypes);
+        atom_x(atom_id)     = atof(strtok(NULL, " "));
+        atom_y(atom_id)     = atof(strtok(NULL, " "));
+        atom_z(atom_id)     = atof(strtok(NULL, " "));
+        atom_vx(atom_id)    = atof(strtok(NULL, " "));
+        atom_vy(atom_id)    = atof(strtok(NULL, " "));
+        atom_vz(atom_id)    = atof(strtok(NULL, " "));
+        atom->type[atom_id] = 0;
+        atom->ntypes        = MAX(atom->type[atom_id], atom->ntypes);
         atom_id++;
     }
 
@@ -619,18 +615,4 @@ void growAtom(Atom* atom)
     REALLOC(fz, MD_FLOAT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
 #endif
     REALLOC(type, int, atom->Nmax * sizeof(int), nold * sizeof(int));
-
-    // DEM
-    atom->radius = (MD_FLOAT*)reallocate(atom->radius,
-        ALIGNMENT,
-        atom->Nmax * sizeof(MD_FLOAT),
-        nold * sizeof(MD_FLOAT));
-    atom->av     = (MD_FLOAT*)reallocate(atom->av,
-        ALIGNMENT,
-        atom->Nmax * sizeof(MD_FLOAT) * 3,
-        nold * sizeof(MD_FLOAT) * 3);
-    atom->r      = (MD_FLOAT*)reallocate(atom->r,
-        ALIGNMENT,
-        atom->Nmax * sizeof(MD_FLOAT) * 4,
-        nold * sizeof(MD_FLOAT) * 4);
 }

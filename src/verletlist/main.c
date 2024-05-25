@@ -206,7 +206,7 @@ int main(int argc, char** argv)
             printf(HLINE);
             printf("-p / --params <string>:     file to read parameters from (can be "
                    "specified more than once)\n");
-            printf("-f <string>:                force field (lj, eam or dem), "
+            printf("-f <string>:                force field (lj or eam), "
                    "default lj\n");
             printf("-i <string>:                input file with atom positions "
                    "(dump)\n");

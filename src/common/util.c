@@ -73,7 +73,6 @@ int str2ff(const char* string)
 {
     if (strncmp(string, "lj", 2) == 0) return FF_LJ;
     if (strncmp(string, "eam", 3) == 0) return FF_EAM;
-    if (strncmp(string, "dem", 3) == 0) return FF_DEM;
     return -1;
 }
 
@@ -84,9 +83,6 @@ const char* ff2str(int ff)
     }
     if (ff == FF_EAM) {
         return "eam";
-    }
-    if (ff == FF_DEM) {
-        return "dem";
     }
     return "invalid";
 }

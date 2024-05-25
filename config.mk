@@ -1,8 +1,9 @@
 # Compiler tool chain (GCC/CLANG/ICC/ICX/ONEAPI/NVCC)
 TOOLCHAIN ?= CLANG
+# ISA of instruction code - has currently no consequence yet
+ISA ?= ARM
 # Instruction set for instrinsic kernels (NONE/SSE/AVX/AVX_FMA/AVX2/AVX512)
-ISA ?= X86
-SIMD ?= AVX2
+SIMD ?= NONE
 # Optimization scheme (verletlist/clusterpair/clusters_per_bin)
 OPT_SCHEME ?= verletlist
 # Enable likwid (true or false)
@@ -48,6 +49,11 @@ OPTIONS =  -DALIGNMENT=64
 ################################################################
 # DO NOT EDIT BELOW !!!
 ################################################################
+DEFINES =
+
+ifeq ($(strip $(SIMD)), NONE)
+    VECTOR_WIDTH=1
+else
 ifeq ($(strip $(SIMD)), SSE)
     __ISA_SSE__=true
     __SIMD_WIDTH_DBL__=2
@@ -70,13 +76,13 @@ else ifeq ($(strip $(SIMD)), AVX512)
     endif
 endif
 
-DEFINES =
 # SIMD width is specified in double-precision, hence it may
 # need to be adjusted for single-precision
 ifeq ($(strip $(DATA_TYPE)), SP)
     VECTOR_WIDTH=$(shell echo $$(( $(__SIMD_WIDTH_DBL__) * 2 )))
 else
     VECTOR_WIDTH=$(__SIMD_WIDTH_DBL__)
+endif
 endif
 ifeq ($(strip $(DATA_LAYOUT)),AOS)
     DEFINES +=  -DAOS
@@ -165,6 +171,8 @@ else ifeq ($(strip $(OPT_SCHEME)),clusterpair)
 		OPT_TAG = CP
 endif
 
-ifneq ($(strip $(SIMD)),NONE)
+ifeq ($(strip $(SIMD)),NONE)
+		TOOL_TAG = $(TOOLCHAIN)-$(ISA)
+else
 		TOOL_TAG = $(TOOLCHAIN)-$(ISA)-$(SIMD)
 endif

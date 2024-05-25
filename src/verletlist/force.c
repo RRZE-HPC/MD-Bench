@@ -16,13 +16,6 @@ void initForce(Parameter* param)
     case FF_EAM:
         computeForce = computeForceEam;
         break;
-    case FF_DEM:
-        if (param->half_neigh) {
-            fprintf(stderr, "Error: DEM cannot use half neighbor-lists!\n");
-            exit(EXIT_FAILURE);
-        }
-        computeForce = computeForceDemFullNeigh;
-        break;
     case FF_LJ:
         if (param->half_neigh) {
             computeForce = computeForceLJHalfNeigh;
@@ -33,5 +26,9 @@ void initForce(Parameter* param)
             computeForce = computeForceLJFullNeigh;
 #endif
         }
+        break;
+    default:
+        fprintf(stderr, "Error: Unknown force field!\n");
+        exit(EXIT_FAILURE);
     }
 }
