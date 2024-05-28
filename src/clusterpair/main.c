@@ -17,6 +17,7 @@
 #include <atom.h>
 #include <device.h>
 #include <eam.h>
+#include <force.h>
 #include <integrate.h>
 #include <neighbor.h>
 #include <parameter.h>
@@ -31,24 +32,10 @@
 
 #define HLINE "------------------------------------------------------------------\n"
 
-extern double computeForceLJ_ref(Parameter*, Atom*, Neighbor*, Stats*);
-extern double computeForceLJ_4xn(Parameter*, Atom*, Neighbor*, Stats*);
-extern double computeForceLJ_2xnn(Parameter*, Atom*, Neighbor*, Stats*);
-extern double computeForceEam(Eam*, Parameter*, Atom*, Neighbor*, Stats*);
-
-#ifdef CUDA_TARGET
-extern int isReneighboured;
-extern double computeForceLJ_cuda(
-    Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats);
-extern void copyDataToCUDADevice(Atom* atom);
-extern void copyDataFromCUDADevice(Atom* atom);
-extern void cudaDeviceFree();
-#endif
-
 double setup(Parameter* param, Eam* eam, Atom* atom, Neighbor* neighbor, Stats* stats)
 {
     if (param->force_field == FF_EAM) {
-        initEam(eam, param);
+        initEam(param);
     }
     double timeStart, timeStop;
     param->lattice = pow((4.0 / param->rho), (1.0 / 3.0));
@@ -239,11 +226,7 @@ int main(int argc, char** argv)
     copyDataToCUDADevice(&atom);
 #endif
 
-    if (param.force_field == FF_EAM) {
-        timer[FORCE] = computeForceEam(&eam, &param, &atom, &neighbor, &stats);
-    } else {
-        timer[FORCE] = computeForceLJ(&param, &atom, &neighbor, &stats);
-    }
+    timer[FORCE] = computeForce(&param, &atom, &neighbor, &stats);
 
     timer[NEIGH] = 0.0;
     timer[TOTAL] = getTimeStamp();
@@ -282,11 +265,7 @@ int main(int argc, char** argv)
         traceAddresses(&param, &atom, &neighbor, n + 1);
 #endif
 
-        if (param.force_field == FF_EAM) {
-            timer[FORCE] += computeForceEam(&eam, &param, &atom, &neighbor, &stats);
-        } else {
-            timer[FORCE] += computeForceLJ(&param, &atom, &neighbor, &stats);
-        }
+        timer[FORCE] += computeForce(&param, &atom, &neighbor, &stats);
 
         finalIntegrate(&param, &atom);
 
@@ -294,9 +273,9 @@ int main(int argc, char** argv)
             computeThermo(n + 1, &param, &atom);
         }
 
-        int write_pos = !((n + 1) % param.x_out_every);
-        int write_vel = !((n + 1) % param.v_out_every);
-        if (write_pos || write_vel) {
+        int writePos = !((n + 1) % param.x_out_every);
+        int writeVel = !((n + 1) % param.v_out_every);
+        if (writePos || writeVel) {
             if (param.vtk_file != NULL) {
                 write_data_to_vtk_file(param.vtk_file, &atom, n + 1);
             }

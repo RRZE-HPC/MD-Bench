@@ -281,7 +281,7 @@ __global__ void cudaFinalIntegrate_warp(MD_FLOAT* cuda_cl_v,
     }
 }
 
-extern "C" void cudaInitialIntegrate(Parameter* param, Atom* atom)
+extern "C" void initialIntegrateCUDA(Parameter* param, Atom* atom)
 {
     const int threads_num = 16;
     dim3 block_size       = dim3(threads_num, 1, 1);
@@ -363,7 +363,7 @@ extern "C" double computeForceLJ_cuda(
     return E - S;
 }
 
-extern "C" void cudaFinalIntegrate(Parameter* param, Atom* atom)
+extern "C" void finalIntegrateCUDA(Parameter* param, Atom* atom)
 {
     const int threads_num = 16;
     dim3 block_size       = dim3(threads_num, 1, 1);

@@ -16,8 +16,7 @@
 #include <timing.h>
 #include <util.h>
 
-double computeForceEam(
-    Eam* eam, Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
+double computeForceEam(Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
 {
     /*
     if(eam->nmax < atom->Nmax) {

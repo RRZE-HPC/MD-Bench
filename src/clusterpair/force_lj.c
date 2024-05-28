@@ -42,7 +42,7 @@ MD_SIMD_BITMASK filter3, MD_SIMD_MASK *interact0, MD_SIMD_MASK *interact1, MD_SI
 }
 */
 
-double computeForceLJ_ref(Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
+double computeForceLJRef(Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
 {
     DEBUG_MESSAGE("computeForceLJ begin\n");
     int Nlocal = atom->Nlocal;
@@ -286,8 +286,8 @@ double computeForceLJ_2xnn_half(
                     atom->masks_2xnn_hn[cond0 * 2 + 1]);
 #else
 #if CLUSTER_M < CLUSTER_N
-                unsigned int cond0      = (unsigned int)((cj << 1) + 0 == ci);
-                unsigned int cond1      = (unsigned int)((cj << 1) + 1 == ci);
+                unsigned int cond0 = (unsigned int)((cj << 1) + 0 == ci);
+                unsigned int cond1 = (unsigned int)((cj << 1) + 1 == ci);
 #else
                 unsigned int cond0 = (unsigned int)(cj == ci_cj0);
                 unsigned int cond1 = (unsigned int)(cj == ci_cj1);
@@ -514,8 +514,8 @@ double computeForceLJ_2xnn_full(
                     atom->masks_2xnn_fn[cond0 * 2 + 1]);
 #else
 #if CLUSTER_M < CLUSTER_N
-                unsigned int cond0      = (unsigned int)((cj << 1) + 0 == ci);
-                unsigned int cond1      = (unsigned int)((cj << 1) + 1 == ci);
+                unsigned int cond0 = (unsigned int)((cj << 1) + 0 == ci);
+                unsigned int cond1 = (unsigned int)((cj << 1) + 1 == ci);
 #else
                 unsigned int cond0 = (unsigned int)(cj == ci_cj0);
                 unsigned int cond1 = (unsigned int)(cj == ci_cj1);
@@ -719,8 +719,8 @@ double computeForceLJ_4xn_half(
                     atom->masks_4xn_hn[cond0 * 4 + 3]);
 #else
 #if CLUSTER_M < CLUSTER_N
-                unsigned int cond0      = (unsigned int)((cj << 1) + 0 == ci);
-                unsigned int cond1      = (unsigned int)((cj << 1) + 1 == ci);
+                unsigned int cond0 = (unsigned int)((cj << 1) + 0 == ci);
+                unsigned int cond1 = (unsigned int)((cj << 1) + 1 == ci);
 #else
                 unsigned int cond0 = (unsigned int)(cj == ci_cj0);
                 unsigned int cond1 = (unsigned int)(cj == ci_cj1);
@@ -1043,8 +1043,8 @@ double computeForceLJ_4xn_full(
                     atom->masks_4xn_fn[cond0 * 4 + 3]);
 #else
 #if CLUSTER_M < CLUSTER_N
-                unsigned int cond0      = (unsigned int)((cj << 1) + 0 == ci);
-                unsigned int cond1      = (unsigned int)((cj << 1) + 1 == ci);
+                unsigned int cond0 = (unsigned int)((cj << 1) + 0 == ci);
+                unsigned int cond1 = (unsigned int)((cj << 1) + 1 == ci);
 #else
                 unsigned int cond0 = (unsigned int)(cj == ci_cj0);
                 unsigned int cond1 = (unsigned int)(cj == ci_cj1);
@@ -1204,7 +1204,7 @@ double computeForceLJ_4xn_full(
     return E - S;
 }
 
-double computeForceLJ_4xn(Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
+double computeForceLJ4xn(Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
 {
     if (neighbor->half_neigh) {
         return computeForceLJ_4xn_half(param, atom, neighbor, stats);
