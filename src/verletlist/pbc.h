@@ -25,5 +25,4 @@ extern void setupPbc(Atom*, Parameter*);
 extern void updatePbcCUDA(Atom*, Parameter*, bool);
 extern void updateAtomsPbcCUDA(Atom*, Parameter*, bool);
 #endif
-
 #endif // __PBC_H_

@@ -16,6 +16,12 @@
 #define SMALL  1.0e-6
 #define FACTOR 0.999
 
+#ifdef CUDA_TARGET
+BuildNeighborFunction buildNeighbor = buildNeighborCUDA;
+#else
+BuildNeighborFunction buildNeighbor = buildNeighborCPU;
+#endif
+
 static MD_FLOAT xprd, yprd, zprd;
 static MD_FLOAT bininvx, bininvy;
 static int mbinxlo, mbinylo;
@@ -251,7 +257,7 @@ static unsigned int get_imask_simd_j8(int rdiag, int ci, int cj)
 #error "Invalid cluster configuration"
 #endif
 
-void buildNeighbor(Atom* atom, Neighbor* neighbor)
+void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
 {
     DEBUG_MESSAGE("buildNeighbor start\n");
 

@@ -36,10 +36,13 @@ typedef struct {
     unsigned int* neighbors_imask;
 } Neighbor;
 
+typedef void (*BuildNeighborFunction)(Atom*, Neighbor*);
+extern BuildNeighborFunction buildNeighbor;
+
 extern void initNeighbor(Neighbor*, Parameter*);
 extern void setupNeighbor(Parameter*, Atom*);
 extern void binatoms(Atom*);
-extern void buildNeighbor(Atom*, Neighbor*);
+extern void buildNeighborCPU(Atom*, Neighbor*);
 extern void pruneNeighbor(Parameter*, Atom*, Neighbor*);
 extern void sortAtom(Atom*);
 extern void buildClusters(Atom*);

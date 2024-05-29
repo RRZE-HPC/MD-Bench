@@ -24,20 +24,14 @@ void initForce(Parameter* param)
             computeForce = computeForceLJFullNeighCUDA;
 #else
 // Simd2xNN (here used for single-precision)
-#if VECTOR_WIDTH > CLUSTER_M * 2
-#define KERNEL_NAME    "Simd2xNN"
-#define CLUSTER_N      (VECTOR_WIDTH / 2)
-#define UNROLL_I       4
-#define UNROLL_J       2
-#define computeForceLJ computeForceLJ_2xnn
-            computeForce = computeForceLJ2xnnFullNeigh;
+#ifdef USE_REFERENCE_VERSION
+            computeForce = computeForceLJFullNeighRef;
 #else
-// Simd4xN
-#define KERNEL_NAME "Simd4xN"
-#define CLUSTER_N   VECTOR_WIDTH
-#define UNROLL_I    4
-#define UNROLL_J    1
+#if VECTOR_WIDTH > CLUSTER_M * 2
+            computeForce = computeForceLJ2xnnFullNeigh;
+#else // Simd4xN
             computeForce = computeForceLJ4xnFullNeigh;
+#endif
 #endif
 #endif
         }

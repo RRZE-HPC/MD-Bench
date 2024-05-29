@@ -18,6 +18,14 @@
 
 static int NmaxGhost;
 
+#ifdef CUDA_TARGET
+UpdatePbcFunction updatePbc      = updatePbcCUDA;
+UpdatePbcFunction updateAtomsPbc = updateAtomsPbcCUDA;
+#else
+UpdatePbcFunction updatePbc      = updatePbcCPU;
+UpdatePbcFunction updateAtomsPbc = updateAtomsPbcCPU;
+#endif
+
 static void growPbc(Atom*);
 
 /* exported subroutines */
@@ -32,7 +40,7 @@ void initPbc(Atom* atom)
 
 /* update coordinates of ghost atoms */
 /* uses mapping created in setupPbc */
-void cpuUpdatePbc(Atom* atom, Parameter* param, int firstUpdate)
+void updatePbcCPU(Atom* atom, Parameter* param, bool firstUpdate)
 {
     DEBUG_MESSAGE("updatePbc start\n");
     int jfac      = MAX(1, CLUSTER_N / CLUSTER_M);
@@ -104,7 +112,7 @@ void cpuUpdatePbc(Atom* atom, Parameter* param, int firstUpdate)
 
 /* relocate atoms that have left domain according
  * to periodic boundary conditions */
-void updateAtomsPbc(Atom* atom, Parameter* param)
+void updateAtomsPbcCPU(Atom* atom, Parameter* param, bool dummy)
 {
     MD_FLOAT xprd = param->xprd;
     MD_FLOAT yprd = param->yprd;

@@ -25,20 +25,59 @@ extern double computeForceLJ2xnnHalfNeigh(Parameter*, Atom*, Neighbor*, Stats*);
 extern double computeForceLJ2xnnFullNeigh(Parameter*, Atom*, Neighbor*, Stats*);
 extern double computeForceEam(Parameter*, Atom*, Neighbor*, Stats*);
 
+// Nbnxn layouts (as of GROMACS):
+// Simd4xN: M=4, N=VECTOR_WIDTH
+// Simd2xNN: M=4, N=(VECTOR_WIDTH/2)
+// Cuda: M=8, N=VECTOR_WIDTH
+
 #ifdef CUDA_TARGET
-extern int isReneighboured;
-extern double computeForceLJFullNeighCUDA(
-    Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats);
-extern void copyDataToCUDADevice(Atom* atom);
-extern void copyDataFromCUDADevice(Atom* atom);
-extern void cudaDeviceFree();
-#define KERNEL_NAME "CUDA"
+#undef VECTOR_WIDTH
+#define VECTOR_WIDTH 8
+#define KERNEL_NAME  "CUDA"
+#define CLUSTER_M    8
+#define CLUSTER_N    VECTOR_WIDTH
+#define UNROLL_J     1
 #else
-#ifdef USE_SIMD_KERNEL
-#define KERNEL_NAME "SIMD"
+#ifdef USE_REFERENCE_VERSION
+#define KERNEL_NAME "Reference"
 #else
-#define KERNEL_NAME "PLAIN"
+#define CLUSTER_M 4
+// Simd2xNN (here used for single-precision)
+#if VECTOR_WIDTH > CLUSTER_M * 2
+#define KERNEL_NAME "Simd2xNN"
+#define CLUSTER_N   (VECTOR_WIDTH / 2)
+#define UNROLL_I    4
+#define UNROLL_J    2
+#else // Simd4xN
+#define KERNEL_NAME "Simd4xN"
+#define CLUSTER_N   VECTOR_WIDTH
+#define UNROLL_I    4
+#define UNROLL_J    1
 #endif
+#endif
+#endif
+
+#if CLUSTER_M == CLUSTER_N
+#define CJ0_FROM_CI(a)      (a)
+#define CJ1_FROM_CI(a)      (a)
+#define CI_BASE_INDEX(a, b) ((a)*CLUSTER_N * (b))
+#define CJ_BASE_INDEX(a, b) ((a)*CLUSTER_N * (b))
+#elif CLUSTER_M == CLUSTER_N * 2 // M > N
+#define CJ0_FROM_CI(a)      ((a) << 1)
+#define CJ1_FROM_CI(a)      (((a) << 1) | 0x1)
+#define CI_BASE_INDEX(a, b) ((a)*CLUSTER_M * (b))
+#define CJ_BASE_INDEX(a, b) (((a) >> 1) * CLUSTER_M * (b) + ((a)&0x1) * (CLUSTER_M >> 1))
+#elif CLUSTER_M == CLUSTER_N / 2 // M < N
+#define CJ0_FROM_CI(a)      ((a) >> 1)
+#define CJ1_FROM_CI(a)      ((a) >> 1)
+#define CI_BASE_INDEX(a, b) (((a) >> 1) * CLUSTER_N * (b) + ((a)&0x1) * (CLUSTER_N >> 1))
+#define CJ_BASE_INDEX(a, b) ((a)*CLUSTER_N * (b))
+#else
+#error "Invalid cluster configuration!"
+#endif
+
+#if CLUSTER_N != 2 && CLUSTER_N != 4 && CLUSTER_N != 8
+#error "Cluster N dimension can be only 2, 4 and 8"
 #endif
 
 #endif // __FORCE_H_
