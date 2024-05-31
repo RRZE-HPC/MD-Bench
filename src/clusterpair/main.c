@@ -45,6 +45,7 @@ double setup(Parameter* param, Eam* eam, Atom* atom, Neighbor* neighbor, Stats* 
 
     timeStart = getTimeStamp();
     initAtom(atom);
+    initForce(param);
     initPbc(atom);
     initStats(stats);
     initNeighbor(neighbor, param);
@@ -75,7 +76,7 @@ double reneighbour(Parameter* param, Atom* atom, Neighbor* neighbor)
     timeStart = getTimeStamp();
     LIKWID_MARKER_START("reneighbour");
     updateSingleAtoms(atom);
-    updateAtomsPbc(atom, param);
+    updateAtomsPbc(atom, param, false);
     buildClusters(atom);
     defineJClusters(atom);
     setupPbc(atom, param);

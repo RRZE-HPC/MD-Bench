@@ -7,6 +7,7 @@
 #include <stdio.h>
 
 #include <atom.h>
+#include <force.h>
 #include <likwid-marker.h>
 #include <neighbor.h>
 #include <parameter.h>
@@ -162,7 +163,7 @@ double computeForceLJRef(Parameter* param, Atom* atom, Neighbor* neighbor, Stats
     return E - S;
 }
 
-double computeForceLJ_2xnn_half(
+double computeForceLJ2xnnHalfNeigh(
     Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
 {
     DEBUG_MESSAGE("computeForceLJ_2xnn begin\n");
@@ -427,7 +428,7 @@ double computeForceLJ_2xnn_half(
     return E - S;
 }
 
-double computeForceLJ_2xnn_full(
+double computeForceLJ2xnnFullNeigh(
     Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
 {
     DEBUG_MESSAGE("computeForceLJ_2xnn begin\n");
@@ -608,16 +609,7 @@ double computeForceLJ_2xnn_full(
     return E - S;
 }
 
-double computeForceLJ_2xnn(Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
-{
-    if (neighbor->half_neigh) {
-        return computeForceLJ_2xnn_half(param, atom, neighbor, stats);
-    }
-
-    return computeForceLJ_2xnn_full(param, atom, neighbor, stats);
-}
-
-double computeForceLJ_4xn_half(
+double computeForceLJ4xnHalfNeigh(
     Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
 {
     DEBUG_MESSAGE("computeForceLJ_4xn begin\n");
@@ -942,7 +934,7 @@ double computeForceLJ_4xn_half(
     return E - S;
 }
 
-double computeForceLJ_4xn_full(
+double computeForceLJ4xnFullNeigh(
     Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
 {
     DEBUG_MESSAGE("computeForceLJ_4xn begin\n");
@@ -1202,13 +1194,4 @@ double computeForceLJ_4xn_full(
     double E = getTimeStamp();
     DEBUG_MESSAGE("computeForceLJ_4xn end\n");
     return E - S;
-}
-
-double computeForceLJ4xn(Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
-{
-    if (neighbor->half_neigh) {
-        return computeForceLJ_4xn_half(param, atom, neighbor, stats);
-    }
-
-    return computeForceLJ_4xn_full(param, atom, neighbor, stats);
 }

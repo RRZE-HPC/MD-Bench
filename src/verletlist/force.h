@@ -12,6 +12,7 @@
 
 #ifndef __FORCE_H_
 #define __FORCE_H_
+
 typedef double (*ComputeForceFunction)(Parameter*, Atom*, Neighbor*, Stats*);
 extern ComputeForceFunction computeForce;
 

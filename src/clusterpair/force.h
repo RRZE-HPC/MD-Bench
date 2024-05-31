@@ -12,6 +12,7 @@
 
 #ifndef __FORCE_H_
 #define __FORCE_H_
+
 typedef double (*ComputeForceFunction)(Parameter*, Atom*, Neighbor*, Stats*);
 extern ComputeForceFunction computeForce;
 
@@ -55,6 +56,16 @@ extern double computeForceEam(Parameter*, Atom*, Neighbor*, Stats*);
 #define UNROLL_J    1
 #endif
 #endif
+#endif
+
+#if CLUSTER_M >= CLUSTER_N
+#define CL_X_OFFSET (0 * CLUSTER_M)
+#define CL_Y_OFFSET (1 * CLUSTER_M)
+#define CL_Z_OFFSET (2 * CLUSTER_M)
+#else
+#define CL_X_OFFSET (0 * CLUSTER_N)
+#define CL_Y_OFFSET (1 * CLUSTER_N)
+#define CL_Z_OFFSET (2 * CLUSTER_N)
 #endif
 
 #if CLUSTER_M == CLUSTER_N

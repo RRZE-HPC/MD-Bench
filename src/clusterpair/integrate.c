@@ -7,6 +7,7 @@
 #include <stdbool.h>
 
 #include <atom.h>
+#include <force.h>
 #include <integrate.h>
 #include <parameter.h>
 #include <util.h>

@@ -11,6 +11,7 @@
 
 #include <allocate.h>
 #include <atom.h>
+#include <force.h>
 #include <util.h>
 
 void initAtom(Atom* atom)
@@ -160,7 +161,7 @@ void createAtom(Atom* atom, Parameter* param)
     }
 }
 
-int type_str2int(const char* type)
+int typeStr2int(const char* type)
 {
     if (strncmp(type, "Ar", 2) == 0) {
         return 0;
@@ -174,13 +175,13 @@ int readAtom(Atom* atom, Parameter* param)
 {
     int len = strlen(param->input_file);
     if (strncmp(&param->input_file[len - 4], ".pdb", 4) == 0) {
-        return readAtom_pdb(atom, param);
+        return readAtomPdb(atom, param);
     }
     if (strncmp(&param->input_file[len - 4], ".gro", 4) == 0) {
-        return readAtom_gro(atom, param);
+        return readAtomGro(atom, param);
     }
     if (strncmp(&param->input_file[len - 4], ".dmp", 4) == 0) {
-        return readAtom_dmp(atom, param);
+        return readAtomDmp(atom, param);
     }
     fprintf(stderr,
         "Invalid input file extension: %s\nValid choices are: pdb, gro, dmp\n",
@@ -189,11 +190,11 @@ int readAtom(Atom* atom, Parameter* param)
     return -1;
 }
 
-int readAtom_pdb(Atom* atom, Parameter* param)
+int readAtomPdb(Atom* atom, Parameter* param)
 {
     FILE* fp = fopen(param->input_file, "r");
     char line[MAXLINE];
-    int read_atoms = 0;
+    int readAtoms = 0;
 
     if (!fp) {
         fprintf(stderr, "Could not open input file: %s\n", param->input_file);
@@ -217,29 +218,29 @@ int readAtom_pdb(Atom* atom, Parameter* param)
             // alpha, beta, gamma, sGroup, z
         } else if (strncmp(item, "ATOM", 4) == 0) {
             char* label;
-            int atom_id, comp_id;
+            int atomId, compId;
             MD_FLOAT occupancy, charge;
-            atom_id = atoi(strtok(NULL, " ")) - 1;
+            atomId = atoi(strtok(NULL, " ")) - 1;
 
-            while (atom_id + 1 >= atom->Nmax) {
+            while (atomId + 1 >= atom->Nmax) {
                 growAtom(atom);
             }
 
-            atom->type[atom_id] = type_str2int(strtok(NULL, " "));
-            label               = strtok(NULL, " ");
-            comp_id             = atoi(strtok(NULL, " "));
-            atom_x(atom_id)     = atof(strtok(NULL, " "));
-            atom_y(atom_id)     = atof(strtok(NULL, " "));
-            atom_z(atom_id)     = atof(strtok(NULL, " "));
-            atom->vx[atom_id]   = 0.0;
-            atom->vy[atom_id]   = 0.0;
-            atom->vz[atom_id]   = 0.0;
-            occupancy           = atof(strtok(NULL, " "));
-            charge              = atof(strtok(NULL, " "));
-            atom->ntypes        = MAX(atom->type[atom_id] + 1, atom->ntypes);
+            atom->type[atomId] = typeStr2int(strtok(NULL, " "));
+            label              = strtok(NULL, " ");
+            compId             = atoi(strtok(NULL, " "));
+            atom_x(atomId)     = atof(strtok(NULL, " "));
+            atom_y(atomId)     = atof(strtok(NULL, " "));
+            atom_z(atomId)     = atof(strtok(NULL, " "));
+            atom->vx[atomId]   = 0.0;
+            atom->vy[atomId]   = 0.0;
+            atom->vz[atomId]   = 0.0;
+            occupancy          = atof(strtok(NULL, " "));
+            charge             = atof(strtok(NULL, " "));
+            atom->ntypes       = MAX(atom->type[atomId] + 1, atom->ntypes);
             atom->Natoms++;
             atom->Nlocal++;
-            read_atoms++;
+            readAtoms++;
         } else if (strncmp(item, "HEADER", 6) == 0 || strncmp(item, "REMARK", 6) == 0 ||
                    strncmp(item, "MODEL", 5) == 0 || strncmp(item, "TER", 3) == 0 ||
                    strncmp(item, "ENDMDL", 6) == 0) {
@@ -251,7 +252,7 @@ int readAtom_pdb(Atom* atom, Parameter* param)
         }
     }
 
-    if (!read_atoms) {
+    if (!readAtoms) {
         fprintf(stderr, "Input error: No atoms read!\n");
         exit(-1);
         return -1;
@@ -270,19 +271,19 @@ int readAtom_pdb(Atom* atom, Parameter* param)
         atom->cutforcesq[i] = param->cutforce * param->cutforce;
     }
 
-    fprintf(stdout, "Read %d atoms from %s\n", read_atoms, param->input_file);
+    fprintf(stdout, "Read %d atoms from %s\n", readAtoms, param->input_file);
     fclose(fp);
-    return read_atoms;
+    return readAtoms;
 }
 
-int readAtom_gro(Atom* atom, Parameter* param)
+int readAtomGro(Atom* atom, Parameter* param)
 {
     FILE* fp = fopen(param->input_file, "r");
     char line[MAXLINE];
     char desc[MAXLINE];
-    int read_atoms    = 0;
-    int atoms_to_read = 0;
-    int i             = 0;
+    int readAtoms   = 0;
+    int atomsToRead = 0;
+    int i           = 0;
 
     if (!fp) {
         fprintf(stderr, "Could not open input file: %s\n", param->input_file);
@@ -295,30 +296,30 @@ int readAtom_gro(Atom* atom, Parameter* param)
         ;
     desc[i] = '\0';
     readline(line, fp);
-    atoms_to_read = atoi(strtok(line, " "));
-    fprintf(stdout, "System: %s with %d atoms\n", desc, atoms_to_read);
+    atomsToRead = atoi(strtok(line, " "));
+    fprintf(stdout, "System: %s with %d atoms\n", desc, atomsToRead);
 
-    while (!feof(fp) && read_atoms < atoms_to_read) {
+    while (!feof(fp) && readAtoms < atomsToRead) {
         readline(line, fp);
         char* label = strtok(line, " ");
-        int type    = type_str2int(strtok(NULL, " "));
-        int atom_id = atoi(strtok(NULL, " ")) - 1;
-        atom_id     = read_atoms;
-        while (atom_id + 1 >= atom->Nmax) {
+        int type    = typeStr2int(strtok(NULL, " "));
+        int atomId  = atoi(strtok(NULL, " ")) - 1;
+        atomId      = readAtoms;
+        while (atomId + 1 >= atom->Nmax) {
             growAtom(atom);
         }
 
-        atom->type[atom_id] = type;
-        atom_x(atom_id)     = atof(strtok(NULL, " "));
-        atom_y(atom_id)     = atof(strtok(NULL, " "));
-        atom_z(atom_id)     = atof(strtok(NULL, " "));
-        atom->vx[atom_id]   = atof(strtok(NULL, " "));
-        atom->vy[atom_id]   = atof(strtok(NULL, " "));
-        atom->vz[atom_id]   = atof(strtok(NULL, " "));
-        atom->ntypes        = MAX(atom->type[atom_id] + 1, atom->ntypes);
+        atom->type[atomId] = type;
+        atom_x(atomId)     = atof(strtok(NULL, " "));
+        atom_y(atomId)     = atof(strtok(NULL, " "));
+        atom_z(atomId)     = atof(strtok(NULL, " "));
+        atom->vx[atomId]   = atof(strtok(NULL, " "));
+        atom->vy[atomId]   = atof(strtok(NULL, " "));
+        atom->vz[atomId]   = atof(strtok(NULL, " "));
+        atom->ntypes       = MAX(atom->type[atomId] + 1, atom->ntypes);
         atom->Natoms++;
         atom->Nlocal++;
-        read_atoms++;
+        readAtoms++;
     }
 
     if (!feof(fp)) {
@@ -334,11 +335,11 @@ int readAtom_gro(Atom* atom, Parameter* param)
         param->zprd = param->zhi - param->zlo;
     }
 
-    if (read_atoms != atoms_to_read) {
+    if (readAtoms != atomsToRead) {
         fprintf(stderr,
             "Input error: Number of atoms read do not match (%d/%d).\n",
-            read_atoms,
-            atoms_to_read);
+            readAtoms,
+            atomsToRead);
         exit(-1);
         return -1;
     }
@@ -356,19 +357,19 @@ int readAtom_gro(Atom* atom, Parameter* param)
         atom->cutforcesq[i] = param->cutforce * param->cutforce;
     }
 
-    fprintf(stdout, "Read %d atoms from %s\n", read_atoms, param->input_file);
+    fprintf(stdout, "Read %d atoms from %s\n", readAtoms, param->input_file);
     fclose(fp);
-    return read_atoms;
+    return readAtoms;
 }
 
-int readAtom_dmp(Atom* atom, Parameter* param)
+int readAtomDmp(Atom* atom, Parameter* param)
 {
     FILE* fp = fopen(param->input_file, "r");
     char line[MAXLINE];
-    int natoms     = 0;
-    int read_atoms = 0;
-    int atom_id    = -1;
-    int ts         = -1;
+    int natoms    = 0;
+    int readAtoms = 0;
+    int atomId    = -1;
+    int ts        = -1;
 
     if (!fp) {
         fprintf(stderr, "Could not open input file: %s\n", param->input_file);
@@ -376,7 +377,7 @@ int readAtom_dmp(Atom* atom, Parameter* param)
         return -1;
     }
 
-    while (!feof(fp) && ts < 1 && !read_atoms) {
+    while (!feof(fp) && ts < 1 && !readAtoms) {
         readline(line, fp);
         if (strncmp(line, "ITEM: ", 6) == 0) {
             char* item = &line[6];
@@ -410,16 +411,16 @@ int readAtom_dmp(Atom* atom, Parameter* param)
             } else if (strncmp(item, "ATOMS id type x y z vx vy vz", 28) == 0) {
                 for (int i = 0; i < natoms; i++) {
                     readline(line, fp);
-                    atom_id             = atoi(strtok(line, " ")) - 1;
-                    atom->type[atom_id] = atoi(strtok(NULL, " "));
-                    atom_x(atom_id)     = atof(strtok(NULL, " "));
-                    atom_y(atom_id)     = atof(strtok(NULL, " "));
-                    atom_z(atom_id)     = atof(strtok(NULL, " "));
-                    atom->vx[atom_id]   = atof(strtok(NULL, " "));
-                    atom->vy[atom_id]   = atof(strtok(NULL, " "));
-                    atom->vz[atom_id]   = atof(strtok(NULL, " "));
-                    atom->ntypes        = MAX(atom->type[atom_id], atom->ntypes);
-                    read_atoms++;
+                    atomId             = atoi(strtok(line, " ")) - 1;
+                    atom->type[atomId] = atoi(strtok(NULL, " "));
+                    atom_x(atomId)     = atof(strtok(NULL, " "));
+                    atom_y(atomId)     = atof(strtok(NULL, " "));
+                    atom_z(atomId)     = atof(strtok(NULL, " "));
+                    atom->vx[atomId]   = atof(strtok(NULL, " "));
+                    atom->vy[atomId]   = atof(strtok(NULL, " "));
+                    atom->vz[atomId]   = atof(strtok(NULL, " "));
+                    atom->ntypes       = MAX(atom->type[atomId], atom->ntypes);
+                    readAtoms++;
                 }
             } else {
                 fprintf(stderr, "Invalid item: %s\n", item);
@@ -435,7 +436,7 @@ int readAtom_dmp(Atom* atom, Parameter* param)
         }
     }
 
-    if (ts < 0 || !natoms || !read_atoms) {
+    if (ts < 0 || !natoms || !readAtoms) {
         fprintf(stderr, "Input error: atom data was not read!\n");
         exit(-1);
         return -1;
@@ -461,7 +462,7 @@ int readAtom_dmp(Atom* atom, Parameter* param)
 
 void initMasks(Atom* atom)
 {
-    const unsigned int half_mask_bits = VECTOR_WIDTH >> 1;
+    const unsigned int halfMaskBits = VECTOR_WIDTH >> 1;
     unsigned int mask0, mask1, mask2, mask3;
 
     atom->exclusion_filter        = allocate(ALIGNMENT,
@@ -490,15 +491,15 @@ void initMasks(Atom* atom)
         mask1                              = (unsigned int)(0xf - 0x3 * cond0);
         mask2                              = (unsigned int)(0xf - 0x7 * cond0);
         mask3                              = (unsigned int)(0xf - 0xf * cond0);
-        atom->masks_2xnn_hn[cond0 * 2 + 0] = (mask1 << half_mask_bits) | mask0;
-        atom->masks_2xnn_hn[cond0 * 2 + 1] = (mask3 << half_mask_bits) | mask2;
+        atom->masks_2xnn_hn[cond0 * 2 + 0] = (mask1 << halfMaskBits) | mask0;
+        atom->masks_2xnn_hn[cond0 * 2 + 1] = (mask3 << halfMaskBits) | mask2;
 
         mask0                              = (unsigned int)(0xf - 0x1 * cond0);
         mask1                              = (unsigned int)(0xf - 0x2 * cond0);
         mask2                              = (unsigned int)(0xf - 0x4 * cond0);
         mask3                              = (unsigned int)(0xf - 0x8 * cond0);
-        atom->masks_2xnn_fn[cond0 * 2 + 0] = (mask1 << half_mask_bits) | mask0;
-        atom->masks_2xnn_fn[cond0 * 2 + 1] = (mask3 << half_mask_bits) | mask2;
+        atom->masks_2xnn_fn[cond0 * 2 + 0] = (mask1 << halfMaskBits) | mask0;
+        atom->masks_2xnn_fn[cond0 * 2 + 1] = (mask3 << halfMaskBits) | mask2;
 
         atom->masks_4xn_hn[cond0 * 4 + 0] = (unsigned int)(0xf - 0x1 * cond0);
         atom->masks_4xn_hn[cond0 * 4 + 1] = (unsigned int)(0xf - 0x3 * cond0);

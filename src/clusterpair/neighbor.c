@@ -9,6 +9,7 @@
 #include <stdlib.h>
 
 #include <atom.h>
+#include <force.h>
 #include <neighbor.h>
 #include <parameter.h>
 #include <util.h>

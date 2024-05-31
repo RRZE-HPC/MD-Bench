@@ -16,16 +16,6 @@
 #define CJ_SCALAR_BASE_INDEX(a) (CJ_BASE_INDEX(a, 1))
 #define CJ_VECTOR_BASE_INDEX(a) (CJ_BASE_INDEX(a, 3))
 
-#if CLUSTER_M >= CLUSTER_N
-#define CL_X_OFFSET (0 * CLUSTER_M)
-#define CL_Y_OFFSET (1 * CLUSTER_M)
-#define CL_Z_OFFSET (2 * CLUSTER_M)
-#else
-#define CL_X_OFFSET (0 * CLUSTER_N)
-#define CL_Y_OFFSET (1 * CLUSTER_N)
-#define CL_Z_OFFSET (2 * CLUSTER_N)
-#endif
-
 typedef struct {
     int natoms;
     MD_FLOAT bbminx, bbmaxx;
@@ -67,9 +57,9 @@ extern void initAtom(Atom*);
 extern void initMasks(Atom*);
 extern void createAtom(Atom*, Parameter*);
 extern int readAtom(Atom*, Parameter*);
-extern int readAtom_pdb(Atom*, Parameter*);
-extern int readAtom_gro(Atom*, Parameter*);
-extern int readAtom_dmp(Atom*, Parameter*);
+extern int readAtomPdb(Atom*, Parameter*);
+extern int readAtomGro(Atom*, Parameter*);
+extern int readAtomDmp(Atom*, Parameter*);
 extern void growAtom(Atom*);
 extern void growClusters(Atom*);
 
