@@ -21,7 +21,7 @@ void initForce(Parameter* param)
             computeForce = computeForceLJ4xnHalfNeigh;
         } else {
 #ifdef CUDA_TARGET
-            computeForce = computeForceLJFullNeighCUDA;
+            computeForce = computeForceLJCUDA;
 #else
 // Simd2xNN (here used for single-precision)
 #ifdef USE_REFERENCE_VERSION

@@ -321,7 +321,7 @@ extern "C" void updatePbcCUDA(Atom* atom, Parameter* param)
     cuda_assert("cudaUpdatePbc", cudaDeviceSynchronize());
 }
 
-extern "C" double computeForceLJ_cuda(
+extern "C" double computeForceLJCUDA(
     Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
 {
     MD_FLOAT cutforcesq = param->cutforce * param->cutforce;

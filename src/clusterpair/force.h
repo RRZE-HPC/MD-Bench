@@ -32,6 +32,7 @@ extern double computeForceEam(Parameter*, Atom*, Neighbor*, Stats*);
 // Cuda: M=8, N=VECTOR_WIDTH
 
 #ifdef CUDA_TARGET
+extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #undef VECTOR_WIDTH
 #define VECTOR_WIDTH 8
 #define KERNEL_NAME  "CUDA"
