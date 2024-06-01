@@ -24,7 +24,7 @@ endif
 
 #OPTS     = -Ofast -no-vec $(PROFILE)
 #OPTS     = -Ofast -xHost $(PROFILE)
-CFLAGS   = $(PROFILE) $(OPENMP) $(OPTS) -std=c11 -restrict #-pedantic-errors 
+CFLAGS   = $(PROFILE) $(OPENMP) $(OPTS) -std=c11 -restrict -diag-disable=10441 #-pedantic-errors 
 ASFLAGS  = #-masm=intel
 LFLAGS   = $(PROFILE) $(OPTS) $(OPENMP)
 DEFINES  += -D_GNU_SOURCE
