@@ -526,9 +526,9 @@ void initMasks(Atom* atom)
             mask3 = (unsigned int)(0x3 - cond0 * 0x3 - 0x3 * cond1);
 #endif
 
-            atom->masks_2xnn_hn[cond0 * 4 + cond1 * 2 + 0] = (mask1 << half_mask_bits) |
+            atom->masks_2xnn_hn[cond0 * 4 + cond1 * 2 + 0] = (mask1 << halfMaskBits) |
                                                              mask0;
-            atom->masks_2xnn_hn[cond0 * 4 + cond1 * 2 + 1] = (mask3 << half_mask_bits) |
+            atom->masks_2xnn_hn[cond0 * 4 + cond1 * 2 + 1] = (mask3 << halfMaskBits) |
                                                              mask2;
 
 #if CLUSTER_M < CLUSTER_N
@@ -543,9 +543,9 @@ void initMasks(Atom* atom)
             mask3 = (unsigned int)(0x3 - 0x2 * cond1);
 #endif
 
-            atom->masks_2xnn_fn[cond0 * 4 + cond1 * 2 + 0] = (mask1 << half_mask_bits) |
+            atom->masks_2xnn_fn[cond0 * 4 + cond1 * 2 + 0] = (mask1 << halfMaskBits) |
                                                              mask0;
-            atom->masks_2xnn_fn[cond0 * 4 + cond1 * 2 + 1] = (mask3 << half_mask_bits) |
+            atom->masks_2xnn_fn[cond0 * 4 + cond1 * 2 + 1] = (mask3 << halfMaskBits) |
                                                              mask2;
 
 #if CLUSTER_M < CLUSTER_N
