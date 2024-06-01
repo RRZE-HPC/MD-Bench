@@ -22,7 +22,6 @@ extern void initForce(Parameter*);
 extern double computeForceLJHalfNeigh(Parameter*, Atom*, Neighbor*, Stats*);
 extern double computeForceLJFullNeigh(Parameter*, Atom*, Neighbor*, Stats*);
 extern double computeForceEam(Parameter*, Atom*, Neighbor*, Stats*);
-extern double computeForceDemFullNeigh(Parameter*, Atom*, Neighbor*, Stats*);
 
 #ifdef CUDA_TARGET
 extern double computeForceLJFullNeighCUDA(Parameter*, Atom*, Neighbor*, Stats*);

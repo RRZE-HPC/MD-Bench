@@ -10,6 +10,7 @@
 #include <allocate.h>
 #include <atom.h>
 #include <eam.h>
+#include <force.h>
 #include <neighbor.h>
 #include <parameter.h>
 #include <stats.h>

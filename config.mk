@@ -16,7 +16,7 @@ DATA_LAYOUT ?= AOS
 DEBUG ?= false
 
 # Sort atoms when reneighboring (true or false)
-SORT_ATOMS ?= true
+SORT_ATOMS ?= false
 # Explicitly store and load atom types (true or false)
 EXPLICIT_TYPES ?= false
 # Trace memory addresses for cache simulator (true or false)
