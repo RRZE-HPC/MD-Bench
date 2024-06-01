@@ -299,7 +299,7 @@ extern "C" void initialIntegrateCUDA(Parameter* param, Atom* atom)
 
 /* update coordinates of ghost atoms */
 /* uses mapping created in setupPbc */
-extern "C" void cudaUpdatePbc(Atom* atom, Parameter* param)
+extern "C" void updatePbcCUDA(Atom* atom, Parameter* param)
 {
     const int threads_num = 512;
     dim3 block_size       = dim3(threads_num, 1, 1);

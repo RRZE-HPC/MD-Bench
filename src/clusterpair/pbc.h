@@ -22,7 +22,7 @@ extern void updateAtomsPbcCPU(Atom*, Parameter*, bool);
 extern void setupPbc(Atom*, Parameter*);
 
 #ifdef CUDA_TARGET
-extern void cudaUpdateCUDA(Atom*, Parameter*, bool);
-extern void updateAtomsPbcCUDA(Atom*, Parameter*, bool);
+extern void updatePbcCUDA(Atom*, Parameter*, bool);
+// extern void updateAtomsPbcCUDA(Atom*, Parameter*, bool);
 #endif
 #endif

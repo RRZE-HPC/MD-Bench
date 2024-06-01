@@ -21,7 +21,8 @@ static int NmaxGhost;
 
 #ifdef CUDA_TARGET
 UpdatePbcFunction updatePbc      = updatePbcCUDA;
-UpdatePbcFunction updateAtomsPbc = updateAtomsPbcCUDA;
+UpdatePbcFunction updateAtomsPbc = updateAtomsPbcCPU;
+// UpdatePbcFunction updateAtomsPbc = updateAtomsPbcCUDA;
 #else
 UpdatePbcFunction updatePbc      = updatePbcCPU;
 UpdatePbcFunction updateAtomsPbc = updateAtomsPbcCPU;

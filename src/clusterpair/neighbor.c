@@ -18,7 +18,8 @@
 #define FACTOR 0.999
 
 #ifdef CUDA_TARGET
-BuildNeighborFunction buildNeighbor = buildNeighborCUDA;
+BuildNeighborFunction buildNeighbor = buildNeighborCPU;
+// BuildNeighborFunction buildNeighbor = buildNeighborCUDA;
 #else
 BuildNeighborFunction buildNeighbor = buildNeighborCPU;
 #endif
