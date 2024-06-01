@@ -109,7 +109,7 @@ extern "C" void copyDataFromCUDADevice(Atom* atom)
         atom->Nclusters_max * CLUSTER_M * 3 * sizeof(MD_FLOAT));
 }
 
-extern "C" void cudaDeviceFree()
+extern "C" void cudaDeviceFree(void)
 {
     cuda_assert("cudaDeviceFree", cudaFree(cuda_cl_x));
     cuda_assert("cudaDeviceFree", cudaFree(cuda_cl_v));

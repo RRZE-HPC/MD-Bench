@@ -30,6 +30,11 @@
 #include <vtk.h>
 #include <xtc.h>
 
+extern void copyDataToCUDADevice(Atom*);
+extern void copyDataFromCUDADevice(Atom*);
+extern void cudaDeviceFree(void);
+extern int isReneighboured;
+
 #define HLINE "------------------------------------------------------------------\n"
 
 double setup(Parameter* param, Eam* eam, Atom* atom, Neighbor* neighbor, Stats* stats)
