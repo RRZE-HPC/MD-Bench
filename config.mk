@@ -1,8 +1,10 @@
 # Compiler tool chain (GCC/CLANG/ICC/ICX/ONEAPI/NVCC)
-TOOLCHAIN ?= CLANG
-# ISA of instruction code - has currently no consequence yet
+TOOLCHAIN ?= GCC
+# ISA of instruction code (X86/ARM)
 ISA ?= X86
-# Instruction set for instrinsic kernels (NONE/SSE/AVX/AVX_FMA/AVX2/AVX512)
+# Instruction set for instrinsic kernels (NONE/<X86-SIMD>/<ARM-SIMD>)
+# with X86-SIMD options: SSE/AVX/AVX_FMA/AVX2/AVX512
+# with ARM-SIMD options: NEON/SVE (both not implemented yet!)
 SIMD ?= AVX2
 # Optimization scheme (verletlist/clusterpair/clusters_per_bin)
 OPT_SCHEME ?= verletlist
@@ -54,25 +56,35 @@ DEFINES =
 ifeq ($(strip $(SIMD)), NONE)
     VECTOR_WIDTH=1
 else
-ifeq ($(strip $(SIMD)), SSE)
-    __ISA_SSE__=true
-    __SIMD_WIDTH_DBL__=2
-else ifeq ($(strip $(SIMD)), AVX)
-    __ISA_AVX__=true
-    __SIMD_WIDTH_DBL__=4
-else ifeq ($(strip $(SIMD)), AVX_FMA)
-    __ISA_AVX__=true
-    __ISA_AVX_FMA__=true
-    __SIMD_WIDTH_DBL__=4
-else ifeq ($(strip $(SIMD)), AVX2)
-    #__SIMD_KERNEL__=true
-    __ISA_AVX2__=true
-    __SIMD_WIDTH_DBL__=4
-else ifeq ($(strip $(SIMD)), AVX512)
-    __ISA_AVX512__=true
-    __SIMD_WIDTH_DBL__=8
-    ifeq ($(strip $(DATA_TYPE)), DP)
-        __SIMD_KERNEL__=true
+ifeq ($(strip $(ISA)),ARM)
+    ifeq ($(strip $(SIMD)), NEON)
+        __SIMD_WIDTH_DBL__=2
+    else ifeq ($(strip $(SIMD)), SVE)
+		# needs further specification
+        __SIMD_WIDTH_DBL__=2
+    endif
+else
+# X86
+    ifeq ($(strip $(SIMD)), SSE)
+        __ISA_SSE__=true
+        __SIMD_WIDTH_DBL__=2
+    else ifeq ($(strip $(SIMD)), AVX)
+        __ISA_AVX__=true
+        __SIMD_WIDTH_DBL__=4
+    else ifeq ($(strip $(SIMD)), AVX_FMA)
+        __ISA_AVX__=true
+        __ISA_AVX_FMA__=true
+        __SIMD_WIDTH_DBL__=4
+    else ifeq ($(strip $(SIMD)), AVX2)
+        #__SIMD_KERNEL__=true
+        __ISA_AVX2__=true
+        __SIMD_WIDTH_DBL__=4
+    else ifeq ($(strip $(SIMD)), AVX512)
+        __ISA_AVX512__=true
+        __SIMD_WIDTH_DBL__=8
+        ifeq ($(strip $(DATA_TYPE)), DP)
+            __SIMD_KERNEL__=true
+        endif
     endif
 endif
 
@@ -93,8 +105,10 @@ else
     DEFINES +=  -DPRECISION=2
 endif
 
+ifeq ($(strip $(ISA)),X86)
 ifneq ($(ASM_SYNTAX), ATT)
     ASFLAGS += -masm=intel
+endif
 endif
 
 ifeq ($(strip $(SORT_ATOMS)),true)
