@@ -4,7 +4,7 @@ TOOLCHAIN ?= CLANG
 ISA ?= X86
 # Instruction set for instrinsic kernels (NONE/<X86-SIMD>/<ARM-SIMD>)
 # with X86-SIMD options: SSE/AVX/AVX_FMA/AVX2/AVX512
-# with ARM-SIMD options: NEON/SVE (both not implemented yet!)
+# with ARM-SIMD options: NEON/SVE (SVE not implemented yet!)
 SIMD ?= AVX2
 # Optimization scheme (verletlist/clusterpair/clusters_per_bin)
 OPT_SCHEME ?= verletlist
