@@ -14,7 +14,7 @@ CFLAGS   = -Ofast -march=native -mavx2 -mfma $(ANSI_CFLAGS) #-fopenmp -Xpreproce
 #CFLAGS   = -Ofast -march=core-avx2 $(ANSI_CFLAGS) #-Xpreprocessor -fopenmp -g
 #CFLAGS   = -O3 -march=cascadelake $(ANSI_CFLAGS) #-Xpreprocessor -fopenmp -g
 #CFLAGS   = -Ofast $(ANSI_CFLAGS) -g #-Xpreprocessor -fopenmp -g
-ASFLAGS  = #-masm=intel
+ASFLAGS  = -masm=intel
 DEFINES  += -DNO_ZMM_INTRIN
 endif
 # MacOSX with Apple Silicon and homebrew

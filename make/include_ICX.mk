@@ -26,7 +26,7 @@ endif
 #OPTS     = -Ofast -no-vec $(PROFILE)
 #OPTS     = -Ofast -xHost $(PROFILE)
 CFLAGS   = $(PROFILE) $(OPENMP) $(OPTS) -std=c11 #-pedantic-errors
-ASFLAGS  = #-masm=intel
+ASFLAGS  = -masm=intel
 LFLAGS   = $(PROFILE) $(OPTS) $(OPENMP)
 DEFINES  += -D_GNU_SOURCE -DNO_ZMM_INTRIN
 INCLUDES =

@@ -6,7 +6,7 @@ ISA ?= X86
 # with X86-SIMD options: SSE/AVX/AVX_FMA/AVX2/AVX512
 # with ARM-SIMD options: NEON/SVE (SVE not implemented yet!)
 SIMD ?= AVX2
-# Optimization scheme (verletlist/clusterpair/clusters_per_bin)
+# Optimization scheme (verletlist/clusterpair)
 OPT_SCHEME ?= verletlist
 # Enable likwid (true or false)
 ENABLE_LIKWID ?= false
@@ -103,12 +103,6 @@ ifeq ($(strip $(DATA_TYPE)),SP)
     DEFINES +=  -DPRECISION=1
 else
     DEFINES +=  -DPRECISION=2
-endif
-
-ifeq ($(strip $(ISA)),X86)
-ifneq ($(ASM_SYNTAX), ATT)
-    ASFLAGS += -masm=intel
-endif
 endif
 
 ifeq ($(strip $(SORT_ATOMS)),true)

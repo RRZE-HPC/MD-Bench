@@ -34,7 +34,7 @@ endif
 #CFLAGS   = -O0 -g -std=c99 -fargument-noalias
 #CFLAGS   = -Ofast -march=native -ffast-math -funroll-loops # -fopenmp
 #CFLAGS   = -O3 -march=native  -ffast-math -funroll-loops # -fopenmp
-ASFLAGS  =  #-masm=intel
+ASFLAGS  =  -masm=intel
 DEFINES  += -DNO_ZMM_INTRIN
 endif
 
