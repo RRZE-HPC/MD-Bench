@@ -25,7 +25,7 @@ void initForce(Parameter* param)
 #else
 // Simd2xNN (here used for single-precision)
 #ifdef USE_REFERENCE_VERSION
-            computeForce = computeForceLJFullNeighRef;
+            computeForce = computeForceLJRef;
 #else
 #if VECTOR_WIDTH > CLUSTER_M * 2
             computeForce = computeForceLJ2xnnFullNeigh;
