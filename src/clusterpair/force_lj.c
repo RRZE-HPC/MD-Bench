@@ -43,6 +43,7 @@ MD_SIMD_BITMASK filter3, MD_SIMD_MASK *interact0, MD_SIMD_MASK *interact1, MD_SI
 }
 */
 
+#ifdef USE_REFERENCE_VERSION
 double computeForceLJRef(Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
 {
     DEBUG_MESSAGE("computeForceLJ begin\n");
@@ -162,8 +163,7 @@ double computeForceLJRef(Parameter* param, Atom* atom, Neighbor* neighbor, Stats
     DEBUG_MESSAGE("computeForceLJ end\n");
     return E - S;
 }
-
-#ifndef USE_REFERENCE_VERSION
+#else
 double computeForceLJ2xnnHalfNeigh(
     Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
 {
@@ -428,13 +428,7 @@ double computeForceLJ2xnnHalfNeigh(
     DEBUG_MESSAGE("computeForceLJ_2xnn end\n");
     return E - S;
 }
-#else
-double computeForceLJ2xnnHalfNeigh(
-    Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats) {}
-#endif
 
-
-#ifndef USE_REFERENCE_VERSION
 double computeForceLJ2xnnFullNeigh(
     Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
 {
@@ -615,12 +609,7 @@ double computeForceLJ2xnnFullNeigh(
     DEBUG_MESSAGE("computeForceLJ_2xnn end\n");
     return E - S;
 }
-#else
-double computeForceLJ2xnnFullNeigh(
-    Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats) {}
-#endif
 
-#ifndef USE_REFERENCE_VERSION
 double computeForceLJ4xnHalfNeigh(
     Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
 {
@@ -945,12 +934,7 @@ double computeForceLJ4xnHalfNeigh(
     DEBUG_MESSAGE("computeForceLJ_4xn end\n");
     return E - S;
 }
-#else
-double computeForceLJ4xnHalfNeigh(
-    Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats) {}
-#endif
 
-#ifndef USE_REFERENCE_VERSION
 double computeForceLJ4xnFullNeigh(
     Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
 {
@@ -1212,7 +1196,4 @@ double computeForceLJ4xnFullNeigh(
     DEBUG_MESSAGE("computeForceLJ_4xn end\n");
     return E - S;
 }
-#else
-double computeForceLJ4xnFullNeigh(
-    Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats) {}
 #endif
