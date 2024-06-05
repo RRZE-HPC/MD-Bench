@@ -128,7 +128,7 @@ double computeForceLJHalfNeigh(
 
 #pragma omp parallel
     {
-        LIKWID_MARKER_START("forceLJ-halfneigh");
+        LIKWID_MARKER_START("force");
 
 #pragma omp for schedule(runtime)
         for (int i = 0; i < nlocal; i++) {
@@ -190,7 +190,7 @@ double computeForceLJHalfNeigh(
                 (numneighs + VECTOR_WIDTH - 1) / VECTOR_WIDTH);
         }
 
-        LIKWID_MARKER_STOP("forceLJ-halfneigh");
+        LIKWID_MARKER_STOP("force");
     }
 
     double timeStop = getTimeStamp();

@@ -42,6 +42,7 @@ void initParameter(Parameter* param)
     param->mass            = 1.0;
     param->dtforce         = 0.5 * param->dt;
     param->reneigh_every   = 20;
+    param->resort_every    = 400;
     param->prune_every     = 1000;
     param->x_out_every     = 20;
     param->v_out_every     = 5;
@@ -103,6 +104,7 @@ void readParameter(Parameter* param, const char* filename)
             PARSE_INT(pbc_z);
             PARSE_INT(nstat);
             PARSE_INT(reneigh_every);
+            PARSE_INT(resort_every);
             PARSE_INT(prune_every);
             PARSE_INT(x_out_every);
             PARSE_INT(v_out_every);
@@ -170,9 +172,9 @@ void printParameter(Parameter* param)
     printf("\tReport stats every (timesteps): %d\n", param->nstat);
     printf("\tReneighbor every (timesteps): %d\n", param->reneigh_every);
 #ifdef SORT_ATOMS
-    printf("\tSort atoms when reneighboring: yes\n");
+    printf("\tResort atoms every (timesteps): %d\n", param->resort_every);
 #else
-    printf("\tSort atoms when reneighboring: no\n");
+    printf("\tSort atoms: no\n");
 #endif
     printf("\tPrune every (timesteps): %d\n", param->prune_every);
     printf("\tOutput positions every (timesteps): %d\n", param->x_out_every);

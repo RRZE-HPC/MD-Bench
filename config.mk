@@ -1,5 +1,5 @@
 # Compiler tool chain (GCC/CLANG/ICC/ICX/ONEAPI/NVCC)
-TOOLCHAIN ?= CLANG
+TOOLCHAIN ?= ICC
 # ISA of instruction code - has currently no consequence yet
 ISA ?= X86
 # Instruction set for instrinsic kernels (NONE/SSE/AVX/AVX_FMA/AVX2/AVX512)
