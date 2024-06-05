@@ -44,7 +44,6 @@ extern void setupNeighbor(Parameter*, Atom*);
 extern void binatoms(Atom*);
 extern void buildNeighborCPU(Atom*, Neighbor*);
 extern void pruneNeighbor(Parameter*, Atom*, Neighbor*);
-extern void sortAtom(Atom*);
 extern void buildClusters(Atom*);
 extern void defineJClusters(Atom*);
 extern void binClusters(Atom*);
