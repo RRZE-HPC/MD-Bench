@@ -13,6 +13,7 @@
 #include <allocate.h>
 #include <atom.h>
 #include <eam.h>
+#include <force.h>
 #include <neighbor.h>
 #include <parameter.h>
 #include <pbc.h>
@@ -24,11 +25,6 @@
 
 #define HLINE                                                                            \
     "----------------------------------------------------------------------------\n"
-
-extern double computeForceLJ_ref(Parameter*, Atom*, Neighbor*, Stats*);
-extern double computeForceLJ_4xn(Parameter*, Atom*, Neighbor*, Stats*);
-extern double computeForceLJ_2xnn(Parameter*, Atom*, Neighbor*, Stats*);
-extern double computeForceEam(Eam*, Parameter*, Atom*, Neighbor*, Stats*);
 
 // Patterns
 #define P_SEQ  0
@@ -231,7 +227,7 @@ int main(int argc, const char* argv[])
 
     if (param.force_field == FF_EAM) {
         DEBUG_MESSAGE("Initializing EAM parameters...\n");
-        initEam(&eam, &param);
+        initEam(&param);
     }
 
     DEBUG_MESSAGE("Initializing atoms...\n");
@@ -329,9 +325,21 @@ int main(int argc, const char* argv[])
 #endif
 
         if (param.force_field == FF_EAM) {
-            T_accum += computeForceEam(&eam, &param, atom, &neighbor, &stats);
+            T_accum += computeForceEam(&param, atom, &neighbor, &stats);
         } else {
-            T_accum += computeForceLJ(&param, atom, &neighbor, &stats);
+            if (param.half_neigh) {
+                if (VECTOR_WIDTH > CLUSTER_M * 2) {
+                    T_accum += computeForceLJ2xnnHalfNeigh(&param, atom, &neighbor, &stats);
+                } else {
+                    T_accum += computeForceLJ4xnHalfNeigh(&param, atom, &neighbor, &stats);
+                }
+            } else {
+                if (VECTOR_WIDTH > CLUSTER_M * 2) {
+                    T_accum += computeForceLJ2xnnFullNeigh(&param, atom, &neighbor, &stats);
+                } else {
+                    T_accum += computeForceLJ4xnFullNeigh(&param, atom, &neighbor, &stats);
+                }
+            }
         }
     }
 

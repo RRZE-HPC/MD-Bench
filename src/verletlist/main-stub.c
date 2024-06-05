@@ -12,6 +12,7 @@
 #include <allocate.h>
 #include <atom.h>
 #include <eam.h>
+#include <force.h>
 #include <neighbor.h>
 #include <parameter.h>
 #include <pbc.h>
@@ -23,11 +24,6 @@
 
 #define HLINE                                                                            \
     "----------------------------------------------------------------------------\n"
-
-extern double computeForceLJFullNeigh_plain_c(Parameter*, Atom*, Neighbor*, Stats*);
-extern double computeForceLJFullNeigh_simd(Parameter*, Atom*, Neighbor*, Stats*);
-extern double computeForceLJHalfNeigh(Parameter*, Atom*, Neighbor*, Stats*);
-extern double computeForceEam(Eam*, Parameter*, Atom*, Neighbor*, Stats*);
 
 // Patterns
 #define P_SEQ  0
@@ -203,7 +199,7 @@ int main(int argc, const char* argv[])
 
     if (param.force_field == FF_EAM) {
         DEBUG_MESSAGE("Initializing EAM parameters...\n");
-        initEam(&eam, &param);
+        initEam(&param);
     }
 
     DEBUG_MESSAGE("Initializing atoms...\n");
@@ -271,7 +267,7 @@ int main(int argc, const char* argv[])
 #endif
 
         if (param.force_field == FF_EAM) {
-            computeForceEam(&eam, &param, atom, &neighbor, &stats);
+            computeForceEam(&param, atom, &neighbor, &stats);
         } else {
             if (param.half_neigh) {
                 T_accum += computeForceLJHalfNeigh(&param, atom, &neighbor, &stats);
