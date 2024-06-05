@@ -62,6 +62,8 @@
 #define SIMD_PRINT_REAL(a) simd_print_real(#a, a);
 #define SIMD_PRINT_MASK(a) simd_print_mask(#a, a);
 
+extern unsigned int simd_mask_to_u32(MD_SIMD_MASK a);
+
 static inline void simd_print_real(const char* ref, MD_SIMD_FLOAT a)
 {
     double x[VECTOR_WIDTH];

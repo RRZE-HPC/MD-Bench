@@ -163,6 +163,7 @@ double computeForceLJRef(Parameter* param, Atom* atom, Neighbor* neighbor, Stats
     return E - S;
 }
 
+#ifndef USE_REFERENCE_VERSION
 double computeForceLJ2xnnHalfNeigh(
     Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
 {
@@ -427,7 +428,13 @@ double computeForceLJ2xnnHalfNeigh(
     DEBUG_MESSAGE("computeForceLJ_2xnn end\n");
     return E - S;
 }
+#else
+double computeForceLJ2xnnHalfNeigh(
+    Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats) {}
+#endif
 
+
+#ifndef USE_REFERENCE_VERSION
 double computeForceLJ2xnnFullNeigh(
     Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
 {
@@ -608,7 +615,12 @@ double computeForceLJ2xnnFullNeigh(
     DEBUG_MESSAGE("computeForceLJ_2xnn end\n");
     return E - S;
 }
+#else
+double computeForceLJ2xnnFullNeigh(
+    Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats) {}
+#endif
 
+#ifndef USE_REFERENCE_VERSION
 double computeForceLJ4xnHalfNeigh(
     Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
 {
@@ -933,7 +945,12 @@ double computeForceLJ4xnHalfNeigh(
     DEBUG_MESSAGE("computeForceLJ_4xn end\n");
     return E - S;
 }
+#else
+double computeForceLJ4xnHalfNeigh(
+    Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats) {}
+#endif
 
+#ifndef USE_REFERENCE_VERSION
 double computeForceLJ4xnFullNeigh(
     Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
 {
@@ -1195,3 +1212,7 @@ double computeForceLJ4xnFullNeigh(
     DEBUG_MESSAGE("computeForceLJ_4xn end\n");
     return E - S;
 }
+#else
+double computeForceLJ4xnFullNeigh(
+    Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats) {}
+#endif
