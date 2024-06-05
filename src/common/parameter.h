@@ -32,6 +32,7 @@ typedef struct {
     int ntimes;
     int nstat;
     int reneigh_every;
+    int resort_every;
     int prune_every;
     int x_out_every;
     int v_out_every;

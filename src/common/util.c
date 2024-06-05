@@ -5,6 +5,7 @@
  * license that can be found in the LICENSE file.
  */
 #include <errno.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -106,7 +107,7 @@ void readline(char* line, FILE* fp)
 void debug_printf(const char* format, ...)
 {
 #ifdef DEBUG
-    va_list arg;
+    __va_list arg;
     int ret;
 
     va_start(arg, format);

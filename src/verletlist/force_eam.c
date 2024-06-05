@@ -43,7 +43,7 @@ double computeForceEam(Parameter* param, Atom* atom, Neighbor* neighbor, Stats* 
 
 #pragma omp parallel
     {
-        LIKWID_MARKER_START("force_eam_fp");
+        LIKWID_MARKER_START("force");
 
 #pragma omp for
         for (int i = 0; i < Nlocal; i++) {
@@ -111,7 +111,7 @@ double computeForceEam(Parameter* param, Atom* atom, Neighbor* neighbor, Stats* 
 #endif
         }
 
-        LIKWID_MARKER_STOP("force_eam_fp");
+        LIKWID_MARKER_STOP("force");
     }
 
     // We still need to update fp for PBC atoms
@@ -121,7 +121,7 @@ double computeForceEam(Parameter* param, Atom* atom, Neighbor* neighbor, Stats* 
 
 #pragma omp parallel
     {
-        LIKWID_MARKER_START("force_eam");
+        LIKWID_MARKER_START("force");
 
 #pragma omp for
         for (int i = 0; i < Nlocal; i++) {
@@ -223,7 +223,7 @@ double computeForceEam(Parameter* param, Atom* atom, Neighbor* neighbor, Stats* 
                 (numneighs + VECTOR_WIDTH - 1) / VECTOR_WIDTH);
         }
 
-        LIKWID_MARKER_STOP("force_eam");
+        LIKWID_MARKER_STOP("force");
     }
 
     double timeStop = getTimeStamp();

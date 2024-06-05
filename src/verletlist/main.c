@@ -73,15 +73,18 @@ double setup(Parameter* param, Eam* eam, Atom* atom, Neighbor* neighbor, Stats* 
     return timeStop - timeStart;
 }
 
-double reneighbour(Parameter* param, Atom* atom, Neighbor* neighbor)
+double reneighbour(int n, Parameter* param, Atom* atom, Neighbor* neighbor)
 {
     double timeStart, timeStop;
     timeStart = getTimeStamp();
     LIKWID_MARKER_START("reneighbour");
     updateAtomsPbc(atom, param, true);
 #ifdef SORT_ATOMS
-    atom->Nghost = 0;
-    sortAtom(atom);
+    if ((n + 1) % param->resort_every == 0) {
+        DEBUG_MESSAGE("Resorting atoms");
+        atom->Nghost = 0;
+        sortAtom(atom);
+    }
 #endif
     setupPbc(atom, param);
     updatePbc(atom, param, true);
@@ -255,10 +258,11 @@ int main(int argc, char** argv)
     for (int n = 0; n < param.ntimes; n++) {
         bool reneigh = (n + 1) % param.reneigh_every == 0;
         initialIntegrate(reneigh, &param, &atom);
-        if ((n + 1) % param.reneigh_every) {
-            updatePbc(&atom, &param, false);
+
+        if (reneigh) {
+            timer[NEIGH] += reneighbour(n, &param, &atom, &neighbor);
         } else {
-            timer[NEIGH] += reneighbour(&param, &atom, &neighbor);
+            updatePbc(&atom, &param, false);
         }
 
 #if defined(MEM_TRACER) || defined(INDEX_TRACER)
