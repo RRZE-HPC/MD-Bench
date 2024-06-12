@@ -7,7 +7,16 @@ ANSI_CFLAGS += -pedantic
 # ANSI_CFLAGS += -Wextra
 
 ifeq ($(strip $(ISA)),ARM)
-CFLAGS  = -Ofast -mcpu=native $(ANSI_CFLAGS)
+CFLAGS  = -Ofast $(ANSI_CFLAGS)
+ifeq ($(strip $(SIMD)),NONE)
+CFLAGS += -mcpu=native+nosimd+nosve
+endif
+ifeq ($(strip $(SIMD)),NEON)
+CFLAGS += -mcpu=native+simd+nosve
+endif
+ifeq ($(strip $(SIMD)),SVE)
+CFLAGS += -mcpu=native+sve2
+endif
 endif
 ifeq ($(strip $(ISA)),X86)
 CFLAGS   = -Ofast -march=native -mavx2 -mfma $(ANSI_CFLAGS) #-fopenmp -Xpreprocessor -fopenmp -g
