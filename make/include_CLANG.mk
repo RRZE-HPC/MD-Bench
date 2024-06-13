@@ -1,33 +1,57 @@
-CC  = clang
+CC = clang
 LINKER = $(CC)
 
-ANSI_CFLAGS  = -ansi
-ANSI_CFLAGS += -std=c99
-ANSI_CFLAGS += -pedantic
-# ANSI_CFLAGS += -Wextra
+OPENMP   	= -fopenmp
+PROFILE  	= #-fdiagnostics-show-hotness -fprofile-generate -fdebug-info-for-profiling -funique-internal-linkage-names -g
+ANSI_CFLAGS = #-ansi -pedantic -Wextra
 
+# ARM SIMD options
 ifeq ($(strip $(ISA)),ARM)
-CFLAGS  = -Ofast $(ANSI_CFLAGS)
-ifeq ($(strip $(SIMD)),NONE)
-CFLAGS += -mcpu=native+nosimd+nosve
-endif
-ifeq ($(strip $(SIMD)),NEON)
-CFLAGS += -mcpu=native+simd+nosve
+OPTS  	 	= -Ofast
+ifeq ($(strip $(SIMD)),SVE2)
+OPTS 	   += -mcpu=native+sve2
 endif
 ifeq ($(strip $(SIMD)),SVE)
-CFLAGS += -mcpu=native+sve2
+OPTS 	   += -mcpu=native+sve+nosve2
 endif
+ifeq ($(strip $(SIMD)),NEON)
+OPTS 	   += -mcpu=native+simd+nosve
 endif
+ifeq ($(strip $(SIMD)),NONE)
+OPTS 	   += -mcpu=native+nosimd+nosve
+endif
+ASFLAGS		=
+endif
+
+# X86 SIMD options
 ifeq ($(strip $(ISA)),X86)
-CFLAGS   = -Ofast -march=native -mavx2 -mfma $(ANSI_CFLAGS) #-fopenmp -Xpreprocessor -fopenmp -g
-#CFLAGS   = -Ofast -march=core-avx2 $(ANSI_CFLAGS) #-Xpreprocessor -fopenmp -g
-#CFLAGS   = -O3 -march=cascadelake $(ANSI_CFLAGS) #-Xpreprocessor -fopenmp -g
-#CFLAGS   = -Ofast $(ANSI_CFLAGS) -g #-Xpreprocessor -fopenmp -g
-ASFLAGS  = -masm=intel
-DEFINES  += -DNO_ZMM_INTRIN
+OPTS      	= -Ofast
+ifeq ($(strip $(SIMD)),AVX512)
+OPTS       += -march=x86-64-v4 -mevex512
+else
+DEFINES    += -DNO_ZMM_INTRIN
 endif
+ifeq ($(strip $(SIMD)),AVX2)
+OPTS       += -march=x86-64-v3 -mavx2
+endif
+ifeq ($(strip $(SIMD)),AVX)
+OPTS       += -march=x86-64-v3 -mno-avx2 -mno-bmi1 -mno-bmi2 -mno-fma4
+endif
+ifeq ($(strip $(SIMD)),SSE)
+OPTS       += -march=x86-64-v2
+endif
+ifeq ($(strip $(SIMD)),NONE)
+OPTS       += -fno-vectorize -fno-slp-vectorize -fno-tree-vectorize
+endif
+ASFLAGS		= -masm=intel
+endif
+
+CFLAGS   	= $(PROFILE) $(OPENMP) $(OPTS) -std=c99 $(ANSI_CFLAGS)
+LFLAGS		= $(PROFILE) $(OPENMP) $(OPTS)
+DEFINES		= -D_GNU_SOURCE
+INCLUDES	=
+LIBS		= -lm
+
 # MacOSX with Apple Silicon and homebrew
-# INCLUDES = -I/opt/homebrew/Cellar/libomp/18.1.5/include/
-# LIBS     = -lm  -L/opt/homebrew/Cellar/libomp/18.1.5/lib/ -lomp
-LFLAGS   = -lm
-DEFINES  += -D_GNU_SOURCE
+#INCLUDES = -I/opt/homebrew/Cellar/libomp/18.1.5/include/
+#LIBS     = -lm  -L/opt/homebrew/Cellar/libomp/18.1.5/lib/ -lomp

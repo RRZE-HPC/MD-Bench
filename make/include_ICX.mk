@@ -1,33 +1,31 @@
-CC  = icx
+CC = icx
 LINKER = $(CC)
 
-OPENMP  = #-qopenmp
-PROFILE  = #-profile-functions -g  -pg
+OPENMP      = -qopenmp
+PROFILE     = #-profile-functions -g  -pg
 
-ifeq ($(SIMD),AVX512)
-OPTS      = -Ofast -xCORE-AVX512 -qopt-zmm-usage=high $(PROFILE)
-#OPTS      = -Ofast -march=cascadelake -xCORE-AVX512 -qopt-zmm-usage=high $(PROFILE)
+# SIMD options
+OPTS        = -Ofast
+ifeq ($(strip $(SIMD)),AVX512)
+OPTS        = -xCORE-AVX512 -qopt-zmm-usage=high
+endif
+ifeq ($(strip $(SIMD)),AVX2)
+OPTS       += -xCORE-AVX2
+endif
+ifeq ($(strip $(SIMD)),AVX)
+OPTS       += -xAVX
+endif
+ifeq ($(strip $(SIMD)),SSE)
+OPTS       += -xSSE4.2
+endif
+ifeq ($(strip $(SIMD)),NONE)
+OPTS        = -O1 -no-vec
 endif
 
-ifeq ($(SIMD),AVX2)
-OPTS     = -Ofast -xCORE-AVX2  $(PROFILE)
-#OPTS     = -Ofast -xHost  $(PROFILE)
-#OPTS     = -Ofast -march=core-avx2 $(PROFILE)
-endif
-
-ifeq ($(SIMD),AVX)
-OPTS     = -Ofast -xAVX  $(PROFILE)
-endif
-
-ifeq ($(SIMD),SSE)
-OPTS     = -Ofast -xSSE4.2 $(PROFILE)
-endif
-
-#OPTS     = -Ofast -no-vec $(PROFILE)
-#OPTS     = -Ofast -xHost $(PROFILE)
-CFLAGS   = $(PROFILE) $(OPENMP) $(OPTS) -std=c11 #-pedantic-errors
-ASFLAGS  = -masm=intel
-LFLAGS   = $(PROFILE) $(OPTS) $(OPENMP)
-DEFINES  += -D_GNU_SOURCE -DNO_ZMM_INTRIN
-INCLUDES =
-LIBS     = -lm
+DEFINES    += -DNO_ZMM_INTRIN
+CFLAGS      = $(PROFILE) $(OPENMP) $(OPTS) -std=c11 #-pedantic-errors
+ASFLAGS     = -masm=intel
+LFLAGS      = $(PROFILE) $(OPENMP) $(OPTS)
+DEFINES    += -D_GNU_SOURCE
+INCLUDES    =
+LIBS        = -lm

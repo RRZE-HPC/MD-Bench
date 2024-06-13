@@ -1,44 +1,54 @@
-CC  = gcc
+CC = gcc
 LINKER = $(CC)
 
-ANSI_CFLAGS  = -ansi
-ANSI_CFLAGS += -std=c99
-ANSI_CFLAGS += -pedantic
-ANSI_CFLAGS += -Wextra
+OPENMP      = -fopenmp
+PROFILE		= #-fprofile-generate -fauto-profile -g
+ANSI_CFLAGS	= #-ansi -pedantic -Wextra
 
+# ARM SIMD options
 ifeq ($(strip $(ISA)),ARM)
-CFLAGS  = -Ofast -march=native
+OPTS  		= -Ofast
+# instead of armvXY-a, we would prefer native, but GCC does not support further
+# extensions to it
+ifeq ($(strip $(SIMD)),SVE2)
+OPTS 	   += -march=armv8.5-a+sve2
+endif
+ifeq ($(strip $(SIMD)),SVE)
+OPTS	   += -march=armv8.5-a+sve
+endif
+ifeq ($(strip $(SIMD)),NEON)
+OPTS 	   += -march=armv8.5-a
+endif
+ifeq ($(strip $(SIMD)),NONE)
+OPTS       += -march=armv8.5-a+nosimd
+endif
+ASFLAGS     =
 endif
 
+# X86 SIMD options
 ifeq ($(strip $(ISA)),X86)
+OPTS  		= -Ofast -ffast-math -funroll-loops
+DEFINES    += -DNO_ZMM_INTRIN
 ifeq ($(SIMD),AVX512)
-CFLAGS   = -Ofast -mavx512f -mavx512vl -mavx512bw -mavx512dq -mavx512cd -ffast-math -funroll-loops # -fopenmp
-#CFLAGS   = -O3 -march=cascadelake  -ffast-math -funroll-loops # -fopenmp
+OPTS   	   +=  -march=x86-64-v4
+endif
+ifeq ($(strip $(SIMD)),AVX2)
+OPTS       += -march=x86-64-v3 -mavx2
+endif
+ifeq ($(strip $(SIMD)),AVX)
+OPTS       += -march=x86-64-v3 -mno-avx2 -mno-bmi1 -mno-bmi2 -mno-fma4
+endif
+ifeq ($(strip $(SIMD)),SSE)
+OPTS       += -march=x86-64-v2
+endif
+ifeq ($(strip $(SIMD)),NONE)
+OPTS       += -fno-tree-loop-vectorize -fno-tree-vectorize -fno-tree-slp-vectorize
+endif
+ASFLAGS     = -masm=intel
 endif
 
-ifeq ($(SIMD),AVX2)
-#CFLAGS   = -Ofast -march=native -mavx2  -ffast-math -funroll-loops # -fopenmp
-#CFLAGS   = -O3 -march=znver1  -ffast-math -funroll-loops # -fopenmp
-#CFLAGS   = -Ofast -mavx2 -ffast-math -funroll-loops # -fopenmp
-CFLAGS   = -Ofast -mavx2 -mfma -ffast-math -funroll-loops # -fopenmp
-endif
-
-ifeq ($(SIMD),AVX)
-CFLAGS   = -Ofast -mavx -ffast-math -funroll-loops # -fopenmp
-endif
-
-ifeq ($(SIMD),SSE)
-CFLAGS   = -Ofast -msse4.2 -ffast-math -funroll-loops # -fopenmp
-endif
-
-#CFLAGS   = -O0 -g -std=c99 -fargument-noalias
-#CFLAGS   = -Ofast -march=native -ffast-math -funroll-loops # -fopenmp
-#CFLAGS   = -O3 -march=native  -ffast-math -funroll-loops # -fopenmp
-ASFLAGS  =  -masm=intel
-DEFINES  += -DNO_ZMM_INTRIN
-endif
-
-LFLAGS   =
-DEFINES  += -D_GNU_SOURCE
-INCLUDES = $(LIKWID_INC)
-LIBS     = -lm
+CFLAGS      = $(PROFILE) $(OPENMP) $(OPTS) -std=c11 $(ANSI_CFLAGS)
+LFLAGS   	= $(PROFILE) $(OPENMP) $(OPTS)
+DEFINES    += -D_GNU_SOURCE
+INCLUDES    =
+LIBS     	= -lm

@@ -3,8 +3,8 @@ TOOLCHAIN ?= CLANG
 # ISA of instruction code (X86/ARM)
 ISA ?= X86
 # Instruction set for instrinsic kernels (NONE/<X86-SIMD>/<ARM-SIMD>)
-# with X86-SIMD options: SSE/AVX/AVX_FMA/AVX2/AVX512
-# with ARM-SIMD options: NEON/SVE (SVE not implemented yet!)
+# with X86-SIMD options: NONE/SSE/AVX/AVX_FMA/AVX2/AVX512
+# with ARM-SIMD options: NONE/NEON/SVE/SVE2 (SVE not width-agnostic yet!)
 SIMD ?= AVX2
 # Optimization scheme (verletlist/clusterpair)
 OPT_SCHEME ?= verletlist
@@ -61,6 +61,9 @@ ifeq ($(strip $(ISA)),ARM)
         __SIMD_WIDTH_DBL__=2
     else ifeq ($(strip $(SIMD)), SVE)
 		# needs further specification
+        __SIMD_WIDTH_DBL__=2
+    else ifeq ($(strip $(SIMD)), SVE2)
+        # needs further specification
         __SIMD_WIDTH_DBL__=2
     endif
 else
