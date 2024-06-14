@@ -53,10 +53,10 @@ void readEamFile(Funcfl* file, const char* filename)
     int tmp;
     readline(line, fptr);
     readline(line, fptr);
-    sscanf(line, "%d %lg", &tmp, &(file->mass));
+    sscanf(line, "%d %lf", &tmp, &(file->mass));
     readline(line, fptr);
     sscanf(line,
-        "%d %lg %d %lg %lg",
+        "%d %lf %d %lf %lf",
         &file->nrho,
         &file->drho,
         &file->nr,
