@@ -53,7 +53,7 @@ void readEamFile(Funcfl* file, const char* filename)
     int tmp;
     readline(line, fptr);
     readline(line, fptr);
-#if MD_FLOAT == double
+#if PRECISION == 2
     sscanf(line, "%d %lg", &tmp, &(file->mass));
     readline(line, fptr);
     sscanf(line,
