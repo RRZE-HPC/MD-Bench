@@ -1,7 +1,10 @@
 CC = icc
 LINKER = $(CC)
 
+ifeq ($(strip $(ENABLE_OPENMP)),true)
 OPENMP      = -qopenmp
+endif
+
 PROFILE     = #-profile-functions -g  -pg
 
 # SIMD options
