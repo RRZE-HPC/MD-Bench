@@ -53,15 +53,27 @@ void readEamFile(Funcfl* file, const char* filename)
     int tmp;
     readline(line, fptr);
     readline(line, fptr);
-    sscanf(line, "%d %lf", &tmp, &(file->mass));
+#if MD_FLOAT == double
+    sscanf(line, "%d %lg", &tmp, &(file->mass));
     readline(line, fptr);
     sscanf(line,
-        "%d %lf %d %lf %lf",
+        "%d %lg %d %lg %lg",
         &file->nrho,
         &file->drho,
         &file->nr,
         &file->dr,
         &file->cut);
+#else
+    sscanf(line, "%d %g", &tmp, &(file->mass));
+    readline(line, fptr);
+    sscanf(line,
+        "%d %g %d %g %g",
+        &file->nrho,
+        &file->drho,
+        &file->nr,
+        &file->dr,
+        &file->cut);
+#endif
 
     // printf("Read: %lf %i %lf %i %lf
     // %lf\n",file->mass,file->nrho,file->drho,file->nr,file->dr,file->cut);
