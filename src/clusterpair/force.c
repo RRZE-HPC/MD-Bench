@@ -21,7 +21,12 @@ void initForce(Parameter* param)
         computeForce = computeForceLJRef;
 #else
         if (param->half_neigh) {
+            #ifdef CUDA_TARGET
+            fprintf(stderr, "Error: CUDA_TARGET is defined. Exiting.\n");
+            exit(EXIT_FAILURE);
+            #else
             computeForce = computeForceLJ4xnHalfNeigh;
+            #endif
         } else {
 #ifdef CUDA_TARGET
             computeForce = computeForceLJCUDA;

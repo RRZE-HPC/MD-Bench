@@ -1,6 +1,6 @@
-#CONFIGURE BUILD SYSTEM
+# CONFIGURE BUILD SYSTEM
 TAG = $(OPT_TAG)-$(TOOL_TAG)-$(DATA_TYPE)
-TARGET	   = MDBench-$(TAG)
+TARGET    = MDBench-$(TAG)
 BUILD_DIR  = ./build/build-$(TAG)
 SRC_ROOT   = src
 SRC_DIR    = $(SRC_ROOT)/$(OPT_SCHEME)
@@ -8,7 +8,7 @@ COMMON_DIR = $(SRC_ROOT)/common
 MAKE_DIR   = ./make
 Q         ?= @
 
-#DO NOT EDIT BELOW
+# DO NOT EDIT BELOW
 include config.mk
 include $(MAKE_DIR)/include_$(TOOLCHAIN).mk
 include $(MAKE_DIR)/include_LIKWID.mk
@@ -16,10 +16,10 @@ INCLUDES  += -I$(CURDIR)/$(SRC_DIR) -I$(CURDIR)/$(COMMON_DIR)
 
 VPATH     = $(SRC_DIR) $(COMMON_DIR) $(CUDA_DIR)
 ASM       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.s,$(wildcard $(SRC_DIR)/*.c))
-OBJ       = $(filter-out $(BUILD_DIR)/main%, $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c)))
+OBJ       = $(filter-out $(BUILD_DIR)/main% $(BUILD_DIR)/force_lj.o $(BUILD_DIR)/force_lj.cu.o, $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c)))
 OBJ      += $(patsubst $(COMMON_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(COMMON_DIR)/*.c))
 ifeq ($(strip $(TOOLCHAIN)),NVCC)
-OBJ      += $(patsubst $(SRC_DIR)/%.cu, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.cu))
+OBJ      += $(filter-out $(BUILD_DIR)/force_lj.o $(BUILD_DIR)/force_lj.cu.o, $(patsubst $(SRC_DIR)/%.cu, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.cu)))
 endif
 SOURCES   =  $(wildcard $(SRC_DIR)/*.h $(SRC_DIR)/*.c $(COMMON_DIR)/*.c $(COMMON_DIR)/*.h)
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(OPTIONS) $(INCLUDES)
@@ -33,8 +33,8 @@ CompileFlags:
 endef
 
 ifneq ($(VARIANT),)
-	.DEFAULT_GOAL := ${TARGET}-$(VARIANT)
-    DEFINES += -DVARIANT=$(VARIANT)
+.DEFAULT_GOAL := ${TARGET}-$(VARIANT)
+DEFINES += -DVARIANT=$(VARIANT)
 endif
 
 ${TARGET}: $(BUILD_DIR) .clangd $(OBJ) $(SRC_DIR)/main.c
