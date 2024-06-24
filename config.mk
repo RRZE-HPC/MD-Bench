@@ -55,8 +55,14 @@ OPTIONS =  -DALIGNMENT=64
 ################################################################
 DEFINES =
 
+ifeq ($(strip $(TOOLCHAIN)), NVCC)
+	VECTOR_WIDTH=1
+	SIMD = NONE
+	USE_REFERENCE_VERSION = true
+endif
 ifeq ($(strip $(SIMD)), NONE)
-    VECTOR_WIDTH=1
+	VECTOR_WIDTH=1
+	USE_REFERENCE_VERSION = true
 else
 ifeq ($(strip $(ISA)),ARM)
     ifeq ($(strip $(SIMD)), NEON)
