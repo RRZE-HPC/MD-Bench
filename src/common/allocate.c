@@ -10,7 +10,7 @@
 #include <string.h>
 #include <util.h>
 
-void* allocate(int alignment, size_t bytesize)
+void* allocate(int alignment, size_t bytesize) 
 {
     void* ptr;
     int errorCode;
@@ -34,7 +34,7 @@ void* allocate(int alignment, size_t bytesize)
     return ptr;
 }
 
-void* reallocate(void* ptr, int alignment, size_t new_bytesize, size_t old_bytesize)
+void* reallocate(void* ptr, int alignment, size_t new_bytesize, size_t old_bytesize) 
 {
     void* newarray = allocate(alignment, new_bytesize);
     if (ptr != NULL) {

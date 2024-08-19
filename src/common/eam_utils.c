@@ -19,7 +19,7 @@
 #endif
 Eam eam;
 
-void initEam(Parameter* param)
+void initEam(Parameter* param) 
 {
     int ntypes = param->ntypes;
     eam.nmax   = 0;
@@ -39,7 +39,7 @@ void initEam(Parameter* param)
     array2spline(&eam, param);
 }
 
-void readEamFile(Funcfl* file, const char* filename)
+void readEamFile(Funcfl* file, const char* filename) 
 {
     FILE* fptr;
     char line[MAXLINE];
@@ -53,15 +53,15 @@ void readEamFile(Funcfl* file, const char* filename)
     int tmp;
     readline(line, fptr);
     readline(line, fptr);
-#if PRECISION == 2
+#if PRECISION == 2  
     sscanf(line, "%d %lg", &tmp, &(file->mass));
     readline(line, fptr);
-    sscanf(line,
-        "%d %lg %d %lg %lg",
-        &file->nrho,
-        &file->drho,
-        &file->nr,
-        &file->dr,
+    sscanf(line, 
+        "%d %lg %d %lg %lg", 
+        &file->nrho, 
+        &file->drho, 
+        &file->nr, 
+        &file->dr, 
         &file->cut);
 #else
     sscanf(line, "%d %g", &tmp, &(file->mass));
@@ -75,24 +75,23 @@ void readEamFile(Funcfl* file, const char* filename)
         &file->cut);
 #endif
 
-    // printf("Read: %lf %i %lf %i %lf
-    // %lf\n",file->mass,file->nrho,file->drho,file->nr,file->dr,file->cut);
+    // printf("Read: %lf %i %lf %i %lf %lf\n",file->mass,file->nrho,file->drho,file->nr,file->dr,file->cut);
     file->frho = (MD_FLOAT*)allocate(ALIGNMENT, (file->nrho + 1) * sizeof(MD_FLOAT));
     file->rhor = (MD_FLOAT*)allocate(ALIGNMENT, (file->nr + 1) * sizeof(MD_FLOAT));
     file->zr   = (MD_FLOAT*)allocate(ALIGNMENT, (file->nr + 1) * sizeof(MD_FLOAT));
     grab(fptr, file->nrho, file->frho);
     grab(fptr, file->nr, file->zr);
     grab(fptr, file->nr, file->rhor);
-    for (int i = file->nrho; i > 0; i--)
+    for (int i = file->nrho; i > 0; i--) 
         file->frho[i] = file->frho[i - 1];
-    for (int i = file->nr; i > 0; i--)
+    for (int i = file->nr; i > 0; i--) 
         file->rhor[i] = file->rhor[i - 1];
-    for (int i = file->nr; i > 0; i--)
+    for (int i = file->nr; i > 0; i--) 
         file->zr[i] = file->zr[i - 1];
     fclose(fptr);
 }
 
-void file2array(Eam* eam)
+void file2array(Eam* eam) 
 {
     int i, j, k, m, n;
     double sixth = 1.0 / 6.0;
@@ -165,8 +164,7 @@ void file2array(Eam* eam)
         cof4         = sixth * p * (p * p - 1.0);
         eam->rhor[m] = cof1 * file->rhor[k - 1] + cof2 * file->rhor[k] +
                        cof3 * file->rhor[k + 1] + cof4 * file->rhor[k + 2];
-        // if(m==119)printf("BuildRho: %e %e %e %e %e
-        // %e\n",rhor[m],cof1,cof2,cof3,cof4,file->rhor[k]);
+        // if(m==119)printf("BuildRho: %e %e %e %e %e %e\n",rhor[m],cof1,cof2,cof3,cof4,file->rhor[k]);
     }
 
     // type2rhor[i][j] = which rhor array (0 to nrhor-1) each type pair maps to
@@ -200,7 +198,7 @@ void file2array(Eam* eam)
         cof3 = -0.5 * p * (p + 1.0) * (p - 2.0);
         cof4 = sixth * p * (p * p - 1.0);
         zri  = cof1 * ifile->zr[k - 1] + cof2 * ifile->zr[k] + cof3 * ifile->zr[k + 1] +
-              cof4 * ifile->zr[k + 2];
+            cof4 * ifile->zr[k + 2];
 
         p = r / jfile->dr + 1.0;
         k = (int)(p);
@@ -212,14 +210,14 @@ void file2array(Eam* eam)
         cof2 = 0.5 * (p * p - 1.0) * (p - 2.0);
         cof3 = -0.5 * p * (p + 1.0) * (p - 2.0);
         cof4 = sixth * p * (p * p - 1.0);
-        zrj  = cof1 * jfile->zr[k - 1] + cof2 * jfile->zr[k] + cof3 * jfile->zr[k + 1] +
-              cof4 * jfile->zr[k + 2];
+        zrj  = cof1 * jfile->zr[k - 1] + cof2 * jfile->zr[k] + cof3 * jfile->zr[k + 1] + 
+            cof4 * jfile->zr[k + 2];
 
         eam->z2r[m] = 27.2 * 0.529 * zri * zrj;
     }
 }
 
-void array2spline(Eam* eam, Parameter* param)
+void array2spline(Eam* eam, Parameter* param) 
 {
     eam->rdr      = 1.0 / eam->dr;
     eam->rdrho    = 1.0 / eam->drho;
@@ -229,11 +227,11 @@ void array2spline(Eam* eam, Parameter* param)
     eam->nr_tot -= eam->nr_tot % 64;
 
     int ntypes       = param->ntypes;
-    eam->frho_spline = (MD_FLOAT*)allocate(ALIGNMENT,
+    eam->frho_spline = (MD_FLOAT*)allocate(ALIGNMENT, 
         ntypes * ntypes * eam->nrho_tot * sizeof(MD_FLOAT));
-    eam->rhor_spline = (MD_FLOAT*)allocate(ALIGNMENT,
+    eam->rhor_spline = (MD_FLOAT*)allocate(ALIGNMENT, 
         ntypes * ntypes * eam->nr_tot * sizeof(MD_FLOAT));
-    eam->z2r_spline  = (MD_FLOAT*)allocate(ALIGNMENT,
+    eam->z2r_spline  = (MD_FLOAT*)allocate(ALIGNMENT, 
         ntypes * ntypes * eam->nr_tot * sizeof(MD_FLOAT));
     interpolate(eam->nrho, eam->drho, eam->frho, eam->frho_spline);
     interpolate(eam->nr, eam->dr, eam->rhor, eam->rhor_spline);
@@ -250,9 +248,9 @@ void array2spline(Eam* eam, Parameter* param)
     }
 }
 
-void interpolate(int n, MD_FLOAT delta, MD_FLOAT* f, MD_FLOAT* spline)
+void interpolate(int n, MD_FLOAT delta, MD_FLOAT* f, MD_FLOAT* spline) 
 {
-    for (int m = 1; m <= n; m++)
+    for (int m = 1; m <= n; m++) 
         spline[m * 7 + 6] = f[m];
 
     spline[1 * 7 + 5]       = spline[2 * 7 + 6] - spline[1 * 7 + 6];
@@ -262,9 +260,7 @@ void interpolate(int n, MD_FLOAT delta, MD_FLOAT* f, MD_FLOAT* spline)
 
     for (int m = 3; m <= n - 2; m++)
         spline[m * 7 + 5] = ((spline[(m - 2) * 7 + 6] - spline[(m + 2) * 7 + 6]) +
-                                8.0 *
-                                    (spline[(m + 1) * 7 + 6] - spline[(m - 1) * 7 + 6])) /
-                            12.0;
+                            8.0 * (spline[(m + 1) * 7 + 6] - spline[(m - 1) * 7 + 6])) / 12.0;
 
     for (int m = 1; m <= n - 1; m++) {
         spline[m * 7 + 4] = 3.0 * (spline[(m + 1) * 7 + 6] - spline[m * 7 + 6]) -
@@ -283,7 +279,7 @@ void interpolate(int n, MD_FLOAT delta, MD_FLOAT* f, MD_FLOAT* spline)
     }
 }
 
-void grab(FILE* fptr, int n, MD_FLOAT* list)
+void grab(FILE* fptr, int n, MD_FLOAT* list) 
 {
     char* ptr;
     char line[MAXLINE];
@@ -293,7 +289,7 @@ void grab(FILE* fptr, int n, MD_FLOAT* list)
         readline(line, fptr);
         ptr       = strtok(line, " \t\n\r\f");
         list[i++] = atof(ptr);
-        while ((ptr = strtok(NULL, " \t\n\r\f")))
+        while ((ptr = strtok(NULL, " \t\n\r\f"))) 
             list[i++] = atof(ptr);
     }
 }

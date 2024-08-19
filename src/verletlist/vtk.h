@@ -5,8 +5,11 @@
  * license that can be found in the LICENSE file.
  */
 #include <atom.h>
+#include <comm.h>
+#include <parameter.h>
 
 #ifndef __VTK_H_
 #define __VTK_H_
 extern int write_atoms_to_vtk_file(const char* filename, Atom* atom, int timestep);
+extern void printvtk(const char* filename, Comm* comm, Atom* atom ,Parameter* param, int timestep);
 #endif

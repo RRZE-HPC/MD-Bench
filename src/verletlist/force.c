@@ -17,7 +17,7 @@ void initForce(Parameter* param)
         computeForce = computeForceEam;
         break;
     case FF_LJ:
-        if (param->half_neigh) {
+        if (param->half_neigh || param->method) {
             computeForce = computeForceLJHalfNeigh;
         } else {
 #ifdef CUDA_TARGET

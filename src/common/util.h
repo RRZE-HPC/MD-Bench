@@ -4,10 +4,11 @@
  * Use of this source code is governed by a LGPL-3.0
  * license that can be found in the LICENSE file.
  */
+
 #ifndef __UTIL_H_
 #define __UTIL_H_
-
 #include <stdio.h>
+
 #ifndef MIN
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
 #endif
@@ -31,6 +32,12 @@
 #else
 #define PRECISION_STRING "double"
 #endif
+
+enum {_x=0, _y, _z}; 
+enum {fullShell=0, halfShell, eightShell, halfStencil};
+
+#define BigOrEqual(a,b) (fabs((a)-(b)) < 1e-9 || (a)>(b))
+#define Equal(a,b) (fabs((a)-(b)) < 1e-6)
 
 extern double myrandom(int*);
 extern void random_reset(int* seed, int ibase, double* coord);

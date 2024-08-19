@@ -25,23 +25,30 @@ typedef struct {
 
     // Device data
     DeviceNeighbor d_neighbor;
+    //MPI
+    int half_stencil;
+    int Nshell;         //# of atoms in listShell
+    int *numNeighShell; //# of neighs for each atom in listShell
+    int *neighshell;    //list of neighs for each atom in listShell
+    int *listshell;     //Atoms to compute the force
+   
 } Neighbor;
 
 typedef struct {
-    MD_FLOAT xprd;
-    MD_FLOAT yprd;
+    MD_FLOAT xprd; 
+    MD_FLOAT yprd; 
     MD_FLOAT zprd;
     MD_FLOAT bininvx;
-    MD_FLOAT bininvy;
+    MD_FLOAT bininvy; 
     MD_FLOAT bininvz;
-    int mbinxlo;
-    int mbinylo;
+    int mbinxlo; 
+    int mbinylo; 
     int mbinzlo;
-    int nbinx;
-    int nbiny;
+    int nbinx; 
+    int nbiny; 
     int nbinz;
-    int mbinx;
-    int mbiny;
+    int mbinx; 
+    int mbiny; 
     int mbinz;
 } Neighbor_params;
 
@@ -51,7 +58,6 @@ typedef struct {
     int mbins;
     int atoms_per_bin;
 } Binning;
-
 typedef void (*BuildNeighborFunction)(Atom*, Neighbor*);
 extern BuildNeighborFunction buildNeighbor;
 

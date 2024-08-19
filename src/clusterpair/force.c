@@ -20,7 +20,7 @@ void initForce(Parameter* param)
 #ifdef USE_REFERENCE_VERSION
         computeForce = computeForceLJRef;
 #else
-        if (param->half_neigh) {
+        if (param->half_neigh || param->method) {
             computeForce = computeForceLJ4xnHalfNeigh;
         } else {
 #ifdef CUDA_TARGET

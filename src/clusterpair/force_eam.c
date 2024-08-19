@@ -17,7 +17,7 @@
 #include <timing.h>
 #include <util.h>
 
-double computeForceEam(Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
+double computeForceEam(Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats) 
 {
     /*
     if(eam->nmax < atom->Nmax) {
@@ -26,7 +26,7 @@ double computeForceEam(Parameter* param, Atom* atom, Neighbor* neighbor, Stats* 
         eam->fp = (MD_FLOAT *) allocate(ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT));
     }
 
-    int Nlocal = atom->Nlocal;
+        int Nlocal = atom->Nlocal;
     int* neighs;
     MD_FLOAT* fx = atom->fx; MD_FLOAT* fy = atom->fy; MD_FLOAT* fz = atom->fz; int ntypes
     = atom->ntypes; MD_FLOAT* fp = eam->fp; MD_FLOAT* rhor_spline = eam->rhor_spline;
@@ -96,8 +96,8 @@ double computeForceEam(Parameter* param, Atom* atom, Neighbor* neighbor, Stats* 
                  frho_spline[type_ii * nrho_tot + m * 7 + 1]) * p +
                  frho_spline[type_ii * nrho_tot + m * 7 + 2];
 #else
-        fp[i] = (frho_spline[m * 7 + 0] * p + frho_spline[m * 7 + 1]) * p + frho_spline[m
-* 7 + 2]; #endif
+        fp[i] = (frho_spline[m * 7 + 0] * p + frho_spline[m * 7 + 1]) * p + frho_spline[m * 7 + 2];
+#endif
     }
 
     LIKWID_MARKER_STOP("force_eam_fp");
@@ -169,10 +169,13 @@ double computeForceEam(Parameter* param, Atom* atom, Neighbor* neighbor, Stats* 
                                 z2r_spline[type_ij * nr_tot + m * 7 + 5]) * p +
                                 z2r_spline[type_ij * nr_tot + m * 7 + 6];
 #else
-                MD_FLOAT rhoip = (rhor_spline[m * 7 + 0] * p + rhor_spline[m * 7 + 1]) * p
-+ rhor_spline[m * 7 + 2]; MD_FLOAT z2p = (z2r_spline[m * 7 + 0] * p + z2r_spline[m * 7 +
-1]) * p + z2r_spline[m * 7 + 2]; MD_FLOAT z2 = ((z2r_spline[m * 7 + 3] * p + z2r_spline[m
-* 7 + 4]) * p + z2r_spline[m * 7 + 5]) * p + z2r_spline[m * 7 + 6]; #endif
+                MD_FLOAT rhoip = (rhor_spline[m * 7 + 0] * p + rhor_spline[m * 7 + 1]) * p + rhor_spline[m * 7 + 2];
+                MD_FLOAT z2p = (z2r_spline[m * 7 + 0] * p + z2r_spline[m * 7 + 1]) * p + z2r_spline[m * 7 + 2];
+                MD_FLOAT z2 = ((z2r_spline[m * 7 + 3] * p +
+                                z2r_spline[m * 7 + 4]) * p +
+                                z2r_spline[m * 7 + 5]) * p +
+                                z2r_spline[m * 7 + 6];
+#endif
 
                 MD_FLOAT recip = 1.0 / r;
                 MD_FLOAT phi = z2 * recip;

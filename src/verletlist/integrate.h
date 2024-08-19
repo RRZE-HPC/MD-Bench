@@ -13,7 +13,7 @@ typedef void (*IntegrationFunction)(bool, Parameter*, Atom*);
 extern IntegrationFunction initialIntegrate;
 extern IntegrationFunction finalIntegrate;
 
-extern void initialIntegrateCPU(bool reneigh, Parameter* param, Atom* atom);
+extern void initialIntegrateCPU(bool reneigh, Parameter* param, Atom* atom); 
 extern void finalIntegrateCPU(bool reneigh, Parameter* param, Atom* atom);
 
 #ifdef CUDA_TARGET

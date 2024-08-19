@@ -8,52 +8,43 @@
 #define LIKWID_MARKER_H
 
 /** \addtogroup MarkerAPI Marker API module
- *  @{
- */
+*  @{
+*/
 /*!
 \def LIKWID_MARKER_INIT
-Shortcut for likwid_markerInit() if compiled with -DLIKWID_PERFMON. Otherwise no operation
-is performed
+Shortcut for likwid_markerInit() if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
 */
 /*!
 \def LIKWID_MARKER_THREADINIT
-Shortcut for likwid_markerThreadInit() if compiled with -DLIKWID_PERFMON. Otherwise no
-operation is performed
+Shortcut for likwid_markerThreadInit() if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
 */
 /*!
 \def LIKWID_MARKER_REGISTER(regionTag)
-Shortcut for likwid_markerRegisterRegion() with \a regionTag if compiled with
--DLIKWID_PERFMON. Otherwise no operation is performed
+Shortcut for likwid_markerRegisterRegion() with \a regionTag if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
 */
 /*!
 \def LIKWID_MARKER_START(regionTag)
-Shortcut for likwid_markerStartRegion() with \a regionTag if compiled with
--DLIKWID_PERFMON. Otherwise no operation is performed
+Shortcut for likwid_markerStartRegion() with \a regionTag if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
 */
 /*!
 \def LIKWID_MARKER_STOP(regionTag)
-Shortcut for likwid_markerStopRegion() with \a regionTag if compiled with
--DLIKWID_PERFMON. Otherwise no operation is performed
+Shortcut for likwid_markerStopRegion() with \a regionTag if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
 */
 /*!
 \def LIKWID_MARKER_GET(regionTag, nevents, events, time, count)
-Shortcut for likwid_markerGetResults() for \a regionTag if compiled with -DLIKWID_PERFMON.
-Otherwise no operation is performed
+Shortcut for likwid_markerGetResults() for \a regionTag if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
 */
 /*!
 \def LIKWID_MARKER_SWITCH
-Shortcut for likwid_markerNextGroup() if compiled with -DLIKWID_PERFMON. Otherwise no
-operation is performed
+Shortcut for likwid_markerNextGroup() if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
 */
 /*!
 \def LIKWID_MARKER_RESET(regionTag)
-Shortcut for likwid_markerResetRegion() if compiled with -DLIKWID_PERFMON. Otherwise no
-operation is performed
+Shortcut for likwid_markerResetRegion() if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
 */
 /*!
 \def LIKWID_MARKER_CLOSE
-Shortcut for likwid_markerClose() if compiled with -DLIKWID_PERFMON. Otherwise no
-operation is performed
+Shortcut for likwid_markerClose() if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
 */
 /** @}*/
 
@@ -68,7 +59,7 @@ operation is performed
 #define LIKWID_MARKER_CLOSE               likwid_markerClose()
 #define LIKWID_MARKER_RESET(regionTag)    likwid_markerResetRegion(regionTag)
 #define LIKWID_MARKER_GET(regionTag, nevents, events, time, count)                       \
-    likwid_markerGetRegion(regionTag, nevents, events, time, count)
+        likwid_markerGetRegion(regionTag, nevents, events, time, count)
 #else /* LIKWID_PERFMON */
 #define LIKWID_MARKER_INIT
 #define LIKWID_MARKER_THREADINIT
@@ -82,52 +73,43 @@ operation is performed
 #endif /* LIKWID_PERFMON */
 
 /** \addtogroup NvMarkerAPI NvMarker API module (MarkerAPI for Nvidia GPUs)
- *  @{
- */
+*  @{
+*/
 /*!
 \def LIKWID_NVMARKER_INIT
-Shortcut for likwid_gpuMarkerInit() if compiled with -DLIKWID_PERFMON. Otherwise no
-operation is performed
+Shortcut for likwid_gpuMarkerInit() if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
 */
 /*!
 \def LIKWID_NVMARKER_THREADINIT
-Shortcut for likwid_gpuMarkerThreadInit() if compiled with -DLIKWID_PERFMON. Otherwise no
-operation is performed
+Shortcut for likwid_gpuMarkerThreadInit() if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
 */
 /*!
 \def LIKWID_NVMARKER_REGISTER(regionTag)
-Shortcut for likwid_gpuMarkerRegisterRegion() with \a regionTag if compiled with
--DLIKWID_NVMON. Otherwise no operation is performed
+Shortcut for likwid_gpuMarkerRegisterRegion() with \a regionTag if compiled with -DLIKWID_NVMON. Otherwise no operation is performed
 */
 /*!
 \def LIKWID_NVMARKER_START(regionTag)
-Shortcut for likwid_gpuMarkerStartRegion() with \a regionTag if compiled with
--DLIKWID_NVMON. Otherwise no operation is performed
+Shortcut for likwid_gpuMarkerStartRegion() with \a regionTag if compiled with -DLIKWID_NVMON. Otherwise no operation is performed
 */
 /*!
 \def LIKWID_NVMARKER_STOP(regionTag)
-Shortcut for likwid_gpuMarkerStopRegion() with \a regionTag if compiled with
--DLIKWID_NVMON. Otherwise no operation is performed
+Shortcut for likwid_gpuMarkerStopRegion() with \a regionTag if compiled with -DLIKWID_NVMON. Otherwise no operation is performed
 */
 /*!
 \def LIKWID_NVMARKER_GET(regionTag, ngpus, nevents, events, time, count)
-Shortcut for likwid_gpuMarkerGetRegion() for \a regionTag if compiled with -DLIKWID_NVMON.
-Otherwise no operation is performed
+Shortcut for likwid_gpuMarkerGetRegion() for \a regionTag if compiled with -DLIKWID_NVMON. Otherwise no operation is performed
 */
 /*!
 \def LIKWID_NVMARKER_SWITCH
-Shortcut for likwid_gpuMarkerNextGroup() if compiled with -DLIKWID_NVMON. Otherwise no
-operation is performed
+Shortcut for likwid_gpuMarkerNextGroup() if compiled with -DLIKWID_NVMON. Otherwise no operation is performed
 */
 /*!
 \def LIKWID_NVMARKER_RESET(regionTag)
-Shortcut for likwid_gpuMarkerResetRegion() if compiled with -DLIKWID_NVMON. Otherwise no
-operation is performed
+Shortcut for likwid_gpuMarkerResetRegion() if compiled with -DLIKWID_NVMON. Otherwise no operation is performed
 */
 /*!
 \def LIKWID_NVMARKER_CLOSE
-Shortcut for likwid_gpuMarkerClose() if compiled with -DLIKWID_NVMON. Otherwise no
-operation is performed
+Shortcut for likwid_gpuMarkerClose() if compiled with -DLIKWID_NVMON. Otherwise no operation is performed
 */
 /** @}*/
 

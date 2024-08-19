@@ -31,34 +31,38 @@ extern double computeForceEam(Parameter*, Atom*, Neighbor*, Stats*);
 // Simd2xNN: M=4, N=(VECTOR_WIDTH/2)
 // Cuda: M=8, N=VECTOR_WIDTH
 
+#ifndef VECTOR_WIDTH
+#define VECTOR_WIDTH 8
+#endif
+
 #ifdef CUDA_TARGET
 extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
-#undef VECTOR_WIDTH
-#define VECTOR_WIDTH 8
-#define KERNEL_NAME  "CUDA"
-#define CLUSTER_M    8
-#define CLUSTER_N    VECTOR_WIDTH
-#define UNROLL_J     1
+#   undef VECTOR_WIDTH
+#   define VECTOR_WIDTH 8
+#   define KERNEL_NAME  "CUDA"
+#   define CLUSTER_M    8
+#   define CLUSTER_N    VECTOR_WIDTH
+#   define UNROLL_J     1
 #else
-#ifdef USE_REFERENCE_VERSION
-#define KERNEL_NAME "Reference"
-#define CLUSTER_M    1
-#define CLUSTER_N    VECTOR_WIDTH
-#else
-#define CLUSTER_M 4
-// Simd2xNN (here used for single-precision)
-#if VECTOR_WIDTH > CLUSTER_M * 2
-#define KERNEL_NAME "Simd2xNN"
-#define CLUSTER_N   (VECTOR_WIDTH / 2)
-#define UNROLL_I    4
-#define UNROLL_J    2
+#   define CLUSTER_M    4 
+#   ifdef USE_REFERENCE_VERSION
+#     define KERNEL_NAME "Reference"
+#     define CLUSTER_N    VECTOR_WIDTH
+#endif 
+  // Simd2xNN (here used for single-precision)
+#   if VECTOR_WIDTH > CLUSTER_M * 2
+#       undef KERNEL_NAME
+#       define KERNEL_NAME "Simd2xNN"
+#       define CLUSTER_N   (VECTOR_WIDTH / 2)
+#       define UNROLL_I    4
+#       define UNROLL_J    2
 #else // Simd4xN
-#define KERNEL_NAME "Simd4xN"
-#define CLUSTER_N   VECTOR_WIDTH
-#define UNROLL_I    4
-#define UNROLL_J    1
-#endif
-#endif
+#     undef KERNEL_NAME
+#     define KERNEL_NAME "Simd4xN"
+#     define CLUSTER_N   VECTOR_WIDTH
+#     define UNROLL_I    4
+#     define UNROLL_J    1
+#   endif
 #endif
 
 #if CLUSTER_M >= CLUSTER_N

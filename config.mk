@@ -1,26 +1,26 @@
-# Compiler tool chain (GCC/CLANG/ICC/ICX/ONEAPI/NVCC)
-TOOLCHAIN ?= CLANG
+# Compiler tool chain (GCC/CLANG/ICC/ICX/ONEAPI/NVCC/MPIICC)
+TOOLCHAIN ?= MPIICC
 # ISA of instruction code (X86/ARM)
 ISA ?= X86
 # Instruction set for instrinsic kernels (NONE/<X86-SIMD>/<ARM-SIMD>)
 # with X86-SIMD options: NONE/SSE/AVX/AVX_FMA/AVX2/AVX512
 # with ARM-SIMD options: NONE/NEON/SVE/SVE2 (SVE not width-agnostic yet!)
-SIMD ?= AVX2
+SIMD ?= AVX512
 # Optimization scheme (verletlist/clusterpair)
 OPT_SCHEME ?= verletlist
 # Enable likwid (true or false)
 ENABLE_LIKWID ?= false
 # Enable OpenMP parallelization (true or false)
-ENABLE_OPENMP ?= true
+ENABLE_OPENMP ?= false
 # SP or DP
-DATA_TYPE ?= DP
+DATA_TYPE ?= SP
 # AOS or SOA
 DATA_LAYOUT ?= AOS
 # Debug
 DEBUG ?= false
 
 # Sort atoms when reneighboring (true or false)
-SORT_ATOMS ?= false
+SORT_ATOMS ?= true
 # Explicitly store and load atom types (true or false)
 EXPLICIT_TYPES ?= false
 # Trace memory addresses for cache simulator (true or false)
@@ -28,7 +28,7 @@ MEM_TRACER ?= false
 # Trace indexes and distances for gather-md (true or false)
 INDEX_TRACER ?= false
 # Compute statistics
-COMPUTE_STATS ?= true
+COMPUTE_STATS ?= false
 
 # Configurations for verletlist optimization scheme
 # Use omp simd pragma when running with half neighbor-lists
@@ -40,11 +40,11 @@ USE_REFERENCE_VERSION ?= false
 # Enable XTC output (a GROMACS file format for trajectories)
 XTC_OUTPUT ?= false
 # Check if cj is local when decreasing reaction force
-HALF_NEIGHBOR_LISTS_CHECK_CJ ?= true
+HALF_NEIGHBOR_LISTS_CHECK_CJ ?= false
 
 # Configurations for CUDA
 # Use CUDA pinned memory to optimize transfers
-USE_CUDA_HOST_MEMORY ?= false
+USE_CUDA_HOST_MEMORY ?= true
 
 #Feature options
 OPTIONS =  -DALIGNMENT=64
@@ -53,13 +53,14 @@ OPTIONS =  -DALIGNMENT=64
 ################################################################
 # DO NOT EDIT BELOW !!!
 ################################################################
-DEFINES =
+DEFINES = 
 
 ifeq ($(strip $(TOOLCHAIN)), NVCC)
 	VECTOR_WIDTH=1
 	SIMD = NONE
 	USE_REFERENCE_VERSION = true
 endif
+
 ifeq ($(strip $(SIMD)), NONE)
 	VECTOR_WIDTH=1
 	USE_REFERENCE_VERSION = true
@@ -98,7 +99,6 @@ else
         endif
     endif
 endif
-
 # SIMD width is specified in double-precision, hence it may
 # need to be adjusted for single-precision
 ifeq ($(strip $(DATA_TYPE)), SP)
@@ -110,6 +110,7 @@ endif
 ifeq ($(strip $(DATA_LAYOUT)),AOS)
     DEFINES +=  -DAOS
 endif
+
 ifeq ($(strip $(DATA_TYPE)),SP)
     DEFINES +=  -DPRECISION=1
 else
@@ -184,6 +185,10 @@ ifeq ($(strip $(ENABLE_OMP_SIMD)),true)
     DEFINES += -DENABLE_OMP_SIMD
 endif
 
+ifeq ($(strip $(OPT_SCHEME)),clusterpair)
+    DEFINES += -DCLUSTER_PAIR
+endif
+
 ifeq ($(strip $(OPT_SCHEME)),verletlist)
 		OPT_TAG = VL
 else ifeq ($(strip $(OPT_SCHEME)),clusterpair)
@@ -195,3 +200,4 @@ ifeq ($(strip $(SIMD)),NONE)
 else
 		TOOL_TAG = $(TOOLCHAIN)-$(ISA)-$(SIMD)
 endif
+

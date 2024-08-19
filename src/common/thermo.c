@@ -11,6 +11,7 @@
 #include <force.h>
 #include <thermo.h>
 #include <util.h>
+#include <mpi.h>
 
 static int* steparr;
 static MD_FLOAT* tmparr;
@@ -25,6 +26,7 @@ static MD_FLOAT t_act;
 static MD_FLOAT p_act;
 static MD_FLOAT e_act;
 static int mstat;
+static MPI_Datatype type = (sizeof(MD_FLOAT) == 4) ? MPI_FLOAT : MPI_DOUBLE;
 
 /* exported subroutines */
 void setupThermo(Parameter* param, int natoms)
@@ -55,62 +57,78 @@ void setupThermo(Parameter* param, int natoms)
 void computeThermo(int iflag, Parameter* param, Atom* atom)
 {
     MD_FLOAT t = 0.0, p;
+    MD_FLOAT t_sum = 0.0;
+    int me = 0; 
+    MPI_Comm_rank(MPI_COMM_WORLD, &me);
+
     for (int i = 0; i < atom->Nlocal; i++) {
-        t += (atom_vx(i) * atom_vx(i) + atom_vy(i) * atom_vy(i) +
-                 atom_vz(i) * atom_vz(i)) *
-             param->mass;
+        t += (atom_vx(i) * atom_vx(i) + atom_vy(i) * atom_vy(i) + 
+            atom_vz(i) * atom_vz(i)) * 
+            param->mass;
     }
 
-    t         = t * t_scale;
-    p         = (t * dof_boltz) * p_scale;
-    int istep = iflag;
+    MPI_Reduce(&t, &t_sum, 1, type, MPI_SUM, 0 ,MPI_COMM_WORLD);
+    
+    if(me == 0)
+    {
+        t         = t_sum * t_scale;
+        p         = (t * dof_boltz) * p_scale;
+        int istep = iflag;
 
-    if (iflag == -1) {
-        istep = param->ntimes;
-    }
-    if (iflag == 0) {
-        mstat = 0;
-    }
+        if (iflag == -1) {
+            istep = param->ntimes;
+        }
+        if (iflag == 0) {
+            mstat = 0;
+        }
 
-    steparr[mstat] = istep;
-    tmparr[mstat]  = t;
-    prsarr[mstat]  = p;
-    mstat++;
-    fprintf(stdout, "%i\t%e\t%e\n", istep, t, p);
+        steparr[mstat] = istep;
+        tmparr[mstat]  = t;
+        prsarr[mstat]  = p;
+        mstat++;
+        fprintf(stdout, "%i\t%e\t%e\n", istep, t, p);
+    }
 }
 
 void adjustThermo(Parameter* param, Atom* atom)
 {
     /* zero center-of-mass motion */
-    MD_FLOAT vxtot = 0.0;
-    MD_FLOAT vytot = 0.0;
+    MD_FLOAT vxtot = 0.0; 
+    MD_FLOAT vytot = 0.0; 
     MD_FLOAT vztot = 0.0;
-
+    MD_FLOAT v_sum[3], vtot[3];  
+    
     for (int i = 0; i < atom->Nlocal; i++) {
         vxtot += atom_vx(i);
         vytot += atom_vy(i);
         vztot += atom_vz(i);
     }
-
-    vxtot = vxtot / atom->Natoms;
-    vytot = vytot / atom->Natoms;
-    vztot = vztot / atom->Natoms;
+    
+    vtot[0] = vxtot; vtot[1] = vytot; vtot[2] = vztot;  
+    MPI_Allreduce(vtot, v_sum, 3, type, MPI_SUM, MPI_COMM_WORLD);
+    
+    vxtot = v_sum[0] / atom->Natoms;
+    vytot = v_sum[1] / atom->Natoms;
+    vztot = v_sum[2] / atom->Natoms;
 
     for (int i = 0; i < atom->Nlocal; i++) {
         atom_vx(i) -= vxtot;
         atom_vy(i) -= vytot;
         atom_vz(i) -= vztot;
     }
-
-    t_act      = 0;
+   
     MD_FLOAT t = 0.0;
+    MD_FLOAT t_sum = 0.0;
 
     for (int i = 0; i < atom->Nlocal; i++) {
-        t += (atom_vx(i) * atom_vx(i) + atom_vy(i) * atom_vy(i) +
-                 atom_vz(i) * atom_vz(i)) *
-             param->mass;
+        t += (atom_vx(i) * atom_vx(i) + atom_vy(i) * atom_vy(i) + 
+            atom_vz(i) * atom_vz(i)) * 
+            param->mass;
     }
 
+    MPI_Allreduce(&t, &t_sum, 1,type, MPI_SUM,MPI_COMM_WORLD);
+
+    t = t_sum; 
     t *= t_scale;
     MD_FLOAT factor = sqrt(param->temp / t);
 

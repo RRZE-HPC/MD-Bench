@@ -27,15 +27,15 @@ extern "C" {
 }
 
 // cuda kernel
-__global__ void calc_force(DeviceAtom a,
-    MD_FLOAT cutforcesq,
-    MD_FLOAT sigma6,
-    MD_FLOAT epsilon,
-    int Nlocal,
-    int neigh_maxneighs,
-    int* neigh_neighbors,
-    int* neigh_numneigh,
-    int ntypes)
+__global__ void calc_force(DeviceAtom a, 
+    MD_FLOAT cutforcesq, 
+    MD_FLOAT sigma6, 
+    MD_FLOAT epsilon, 
+    int Nlocal, 
+    int neigh_maxneighs, 
+    int* neigh_neighbors, 
+    int* neigh_numneigh, 
+    int ntypes) 
 {
     const int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= Nlocal) {
@@ -88,7 +88,7 @@ __global__ void calc_force(DeviceAtom a,
 }
 
 __global__ void kernel_initial_integrate(
-    MD_FLOAT dtforce, MD_FLOAT dt, int Nlocal, DeviceAtom a)
+    MD_FLOAT dtforce, MD_FLOAT dt, int Nlocal, DeviceAtom a) 
 {
     const int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= Nlocal) {
@@ -105,7 +105,7 @@ __global__ void kernel_initial_integrate(
     atom_z(i) = atom_z(i) + dt * atom_vz(i);
 }
 
-__global__ void kernel_final_integrate(MD_FLOAT dtforce, int Nlocal, DeviceAtom a)
+__global__ void kernel_final_integrate(MD_FLOAT dtforce, int Nlocal, DeviceAtom a) 
 {
     const int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= Nlocal) {
@@ -121,15 +121,15 @@ __global__ void kernel_final_integrate(MD_FLOAT dtforce, int Nlocal, DeviceAtom 
 
 extern "C" {
 
-void finalIntegrateCUDA(bool reneigh, Parameter* param, Atom* atom)
+void finalIntegrateCUDA(bool reneigh, Parameter* param, Atom* atom) 
 {
     const int Nlocal                = atom->Nlocal;
     const int num_threads_per_block = get_cuda_num_threads();
     const int num_blocks            = ceil((float)Nlocal / (float)num_threads_per_block);
 
-    kernel_final_integrate<<<num_blocks, num_threads_per_block>>>(param->dtforce,
-        Nlocal,
-        atom->d_atom);
+    kernel_final_integrate<<<num_blocks, num_threads_per_block>>>(param->dtforce, 
+                                                                Nlocal, 
+                                                                atom->d_atom);
     cuda_assert("kernel_final_integrate", cudaPeekAtLastError());
     cuda_assert("kernel_final_integrate", cudaDeviceSynchronize());
 
@@ -138,16 +138,16 @@ void finalIntegrateCUDA(bool reneigh, Parameter* param, Atom* atom)
     }
 }
 
-void initialIntegrateCUDA(bool reneigh, Parameter* param, Atom* atom)
+void initialIntegrateCUDA(bool reneigh, Parameter* param, Atom* atom) 
 {
     const int Nlocal                = atom->Nlocal;
     const int num_threads_per_block = get_cuda_num_threads();
     const int num_blocks            = ceil((float)Nlocal / (float)num_threads_per_block);
 
-    kernel_initial_integrate<<<num_blocks, num_threads_per_block>>>(param->dtforce,
-        param->dt,
-        Nlocal,
-        atom->d_atom);
+    kernel_initial_integrate<<<num_blocks, num_threads_per_block>>>(param->dtforce, 
+                                                                    param->dt, 
+                                                                    Nlocal, 
+                                                                    atom->d_atom);
     cuda_assert("kernel_initial_integrate", cudaPeekAtLastError());
     cuda_assert("kernel_initial_integrate", cudaDeviceSynchronize());
 
@@ -157,7 +157,7 @@ void initialIntegrateCUDA(bool reneigh, Parameter* param, Atom* atom)
 }
 
 double computeForceLJFullNeighCUDA(
-    Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
+    Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats) 
 {
     const int num_threads_per_block = get_cuda_num_threads();
     int Nlocal                      = atom->Nlocal;
@@ -173,8 +173,7 @@ double computeForceLJFullNeighCUDA(
         cudaMemGetInfo( &free, &total );
         cudaDeviceProp prop;
         cudaGetDeviceProperties(&prop, i);
-        printf("DEVICE %d/%d NAME: %s\r\n with %ld MB/%ld MB memory used", i + 1,
-    nDevices, prop.name, free / 1024 / 1024, total / 1024 / 1024);
+        printf("DEVICE %d/%d NAME: %s\r\n with %ld MB/%ld MB memory used", i + 1, nDevices, prop.name, free / 1024 / 1024, total / 1024 / 1024);
     }
     */
 
@@ -186,15 +185,15 @@ double computeForceLJFullNeighCUDA(
     double S             = getTimeStamp();
     LIKWID_MARKER_START("force");
 
-    calc_force<<<num_blocks, num_threads_per_block>>>(atom->d_atom,
-        cutforcesq,
-        sigma6,
-        epsilon,
-        Nlocal,
-        neighbor->maxneighs,
-        neighbor->d_neighbor.neighbors,
-        neighbor->d_neighbor.numneigh,
-        atom->ntypes);
+    calc_force<<<num_blocks, num_threads_per_block>>>(atom->d_atom, 
+                                                      cutforcesq, 
+                                                      sigma6, 
+                                                      epsilon, 
+                                                      Nlocal, 
+                                                      neighbor->maxneighs, 
+                                                      neighbor->d_neighbor.neighbors, 
+                                                      neighbor->d_neighbor.numneigh, 
+                                                      atom->ntypes);
     cuda_assert("calc_force", cudaPeekAtLastError());
     cuda_assert("calc_force", cudaDeviceSynchronize());
     cudaProfilerStop();

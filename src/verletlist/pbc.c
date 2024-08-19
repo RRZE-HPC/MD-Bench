@@ -28,18 +28,18 @@ UpdatePbcFunction updateAtomsPbc = updateAtomsPbcCPU;
 static void growPbc(Atom*);
 
 /* exported subroutines */
-void initPbc(Atom* atom)
+void initPbc(Atom* atom) 
 {
     NmaxGhost        = 0;
     atom->border_map = NULL;
-    PBCx             = NULL;
-    PBCy             = NULL;
+    PBCx             = NULL; 
+    PBCy             = NULL; 
     PBCz             = NULL;
 }
 
 /* update coordinates of ghost atoms */
 /* uses mapping created in setupPbc */
-void updatePbcCPU(Atom* atom, Parameter* param, bool doReneighbor)
+void updatePbcCPU(Atom* atom, Parameter* param, bool doReneighbor) 
 {
     int* borderMap = atom->border_map;
     int nlocal     = atom->Nlocal;
@@ -56,7 +56,7 @@ void updatePbcCPU(Atom* atom, Parameter* param, bool doReneighbor)
 
 /* relocate atoms that have left domain according
  * to periodic boundary conditions */
-void updateAtomsPbcCPU(Atom* atom, Parameter* param, bool doReneighbor)
+void updateAtomsPbcCPU(Atom* atom, Parameter* param, bool doReneighbor) 
 {
     MD_FLOAT xprd = param->xprd;
     MD_FLOAT yprd = param->yprd;
@@ -95,7 +95,7 @@ void updateAtomsPbcCPU(Atom* atom, Parameter* param, bool doReneighbor)
     PBCz[Nghost]                      = dz;                                              \
     atom->type[atom->Nlocal + Nghost] = atom->type[i]
 
-void setupPbc(Atom* atom, Parameter* param)
+void setupPbc(Atom* atom, Parameter* param) 
 {
     int* border_map   = atom->border_map;
     MD_FLOAT xprd     = param->xprd;
@@ -121,104 +121,104 @@ void setupPbc(Atom* atom, Parameter* param)
         /* Setup ghost atoms */
         /* 6 planes */
         if (param->pbc_x != 0) {
-            if (x < cutneigh) {
-                ADDGHOST(+1, 0, 0);
+            if (x < cutneigh) { 
+                ADDGHOST(+1, 0, 0); 
             }
-            if (x >= (xprd - cutneigh)) {
-                ADDGHOST(-1, 0, 0);
+            if (x >= (xprd - cutneigh)) { 
+                ADDGHOST(-1, 0, 0); 
             }
         }
 
         if (param->pbc_y != 0) {
-            if (y < cutneigh) {
-                ADDGHOST(0, +1, 0);
+            if (y < cutneigh) { 
+                ADDGHOST(0, +1, 0); 
             }
-            if (y >= (yprd - cutneigh)) {
-                ADDGHOST(0, -1, 0);
+            if (y >= (yprd - cutneigh)) { 
+                ADDGHOST(0, -1, 0); 
             }
         }
 
         if (param->pbc_z != 0) {
-            if (z < cutneigh) {
-                ADDGHOST(0, 0, +1);
+            if (z < cutneigh) { 
+                ADDGHOST(0, 0, +1); 
             }
-            if (z >= (zprd - cutneigh)) {
-                ADDGHOST(0, 0, -1);
+            if (z >= (zprd - cutneigh)) { 
+                ADDGHOST(0, 0, -1); 
             }
         }
 
         /* 8 corners */
         if (param->pbc_x != 0 && param->pbc_y != 0 && param->pbc_z != 0) {
-            if (x < cutneigh && y < cutneigh && z < cutneigh) {
-                ADDGHOST(+1, +1, +1);
+            if (x < cutneigh && y < cutneigh && z < cutneigh) { 
+                ADDGHOST(+1, +1, +1); 
             }
-            if (x < cutneigh && y >= (yprd - cutneigh) && z < cutneigh) {
-                ADDGHOST(+1, -1, +1);
+            if (x < cutneigh && y >= (yprd - cutneigh) && z < cutneigh) { 
+                ADDGHOST(+1, -1, +1); 
             }
-            if (x < cutneigh && y < cutneigh && z >= (zprd - cutneigh)) {
-                ADDGHOST(+1, +1, -1);
+            if (x < cutneigh && y < cutneigh && z >= (zprd - cutneigh)) { 
+                ADDGHOST(+1, +1, -1); 
             }
-            if (x < cutneigh && y >= (yprd - cutneigh) && z >= (zprd - cutneigh)) {
-                ADDGHOST(+1, -1, -1);
+            if (x < cutneigh && y >= (yprd - cutneigh) && z >= (zprd - cutneigh)) { 
+                ADDGHOST(+1, -1, -1); 
             }
-            if (x >= (xprd - cutneigh) && y < cutneigh && z < cutneigh) {
-                ADDGHOST(-1, +1, +1);
+            if (x >= (xprd - cutneigh) && y < cutneigh && z < cutneigh) { 
+                ADDGHOST(-1, +1, +1); 
             }
-            if (x >= (xprd - cutneigh) && y >= (yprd - cutneigh) && z < cutneigh) {
-                ADDGHOST(-1, -1, +1);
+            if (x >= (xprd - cutneigh) && y >= (yprd - cutneigh) && z < cutneigh) { 
+                ADDGHOST(-1, -1, +1); 
             }
-            if (x >= (xprd - cutneigh) && y < cutneigh && z >= (zprd - cutneigh)) {
-                ADDGHOST(-1, +1, -1);
+            if (x >= (xprd - cutneigh) && y < cutneigh && z >= (zprd - cutneigh)) { 
+                ADDGHOST(-1, +1, -1); 
             }
-            if (x >= (xprd - cutneigh) && y >= (yprd - cutneigh) &&
-                z >= (zprd - cutneigh)) {
-                ADDGHOST(-1, -1, -1);
+            if (x >= (xprd - cutneigh) && y >= (yprd - cutneigh) && 
+                z >= (zprd - cutneigh)) { 
+                ADDGHOST(-1, -1, -1); 
             }
         }
 
         /* 12 edges */
         if (param->pbc_x != 0 && param->pbc_z != 0) {
-            if (x < cutneigh && z < cutneigh) {
+            if (x < cutneigh && z < cutneigh) { 
                 ADDGHOST(+1, 0, +1);
             }
-            if (x < cutneigh && z >= (zprd - cutneigh)) {
-                ADDGHOST(+1, 0, -1);
+            if (x < cutneigh && z >= (zprd - cutneigh)) { 
+                ADDGHOST(+1, 0, -1); 
             }
-            if (x >= (xprd - cutneigh) && z < cutneigh) {
-                ADDGHOST(-1, 0, +1);
+            if (x >= (xprd - cutneigh) && z < cutneigh) { 
+                ADDGHOST(-1, 0, +1); 
             }
-            if (x >= (xprd - cutneigh) && z >= (zprd - cutneigh)) {
-                ADDGHOST(-1, 0, -1);
+            if (x >= (xprd - cutneigh) && z >= (zprd - cutneigh)) { 
+                ADDGHOST(-1, 0, -1); 
             }
         }
 
         if (param->pbc_y != 0 && param->pbc_z != 0) {
-            if (y < cutneigh && z < cutneigh) {
-                ADDGHOST(0, +1, +1);
+            if (y < cutneigh && z < cutneigh) { 
+                ADDGHOST(0, +1, +1); 
             }
-            if (y < cutneigh && z >= (zprd - cutneigh)) {
-                ADDGHOST(0, +1, -1);
+            if (y < cutneigh && z >= (zprd - cutneigh)) { 
+                ADDGHOST(0, +1, -1); 
             }
-            if (y >= (yprd - cutneigh) && z < cutneigh) {
-                ADDGHOST(0, -1, +1);
+            if (y >= (yprd - cutneigh) && z < cutneigh) { 
+                ADDGHOST(0, -1, +1); 
             }
-            if (y >= (yprd - cutneigh) && z >= (zprd - cutneigh)) {
-                ADDGHOST(0, -1, -1);
+            if (y >= (yprd - cutneigh) && z >= (zprd - cutneigh)) { 
+                ADDGHOST(0, -1, -1); 
             }
         }
 
         if (param->pbc_x != 0 && param->pbc_y != 0) {
-            if (y < cutneigh && x < cutneigh) {
-                ADDGHOST(+1, +1, 0);
+            if (y < cutneigh && x < cutneigh) { 
+                ADDGHOST(+1, +1, 0); 
             }
-            if (y < cutneigh && x >= (xprd - cutneigh)) {
-                ADDGHOST(-1, +1, 0);
+            if (y < cutneigh && x >= (xprd - cutneigh)) { 
+                ADDGHOST(-1, +1, 0); 
             }
-            if (y >= (yprd - cutneigh) && x < cutneigh) {
-                ADDGHOST(+1, -1, 0);
+            if (y >= (yprd - cutneigh) && x < cutneigh) { 
+                ADDGHOST(+1, -1, 0); 
             }
-            if (y >= (yprd - cutneigh) && x >= (xprd - cutneigh)) {
-                ADDGHOST(-1, -1, 0);
+            if (y >= (yprd - cutneigh) && x >= (xprd - cutneigh)) { 
+                ADDGHOST(-1, -1, 0); 
             }
         }
     }
@@ -227,14 +227,14 @@ void setupPbc(Atom* atom, Parameter* param)
 }
 
 /* internal subroutines */
-void growPbc(Atom* atom)
+void growPbc(Atom* atom) 
 {
     int nold = NmaxGhost;
     NmaxGhost += DELTA;
 
-    atom->border_map = (int*)reallocate(atom->border_map,
-        ALIGNMENT,
-        NmaxGhost * sizeof(int),
+    atom->border_map = (int*)reallocate(atom->border_map, 
+        ALIGNMENT, 
+        NmaxGhost * sizeof(int), 
         nold * sizeof(int));
     PBCx = (int*)reallocate(PBCx, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));
     PBCy = (int*)reallocate(PBCy, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));

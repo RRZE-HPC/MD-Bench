@@ -41,7 +41,7 @@ typedef struct {
     int ntimes;
     int nstat;
     int reneigh_every;
-    int resort_every;
+    int resort_every; 
     int prune_every;
     int x_out_every;
     int v_out_every;
@@ -58,6 +58,10 @@ typedef struct {
     MD_FLOAT xprd, yprd, zprd;
     double proc_freq;
     char* eam_file;
+    //MPI implementation
+    int balance;
+    int method;
+    int balance_every;
 } Parameter;
 
 void initParameter(Parameter*);

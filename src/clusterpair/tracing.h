@@ -27,8 +27,8 @@
     if (TRACER_CONDITION) {                                                              \
         char mem_tracer_fn[128];                                                         \
         snprintf(mem_tracer_fn, sizeof mem_tracer_fn, "mem_tracer_%d.out", timestep);    \
-        mem_tracer_fp = fopen(mem_tracer_fn, "w");
-}
+                                                mem_tracer_fp = fopen(mem_tracer_fn, "w");
+                                            }
 
 #define MEM_TRACER_END                                                                   \
     if (TRACER_CONDITION) {                                                              \

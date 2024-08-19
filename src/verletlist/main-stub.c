@@ -30,7 +30,7 @@
 #define P_FIX  1
 #define P_RAND 2
 
-void init(Parameter* param)
+void init(Parameter* param) 
 {
     param->input_file  = NULL;
     param->force_field = FF_LJ;
@@ -57,15 +57,15 @@ void init(Parameter* param)
     param->eam_file      = NULL;
 }
 
-void createNeighbors(Atom* atom, Neighbor* neighbor, int pattern, int nneighs, int nreps)
+void createNeighbors(Atom* atom, Neighbor* neighbor, int pattern, int nneighs, int nreps) 
 {
     const int maxneighs = nneighs * nreps;
     neighbor->numneigh  = (int*)malloc(atom->Nmax * sizeof(int));
     neighbor->neighbors = (int*)malloc(atom->Nmax * maxneighs * sizeof(int));
 
     if (pattern == P_RAND && atom->Nlocal <= nneighs) {
-        fprintf(stderr,
-            "Error: When using random pattern, number of atoms should be higher than "
+        fprintf(stderr, 
+            "Error: When using random pattern, number of atoms should be higher than " 
             "number of neighbors per atom!\n");
         exit(-1);
     }
@@ -104,7 +104,7 @@ void createNeighbors(Atom* atom, Neighbor* neighbor, int pattern, int nneighs, i
     }
 }
 
-int main(int argc, const char* argv[])
+int main(int argc, const char* argv[]) 
 {
     Eam eam;
     Atom atom_data;
@@ -134,12 +134,12 @@ int main(int argc, const char* argv[])
         }
         if ((strcmp(argv[i], "-p") == 0)) {
             pattern_str = strdup(argv[++i]);
-            if (strncmp(pattern_str, "seq", 3) == 0) {
-                pattern = P_SEQ;
-            } else if (strncmp(pattern_str, "fix", 3) == 0) {
-                pattern = P_FIX;
-            } else if (strncmp(pattern_str, "rand", 3) == 0) {
-                pattern = P_RAND;
+            if (strncmp(pattern_str, "seq", 3) == 0) { 
+                pattern = P_SEQ; 
+            } else if (strncmp(pattern_str, "fix", 3) == 0) { 
+                pattern = P_FIX; 
+            } else if (strncmp(pattern_str, "rand", 3) == 0) { 
+                pattern = P_RAND; 
             } else {
                 fprintf(stderr, "Invalid pattern!\n");
                 exit(-1);
@@ -178,15 +178,12 @@ int main(int argc, const char* argv[])
             printf("MD Bench: A minimalistic re-implementation of miniMD\n");
             printf(HLINE);
             printf("-f <string>:          force field (lj or eam), default lj\n");
-            printf(
-                "-p <string>:          pattern for data accesses (seq, fix or rand)\n");
+            printf("-p <string>:          pattern for data accesses (seq, fix or rand)\n");
             printf("-n / --nsteps <int>:  number of timesteps for simulation\n");
             printf("-na <int>:            number of atoms (default 256)\n");
             printf("-nn <int>:            number of neighbors per atom (default 76)\n");
-            printf("-nr <int>:            number of times neighbor lists should be "
-                   "replicated (default 1)\n");
-            printf("--freq <real>:        set CPU frequency (GHz) and display average "
-                   "cycles per atom and neighbors\n");
+            printf("-nr <int>:            number of times neighbor lists should be replicated (default 1)\n");
+            printf("--freq <real>:        set CPU frequency (GHz) and display average cycles per atom and neighbors\n");
             printf("--csv:                set output as CSV style\n");
             printf(HLINE);
             exit(EXIT_SUCCESS);
@@ -209,9 +206,9 @@ int main(int argc, const char* argv[])
     atom->ntypes  = param.ntypes;
     atom->epsilon = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
     atom->sigma6  = allocate(ALIGNMENT, atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
-    atom->cutforcesq = allocate(ALIGNMENT,
+    atom->cutforcesq = allocate(ALIGNMENT, 
         atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
-    atom->cutneighsq = allocate(ALIGNMENT,
+    atom->cutneighsq = allocate(ALIGNMENT, 
         atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
     for (int i = 0; i < atom->ntypes * atom->ntypes; i++) {
         atom->epsilon[i]    = param.epsilon;
@@ -237,10 +234,10 @@ int main(int argc, const char* argv[])
     }
 
     const double estim_atom_volume      = (double)(atom->Nlocal * 3 * sizeof(MD_FLOAT));
-    const double estim_neighbors_volume = (double)(atom->Nlocal * (nneighs + 2) *
-                                                   sizeof(int));
-    const double estim_volume           = (double)(atom->Nlocal * 6 * sizeof(MD_FLOAT) +
-                                         estim_neighbors_volume);
+    const double estim_neighbors_volume = (double)(atom->Nlocal * (nneighs + 2) * 
+                                                    sizeof(int));
+    const double estim_volume           = (double)(atom->Nlocal * 6 * sizeof(MD_FLOAT) + 
+                                            estim_neighbors_volume);
 
     if (!csv) {
         printf("Pattern: %s\n", pattern_str);
@@ -250,7 +247,7 @@ int main(int argc, const char* argv[])
         printf("Number of times to replicate neighbor lists: %d\n", nreps);
         printf("Estimated total data volume (kB): %.4f\n", estim_volume / 1000.0);
         printf("Estimated atom data volume (kB): %.4f\n", estim_atom_volume / 1000.0);
-        printf("Estimated neighborlist data volume (kB): %.4f\n",
+        printf("Estimated neighborlist data volume (kB): %.4f\n", 
             estim_neighbors_volume / 1000.0);
     }
 
@@ -278,39 +275,39 @@ int main(int argc, const char* argv[])
     }
 
     double freq_hz                     = param.proc_freq * 1.e9;
-    const double atoms_updates_per_sec = (double)(atom->Nlocal) / T_accum *
+    const double atoms_updates_per_sec = (double)(atom->Nlocal) / T_accum * 
                                          (double)(param.ntimes);
-    const double cycles_per_atom = T_accum / (double)(atom->Nlocal) /
-                                   (double)(param.ntimes) * freq_hz;
+    const double cycles_per_atom = T_accum / (double)(atom->Nlocal) / 
+                                    (double)(param.ntimes) * freq_hz;
     const double cycles_per_neigh = cycles_per_atom / (double)(nneighs);
 
     if (!csv) {
-        printf("Total time: %.4f, Mega atom updates/s: %.4f\n",
-            T_accum,
+        printf("Total time: %.4f, Mega atom updates/s: %.4f\n", 
+            T_accum, 
             atoms_updates_per_sec / 1.e6);
         if (param.proc_freq > 0.0) {
-            printf("Cycles per atom: %.4f, Cycles per neighbor: %.4f\n",
-                cycles_per_atom,
+            printf("Cycles per atom: %.4f, Cycles per neighbor: %.4f\n", 
+                cycles_per_atom, 
                 cycles_per_neigh);
         }
     } else {
-        printf("steps,pattern,natoms,nneighs,nreps,total vol.(kB),atoms vol.(kB),neigh "
-               "vol.(kB),time(s),atom upds/s(M)");
+        printf("steps,pattern,natoms,nneighs,nreps,total vol.(kB),atoms vol.(kB),neigh " 
+            "vol.(kB),time(s),atom upds/s(M)");
         if (param.proc_freq > 0.0) {
             printf(",cy/atom,cy/neigh");
         }
         printf("\n");
 
         printf("%d,%s,%d,%d,%d,%.4f,%.4f,%.4f,%.4f,%.4f",
-            param.ntimes,
-            pattern_str,
-            natoms,
-            nneighs,
+            param.ntimes, 
+            pattern_str, 
+            natoms, 
+            nneighs, 
             nreps,
-            estim_volume / 1.e3,
-            estim_atom_volume / 1.e3,
-            estim_neighbors_volume / 1.e3,
-            T_accum,
+            estim_volume / 1.e3, 
+            estim_atom_volume / 1.e3, 
+            estim_neighbors_volume / 1.e3, 
+            T_accum, 
             atoms_updates_per_sec / 1.e6);
 
         if (param.proc_freq > 0.0) {

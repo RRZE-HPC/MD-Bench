@@ -9,7 +9,7 @@
 #include <parameter.h>
 #include <tracing.h>
 
-void traceAddresses(Parameter* param, Atom* atom, Neighbor* neighbor, int timestep)
+void traceAddresses(Parameter* param, Atom* atom, Neighbor* neighbor, int timestep) 
 {
     MEM_TRACER_INIT;
     INDEX_TRACER_INIT;
@@ -25,9 +25,9 @@ void traceAddresses(Parameter* param, Atom* atom, Neighbor* neighbor, int timest
         MEM_TRACE(atom_z(i), 'R');
         INDEX_TRACE_ATOM(i);
 
-#ifdef EXPLICIT_TYPES
+        #ifdef EXPLICIT_TYPES
         MEM_TRACE(atom->type[i], 'R');
-#endif
+        #endif
 
         DIST_TRACE_SORT(neighs, numneighs);
         INDEX_TRACE(neighs, numneighs);
@@ -39,9 +39,9 @@ void traceAddresses(Parameter* param, Atom* atom, Neighbor* neighbor, int timest
             MEM_TRACE(atom_y(j), 'R');
             MEM_TRACE(atom_z(j), 'R');
 
-#ifdef EXPLICIT_TYPES
+            #ifdef EXPLICIT_TYPES
             MEM_TRACE(atom->type[j], 'R');
-#endif
+            #endif
         }
 
         MEM_TRACE(atom_fx(i), 'R');
