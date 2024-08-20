@@ -564,11 +564,13 @@ static void neighborGhost(Atom *atom, Neighbor *neighbor) {
 static inline int skipNeigh(Atom* atom, int i, int j) {     
     if(i>j && j<atom->Nlocal){
         return 1;
-    } else if(atom_x(i)+atom_y(i)+atom_z(i) 
-                    >= atom_x(j)+atom_y(j)+atom_z(j) && j>=atom->Nlocal) {
+    } else if(atom_z(i)>atom_z(j) && j>=atom->Nlocal) {
+        return 1;
+    } else if(Equal(atom_z(i),atom_z(j)) && atom_y(i)>atom_y(j) && j>=atom->Nlocal) {    
+        return 1;
+    } else if(Equal(atom_z(i),atom_z(j)) && Equal(atom_y(i),atom_y(j)) && atom_x(i)>atom_x(j) && j>=atom->Nlocal) {
         return 1;
     } else {
         return 0;
     }
-}                          
- 
+}                            
