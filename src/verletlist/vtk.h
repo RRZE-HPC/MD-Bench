@@ -10,8 +10,7 @@
 
 #ifndef __VTK_H_
 #define __VTK_H_
-extern int write_atoms_to_vtk_file(const char *filename, Atom *atom,
-                                   int timestep);
-extern void printvtk(const char *filename, Comm *comm, Atom *atom,
-                     Parameter *param, int timestep);
+extern int write_atoms_to_vtk_file(const char* filename, Atom* atom, int timestep);
+extern void printvtk(
+    const char* filename, Comm* comm, Atom* atom, Parameter* param, int timestep);
 #endif

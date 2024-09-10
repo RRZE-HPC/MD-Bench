@@ -13,10 +13,10 @@
 #include <thermo.h>
 #include <util.h>
 
-static int *steparr;
-static MD_FLOAT *tmparr;
-static MD_FLOAT *engarr;
-static MD_FLOAT *prsarr;
+static int* steparr;
+static MD_FLOAT* tmparr;
+static MD_FLOAT* engarr;
+static MD_FLOAT* prsarr;
 static MD_FLOAT mvv2e;
 static MD_FLOAT dof_boltz;
 static MD_FLOAT t_scale;
@@ -29,110 +29,113 @@ static int mstat;
 static MPI_Datatype type = (sizeof(MD_FLOAT) == 4) ? MPI_FLOAT : MPI_DOUBLE;
 
 /* exported subroutines */
-void setupThermo(Parameter *param, int natoms) {
-  int maxstat = param->ntimes / param->nstat + 2;
+void setupThermo(Parameter* param, int natoms)
+{
+    int maxstat = param->ntimes / param->nstat + 2;
 
-  steparr = (int *)malloc(maxstat * sizeof(int));
-  tmparr = (MD_FLOAT *)malloc(maxstat * sizeof(MD_FLOAT));
-  engarr = (MD_FLOAT *)malloc(maxstat * sizeof(MD_FLOAT));
-  prsarr = (MD_FLOAT *)malloc(maxstat * sizeof(MD_FLOAT));
+    steparr = (int*)malloc(maxstat * sizeof(int));
+    tmparr  = (MD_FLOAT*)malloc(maxstat * sizeof(MD_FLOAT));
+    engarr  = (MD_FLOAT*)malloc(maxstat * sizeof(MD_FLOAT));
+    prsarr  = (MD_FLOAT*)malloc(maxstat * sizeof(MD_FLOAT));
 
-  if (param->force_field == FF_LJ) {
-    mvv2e = 1.0;
-    dof_boltz = (natoms * 3 - 3);
-    t_scale = mvv2e / dof_boltz;
-    p_scale = 1.0 / 3 / param->xprd / param->yprd / param->zprd;
-    e_scale = 0.5;
-  } else if (param->force_field == FF_EAM) {
-    mvv2e = 1.036427e-04;
-    dof_boltz = (natoms * 3 - 3) * 8.617343e-05;
-    t_scale = mvv2e / dof_boltz;
-    p_scale = 1.602176e+06 / 3 / param->xprd / param->yprd / param->zprd;
-    e_scale = 524287.985533; // 16.0;
-    param->dtforce /= mvv2e;
-  }
+    if (param->force_field == FF_LJ) {
+        mvv2e     = 1.0;
+        dof_boltz = (natoms * 3 - 3);
+        t_scale   = mvv2e / dof_boltz;
+        p_scale   = 1.0 / 3 / param->xprd / param->yprd / param->zprd;
+        e_scale   = 0.5;
+    } else if (param->force_field == FF_EAM) {
+        mvv2e     = 1.036427e-04;
+        dof_boltz = (natoms * 3 - 3) * 8.617343e-05;
+        t_scale   = mvv2e / dof_boltz;
+        p_scale   = 1.602176e+06 / 3 / param->xprd / param->yprd / param->zprd;
+        e_scale   = 524287.985533; // 16.0;
+        param->dtforce /= mvv2e;
+    }
 }
 
-void computeThermo(int iflag, Parameter *param, Atom *atom) {
-  MD_FLOAT t = 0.0, p;
-  MD_FLOAT t_sum = 0.0;
-  int me = 0;
-  MPI_Comm_rank(MPI_COMM_WORLD, &me);
+void computeThermo(int iflag, Parameter* param, Atom* atom)
+{
+    MD_FLOAT t     = 0.0, p;
+    MD_FLOAT t_sum = 0.0;
+    int me         = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &me);
 
-  for (int i = 0; i < atom->Nlocal; i++) {
-    t += (atom_vx(i) * atom_vx(i) + atom_vy(i) * atom_vy(i) +
-          atom_vz(i) * atom_vz(i)) *
-         param->mass;
-  }
-
-  MPI_Reduce(&t, &t_sum, 1, type, MPI_SUM, 0, MPI_COMM_WORLD);
-
-  if (me == 0) {
-    t = t_sum * t_scale;
-    p = (t * dof_boltz) * p_scale;
-    int istep = iflag;
-
-    if (iflag == -1) {
-      istep = param->ntimes;
-    }
-    if (iflag == 0) {
-      mstat = 0;
+    for (int i = 0; i < atom->Nlocal; i++) {
+        t += (atom_vx(i) * atom_vx(i) + atom_vy(i) * atom_vy(i) +
+                 atom_vz(i) * atom_vz(i)) *
+             param->mass;
     }
 
-    steparr[mstat] = istep;
-    tmparr[mstat] = t;
-    prsarr[mstat] = p;
-    mstat++;
-    fprintf(stdout, "%i\t%e\t%e\n", istep, t, p);
-  }
+    MPI_Reduce(&t, &t_sum, 1, type, MPI_SUM, 0, MPI_COMM_WORLD);
+
+    if (me == 0) {
+        t         = t_sum * t_scale;
+        p         = (t * dof_boltz) * p_scale;
+        int istep = iflag;
+
+        if (iflag == -1) {
+            istep = param->ntimes;
+        }
+        if (iflag == 0) {
+            mstat = 0;
+        }
+
+        steparr[mstat] = istep;
+        tmparr[mstat]  = t;
+        prsarr[mstat]  = p;
+        mstat++;
+        fprintf(stdout, "%i\t%e\t%e\n", istep, t, p);
+    }
 }
 
-void adjustThermo(Parameter *param, Atom *atom) {
-  /* zero center-of-mass motion */
-  MD_FLOAT vxtot = 0.0;
-  MD_FLOAT vytot = 0.0;
-  MD_FLOAT vztot = 0.0;
-  MD_FLOAT v_sum[3], vtot[3];
+void adjustThermo(Parameter* param, Atom* atom)
+{
+    /* zero center-of-mass motion */
+    MD_FLOAT vxtot = 0.0;
+    MD_FLOAT vytot = 0.0;
+    MD_FLOAT vztot = 0.0;
+    MD_FLOAT v_sum[3], vtot[3];
 
-  for (int i = 0; i < atom->Nlocal; i++) {
-    vxtot += atom_vx(i);
-    vytot += atom_vy(i);
-    vztot += atom_vz(i);
-  }
+    for (int i = 0; i < atom->Nlocal; i++) {
+        vxtot += atom_vx(i);
+        vytot += atom_vy(i);
+        vztot += atom_vz(i);
+    }
 
-  vtot[0] = vxtot;
-  vtot[1] = vytot;
-  vtot[2] = vztot;
-  MPI_Allreduce(vtot, v_sum, 3, type, MPI_SUM, MPI_COMM_WORLD);
+    vtot[0] = vxtot;
+    vtot[1] = vytot;
+    vtot[2] = vztot;
+    MPI_Allreduce(vtot, v_sum, 3, type, MPI_SUM, MPI_COMM_WORLD);
 
-  vxtot = v_sum[0] / atom->Natoms;
-  vytot = v_sum[1] / atom->Natoms;
-  vztot = v_sum[2] / atom->Natoms;
+    vxtot = v_sum[0] / atom->Natoms;
+    vytot = v_sum[1] / atom->Natoms;
+    vztot = v_sum[2] / atom->Natoms;
 
-  for (int i = 0; i < atom->Nlocal; i++) {
-    atom_vx(i) -= vxtot;
-    atom_vy(i) -= vytot;
-    atom_vz(i) -= vztot;
-  }
+    for (int i = 0; i < atom->Nlocal; i++) {
+        atom_vx(i) -= vxtot;
+        atom_vy(i) -= vytot;
+        atom_vz(i) -= vztot;
+    }
 
-  MD_FLOAT t = 0.0;
-  MD_FLOAT t_sum = 0.0;
+    MD_FLOAT t     = 0.0;
+    MD_FLOAT t_sum = 0.0;
 
-  for (int i = 0; i < atom->Nlocal; i++) {
-    t += (atom_vx(i) * atom_vx(i) + atom_vy(i) * atom_vy(i) +
-          atom_vz(i) * atom_vz(i)) *
-         param->mass;
-  }
+    for (int i = 0; i < atom->Nlocal; i++) {
+        t += (atom_vx(i) * atom_vx(i) + atom_vy(i) * atom_vy(i) +
+                 atom_vz(i) * atom_vz(i)) *
+             param->mass;
+    }
 
-  MPI_Allreduce(&t, &t_sum, 1, type, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(&t, &t_sum, 1, type, MPI_SUM, MPI_COMM_WORLD);
 
-  t = t_sum;
-  t *= t_scale;
-  MD_FLOAT factor = sqrt(param->temp / t);
+    t = t_sum;
+    t *= t_scale;
+    MD_FLOAT factor = sqrt(param->temp / t);
 
-  for (int i = 0; i < atom->Nlocal; i++) {
-    atom_vx(i) *= factor;
-    atom_vy(i) *= factor;
-    atom_vz(i) *= factor;
-  }
+    for (int i = 0; i < atom->Nlocal; i++) {
+        atom_vx(i) *= factor;
+        atom_vy(i) *= factor;
+        atom_vz(i) *= factor;
+    }
 }

@@ -8,16 +8,16 @@
 #define __TIMERS_H_
 
 typedef enum {
-  TOTAL = 0,
-  FORCE,
-  NEIGH,
-  FORWARD,
-  REVERSE,
-  UPDATE,
-  BALANCE,
-  SETUP,
-  REST,
-  NUMTIMER
+    TOTAL = 0,
+    FORCE,
+    NEIGH,
+    FORWARD,
+    REVERSE,
+    UPDATE,
+    BALANCE,
+    SETUP,
+    REST,
+    NUMTIMER
 } timertype;
 
 #endif

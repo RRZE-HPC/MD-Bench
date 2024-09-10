@@ -13,18 +13,23 @@
 #ifndef __FORCE_H_
 #define __FORCE_H_
 
-typedef double (*ComputeForceFunction)(Parameter*, Atom*, Neighbor*, Stats*);
+typedef double (*ComputeForceFunction)(Parameter *, Atom *, Neighbor *,
+                                       Stats *);
 extern ComputeForceFunction computeForce;
 
 enum forcetype { FF_LJ = 0, FF_EAM };
 
-extern void initForce(Parameter*);
-extern double computeForceLJRef(Parameter*, Atom*, Neighbor*, Stats*);
-extern double computeForceLJ4xnHalfNeigh(Parameter*, Atom*, Neighbor*, Stats*);
-extern double computeForceLJ4xnFullNeigh(Parameter*, Atom*, Neighbor*, Stats*);
-extern double computeForceLJ2xnnHalfNeigh(Parameter*, Atom*, Neighbor*, Stats*);
-extern double computeForceLJ2xnnFullNeigh(Parameter*, Atom*, Neighbor*, Stats*);
-extern double computeForceEam(Parameter*, Atom*, Neighbor*, Stats*);
+extern void initForce(Parameter *);
+extern double computeForceLJRef(Parameter *, Atom *, Neighbor *, Stats *);
+extern double computeForceLJ4xnHalfNeigh(Parameter *, Atom *, Neighbor *,
+                                         Stats *);
+extern double computeForceLJ4xnFullNeigh(Parameter *, Atom *, Neighbor *,
+                                         Stats *);
+extern double computeForceLJ2xnnHalfNeigh(Parameter *, Atom *, Neighbor *,
+                                          Stats *);
+extern double computeForceLJ2xnnFullNeigh(Parameter *, Atom *, Neighbor *,
+                                          Stats *);
+extern double computeForceEam(Parameter *, Atom *, Neighbor *, Stats *);
 
 // Nbnxn layouts (as of GROMACS):
 // Simd4xN: M=4, N=VECTOR_WIDTH
@@ -36,33 +41,33 @@ extern double computeForceEam(Parameter*, Atom*, Neighbor*, Stats*);
 #endif
 
 #ifdef CUDA_TARGET
-extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
-#   undef VECTOR_WIDTH
-#   define VECTOR_WIDTH 8
-#   define KERNEL_NAME  "CUDA"
-#   define CLUSTER_M    8
-#   define CLUSTER_N    VECTOR_WIDTH
-#   define UNROLL_J     1
+extern double computeForceLJCUDA(Parameter *, Atom *, Neighbor *, Stats *);
+#undef VECTOR_WIDTH
+#define VECTOR_WIDTH 8
+#define KERNEL_NAME "CUDA"
+#define CLUSTER_M 8
+#define CLUSTER_N VECTOR_WIDTH
+#define UNROLL_J 1
 #else
-#   define CLUSTER_M    4 
-#   ifdef USE_REFERENCE_VERSION
-#     define KERNEL_NAME "Reference"
-#     define CLUSTER_N    VECTOR_WIDTH
-#endif 
-  // Simd2xNN (here used for single-precision)
-#   if VECTOR_WIDTH > CLUSTER_M * 2
-#       undef KERNEL_NAME
-#       define KERNEL_NAME "Simd2xNN"
-#       define CLUSTER_N   (VECTOR_WIDTH / 2)
-#       define UNROLL_I    4
-#       define UNROLL_J    2
+#define CLUSTER_M 4
+#ifdef USE_REFERENCE_VERSION
+#define KERNEL_NAME "Reference"
+#define CLUSTER_N VECTOR_WIDTH
+#endif
+// Simd2xNN (here used for single-precision)
+#if VECTOR_WIDTH > CLUSTER_M * 2
+#undef KERNEL_NAME
+#define KERNEL_NAME "Simd2xNN"
+#define CLUSTER_N (VECTOR_WIDTH / 2)
+#define UNROLL_I 4
+#define UNROLL_J 2
 #else // Simd4xN
-#     undef KERNEL_NAME
-#     define KERNEL_NAME "Simd4xN"
-#     define CLUSTER_N   VECTOR_WIDTH
-#     define UNROLL_I    4
-#     define UNROLL_J    1
-#   endif
+#undef KERNEL_NAME
+#define KERNEL_NAME "Simd4xN"
+#define CLUSTER_N VECTOR_WIDTH
+#define UNROLL_I 4
+#define UNROLL_J 1
+#endif
 #endif
 
 #if CLUSTER_M >= CLUSTER_N
@@ -76,20 +81,22 @@ extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #endif
 
 #if CLUSTER_M == CLUSTER_N
-#define CJ0_FROM_CI(a)      (a)
-#define CJ1_FROM_CI(a)      (a)
-#define CI_BASE_INDEX(a, b) ((a)*CLUSTER_N * (b))
-#define CJ_BASE_INDEX(a, b) ((a)*CLUSTER_N * (b))
+#define CJ0_FROM_CI(a) (a)
+#define CJ1_FROM_CI(a) (a)
+#define CI_BASE_INDEX(a, b) ((a) * CLUSTER_N * (b))
+#define CJ_BASE_INDEX(a, b) ((a) * CLUSTER_N * (b))
 #elif CLUSTER_M == CLUSTER_N * 2 // M > N
-#define CJ0_FROM_CI(a)      ((a) << 1)
-#define CJ1_FROM_CI(a)      (((a) << 1) | 0x1)
-#define CI_BASE_INDEX(a, b) ((a)*CLUSTER_M * (b))
-#define CJ_BASE_INDEX(a, b) (((a) >> 1) * CLUSTER_M * (b) + ((a)&0x1) * (CLUSTER_M >> 1))
+#define CJ0_FROM_CI(a) ((a) << 1)
+#define CJ1_FROM_CI(a) (((a) << 1) | 0x1)
+#define CI_BASE_INDEX(a, b) ((a) * CLUSTER_M * (b))
+#define CJ_BASE_INDEX(a, b)                                                    \
+  (((a) >> 1) * CLUSTER_M * (b) + ((a) & 0x1) * (CLUSTER_M >> 1))
 #elif CLUSTER_M == CLUSTER_N / 2 // M < N
-#define CJ0_FROM_CI(a)      ((a) >> 1)
-#define CJ1_FROM_CI(a)      ((a) >> 1)
-#define CI_BASE_INDEX(a, b) (((a) >> 1) * CLUSTER_N * (b) + ((a)&0x1) * (CLUSTER_N >> 1))
-#define CJ_BASE_INDEX(a, b) ((a)*CLUSTER_N * (b))
+#define CJ0_FROM_CI(a) ((a) >> 1)
+#define CJ1_FROM_CI(a) ((a) >> 1)
+#define CI_BASE_INDEX(a, b)                                                    \
+  (((a) >> 1) * CLUSTER_N * (b) + ((a) & 0x1) * (CLUSTER_N >> 1))
+#define CJ_BASE_INDEX(a, b) ((a) * CLUSTER_N * (b))
 #else
 #error "Invalid cluster configuration!"
 #endif

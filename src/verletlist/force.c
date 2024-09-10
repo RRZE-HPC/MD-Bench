@@ -10,24 +10,25 @@
 
 ComputeForceFunction computeForce;
 
-void initForce(Parameter *param) {
-  switch (param->force_field) {
-  case FF_EAM:
-    computeForce = computeForceEam;
-    break;
-  case FF_LJ:
-    if (param->half_neigh || param->method) {
-      computeForce = computeForceLJHalfNeigh;
-    } else {
+void initForce(Parameter* param)
+{
+    switch (param->force_field) {
+    case FF_EAM:
+        computeForce = computeForceEam;
+        break;
+    case FF_LJ:
+        if (param->half_neigh || param->method) {
+            computeForce = computeForceLJHalfNeigh;
+        } else {
 #ifdef CUDA_TARGET
-      computeForce = computeForceLJFullNeighCUDA;
+            computeForce = computeForceLJFullNeighCUDA;
 #else
-      computeForce = computeForceLJFullNeigh;
+            computeForce = computeForceLJFullNeigh;
 #endif
+        }
+        break;
+    default:
+        fprintf(stderr, "Error: Unknown force field!\n");
+        exit(EXIT_FAILURE);
     }
-    break;
-  default:
-    fprintf(stderr, "Error: Unknown force field!\n");
-    exit(EXIT_FAILURE);
-  }
 }
