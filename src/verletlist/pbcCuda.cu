@@ -4,8 +4,8 @@
  * Use of this source code is governed by a LGPL-3.0
  * license that can be found in the LICENSE file.
  */
- #include <stdio.h>
- #include <stdlib.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 extern "C" {
 #include <allocate.h>
@@ -20,8 +20,8 @@ static int c_NmaxGhost = 0;
 static int *c_PBCx = NULL, *c_PBCy = NULL, *c_PBCz = NULL;
 
 __global__ void computeAtomsPbcUpdate(
-        DeviceAtom a, int nlocal, MD_FLOAT xprd, MD_FLOAT yprd, MD_FLOAT zprd) 
-    {
+    DeviceAtom a, int nlocal, MD_FLOAT xprd, MD_FLOAT yprd, MD_FLOAT zprd)
+{
     const int i      = blockIdx.x * blockDim.x + threadIdx.x;
     DeviceAtom* atom = &a;
     if (i >= nlocal) {
@@ -47,14 +47,14 @@ __global__ void computeAtomsPbcUpdate(
     }
 }
 
-__global__ void computePbcUpdate(DeviceAtom a, 
-    int nlocal, 
-    int nghost, 
-    int* PBCx, 
-    int* PBCy, 
-    int* PBCz, 
-    MD_FLOAT xprd, 
-    MD_FLOAT yprd, 
+__global__ void computePbcUpdate(DeviceAtom a,
+    int nlocal,
+    int nghost,
+    int* PBCx,
+    int* PBCy,
+    int* PBCz,
+    MD_FLOAT xprd,
+    MD_FLOAT yprd,
     MD_FLOAT zprd)
 {
     const int i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -71,7 +71,7 @@ __global__ void computePbcUpdate(DeviceAtom a,
 
 /* update coordinates of ghost atoms */
 /* uses mapping created in setupPbc */
-void updatePbcCUDA(Atom* atom, Parameter* param, bool reneigh) 
+void updatePbcCUDA(Atom* atom, Parameter* param, bool reneigh)
 {
     const int num_threads_per_block = get_cuda_num_threads();
 
@@ -84,7 +84,7 @@ void updatePbcCUDA(Atom* atom, Parameter* param, bool reneigh)
             c_PBCx      = (int*)reallocateGPU(c_PBCx, NmaxGhost * sizeof(int));
             c_PBCy      = (int*)reallocateGPU(c_PBCy, NmaxGhost * sizeof(int));
             c_PBCz      = (int*)reallocateGPU(c_PBCz, NmaxGhost * sizeof(int));
-            atom->d_atom.border_map = (int*)reallocateGPU(atom->d_atom.border_map, 
+            atom->d_atom.border_map = (int*)reallocateGPU(atom->d_atom.border_map,
                 NmaxGhost * sizeof(int));
         }
 
@@ -101,20 +101,20 @@ void updatePbcCUDA(Atom* atom, Parameter* param, bool reneigh)
     MD_FLOAT zprd = param->zprd;
 
     const int num_blocks = ceil((float)atom->Nghost / (float)num_threads_per_block);
-    computePbcUpdate<<<num_blocks, num_threads_per_block>>>(atom->d_atom, 
-        atom->Nlocal, 
-        atom->Nghost, 
-        c_PBCx, 
-        c_PBCy, 
-        c_PBCz, 
-        xprd, 
-        yprd, 
+    computePbcUpdate<<<num_blocks, num_threads_per_block>>>(atom->d_atom,
+        atom->Nlocal,
+        atom->Nghost,
+        c_PBCx,
+        c_PBCy,
+        c_PBCz,
+        xprd,
+        yprd,
         zprd);
     cuda_assert("updatePbc", cudaPeekAtLastError());
     cuda_assert("updatePbc", cudaDeviceSynchronize());
 }
 
-void updateAtomsPbcCUDA(Atom* atom, Parameter* param, bool reneigh) 
+void updateAtomsPbcCUDA(Atom* atom, Parameter* param, bool reneigh)
 {
     const int num_threads_per_block = get_cuda_num_threads();
     MD_FLOAT xprd                   = param->xprd;
@@ -122,10 +122,10 @@ void updateAtomsPbcCUDA(Atom* atom, Parameter* param, bool reneigh)
     MD_FLOAT zprd                   = param->zprd;
 
     const int num_blocks = ceil((float)atom->Nlocal / (float)num_threads_per_block);
-    computeAtomsPbcUpdate<<<num_blocks, num_threads_per_block>>>(atom->d_atom, 
-        atom->Nlocal, 
-        xprd, 
-        yprd, 
+    computeAtomsPbcUpdate<<<num_blocks, num_threads_per_block>>>(atom->d_atom,
+        atom->Nlocal,
+        xprd,
+        yprd,
         zprd);
     cuda_assert("computeAtomsPbcUpdate", cudaPeekAtLastError());
     cuda_assert("computeAtomsPbcUpdate", cudaDeviceSynchronize());
