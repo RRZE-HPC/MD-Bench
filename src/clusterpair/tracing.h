@@ -27,8 +27,8 @@
     if (TRACER_CONDITION) {                                                              \
         char mem_tracer_fn[128];                                                         \
         snprintf(mem_tracer_fn, sizeof mem_tracer_fn, "mem_tracer_%d.out", timestep);    \
-                                                mem_tracer_fp = fopen(mem_tracer_fn, "w");
-                                            }
+        mem_tracer_fp = fopen(mem_tracer_fn, "w");
+}
 
 #define MEM_TRACER_END                                                                   \
     if (TRACER_CONDITION) {                                                              \
@@ -71,7 +71,7 @@
 #define INDEX_TRACE(l, e)                                                                \
     if (TRACER_CONDITION) {                                                              \
         for (int __i = 0; __i < (e); __i += VECTOR_WIDTH) {                              \
-            int __e = (((e)-__i) < VECTOR_WIDTH) ? ((e)-__i) : VECTOR_WIDTH;             \
+            int __e = (((e) - __i) < VECTOR_WIDTH) ? ((e) - __i) : VECTOR_WIDTH;         \
             fprintf(index_tracer_fp, "I: ");                                             \
             for (int __j = 0; __j < __e; ++__j) {                                        \
                 fprintf(index_tracer_fp, "%d ", l[__i + __j]);                           \
@@ -83,7 +83,7 @@
 #define DIST_TRACE_SORT(l, e)                                                            \
     if (TRACER_CONDITION) {                                                              \
         for (int __i = 0; __i < (e); __i += VECTOR_WIDTH) {                              \
-            int __e = (((e)-__i) < VECTOR_WIDTH) ? ((e)-__i) : VECTOR_WIDTH;             \
+            int __e = (((e) - __i) < VECTOR_WIDTH) ? ((e) - __i) : VECTOR_WIDTH;         \
             if (__e > 1) {                                                               \
                 for (int __j = __i; __j < __i + __e - 1; ++__j) {                        \
                     for (int __k = __i; __k < __i + __e - (__j - __i) - 1; ++__k) {      \
@@ -101,7 +101,7 @@
 #define DIST_TRACE(l, e)                                                                 \
     if (TRACER_CONDITION) {                                                              \
         for (int __i = 0; __i < (e); __i += VECTOR_WIDTH) {                              \
-            int __e = (((e)-__i) < VECTOR_WIDTH) ? ((e)-__i) : VECTOR_WIDTH;             \
+            int __e = (((e) - __i) < VECTOR_WIDTH) ? ((e) - __i) : VECTOR_WIDTH;         \
             if (__e > 1) {                                                               \
                 fprintf(index_tracer_fp, "D: ");                                         \
                 for (int __j = 0; __j < __e - 1; ++__j) {                                \

@@ -17,7 +17,7 @@ static struct t_fileio* xtc_file = NULL;
 static rvec* x_buf               = NULL;
 static rvec basis[3];
 
-void xtc_init(const char* filename, Atom* atom, int timestep) 
+void xtc_init(const char* filename, Atom* atom, int timestep)
 {
     basis[0][XX] = 1.0;
     basis[0][YY] = 0.0;
@@ -34,7 +34,7 @@ void xtc_init(const char* filename, Atom* atom, int timestep)
     xtc_write(atom, timestep, 1, 1);
 }
 
-void xtc_write(Atom* atom, int timestep, int write_pos, int write_vel) 
+void xtc_write(Atom* atom, int timestep, int write_pos, int write_vel)
 {
     int i = 0;
     for (int ci = 0; ci < atom->Nclusters_local; ++ci) {
@@ -48,16 +48,16 @@ void xtc_write(Atom* atom, int timestep, int write_pos, int write_vel)
         }
     }
 
-    write_xtc(xtc_file, 
-              atom->Nlocal, 
-              timestep, 
-              0.0, 
-              (const rvec*)basis, 
-              (const rvec*)x_buf, 
-              1000);
+    write_xtc(xtc_file,
+        atom->Nlocal,
+        timestep,
+        0.0,
+        (const rvec*)basis,
+        (const rvec*)x_buf,
+        1000);
 }
 
-void xtc_end() 
+void xtc_end()
 {
     free(x_buf);
     close_xtc(xtc_file);

@@ -31,18 +31,18 @@ UpdatePbcFunction updateAtomsPbc = updateAtomsPbcCPU;
 static void growPbc(Atom*);
 
 /* exported subroutines */
-void initPbc(Atom* atom) 
+void initPbc(Atom* atom)
 {
     NmaxGhost        = 0;
     atom->border_map = NULL;
-    atom->PBCx       = NULL; 
-    atom->PBCy       = NULL; 
+    atom->PBCx       = NULL;
+    atom->PBCy       = NULL;
     atom->PBCz       = NULL;
 }
 
 /* update coordinates of ghost atoms */
 /* uses mapping created in setupPbc */
-void updatePbcCPU(Atom* atom, Parameter* param, bool firstUpdate) 
+void updatePbcCPU(Atom* atom, Parameter* param, bool firstUpdate)
 {
     DEBUG_MESSAGE("updatePbc start\n");
     int jfac      = MAX(1, CLUSTER_N / CLUSTER_M);
@@ -72,23 +72,23 @@ void updatePbcCPU(Atom* atom, Parameter* param, bool firstUpdate)
 
             if (firstUpdate) {
                 // TODO: To create the bounding boxes faster, we can use SIMD operations
-                if (bbminx > xtmp) { 
-                    bbminx = xtmp; 
+                if (bbminx > xtmp) {
+                    bbminx = xtmp;
                 }
-                if (bbmaxx < xtmp) { 
-                    bbmaxx = xtmp; 
+                if (bbmaxx < xtmp) {
+                    bbmaxx = xtmp;
                 }
-                if (bbminy > ytmp) { 
-                    bbminy = ytmp; 
+                if (bbminy > ytmp) {
+                    bbminy = ytmp;
                 }
-                if (bbmaxy < ytmp) { 
-                    bbmaxy = ytmp; 
+                if (bbmaxy < ytmp) {
+                    bbmaxy = ytmp;
                 }
-                if (bbminz > ztmp) { 
-                    bbminz = ztmp; 
+                if (bbminz > ztmp) {
+                    bbminz = ztmp;
                 }
-                if (bbmaxz < ztmp) { 
-                    bbmaxz = ztmp; 
+                if (bbmaxz < ztmp) {
+                    bbmaxz = ztmp;
                 }
             }
         }
@@ -114,7 +114,7 @@ void updatePbcCPU(Atom* atom, Parameter* param, bool firstUpdate)
 
 /* relocate atoms that have left domain according
  * to periodic boundary conditions */
-void updateAtomsPbcCPU(Atom* atom, Parameter* param, bool dummy) 
+void updateAtomsPbcCPU(Atom* atom, Parameter* param, bool dummy)
 {
     MD_FLOAT xprd = param->xprd;
     MD_FLOAT yprd = param->yprd;
@@ -145,7 +145,8 @@ void updateAtomsPbcCPU(Atom* atom, Parameter* param, bool dummy)
  * defining ghost atoms around domain
  * only creates mapping and coordinate corrections
  * that are then enforced in updatePbc */
-#define ADDGHOST(dx,dy,dz);                                                              \
+#define ADDGHOST(dx, dy, dz)                                                             \
+    ;                                                                                    \
     Nghost++;                                                                            \
     const int cg               = ncj + Nghost;                                           \
     const int cj_natoms        = atom->jclusters[cj].natoms;                             \
@@ -162,21 +163,24 @@ void updateAtomsPbcCPU(Atom* atom, Parameter* param, bool dummy)
     }
 
 /* internal subroutines */
-void growPbc(Atom* atom) 
+void growPbc(Atom* atom)
 {
     int nold = NmaxGhost;
     NmaxGhost += DELTA;
 
-    atom->border_map = (int*)reallocate(atom->border_map, 
-                                        ALIGNMENT, 
-                                        NmaxGhost * sizeof(int), 
-                                        nold * sizeof(int));
-    atom->PBCx  = (int*)reallocate(atom->PBCx, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));
-    atom->PBCy = (int*)reallocate(atom->PBCy, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));
-    atom->PBCz = (int*)reallocate(atom->PBCz, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));
+    atom->border_map = (int*)reallocate(atom->border_map,
+        ALIGNMENT,
+        NmaxGhost * sizeof(int),
+        nold * sizeof(int));
+    atom->PBCx       = (int*)
+        reallocate(atom->PBCx, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));
+    atom->PBCy = (int*)
+        reallocate(atom->PBCy, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));
+    atom->PBCz = (int*)
+        reallocate(atom->PBCz, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));
 }
 
-void setupPbc(Atom* atom, Parameter* param) 
+void setupPbc(Atom* atom, Parameter* param)
 {
     DEBUG_MESSAGE("setupPbc start\n");
     MD_FLOAT xprd     = param->xprd;
@@ -207,89 +211,89 @@ void setupPbc(Atom* atom, Parameter* param)
 
             /* Setup ghost atoms */
             /* 6 planes */
-            if (bbminx < cutNeigh) { 
-                ADDGHOST(+1, 0, 0); 
+            if (bbminx < cutNeigh) {
+                ADDGHOST(+1, 0, 0);
             }
-            if (bbmaxx >= (xprd - cutNeigh)) { 
-                ADDGHOST(-1, 0, 0); 
+            if (bbmaxx >= (xprd - cutNeigh)) {
+                ADDGHOST(-1, 0, 0);
             }
-            if (bbminy < cutNeigh) { 
-                ADDGHOST(0, +1, 0); 
+            if (bbminy < cutNeigh) {
+                ADDGHOST(0, +1, 0);
             }
-            if (bbmaxy >= (yprd - cutNeigh)) { 
-                ADDGHOST(0, -1, 0); 
+            if (bbmaxy >= (yprd - cutNeigh)) {
+                ADDGHOST(0, -1, 0);
             }
-            if (bbminz < cutNeigh) { 
-                ADDGHOST(0, 0, +1); 
+            if (bbminz < cutNeigh) {
+                ADDGHOST(0, 0, +1);
             }
-            if (bbmaxz >= (zprd - cutNeigh)) { 
-                ADDGHOST(0, 0, -1); 
+            if (bbmaxz >= (zprd - cutNeigh)) {
+                ADDGHOST(0, 0, -1);
             }
             /* 8 corners */
-            if (bbminx < cutNeigh && bbminy < cutNeigh && bbminz < cutNeigh) { 
-                ADDGHOST(+1, +1, +1); 
+            if (bbminx < cutNeigh && bbminy < cutNeigh && bbminz < cutNeigh) {
+                ADDGHOST(+1, +1, +1);
             }
-            if (bbminx < cutNeigh && bbmaxy >= (yprd - cutNeigh) && bbminz < cutNeigh) { 
-                ADDGHOST(+1, -1, +1); 
+            if (bbminx < cutNeigh && bbmaxy >= (yprd - cutNeigh) && bbminz < cutNeigh) {
+                ADDGHOST(+1, -1, +1);
             }
-            if (bbminx < cutNeigh && bbminy < cutNeigh && bbmaxz >= (zprd - cutNeigh)) { 
-                ADDGHOST(+1, +1, -1); 
+            if (bbminx < cutNeigh && bbminy < cutNeigh && bbmaxz >= (zprd - cutNeigh)) {
+                ADDGHOST(+1, +1, -1);
             }
-            if (bbminx < cutNeigh && bbmaxy >= (yprd - cutNeigh) && 
-                bbmaxz >= (zprd - cutNeigh)) { 
-                ADDGHOST(+1, -1, -1); 
+            if (bbminx < cutNeigh && bbmaxy >= (yprd - cutNeigh) &&
+                bbmaxz >= (zprd - cutNeigh)) {
+                ADDGHOST(+1, -1, -1);
             }
-            if (bbmaxx >= (xprd - cutNeigh) && bbminy < cutNeigh && bbminz < cutNeigh) { 
-                ADDGHOST(-1, +1, +1); 
+            if (bbmaxx >= (xprd - cutNeigh) && bbminy < cutNeigh && bbminz < cutNeigh) {
+                ADDGHOST(-1, +1, +1);
             }
             if (bbmaxx >= (xprd - cutNeigh) && bbmaxy >= (yprd - cutNeigh) &&
-                 bbminz < cutNeigh) { 
-                    ADDGHOST(-1, -1, +1); 
-                }
-            if (bbmaxx >= (xprd - cutNeigh) && bbminy < cutNeigh && 
-                bbmaxz >= (zprd - cutNeigh)) { 
-                    ADDGHOST(-1, +1, -1); 
-                }
-            if (bbmaxx >= (xprd - cutNeigh) && bbmaxy >= (yprd - cutNeigh) && 
-                bbmaxz >= (zprd - cutNeigh)) { 
-                    ADDGHOST(-1, -1, -1); 
-                }
+                bbminz < cutNeigh) {
+                ADDGHOST(-1, -1, +1);
+            }
+            if (bbmaxx >= (xprd - cutNeigh) && bbminy < cutNeigh &&
+                bbmaxz >= (zprd - cutNeigh)) {
+                ADDGHOST(-1, +1, -1);
+            }
+            if (bbmaxx >= (xprd - cutNeigh) && bbmaxy >= (yprd - cutNeigh) &&
+                bbmaxz >= (zprd - cutNeigh)) {
+                ADDGHOST(-1, -1, -1);
+            }
             /* 12 edges */
-            if (bbminx < cutNeigh && bbminz < cutNeigh) { 
-                ADDGHOST(+1, 0, +1); 
+            if (bbminx < cutNeigh && bbminz < cutNeigh) {
+                ADDGHOST(+1, 0, +1);
             }
-            if (bbminx < cutNeigh && bbmaxz >= (zprd - cutNeigh)) { 
-                ADDGHOST(+1, 0, -1); 
+            if (bbminx < cutNeigh && bbmaxz >= (zprd - cutNeigh)) {
+                ADDGHOST(+1, 0, -1);
             }
-            if (bbmaxx >= (xprd - cutNeigh) && bbminz < cutNeigh) { 
-                ADDGHOST(-1, 0, +1); 
+            if (bbmaxx >= (xprd - cutNeigh) && bbminz < cutNeigh) {
+                ADDGHOST(-1, 0, +1);
             }
-            if (bbmaxx >= (xprd - cutNeigh) && bbmaxz >= (zprd - cutNeigh)) { 
-                ADDGHOST(-1, 0, -1); 
+            if (bbmaxx >= (xprd - cutNeigh) && bbmaxz >= (zprd - cutNeigh)) {
+                ADDGHOST(-1, 0, -1);
             }
-            if (bbminy < cutNeigh && bbminz < cutNeigh) { 
-                ADDGHOST(0, +1, +1); 
+            if (bbminy < cutNeigh && bbminz < cutNeigh) {
+                ADDGHOST(0, +1, +1);
             }
-            if (bbminy < cutNeigh && bbmaxz >= (zprd - cutNeigh)) { 
-                ADDGHOST(0, +1, -1); 
+            if (bbminy < cutNeigh && bbmaxz >= (zprd - cutNeigh)) {
+                ADDGHOST(0, +1, -1);
             }
-            if (bbmaxy >= (yprd - cutNeigh) && bbminz < cutNeigh) { 
+            if (bbmaxy >= (yprd - cutNeigh) && bbminz < cutNeigh) {
                 ADDGHOST(0, -1, +1);
             }
-            if (bbmaxy >= (yprd - cutNeigh) && bbmaxz >= (zprd - cutNeigh)) { 
-                ADDGHOST(0, -1, -1); 
+            if (bbmaxy >= (yprd - cutNeigh) && bbmaxz >= (zprd - cutNeigh)) {
+                ADDGHOST(0, -1, -1);
             }
-            if (bbminy < cutNeigh && bbminx < cutNeigh) { 
+            if (bbminy < cutNeigh && bbminx < cutNeigh) {
                 ADDGHOST(+1, +1, 0);
             }
-            if (bbminy < cutNeigh && bbmaxx >= (xprd - cutNeigh)) { 
-                ADDGHOST(-1, +1, 0); 
+            if (bbminy < cutNeigh && bbmaxx >= (xprd - cutNeigh)) {
+                ADDGHOST(-1, +1, 0);
             }
-            if (bbmaxy >= (yprd - cutNeigh) && bbminx < cutNeigh) { 
-                ADDGHOST(+1, -1, 0); 
+            if (bbmaxy >= (yprd - cutNeigh) && bbminx < cutNeigh) {
+                ADDGHOST(+1, -1, 0);
             }
-            if (bbmaxy >= (yprd - cutNeigh) && bbmaxx >= (xprd - cutNeigh)) { 
-                ADDGHOST(-1, -1, 0); 
+            if (bbmaxy >= (yprd - cutNeigh) && bbmaxx >= (xprd - cutNeigh)) {
+                ADDGHOST(-1, -1, 0);
             }
         }
     }
