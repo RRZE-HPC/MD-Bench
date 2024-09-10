@@ -9,7 +9,7 @@
 
 #ifndef __THERMO_H_
 #define __THERMO_H_
-extern void setupThermo(Parameter*, int);
-extern void computeThermo(int, Parameter*, Atom*);
-extern void adjustThermo(Parameter*, Atom*);
+extern void setupThermo(Parameter *, int);
+extern void computeThermo(int, Parameter *, Atom *);
+extern void adjustThermo(Parameter *, Atom *);
 #endif

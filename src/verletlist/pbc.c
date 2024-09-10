@@ -18,225 +18,221 @@ int NmaxGhost;
 int *PBCx, *PBCy, *PBCz;
 
 #ifdef CUDA_TARGET
-UpdatePbcFunction updatePbc      = updatePbcCUDA;
+UpdatePbcFunction updatePbc = updatePbcCUDA;
 UpdatePbcFunction updateAtomsPbc = updateAtomsPbcCUDA;
 #else
-UpdatePbcFunction updatePbc      = updatePbcCPU;
+UpdatePbcFunction updatePbc = updatePbcCPU;
 UpdatePbcFunction updateAtomsPbc = updateAtomsPbcCPU;
 #endif
 
-static void growPbc(Atom*);
+static void growPbc(Atom *);
 
 /* exported subroutines */
-void initPbc(Atom* atom) 
-{
-    NmaxGhost        = 0;
-    atom->border_map = NULL;
-    PBCx             = NULL; 
-    PBCy             = NULL; 
-    PBCz             = NULL;
+void initPbc(Atom *atom) {
+  NmaxGhost = 0;
+  atom->border_map = NULL;
+  PBCx = NULL;
+  PBCy = NULL;
+  PBCz = NULL;
 }
 
 /* update coordinates of ghost atoms */
 /* uses mapping created in setupPbc */
-void updatePbcCPU(Atom* atom, Parameter* param, bool doReneighbor) 
-{
-    int* borderMap = atom->border_map;
-    int nlocal     = atom->Nlocal;
-    MD_FLOAT xprd  = param->xprd;
-    MD_FLOAT yprd  = param->yprd;
-    MD_FLOAT zprd  = param->zprd;
+void updatePbcCPU(Atom *atom, Parameter *param, bool doReneighbor) {
+  int *borderMap = atom->border_map;
+  int nlocal = atom->Nlocal;
+  MD_FLOAT xprd = param->xprd;
+  MD_FLOAT yprd = param->yprd;
+  MD_FLOAT zprd = param->zprd;
 
-    for (int i = 0; i < atom->Nghost; i++) {
-        atom_x(nlocal + i) = atom_x(borderMap[i]) + PBCx[i] * xprd;
-        atom_y(nlocal + i) = atom_y(borderMap[i]) + PBCy[i] * yprd;
-        atom_z(nlocal + i) = atom_z(borderMap[i]) + PBCz[i] * zprd;
-    }
+  for (int i = 0; i < atom->Nghost; i++) {
+    atom_x(nlocal + i) = atom_x(borderMap[i]) + PBCx[i] * xprd;
+    atom_y(nlocal + i) = atom_y(borderMap[i]) + PBCy[i] * yprd;
+    atom_z(nlocal + i) = atom_z(borderMap[i]) + PBCz[i] * zprd;
+  }
 }
 
 /* relocate atoms that have left domain according
  * to periodic boundary conditions */
-void updateAtomsPbcCPU(Atom* atom, Parameter* param, bool doReneighbor) 
-{
-    MD_FLOAT xprd = param->xprd;
-    MD_FLOAT yprd = param->yprd;
-    MD_FLOAT zprd = param->zprd;
+void updateAtomsPbcCPU(Atom *atom, Parameter *param, bool doReneighbor) {
+  MD_FLOAT xprd = param->xprd;
+  MD_FLOAT yprd = param->yprd;
+  MD_FLOAT zprd = param->zprd;
 
-    for (int i = 0; i < atom->Nlocal; i++) {
-        if (atom_x(i) < 0.0) {
-            atom_x(i) += xprd;
-        } else if (atom_x(i) >= xprd) {
-            atom_x(i) -= xprd;
-        }
-
-        if (atom_y(i) < 0.0) {
-            atom_y(i) += yprd;
-        } else if (atom_y(i) >= yprd) {
-            atom_y(i) -= yprd;
-        }
-
-        if (atom_z(i) < 0.0) {
-            atom_z(i) += zprd;
-        } else if (atom_z(i) >= zprd) {
-            atom_z(i) -= zprd;
-        }
+  for (int i = 0; i < atom->Nlocal; i++) {
+    if (atom_x(i) < 0.0) {
+      atom_x(i) += xprd;
+    } else if (atom_x(i) >= xprd) {
+      atom_x(i) -= xprd;
     }
+
+    if (atom_y(i) < 0.0) {
+      atom_y(i) += yprd;
+    } else if (atom_y(i) >= yprd) {
+      atom_y(i) -= yprd;
+    }
+
+    if (atom_z(i) < 0.0) {
+      atom_z(i) += zprd;
+    } else if (atom_z(i) >= zprd) {
+      atom_z(i) -= zprd;
+    }
+  }
 }
 
 /* setup periodic boundary conditions by
  * defining ghost atoms around domain
  * only creates mapping and coordinate corrections
  * that are then enforced in updatePbc */
-#define ADDGHOST(dx, dy, dz)                                                             \
-    Nghost++;                                                                            \
-    border_map[Nghost]                = i;                                               \
-    PBCx[Nghost]                      = dx;                                              \
-    PBCy[Nghost]                      = dy;                                              \
-    PBCz[Nghost]                      = dz;                                              \
-    atom->type[atom->Nlocal + Nghost] = atom->type[i]
+#define ADDGHOST(dx, dy, dz)                                                   \
+  Nghost++;                                                                    \
+  border_map[Nghost] = i;                                                      \
+  PBCx[Nghost] = dx;                                                           \
+  PBCy[Nghost] = dy;                                                           \
+  PBCz[Nghost] = dz;                                                           \
+  atom->type[atom->Nlocal + Nghost] = atom->type[i]
 
-void setupPbc(Atom* atom, Parameter* param) 
-{
-    int* border_map   = atom->border_map;
-    MD_FLOAT xprd     = param->xprd;
-    MD_FLOAT yprd     = param->yprd;
-    MD_FLOAT zprd     = param->zprd;
-    MD_FLOAT cutneigh = param->cutneigh;
-    int Nghost        = -1;
+void setupPbc(Atom *atom, Parameter *param) {
+  int *border_map = atom->border_map;
+  MD_FLOAT xprd = param->xprd;
+  MD_FLOAT yprd = param->yprd;
+  MD_FLOAT zprd = param->zprd;
+  MD_FLOAT cutneigh = param->cutneigh;
+  int Nghost = -1;
 
-    for (int i = 0; i < atom->Nlocal; i++) {
-        if (atom->Nlocal + Nghost + 7 >= atom->Nmax) {
-            growAtom(atom);
-        }
-
-        if (Nghost + 7 >= NmaxGhost) {
-            growPbc(atom);
-            border_map = atom->border_map;
-        }
-
-        MD_FLOAT x = atom_x(i);
-        MD_FLOAT y = atom_y(i);
-        MD_FLOAT z = atom_z(i);
-
-        /* Setup ghost atoms */
-        /* 6 planes */
-        if (param->pbc_x != 0) {
-            if (x < cutneigh) { 
-                ADDGHOST(+1, 0, 0); 
-            }
-            if (x >= (xprd - cutneigh)) { 
-                ADDGHOST(-1, 0, 0); 
-            }
-        }
-
-        if (param->pbc_y != 0) {
-            if (y < cutneigh) { 
-                ADDGHOST(0, +1, 0); 
-            }
-            if (y >= (yprd - cutneigh)) { 
-                ADDGHOST(0, -1, 0); 
-            }
-        }
-
-        if (param->pbc_z != 0) {
-            if (z < cutneigh) { 
-                ADDGHOST(0, 0, +1); 
-            }
-            if (z >= (zprd - cutneigh)) { 
-                ADDGHOST(0, 0, -1); 
-            }
-        }
-
-        /* 8 corners */
-        if (param->pbc_x != 0 && param->pbc_y != 0 && param->pbc_z != 0) {
-            if (x < cutneigh && y < cutneigh && z < cutneigh) { 
-                ADDGHOST(+1, +1, +1); 
-            }
-            if (x < cutneigh && y >= (yprd - cutneigh) && z < cutneigh) { 
-                ADDGHOST(+1, -1, +1); 
-            }
-            if (x < cutneigh && y < cutneigh && z >= (zprd - cutneigh)) { 
-                ADDGHOST(+1, +1, -1); 
-            }
-            if (x < cutneigh && y >= (yprd - cutneigh) && z >= (zprd - cutneigh)) { 
-                ADDGHOST(+1, -1, -1); 
-            }
-            if (x >= (xprd - cutneigh) && y < cutneigh && z < cutneigh) { 
-                ADDGHOST(-1, +1, +1); 
-            }
-            if (x >= (xprd - cutneigh) && y >= (yprd - cutneigh) && z < cutneigh) { 
-                ADDGHOST(-1, -1, +1); 
-            }
-            if (x >= (xprd - cutneigh) && y < cutneigh && z >= (zprd - cutneigh)) { 
-                ADDGHOST(-1, +1, -1); 
-            }
-            if (x >= (xprd - cutneigh) && y >= (yprd - cutneigh) && 
-                z >= (zprd - cutneigh)) { 
-                ADDGHOST(-1, -1, -1); 
-            }
-        }
-
-        /* 12 edges */
-        if (param->pbc_x != 0 && param->pbc_z != 0) {
-            if (x < cutneigh && z < cutneigh) { 
-                ADDGHOST(+1, 0, +1);
-            }
-            if (x < cutneigh && z >= (zprd - cutneigh)) { 
-                ADDGHOST(+1, 0, -1); 
-            }
-            if (x >= (xprd - cutneigh) && z < cutneigh) { 
-                ADDGHOST(-1, 0, +1); 
-            }
-            if (x >= (xprd - cutneigh) && z >= (zprd - cutneigh)) { 
-                ADDGHOST(-1, 0, -1); 
-            }
-        }
-
-        if (param->pbc_y != 0 && param->pbc_z != 0) {
-            if (y < cutneigh && z < cutneigh) { 
-                ADDGHOST(0, +1, +1); 
-            }
-            if (y < cutneigh && z >= (zprd - cutneigh)) { 
-                ADDGHOST(0, +1, -1); 
-            }
-            if (y >= (yprd - cutneigh) && z < cutneigh) { 
-                ADDGHOST(0, -1, +1); 
-            }
-            if (y >= (yprd - cutneigh) && z >= (zprd - cutneigh)) { 
-                ADDGHOST(0, -1, -1); 
-            }
-        }
-
-        if (param->pbc_x != 0 && param->pbc_y != 0) {
-            if (y < cutneigh && x < cutneigh) { 
-                ADDGHOST(+1, +1, 0); 
-            }
-            if (y < cutneigh && x >= (xprd - cutneigh)) { 
-                ADDGHOST(-1, +1, 0); 
-            }
-            if (y >= (yprd - cutneigh) && x < cutneigh) { 
-                ADDGHOST(+1, -1, 0); 
-            }
-            if (y >= (yprd - cutneigh) && x >= (xprd - cutneigh)) { 
-                ADDGHOST(-1, -1, 0); 
-            }
-        }
+  for (int i = 0; i < atom->Nlocal; i++) {
+    if (atom->Nlocal + Nghost + 7 >= atom->Nmax) {
+      growAtom(atom);
     }
-    // increase by one to make it the ghost atom count
-    atom->Nghost = Nghost + 1;
+
+    if (Nghost + 7 >= NmaxGhost) {
+      growPbc(atom);
+      border_map = atom->border_map;
+    }
+
+    MD_FLOAT x = atom_x(i);
+    MD_FLOAT y = atom_y(i);
+    MD_FLOAT z = atom_z(i);
+
+    /* Setup ghost atoms */
+    /* 6 planes */
+    if (param->pbc_x != 0) {
+      if (x < cutneigh) {
+        ADDGHOST(+1, 0, 0);
+      }
+      if (x >= (xprd - cutneigh)) {
+        ADDGHOST(-1, 0, 0);
+      }
+    }
+
+    if (param->pbc_y != 0) {
+      if (y < cutneigh) {
+        ADDGHOST(0, +1, 0);
+      }
+      if (y >= (yprd - cutneigh)) {
+        ADDGHOST(0, -1, 0);
+      }
+    }
+
+    if (param->pbc_z != 0) {
+      if (z < cutneigh) {
+        ADDGHOST(0, 0, +1);
+      }
+      if (z >= (zprd - cutneigh)) {
+        ADDGHOST(0, 0, -1);
+      }
+    }
+
+    /* 8 corners */
+    if (param->pbc_x != 0 && param->pbc_y != 0 && param->pbc_z != 0) {
+      if (x < cutneigh && y < cutneigh && z < cutneigh) {
+        ADDGHOST(+1, +1, +1);
+      }
+      if (x < cutneigh && y >= (yprd - cutneigh) && z < cutneigh) {
+        ADDGHOST(+1, -1, +1);
+      }
+      if (x < cutneigh && y < cutneigh && z >= (zprd - cutneigh)) {
+        ADDGHOST(+1, +1, -1);
+      }
+      if (x < cutneigh && y >= (yprd - cutneigh) && z >= (zprd - cutneigh)) {
+        ADDGHOST(+1, -1, -1);
+      }
+      if (x >= (xprd - cutneigh) && y < cutneigh && z < cutneigh) {
+        ADDGHOST(-1, +1, +1);
+      }
+      if (x >= (xprd - cutneigh) && y >= (yprd - cutneigh) && z < cutneigh) {
+        ADDGHOST(-1, -1, +1);
+      }
+      if (x >= (xprd - cutneigh) && y < cutneigh && z >= (zprd - cutneigh)) {
+        ADDGHOST(-1, +1, -1);
+      }
+      if (x >= (xprd - cutneigh) && y >= (yprd - cutneigh) &&
+          z >= (zprd - cutneigh)) {
+        ADDGHOST(-1, -1, -1);
+      }
+    }
+
+    /* 12 edges */
+    if (param->pbc_x != 0 && param->pbc_z != 0) {
+      if (x < cutneigh && z < cutneigh) {
+        ADDGHOST(+1, 0, +1);
+      }
+      if (x < cutneigh && z >= (zprd - cutneigh)) {
+        ADDGHOST(+1, 0, -1);
+      }
+      if (x >= (xprd - cutneigh) && z < cutneigh) {
+        ADDGHOST(-1, 0, +1);
+      }
+      if (x >= (xprd - cutneigh) && z >= (zprd - cutneigh)) {
+        ADDGHOST(-1, 0, -1);
+      }
+    }
+
+    if (param->pbc_y != 0 && param->pbc_z != 0) {
+      if (y < cutneigh && z < cutneigh) {
+        ADDGHOST(0, +1, +1);
+      }
+      if (y < cutneigh && z >= (zprd - cutneigh)) {
+        ADDGHOST(0, +1, -1);
+      }
+      if (y >= (yprd - cutneigh) && z < cutneigh) {
+        ADDGHOST(0, -1, +1);
+      }
+      if (y >= (yprd - cutneigh) && z >= (zprd - cutneigh)) {
+        ADDGHOST(0, -1, -1);
+      }
+    }
+
+    if (param->pbc_x != 0 && param->pbc_y != 0) {
+      if (y < cutneigh && x < cutneigh) {
+        ADDGHOST(+1, +1, 0);
+      }
+      if (y < cutneigh && x >= (xprd - cutneigh)) {
+        ADDGHOST(-1, +1, 0);
+      }
+      if (y >= (yprd - cutneigh) && x < cutneigh) {
+        ADDGHOST(+1, -1, 0);
+      }
+      if (y >= (yprd - cutneigh) && x >= (xprd - cutneigh)) {
+        ADDGHOST(-1, -1, 0);
+      }
+    }
+  }
+  // increase by one to make it the ghost atom count
+  atom->Nghost = Nghost + 1;
 }
 
 /* internal subroutines */
-void growPbc(Atom* atom) 
-{
-    int nold = NmaxGhost;
-    NmaxGhost += DELTA;
+void growPbc(Atom *atom) {
+  int nold = NmaxGhost;
+  NmaxGhost += DELTA;
 
-    atom->border_map = (int*)reallocate(atom->border_map, 
-        ALIGNMENT, 
-        NmaxGhost * sizeof(int), 
-        nold * sizeof(int));
-    PBCx = (int*)reallocate(PBCx, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));
-    PBCy = (int*)reallocate(PBCy, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));
-    PBCz = (int*)reallocate(PBCz, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));
+  atom->border_map = (int *)reallocate(
+      atom->border_map, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));
+  PBCx = (int *)reallocate(PBCx, ALIGNMENT, NmaxGhost * sizeof(int),
+                           nold * sizeof(int));
+  PBCy = (int *)reallocate(PBCy, ALIGNMENT, NmaxGhost * sizeof(int),
+                           nold * sizeof(int));
+  PBCz = (int *)reallocate(PBCz, ALIGNMENT, NmaxGhost * sizeof(int),
+                           nold * sizeof(int));
 }

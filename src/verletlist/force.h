@@ -10,22 +10,23 @@
 #include <parameter.h>
 #include <stats.h>
 
-
 #ifndef __FORCE_H_
 #define __FORCE_H_
 
-typedef double (*ComputeForceFunction)(Parameter*, Atom*, Neighbor*, Stats*);
+typedef double (*ComputeForceFunction)(Parameter *, Atom *, Neighbor *,
+                                       Stats *);
 extern ComputeForceFunction computeForce;
 
 enum forcetype { FF_LJ = 0, FF_EAM };
 
-extern void initForce(Parameter*);
-extern double computeForceLJHalfNeigh(Parameter*, Atom*, Neighbor*, Stats*);
-extern double computeForceLJFullNeigh(Parameter*, Atom*, Neighbor*, Stats*);
-extern double computeForceEam(Parameter*, Atom*, Neighbor*, Stats*);
+extern void initForce(Parameter *);
+extern double computeForceLJHalfNeigh(Parameter *, Atom *, Neighbor *, Stats *);
+extern double computeForceLJFullNeigh(Parameter *, Atom *, Neighbor *, Stats *);
+extern double computeForceEam(Parameter *, Atom *, Neighbor *, Stats *);
 
 #ifdef CUDA_TARGET
-extern double computeForceLJFullNeighCUDA(Parameter*, Atom*, Neighbor*, Stats*);
+extern double computeForceLJFullNeighCUDA(Parameter *, Atom *, Neighbor *,
+                                          Stats *);
 #define KERNEL_NAME "CUDA"
 #else
 #ifdef USE_SIMD_KERNEL

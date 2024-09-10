@@ -9,14 +9,14 @@
 #include <atom.h>
 #include <parameter.h>
 
-typedef void (*IntegrationFunction)(bool, Parameter*, Atom*);
+typedef void (*IntegrationFunction)(bool, Parameter *, Atom *);
 extern IntegrationFunction initialIntegrate;
 extern IntegrationFunction finalIntegrate;
 
-extern void initialIntegrateCPU(bool reneigh, Parameter* param, Atom* atom); 
-extern void finalIntegrateCPU(bool reneigh, Parameter* param, Atom* atom);
+extern void initialIntegrateCPU(bool reneigh, Parameter *param, Atom *atom);
+extern void finalIntegrateCPU(bool reneigh, Parameter *param, Atom *atom);
 
 #ifdef CUDA_TARGET
-extern void initialIntegrateCUDA(bool, Parameter*, Atom*);
-extern void finalIntegrateCUDA(bool, Parameter*, Atom*);
+extern void initialIntegrateCUDA(bool, Parameter *, Atom *);
+extern void finalIntegrateCUDA(bool, Parameter *, Atom *);
 #endif

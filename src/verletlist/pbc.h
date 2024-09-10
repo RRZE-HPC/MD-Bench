@@ -12,17 +12,17 @@
 #ifndef __PBC_H_
 #define __PBC_H_
 
-typedef void (*UpdatePbcFunction)(Atom*, Parameter*, bool);
+typedef void (*UpdatePbcFunction)(Atom *, Parameter *, bool);
 extern UpdatePbcFunction updatePbc;
 extern UpdatePbcFunction updateAtomsPbc;
 
-extern void initPbc(Atom*);
-extern void updatePbcCPU(Atom*, Parameter*, bool);
-extern void updateAtomsPbcCPU(Atom*, Parameter*, bool);
-extern void setupPbc(Atom*, Parameter*);
+extern void initPbc(Atom *);
+extern void updatePbcCPU(Atom *, Parameter *, bool);
+extern void updateAtomsPbcCPU(Atom *, Parameter *, bool);
+extern void setupPbc(Atom *, Parameter *);
 
 #ifdef CUDA_TARGET
-extern void updatePbcCUDA(Atom*, Parameter*, bool);
-extern void updateAtomsPbcCUDA(Atom*, Parameter*, bool);
+extern void updatePbcCUDA(Atom *, Parameter *, bool);
+extern void updateAtomsPbcCUDA(Atom *, Parameter *, bool);
 #endif
 #endif // __PBC_H_
