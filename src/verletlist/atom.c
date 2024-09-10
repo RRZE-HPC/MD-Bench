@@ -9,10 +9,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef _MPI
+#include <mpi.h>
+#endif
+
 #include <allocate.h>
 #include <atom.h>
 #include <device.h>
-#include <mpi.h>
 #include <util.h>
 
 #define DELTA 20000

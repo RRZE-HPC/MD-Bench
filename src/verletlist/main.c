@@ -11,8 +11,12 @@
 #include <unistd.h>
 
 #include <likwid-marker.h>
+
 #ifdef _OPENMP
 #include <omp.h>
+#endif
+#ifdef _MPI
+#include <mpi.h>
 #endif
 
 #include <allocate.h>
@@ -32,9 +36,6 @@
 #include <timing.h>
 #include <util.h>
 #include <vtk.h>
-// #ifdef _MPI
-#include <mpi.h>
-// #endif
 // #include <limits.h>
 // #include <float.h>
 
