@@ -1,6 +1,7 @@
 - Cluster Pair
     - Use SIMD for distance calculation when building neighbor lists
     - More than one atom type
+    - avx\_float and avx2\_float should not use _mmask types
 
 - By default, use several atom types (change EXPLICIT\_TYPES option to ONE\_ATOM\_TYPE and set it to false by default)
 

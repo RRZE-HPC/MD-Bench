@@ -12,6 +12,12 @@
 #define MD_SIMD_INT     __m128i
 #define MD_SIMD_MASK    __m256d
 
+static inline int simd_test_any(MD_SIMD_MASK a)
+{
+    __m256i a_si256 = _mm256_castpd_si256(a);
+    return _mm256_testz_si256(a_si256, a_si256) != 0;
+}
+
 static inline MD_SIMD_FLOAT simd_broadcast(MD_FLOAT scalar) { return _mm256_set1_pd(scalar); }
 static inline MD_SIMD_FLOAT simd_zero() { return _mm256_set1_pd(0.0); }
 static inline MD_SIMD_FLOAT simd_add(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b) { return _mm256_add_pd(a, b); }

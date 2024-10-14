@@ -15,6 +15,7 @@
 #define MD_SIMD_BITMASK MD_SIMD_INT
 #define MD_SIMD_IBOOL   __mmask16
 
+static inline int simd_test_any(MD_SIMD_MASK a) { return _mm512_kortestz(a, a) != 0; }
 static inline MD_SIMD_MASK cvtIB2B(MD_SIMD_IBOOL a) { return (__mmask8)(a); }
 static inline MD_SIMD_FLOAT simd_broadcast(MD_FLOAT scalar)
 {

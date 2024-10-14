@@ -26,10 +26,11 @@ void initForce(Parameter* param)
 #ifdef CUDA_TARGET
             computeForce = computeForceLJCUDA;
 #else
-            // Simd2xNN (here used for single-precision)
 #if VECTOR_WIDTH > CLUSTER_M * 2
+            // Simd2xNN (here used for single-precision)
             computeForce = computeForceLJ2xnnFullNeigh;
-#else // Simd4xN
+#else
+            // Simd4xN
             computeForce = computeForceLJ4xnFullNeigh;
 #endif
 #endif

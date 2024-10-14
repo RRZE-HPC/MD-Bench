@@ -18,6 +18,7 @@
 #define MD_SIMD_INT32   __m512i
 #define MD_SIMD_BITMASK MD_SIMD_INT32
 
+static inline int simd_test_any(MD_SIMD_MASK a) { return _mm512_kortestz(a, a) != 0; }
 static inline MD_SIMD_BITMASK simd_load_bitmask(const int* m)
 {
     return _mm512_load_si512(m);
