@@ -212,7 +212,7 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
             MD_FLOAT ytmp = atom_y(i);
             MD_FLOAT ztmp = atom_z(i);
             int ibin      = coord2bin(xtmp, ytmp, ztmp);
-#ifdef EXPLICIT_TYPES
+#ifndef ONE_ATOM_TYPE
             int type_i = atom->type[i];
 #endif
             for (int k = 0; k < nstencil; k++) {
@@ -230,7 +230,7 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
                     MD_FLOAT delz = ztmp - atom_z(j);
                     MD_FLOAT rsq  = delx * delx + dely * dely + delz * delz;
 
-#ifdef EXPLICIT_TYPES
+#ifndef ONE_ATOM_TYPE
                     int type_j = atom->type[j];
                     const MD_FLOAT cutoff =
                         atom->cutneighsq[type_i * atom->ntypes + type_j];

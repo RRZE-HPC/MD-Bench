@@ -24,7 +24,7 @@ SIMD other than NONE.
 - **DATA\_LAYOUT:** Data layout for atom vector properties (available options: AOS, SOA).
 - **ASM\_SYNTAX:** Assembly syntax to use when generating assembly files (available options: ATT, INTEL).
 - **DEBUG:** Toggle debug mode.
-- **EXPLICIT\_TYPES:** Explicitly store and load atom types.
+- **ONE\_ATOM\_TYPE:** Simulate only one atom type and do not perform table lookup for parameters.
 - **MEM\_TRACER:** Trace memory addresses for cache simulator.
 - **INDEX\_TRACER:** Trace indexes and distances for gather-md.
 - **COMPUTE\_STATS:** Compute statistics.
@@ -38,7 +38,6 @@ Configurations for GROMACS MxN optimization scheme:
 
 - **USE\_REFERENCE\_VERSION:** Use reference version (only for correction purposes).
 - **XTC\_OUTPUT:** Enable XTC output.
-- **HALF\_NEIGHBOR\_LISTS\_CHECK\_CJ:** Check if j-clusters are local when decreasing the reaction force.
 
 Configurations for CUDA:
 

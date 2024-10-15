@@ -21,8 +21,8 @@ DEBUG ?= false
 
 # Sort atoms when reneighboring (true or false)
 SORT_ATOMS ?= false
-# Explicitly store and load atom types (true or false)
-EXPLICIT_TYPES ?= false
+# Simulate only for one atom type, without table lookup for parameters (true or false)
+ONE_ATOM_TYPE ?= false
 # Trace memory addresses for cache simulator (true or false)
 MEM_TRACER ?= false
 # Trace indexes and distances for gather-md (true or false)
@@ -118,8 +118,8 @@ ifeq ($(strip $(SORT_ATOMS)),true)
     DEFINES += -DSORT_ATOMS
 endif
 
-ifeq ($(strip $(EXPLICIT_TYPES)),true)
-    DEFINES += -DEXPLICIT_TYPES
+ifeq ($(strip $(ONE_ATOM_TYPE)),true)
+    DEFINES += -DONE_ATOM_TYPE
 endif
 
 ifeq ($(strip $(MEM_TRACER)),true)

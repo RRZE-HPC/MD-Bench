@@ -53,7 +53,7 @@ __global__ void calc_force(DeviceAtom a,
     MD_FLOAT fiy = 0;
     MD_FLOAT fiz = 0;
 
-#ifdef EXPLICIT_TYPES
+#ifndef ONE_ATOM_TYPE
     const int type_i = atom->type[i];
 #endif
 
@@ -64,7 +64,7 @@ __global__ void calc_force(DeviceAtom a,
         MD_FLOAT delz = ztmp - atom_z(j);
         MD_FLOAT rsq  = delx * delx + dely * dely + delz * delz;
 
-#ifdef EXPLICIT_TYPES
+#ifndef ONE_ATOM_TYPE
         const int type_j          = atom->type[j];
         const int type_ij         = type_i * ntypes + type_j;
         const MD_FLOAT cutforcesq = atom->cutforcesq[type_ij];

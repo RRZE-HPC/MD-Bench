@@ -39,7 +39,7 @@ void displayStatistics(Atom* atom, Parameter* param, Stats* stats, double* timer
                              (double)(stats->calculated_forces);
     double avgSimd = stats->force_iters / (double)(atom->Nlocal * (param->ntimes + 1));
 
-#ifdef EXPLICIT_TYPES
+#ifndef ONE_ATOM_TYPE
     force_useful_volume += 1e-9 *
                            (double)((atom->Nlocal * (param->ntimes + 1)) +
                                     stats->num_neighs) *
