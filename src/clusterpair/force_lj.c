@@ -345,13 +345,9 @@ double computeForceLJ2xnnHalfNeigh(
                 fiy2 += ty2;
                 fiz2 += tz2;
 
-#ifdef HALF_NEIGHBOR_LISTS_CHECK_CJ
                 if (cj < CJ1_FROM_CI(atom->Nlocal)) {
                     simd_h_decr3(cj_f, tx0 + tx2, ty0 + ty2, tz0 + tz2);
                 }
-#else
-                simd_h_decr3(cj_f, tx0 + tx2, ty0 + ty2, tz0 + tz2);
-#endif
             }
 
             for (int k = numneighs_masked; k < numneighs; k++) {
@@ -402,13 +398,9 @@ double computeForceLJ2xnnHalfNeigh(
                 fiy2 += ty2;
                 fiz2 += tz2;
 
-#ifdef HALF_NEIGHBOR_LISTS_CHECK_CJ
                 if (cj < CJ1_FROM_CI(atom->Nlocal)) {
                     simd_h_decr3(cj_f, tx0 + tx2, ty0 + ty2, tz0 + tz2);
                 }
-#else
-                simd_h_decr3(cj_f, tx0 + tx2, ty0 + ty2, tz0 + tz2);
-#endif
             }
 
             simd_h_dual_incr_reduced_sum(&ci_f[CL_X_OFFSET], fix0, fix2);
@@ -795,7 +787,6 @@ double computeForceLJ4xnHalfNeigh(
                 fiy3 = simd_add(fiy3, ty3);
                 fiz3 = simd_add(fiz3, tz3);
 
-#ifdef HALF_NEIGHBOR_LISTS_CHECK_CJ
                 if (cj < CJ1_FROM_CI(atom->Nlocal)) {
                     simd_store(&cj_f[CL_X_OFFSET],
                         simd_load(&cj_f[CL_X_OFFSET]) - (tx0 + tx1 + tx2 + tx3));
@@ -804,14 +795,6 @@ double computeForceLJ4xnHalfNeigh(
                     simd_store(&cj_f[CL_Z_OFFSET],
                         simd_load(&cj_f[CL_Z_OFFSET]) - (tz0 + tz1 + tz2 + tz3));
                 }
-#else
-                simd_store(&cj_f[CL_X_OFFSET],
-                    simd_load(&cj_f[CL_X_OFFSET]) - (tx0 + tx1 + tx2 + tx3));
-                simd_store(&cj_f[CL_Y_OFFSET],
-                    simd_load(&cj_f[CL_Y_OFFSET]) - (ty0 + ty1 + ty2 + ty3));
-                simd_store(&cj_f[CL_Z_OFFSET],
-                    simd_load(&cj_f[CL_Z_OFFSET]) - (tz0 + tz1 + tz2 + tz3));
-#endif
             }
 
             for (int k = numneighs_masked; k < numneighs; k++) {
@@ -898,7 +881,6 @@ double computeForceLJ4xnHalfNeigh(
                 fiy3 = simd_add(fiy3, ty3);
                 fiz3 = simd_add(fiz3, tz3);
 
-#ifdef HALF_NEIGHBOR_LISTS_CHECK_CJ
                 if (cj < CJ1_FROM_CI(atom->Nlocal)) {
                     simd_store(&cj_f[CL_X_OFFSET],
                         simd_load(&cj_f[CL_X_OFFSET]) - (tx0 + tx1 + tx2 + tx3));
@@ -907,14 +889,6 @@ double computeForceLJ4xnHalfNeigh(
                     simd_store(&cj_f[CL_Z_OFFSET],
                         simd_load(&cj_f[CL_Z_OFFSET]) - (tz0 + tz1 + tz2 + tz3));
                 }
-#else
-                simd_store(&cj_f[CL_X_OFFSET],
-                    simd_load(&cj_f[CL_X_OFFSET]) - (tx0 + tx1 + tx2 + tx3));
-                simd_store(&cj_f[CL_Y_OFFSET],
-                    simd_load(&cj_f[CL_Y_OFFSET]) - (ty0 + ty1 + ty2 + ty3));
-                simd_store(&cj_f[CL_Z_OFFSET],
-                    simd_load(&cj_f[CL_Z_OFFSET]) - (tz0 + tz1 + tz2 + tz3));
-#endif
             }
 
             simd_incr_reduced_sum(&ci_f[CL_X_OFFSET], fix0, fix1, fix2, fix3);

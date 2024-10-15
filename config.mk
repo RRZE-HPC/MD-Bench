@@ -39,8 +39,6 @@ ENABLE_OMP_SIMD ?= false
 USE_REFERENCE_VERSION ?= false
 # Enable XTC output (a GROMACS file format for trajectories)
 XTC_OUTPUT ?= false
-# Check if cj is local when decreasing reaction force
-HALF_NEIGHBOR_LISTS_CHECK_CJ ?= true
 
 # Configurations for CUDA
 # Use CUDA pinned memory to optimize transfers
@@ -142,10 +140,6 @@ endif
 
 ifeq ($(strip $(USE_REFERENCE_VERSION)),true)
     DEFINES += -DUSE_REFERENCE_VERSION
-endif
-
-ifeq ($(strip $(HALF_NEIGHBOR_LISTS_CHECK_CJ)),true)
-    DEFINES += -DHALF_NEIGHBOR_LISTS_CHECK_CJ
 endif
 
 ifeq ($(strip $(DEBUG)),true)
