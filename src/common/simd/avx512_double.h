@@ -190,3 +190,13 @@ static inline MD_SIMD_MASK simd_mask_int_cond_lt(MD_SIMD_INT a, MD_SIMD_INT b)
 {
     return _mm256_cmp_epi32_mask(a, b, _MM_CMPINT_LT);
 }
+
+static inline MD_SIMD_INT simd_int_load_h_duplicate(const int* m)
+{
+    return _mm256_broadcast_i32x4(_mm_load_epi32(m));
+}
+
+static inline MD_SIMD_INT simd_int_load_h_dual(const int* m)
+{
+    return _mm256_inserti32x4(_mm256_broadcastd_epi32(_mm_load_epi32(m)), _mm_load_epi32(m + 1), 1);
+}

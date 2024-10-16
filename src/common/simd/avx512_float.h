@@ -13,10 +13,9 @@
 
 #define MD_SIMD_FLOAT   __m512
 #define MD_SIMD_MASK    __mmask16
-#define MD_SIMD_INT     __m256i
 #define MD_SIMD_IBOOL   __mmask16
-#define MD_SIMD_INT32   __m512i
-#define MD_SIMD_BITMASK MD_SIMD_INT32
+#define MD_SIMD_INT     __m512i
+#define MD_SIMD_BITMASK __m512i
 
 static inline int simd_test_any(MD_SIMD_MASK a) { return _mm512_kortestz(a, a) == 0; }
 static inline MD_SIMD_BITMASK simd_load_bitmask(const int* m)
@@ -24,7 +23,8 @@ static inline MD_SIMD_BITMASK simd_load_bitmask(const int* m)
     return _mm512_load_si512(m);
 }
 
-static inline MD_SIMD_INT32 simd_int32_broadcast(int a) { return _mm512_set1_epi32(a); }
+#define simd_gather(vidx, m, s) (_mm512_i32gather_ps(vidx, m, s))
+static inline MD_SIMD_INT simd_int_broadcast(int a) { return _mm512_set1_epi32(a); }
 
 static inline MD_SIMD_IBOOL simd_test_bits(MD_SIMD_FLOAT a)
 {
@@ -151,4 +151,15 @@ static inline void simd_h_decr3(
     simd_h_decr(m, a0);
     simd_h_decr(m + CLUSTER_N, a1);
     simd_h_decr(m + CLUSTER_N * 2, a2);
+}
+
+static inline MD_SIMD_INT simd_int_load_h_duplicate(const int* m)
+{
+    //return _mm512_broadcast_i32x8(_mm256_load_epi32(m));
+    return _mm512_broadcast_i32x8(_mm256_load_si256((const __m256i *)m));
+}
+
+static inline MD_SIMD_INT simd_int_load_h_dual(const int* m)
+{
+    return _mm512_inserti32x8(_mm512_broadcastd_epi32(_mm_load_epi32(m)), _mm256_broadcastd_epi32(_mm_load_epi32(m + 1)), 1);
 }

@@ -53,10 +53,14 @@ void updatePbcCPU(Atom* atom, Parameter* param, bool firstUpdate)
 
     for (int cg = 0; cg < atom->Nclusters_ghost; cg++) {
         const int cj    = ncj + cg;
+        int cjScaBase   = CJ_SCALAR_BASE_INDEX(cj);
         int cjVecBase   = CJ_VECTOR_BASE_INDEX(cj);
+        int bmapScaBase = CJ_SCALAR_BASE_INDEX(atom->border_map[cg]);
         int bmapVecBase = CJ_VECTOR_BASE_INDEX(atom->border_map[cg]);
+        int* cjT        = &atom->cl_t[cjScaBase];
         MD_FLOAT* cjX   = &atom->cl_x[cjVecBase];
         MD_FLOAT* bmapX = &atom->cl_x[bmapVecBase];
+        MD_FLOAT* bmapT = &atom->cl_t[bmapScaBase];
         MD_FLOAT bbminx = INFINITY, bbmaxx = -INFINITY;
         MD_FLOAT bbminy = INFINITY, bbmaxy = -INFINITY;
         MD_FLOAT bbminz = INFINITY, bbmaxz = -INFINITY;
@@ -69,6 +73,7 @@ void updatePbcCPU(Atom* atom, Parameter* param, bool firstUpdate)
             cjX[CL_X_OFFSET + cjj] = xtmp;
             cjX[CL_Y_OFFSET + cjj] = ytmp;
             cjX[CL_Z_OFFSET + cjj] = ztmp;
+            cjT[cjj]               = bmapT[cjj];
 
             if (firstUpdate) {
                 // TODO: To create the bounding boxes faster, we can use SIMD operations
@@ -98,6 +103,7 @@ void updatePbcCPU(Atom* atom, Parameter* param, bool firstUpdate)
                 cjX[CL_X_OFFSET + cjj] = INFINITY;
                 cjX[CL_Y_OFFSET + cjj] = INFINITY;
                 cjX[CL_Z_OFFSET + cjj] = INFINITY;
+                cjT[cjj]               = 0;
             }
 
             atom->jclusters[cj].bbminx = bbminx;
@@ -159,7 +165,7 @@ void updateAtomsPbcCPU(Atom* atom, Parameter* param, bool dummy)
     int cj_sca_base = CJ_SCALAR_BASE_INDEX(cj);                                          \
     int cg_sca_base = CJ_SCALAR_BASE_INDEX(cg);                                          \
     for (int cjj = 0; cjj < cj_natoms; cjj++) {                                          \
-        atom->cl_type[cg_sca_base + cjj] = atom->cl_type[cj_sca_base + cjj];             \
+        atom->cl_t[cg_sca_base + cjj] = atom->cl_t[cj_sca_base + cjj];                   \
     }
 
 /* internal subroutines */
@@ -303,12 +309,15 @@ void setupPbc(Atom* atom, Parameter* param)
     }
 
     // Add dummy cluster at the end
+    int cjScaBase = CJ_SCALAR_BASE_INDEX(ncj + Nghost + 1);
     int cjVecBase = CJ_VECTOR_BASE_INDEX(ncj + Nghost + 1);
+    int* cjT      = &atom->cl_t[cjScaBase];
     MD_FLOAT* cjX = &atom->cl_x[cjVecBase];
     for (int cjj = 0; cjj < CLUSTER_N; cjj++) {
         cjX[CL_X_OFFSET + cjj] = INFINITY;
         cjX[CL_Y_OFFSET + cjj] = INFINITY;
         cjX[CL_Z_OFFSET + cjj] = INFINITY;
+        cjT[cjj]               = 0;
     }
 
     // increase by one to make it the ghost atom count
