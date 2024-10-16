@@ -9,12 +9,14 @@
 
 #include <atom.h>
 #include <force.h>
-#include <mpi.h>
 #include <string.h>
 #include <vtk.h>
 
-static MPI_File _fh;
-static inline void flushBuffer(char*);
+#ifdef _MPI
+    #include <mpi.h>
+    static MPI_File _fh;
+    static inline void flushBuffer(char*);
+#endif
 
 void write_data_to_vtk_file(const char* filename, Atom* atom, int timestep)
 {
@@ -234,6 +236,7 @@ int write_ghost_cluster_edges_to_vtk_file(const char* filename, Atom* atom, int 
     return 0;
 }
 
+#ifdef _MPI
 int vtkOpen(const char* filename, Comm* comm, Atom* atom, int timestep)
 {
     char msg[256];
@@ -353,23 +356,24 @@ void vtkClose()
     _fh = MPI_FILE_NULL;
 }
 
-// TODO: print ghost and cluster using MPI
-void printvtk(
-    const char* filename, Comm* comm, Atom* atom, Parameter* param, int timestep)
-{
-    if (comm->numproc == 1) {
-        write_data_to_vtk_file(filename, atom, timestep);
-        return;
-    }
-
-    vtkOpen(filename, comm, atom, timestep);
-    vtkVector(comm, atom, param);
-    vtkClose();
-}
-
 static inline void flushBuffer(char* msg)
 {
     MPI_Offset displ;
     MPI_File_get_size(_fh, &displ);
     MPI_File_write_at(_fh, displ, msg, strlen(msg), MPI_CHAR, MPI_STATUS_IGNORE);
+}
+
+#endif
+
+// TODO: print ghost and cluster using MPI
+void printvtk(
+    const char* filename, Comm* comm, Atom* atom, Parameter* param, int timestep)
+{ 
+#ifdef _MPI
+    vtkOpen(filename, comm, atom, timestep);
+    vtkVector(comm, atom, param);
+    vtkClose();
+#else  
+    write_data_to_vtk_file(filename, atom, timestep);
+#endif
 }

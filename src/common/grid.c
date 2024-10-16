@@ -1,13 +1,11 @@
 #include <allocate.h>
 #include <grid.h>
 #include <math.h>
-#include <mpi.h>
 #include <parameter.h>
 #include <stdio.h>
 #include <util.h>
 
-static MPI_Datatype type = (sizeof(MD_FLOAT) == 4) ? MPI_FLOAT : MPI_DOUBLE;
-
+#ifdef _MPI
 // Grommacs Balancing
 MD_FLOAT f_normalization(MD_FLOAT* x, MD_FLOAT* fx, MD_FLOAT minx, int nprocs)
 {
@@ -409,6 +407,7 @@ void cartisian3d(Grid* grid, Parameter* param, Box* box)
     int griddim[3] = { 0, 0, 0 };
     MD_FLOAT len[3];
     MPI_Comm cartesian;
+    MD_FLOAT eps = 1e-3; 
 
     box->xprd = param->xprd;
     box->yprd = param->yprd;
@@ -439,6 +438,10 @@ void cartisian3d(Grid* grid, Parameter* param, Box* box)
     box->lo[_z] = mycoord[_z] * len[_z];
     box->hi[_z] = (mycoord[_z] + 1) * len[_z];
 
+    if (box->hi[_x]+eps > param->xprd) box->hi[_x]=param->xprd;
+    if (box->hi[_y]+eps > param->xprd) box->hi[_y]=param->yprd;
+    if (box->hi[_z]+eps > param->xprd) box->hi[_z]=param->zprd;
+
     MD_FLOAT domain[6] = { box->lo[_x],
         box->lo[_y],
         box->lo[_z],
@@ -447,18 +450,12 @@ void cartisian3d(Grid* grid, Parameter* param, Box* box)
         box->hi[_z] };
     MPI_Allgather(domain, 6, type, grid->map, 6, type, world);
     MPI_Comm_free(&cartesian);
-
-    // Define the same cutneighbour in all dimensions for the exchange
-    // communication
-    for (int dim = _x; dim <= _z; dim++)
-        grid->cutneigh[dim] = param->cutneigh;
 }
+#endif
 
 // Other Functions from the grid
-void initGrid(Grid* grid)
+void initGrid(Grid* grid, int nprocs)
 { // start with regular grid
-    int nprocs;
-    MPI_Comm_size(world, &nprocs);
     grid->map_size = 6 * nprocs;
     grid->map      = (MD_FLOAT*)allocate(ALIGNMENT, grid->map_size * sizeof(MD_FLOAT));
     //========rcb=======
@@ -472,11 +469,14 @@ void initGrid(Grid* grid)
 
 void setupGrid(Grid* grid, Atom* atom, Parameter* param)
 {
-    int me;
+    int me = 0;
+    int nprocs = 1;
     MD_FLOAT xlo, ylo, zlo, xhi, yhi, zhi;
+#ifdef _MPI
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
-    initGrid(grid);
-
+    MPI_Comm_size(world, &nprocs);
+#endif
+    initGrid(grid,nprocs);
     // Set the origin at (0,0,0)
     if (param->input_file) {
         for (int i = 0; i < atom->Nlocal; i++) {
@@ -485,8 +485,28 @@ void setupGrid(Grid* grid, Atom* atom, Parameter* param)
             atom_z(i) = atom_z(i) - param->zlo;
         }
     }
+     
 
+// MAP is stored as follows: xlo,ylo,zlo,xhi,yhi,zhi
+#ifdef _MPI
     cartisian3d(grid, param, &atom->mybox);
+#else 
+    atom->mybox.xprd = param->xprd;
+    atom->mybox.yprd = param->yprd;
+    atom->mybox.zprd = param->zprd;  
+    grid->map[0] = atom->mybox.lo[_x] = 0;
+    grid->map[1] = atom->mybox.lo[_y] = 0;
+    grid->map[2] = atom->mybox.lo[_z] = 0;
+    grid->map[3] = atom->mybox.hi[_x] = param->xprd;
+    grid->map[4] = atom->mybox.hi[_y] = param->yprd;
+    grid->map[5] = atom->mybox.hi[_z] = param->zprd;
+#endif   
+
+    // Define the same cutneighbour in all dimensions for the exchange
+    // communication
+    for (int dim = _x; dim <= _z; dim++){
+        grid->cutneigh[dim] = param->cutneigh;
+    }
 
     xlo = atom->mybox.lo[_x];
     xhi = atom->mybox.hi[_x];
@@ -505,23 +525,31 @@ void setupGrid(Grid* grid, Atom* atom, Parameter* param)
             atom->Nlocal--;
         }
     }
-
-    // printGrid(grid);
+    
+     //printGrid(grid);
     if (!param->balance) {
+#ifdef _MPI
         MPI_Allreduce(&atom->Nlocal, &atom->Natoms, 1, MPI_INT, MPI_SUM, world);
-        printf("Processor:%i, Local atoms:%i, Total atoms:%i\n",
+#endif
+        fprintf(stdout,"Processor:%i, Local atoms:%i, Total atoms:%i\n",
             me,
             atom->Nlocal,
             atom->Natoms);
+        fflush(stdout);
+#ifdef _MPI
         MPI_Barrier(world);
+#endif
     }
 }
 
 void printGrid(Grid* grid)
 {
-    int me, nprocs;
+    int me = 0; 
+    int nprocs = 1;
+#ifdef _MPI
     MPI_Comm_size(world, &nprocs);
     MPI_Comm_rank(world, &me);
+#endif
     MD_FLOAT* map = grid->map;
     if (me == 0) {
 
@@ -529,8 +557,7 @@ void printGrid(Grid* grid)
         printf("==================================================================="
                "================================\n");
         for (int i = 0; i < nprocs; i++)
-            printf("Box:%i\txlo:%.4f\txhi:%.4f\tylo:%.4f\tyhi:%.4f\tzlo:%.4f\tzhi:%."
-                   "4f\n",
+            printf("Box:%i\txlo:%.4f\txhi:%.4f\tylo:%.4f\tyhi:%.4f\tzlo:%.4f\tzhi:%.4f\n",
                 i,
                 map[6 * i],
                 map[6 * i + 3],
@@ -543,5 +570,7 @@ void printGrid(Grid* grid)
         // zlo:%.4f\tzhi:%.4f\n",
         // i,map[6*i],map[6*i+3],map[6*i+1],map[6*i+4],map[6*i+2],map[6*i+5]);
     }
+#ifdef _MPI
     MPI_Barrier(world);
+#endif
 }

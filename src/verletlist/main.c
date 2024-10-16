@@ -36,58 +36,11 @@
 #include <timing.h>
 #include <util.h>
 #include <vtk.h>
+#include <balance.h>
 // #include <limits.h>
 // #include <float.h>
 
 #define HLINE "-----------------------------------------------------------------------\n"
-
-double dynamicBalance(Comm* comm, Grid* grid, Atom* atom, Parameter* param, double time)
-{
-    double S, E;
-    int dims = 3; // TODO: Adjust to do in 3d and 2d
-    S        = getTimeStamp();
-    if (param->balance == RCB) {
-        rcbBalance(grid, atom, param, meanBisect, dims, 0);
-        neighComm(comm, param, grid);
-    } else if (param->balance == meanTimeRCB) {
-        rcbBalance(grid, atom, param, meanTimeBisect, dims, time);
-        neighComm(comm, param, grid);
-    } else if (param->balance == Staggered) {
-        staggeredBalance(grid, atom, param, time);
-        neighComm(comm, param, grid);
-        exchangeComm(comm, atom);
-    } else {
-    } // Do nothing
-    // printGrid(grid);
-    E = getTimeStamp();
-
-    return E - S;
-}
-
-double initialBalance(Parameter* param,
-    Atom* atom,
-    Neighbor* neighbor,
-    Stats* stats,
-    Comm* comm,
-    Grid* grid)
-{
-    double E, S, time;
-    int me;
-    MPI_Comm_rank(world, &me);
-    S = getTimeStamp();
-    if (param->balance == meanTimeRCB || param->balance == RCB) {
-        rcbBalance(grid, atom, param, meanBisect, 3, 0);
-        neighComm(comm, param, grid);
-    }
-    MPI_Allreduce(&atom->Nlocal, &atom->Natoms, 1, MPI_INT, MPI_SUM, world);
-    printf("Processor:%i, Local atoms:%i, Total atoms:%i\n",
-        me,
-        atom->Nlocal,
-        atom->Natoms);
-    MPI_Barrier(world);
-    E = getTimeStamp();
-    return E - S;
-}
 
 double setup(Parameter* param,
     Eam* eam,
@@ -327,14 +280,13 @@ int main(int argc, char** argv)
     timer[UPDATE]  = 0.0;
     timer[BALANCE] = 0.0;
     timer[REVERSE] = reverse(&comm, &atom, &param);
-    // #ifdef _MPI
-    MPI_Barrier(world);
-    // #endif
+    barrierComm();
     timer[TOTAL] = getTimeStamp();
     if (param.vtk_file != NULL) {
         // write_atoms_to_vtk_file(param.vtk_file, &atom, 0);
         printvtk(param.vtk_file, &comm, &atom, &param, 0);
     }
+
     for (int n = 0; n < param.ntimes; n++) {
         bool reneigh = (n + 1) % param.reneigh_every == 0;
         initialIntegrate(reneigh, &param, &atom);
@@ -369,29 +321,27 @@ int main(int argc, char** argv)
             printvtk(param.vtk_file, &comm, &atom, &param, n + 1);
         }
     }
-    // #ifdef _MPI
-    MPI_Barrier(world);
-    // #endif
+    barrierComm();
     timer[TOTAL] = getTimeStamp() - timer[TOTAL];
     computeThermo(-1, &param, &atom);
-    double mint[NUMTIMER];
-    double maxt[NUMTIMER];
-    double sumt[NUMTIMER];
-    int Nghost;
     timer[REST] = timer[TOTAL] - timer[FORCE] - timer[NEIGH] - timer[BALANCE] -
                   timer[FORWARD] - timer[REVERSE];
 
-    // #ifdef _MPI
+#ifdef _MPI
+    double mint[NUMTIMER];
+    double maxt[NUMTIMER];
+    double sumt[NUMTIMER];
+    int Nghost = atom.Nghost;
     MPI_Reduce(timer, mint, NUMTIMER, MPI_DOUBLE, MPI_MIN, 0, world);
     MPI_Reduce(timer, maxt, NUMTIMER, MPI_DOUBLE, MPI_MAX, 0, world);
     MPI_Reduce(timer, sumt, NUMTIMER, MPI_DOUBLE, MPI_SUM, 0, world);
     MPI_Reduce(&atom.Nghost, &Nghost, 1, MPI_INT, MPI_SUM, 0, world);
-    // #else
-    // Nghost = atom.Nghost
-    // mint = timer;
-    // maxt = timer;
-    // avgt = timer;
-    // #endif
+#else
+    int Nghost = atom.Nghost;
+    double *mint = timer;
+    double *maxt = timer;
+    double *sumt = timer;
+#endif
 
     if (comm.myproc == 0) {
         int n = comm.numproc;

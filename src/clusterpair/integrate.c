@@ -24,7 +24,6 @@ IntegrationFunction finalIntegrate   = finalIntegrateCPU;
 void initialIntegrateCPU(Parameter* param, Atom* atom)
 {
     DEBUG_MESSAGE("cpuInitialIntegrate start\n");
-
     for (int ci = 0; ci < atom->Nclusters_local; ci++) {
         int ciVecBase = CI_VECTOR_BASE_INDEX(ci);
         MD_FLOAT* ciX = &atom->cl_x[ciVecBase];

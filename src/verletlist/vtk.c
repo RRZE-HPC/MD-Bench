@@ -8,12 +8,15 @@
 #include <stdlib.h>
 
 #include <atom.h>
-#include <mpi.h>
+
 #include <string.h>
 #include <vtk.h>
 
-static MPI_File _fh;
-static inline void flushBuffer(char*);
+#ifdef _MPI
+    #include <mpi.h>
+    static MPI_File _fh;
+    static inline void flushBuffer(char*);
+#endif
 
 int write_atoms_to_vtk_file(const char* filename, Atom* atom, int timestep)
 {
@@ -59,6 +62,55 @@ int write_atoms_to_vtk_file(const char* filename, Atom* atom, int timestep)
     return 0;
 }
 
+
+int printGhost(const char* filename, Atom* atom, int timestep, int me)
+{
+    char timestep_filename[128];
+    snprintf(timestep_filename,
+        sizeof timestep_filename,
+        "%s_%d_ghost%i.vtk",
+        filename,
+        timestep,
+        me);
+    FILE* fp = fopen(timestep_filename, "wb");
+
+    if (fp == NULL) {
+        fprintf(stderr, "Could not open VTK file for writing!\n");
+        return -1;
+    }
+    fprintf(fp, "# vtk DataFile Version 2.0\n");
+    fprintf(fp, "Particle data\n");
+    fprintf(fp, "ASCII\n");
+    fprintf(fp, "DATASET UNSTRUCTURED_GRID\n");
+    fprintf(fp, "POINTS %d double\n", atom->Nghost);
+
+    for (int i = atom->Nlocal; i < atom->Nlocal + atom->Nghost; ++i) {
+        fprintf(fp, "%.4f %.4f %.4f\n", atom_x(i), atom_y(i), atom_z(i));
+    }
+    fprintf(fp, "\n\n");
+    fprintf(fp, "CELLS %d %d\n", atom->Nlocal, atom->Nlocal * 2);
+    for (int i = atom->Nlocal; i < atom->Nlocal + atom->Nghost; ++i) {
+        fprintf(fp, "1 %d\n", i);
+    }
+    fprintf(fp, "\n\n");
+    fprintf(fp, "CELL_TYPES %d\n", atom->Nlocal);
+    for (int i = atom->Nlocal; i < atom->Nlocal + atom->Nghost; ++i) {
+        fprintf(fp, "1\n");
+    }
+    fprintf(fp, "\n\n");
+    fprintf(fp, "POINT_DATA %d\n", atom->Nghost);
+    fprintf(fp, "SCALARS mass double\n");
+    fprintf(fp, "LOOKUP_TABLE default\n");
+    for (int i = atom->Nlocal; i < atom->Nlocal + atom->Nghost; i++) {
+        fprintf(fp, "1.0\n");
+    }
+    fprintf(fp, "\n\n");
+    fclose(fp);
+    return 0;
+}
+
+
+#ifdef _MPI
 int vtkOpen(const char* filename, Comm* comm, Atom* atom, int timestep)
 {
     char msg[256];
@@ -178,69 +230,23 @@ void vtkClose()
     _fh = MPI_FILE_NULL;
 }
 
-int printGhost(const char* filename, Atom* atom, int timestep, int me)
-{
-    char timestep_filename[128];
-    snprintf(timestep_filename,
-        sizeof timestep_filename,
-        "%s_%d_ghost%i.vtk",
-        filename,
-        timestep,
-        me);
-    FILE* fp = fopen(timestep_filename, "wb");
-
-    if (fp == NULL) {
-        fprintf(stderr, "Could not open VTK file for writing!\n");
-        return -1;
-    }
-    fprintf(fp, "# vtk DataFile Version 2.0\n");
-    fprintf(fp, "Particle data\n");
-    fprintf(fp, "ASCII\n");
-    fprintf(fp, "DATASET UNSTRUCTURED_GRID\n");
-    fprintf(fp, "POINTS %d double\n", atom->Nghost);
-
-    for (int i = atom->Nlocal; i < atom->Nlocal + atom->Nghost; ++i) {
-        fprintf(fp, "%.4f %.4f %.4f\n", atom_x(i), atom_y(i), atom_z(i));
-    }
-    fprintf(fp, "\n\n");
-    fprintf(fp, "CELLS %d %d\n", atom->Nlocal, atom->Nlocal * 2);
-    for (int i = atom->Nlocal; i < atom->Nlocal + atom->Nghost; ++i) {
-        fprintf(fp, "1 %d\n", i);
-    }
-    fprintf(fp, "\n\n");
-    fprintf(fp, "CELL_TYPES %d\n", atom->Nlocal);
-    for (int i = atom->Nlocal; i < atom->Nlocal + atom->Nghost; ++i) {
-        fprintf(fp, "1\n");
-    }
-    fprintf(fp, "\n\n");
-    fprintf(fp, "POINT_DATA %d\n", atom->Nghost);
-    fprintf(fp, "SCALARS mass double\n");
-    fprintf(fp, "LOOKUP_TABLE default\n");
-    for (int i = atom->Nlocal; i < atom->Nlocal + atom->Nghost; i++) {
-        fprintf(fp, "1.0\n");
-    }
-    fprintf(fp, "\n\n");
-    fclose(fp);
-    return 0;
-}
-
-void printvtk(
-    const char* filename, Comm* comm, Atom* atom, Parameter* param, int timestep)
-{
-    if (comm->numproc == 1) {
-        write_atoms_to_vtk_file(filename, atom, timestep);
-        return;
-    }
-
-    vtkOpen(filename, comm, atom, timestep);
-    vtkVector(comm, atom, param);
-    vtkClose();
-    // printGhost(filename, atom, timestep, comm->myproc);
-}
 
 static inline void flushBuffer(char* msg)
 {
     MPI_Offset displ;
     MPI_File_get_size(_fh, &displ);
     MPI_File_write_at(_fh, displ, msg, strlen(msg), MPI_CHAR, MPI_STATUS_IGNORE);
+}
+#endif
+
+void printvtk(
+    const char* filename, Comm* comm, Atom* atom, Parameter* param, int timestep)
+{ 
+#ifdef _MPI
+    vtkOpen(filename, comm, atom, timestep);
+    vtkVector(comm, atom, param);
+    vtkClose();
+#else  
+    write_atoms_to_vtk_file(filename, atom, timestep);
+#endif
 }

@@ -7,9 +7,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-
 #include <atom.h>
-#include <mpi.h>
 #include <neighbor.h>
 #include <parameter.h>
 #include <util.h>
@@ -86,7 +84,9 @@ void initNeighbor(Neighbor* neighbor, Parameter* param)
     neighbor->half_neigh = param->half_neigh;
 
     me = 0;
+#ifdef _MPI
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
+#endif
     neighbor->Nshell        = 0;
     neighbor->numNeighShell = NULL;
     neighbor->neighshell    = NULL;

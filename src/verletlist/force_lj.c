@@ -6,7 +6,6 @@
  */
 #include <atom.h>
 #include <likwid-marker.h>
-#include <mpi.h>
 #include <neighbor.h>
 #include <parameter.h>
 #include <stats.h>

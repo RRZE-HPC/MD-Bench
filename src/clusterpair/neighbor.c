@@ -10,7 +10,6 @@
 
 #include <atom.h>
 #include <force.h>
-#include <mpi.h>
 #include <neighbor.h>
 #include <parameter.h>
 #include <util.h>
@@ -82,7 +81,9 @@ void initNeighbor(Neighbor* neighbor, Parameter* param)
     if (method) param->half_neigh = 1;
     neighbor->half_neigh = param->half_neigh;
     me                   = 0;
+#ifdef _MPI
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
+#endif
     // Eight Shell
     neighbor->Nshell        = 0;
     neighbor->numNeighShell = NULL;
@@ -470,7 +471,7 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
             DEBUG_MESSAGE("%f, %f, %f\n", ci_x[CL_X_OFFSET + cii], ci_x[CL_Y_OFFSET +
     cii], ci_x[CL_Z_OFFSET + cii]);
         }
-
+        
         DEBUG_MESSAGE("Neighbors:\n");
         for(int k = 0; k < neighbor->numneigh[ci]; k++) {
             int cj = neighptr[k];
@@ -569,44 +570,45 @@ MD_FLOAT bindist(int i, int j)
     return (delx * delx + dely * dely);
 }
 
+
 int coord2bin(MD_FLOAT xin, MD_FLOAT yin)
 {
     int ix, iy;
 
     if (xin >= xprd) {
-        ix = (int)((xin + eps - xprd) * bininvx) + nbinx - mbinxlo;
+        ix = (int)((xin - xprd) * bininvx) + nbinx - mbinxlo;
     } else if (xin >= 0.0) {
-        ix = (int)((xin + eps) * bininvx) - mbinxlo;
+        ix = (int)(xin * bininvx) - mbinxlo;
     } else {
-        ix = (int)((xin + eps) * bininvx) - mbinxlo - 1;
+        ix = (int)(xin * bininvx) - mbinxlo - 1;
     }
 
     if (yin >= yprd) {
-        iy = (int)(((yin + eps) - yprd) * bininvy) + nbiny - mbinylo;
+        iy = (int)((yin - yprd) * bininvy) + nbiny - mbinylo;
     } else if (yin >= 0.0) {
-        iy = (int)((yin + eps) * bininvy) - mbinylo;
+        iy = (int)(yin * bininvy) - mbinylo;
     } else {
-        iy = (int)((yin + eps) * bininvy) - mbinylo - 1;
+        iy = (int)(yin * bininvy) - mbinylo - 1;
     }
-
     return (iy * mbinx + ix + 1);
 }
 
 void coord2bin2D(MD_FLOAT xin, MD_FLOAT yin, int* ix, int* iy)
 {
     if (xin >= xprd) {
-        *ix = (int)((xin + eps - xprd) * bininvx) + nbinx - mbinxlo;
+        *ix = (int)((xin - xprd) * bininvx) + nbinx - mbinxlo;
     } else if (xin >= 0.0) {
-        *ix = (int)((xin + eps) * bininvx) - mbinxlo;
+        *ix = (int)(xin * bininvx) - mbinxlo;
     } else {
-        *ix = (int)((xin + eps) * bininvx) - mbinxlo - 1;
+        *ix = (int)(xin * bininvx) - mbinxlo - 1;
     }
+
     if (yin >= yprd) {
-        *iy = (int)((yin + eps - yprd) * bininvy) + nbiny - mbinylo;
+        *iy = (int)((yin - yprd) * bininvy) + nbiny - mbinylo;
     } else if (yin >= 0.0) {
-        *iy = (int)((yin + eps) * bininvy) - mbinylo;
+        *iy = (int)(yin * bininvy) - mbinylo;
     } else {
-        *iy = (int)((yin + eps) * bininvy) - mbinylo - 1;
+        *iy = (int)(yin * bininvy) - mbinylo - 1;
     }
 }
 
@@ -616,7 +618,6 @@ void binAtoms(Atom* atom)
     int resize = 1;
     while (resize > 0) {
         resize = 0;
-
         for (int i = 0; i < mbins; i++) {
             bincount[i] = 0;
         }
@@ -626,7 +627,7 @@ void binAtoms(Atom* atom)
             if (bincount[ibin] < atoms_per_bin) {
                 int ac                          = bincount[ibin]++;
                 bins[ibin * atoms_per_bin + ac] = i;
-            } else {
+            } else {  
                 resize = 1;
             }
         }
@@ -761,7 +762,6 @@ void buildClusters(Atom* atom)
             atom->Nclusters_local++;
         }
     }
-
     DEBUG_MESSAGE("buildClusters end\n");
 }
 

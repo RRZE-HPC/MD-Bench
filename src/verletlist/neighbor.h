@@ -6,6 +6,9 @@
  */
 #include <atom.h>
 #include <parameter.h>
+#ifdef _MPI
+    #include <mpi.h>
+#endif
 
 #ifndef __NEIGHBOR_H_
 #define __NEIGHBOR_H_

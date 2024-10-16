@@ -7,16 +7,18 @@
 
 #include <atom.h>
 #include <box.h>
-#include <mpi.h>
 #include <parameter.h>
 
 #ifndef __MAP_H_
 #define __MAP_H_
 
-#define world       MPI_COMM_WORLD
 #define atom_pos(i) ((dim == _x) ? atom_x((i)) : (dim == _y) ? atom_y((i)) : atom_z((i)))
 
-enum { RCB = 1, meanTimeRCB, Staggered };
+#ifdef _MPI
+    #include <mpi.h>
+    #define world       MPI_COMM_WORLD
+    static MPI_Datatype type = (sizeof(MD_FLOAT) == 4) ? MPI_FLOAT : MPI_DOUBLE;
+#endif
 
 typedef struct {
     int balance_every;
@@ -34,14 +36,18 @@ typedef struct {
     int maxrecv;
 } Grid;
 
-typedef MD_FLOAT (*RCB_Method)(Atom*, MPI_Comm, int, double);
 
+enum { RCB = 1, meanTimeRCB, Staggered };
 void setupGrid(Grid*, Atom*, Parameter*);
-void cartisian3d(Grid*, Parameter*, Box*);
-void rcbBalance(Grid*, Atom*, Parameter*, RCB_Method, int, double);
-void staggeredBalance(Grid*, Atom*, Parameter*, double);
 void printGrid(Grid*);
-// rcb methods
-MD_FLOAT meanBisect(Atom*, MPI_Comm, int, double);
-MD_FLOAT meanTimeBisect(Atom*, MPI_Comm, int, double);
+
+#ifdef _MPI
+    typedef MD_FLOAT (*RCB_Method)(Atom*, MPI_Comm, int, double);
+    void cartisian3d(Grid*, Parameter*, Box*);
+    void rcbBalance(Grid*, Atom*, Parameter*, RCB_Method, int, double);
+    void staggeredBalance(Grid*, Atom*, Parameter*, double);
+    // rcb methods
+    MD_FLOAT meanBisect(Atom*, MPI_Comm, int, double);
+    MD_FLOAT meanTimeBisect(Atom*, MPI_Comm, int, double);
+#endif
 #endif

@@ -8,11 +8,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include <allocate.h>
 #include <atom.h>
 #include <force.h>
-#include <mpi.h>
 #include <util.h>
 
 void initAtom(Atom* atom)
@@ -189,8 +187,10 @@ int typeStr2int(const char* type)
 
 int readAtom(Atom* atom, Parameter* param)
 {
-    int me = 0;                         // New
-    MPI_Comm_rank(MPI_COMM_WORLD, &me); // New
+    int me = 0;
+#ifdef _MPI
+    MPI_Comm_rank(MPI_COMM_WORLD, &me);
+#endif
     int len = strlen(param->input_file);
     if (strncmp(&param->input_file[len - 4], ".pdb", 4) == 0) {
         return readAtomPdb(atom, param);
@@ -212,8 +212,11 @@ int readAtom(Atom* atom, Parameter* param)
 
 int readAtomPdb(Atom* atom, Parameter* param)
 {
-    int me = 0;                         // New
-    MPI_Comm_rank(MPI_COMM_WORLD, &me); // New
+    int me = 0;   
+    #ifdef _MPI
+        MPI_Comm_rank(MPI_COMM_WORLD, &me); // New
+    #endif
+
     FILE* fp = fopen(param->input_file, "r");
     char line[MAXLINE];
     int readAtoms = 0;
@@ -308,9 +311,10 @@ int readAtomPdb(Atom* atom, Parameter* param)
 
 int readAtomGro(Atom* atom, Parameter* param)
 {
-    int me = 0;                         // New
-    MPI_Comm_rank(MPI_COMM_WORLD, &me); // New
-
+    int me = 0;
+    #ifdef _MPI
+        MPI_Comm_rank(MPI_COMM_WORLD, &me); // New
+    #endif
     FILE* fp = fopen(param->input_file, "r");
     char line[MAXLINE];
     char desc[MAXLINE];
@@ -405,8 +409,10 @@ int readAtomGro(Atom* atom, Parameter* param)
 
 int readAtomDmp(Atom* atom, Parameter* param)
 {
-    int me = 0;                         // New
-    MPI_Comm_rank(MPI_COMM_WORLD, &me); // New
+    int me = 0;
+    #ifdef _MPI
+        MPI_Comm_rank(MPI_COMM_WORLD, &me); // New
+    #endif
 
     FILE* fp = fopen(param->input_file, "r");
     char line[MAXLINE];
@@ -788,7 +794,6 @@ void unpackForward(Atom* atom, int nc, int c0, MD_FLOAT* buf)
         int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
         MD_FLOAT* cj_x  = &atom->cl_x[cj_vec_base];
         int displ       = i * CLUSTER_N;
-
         for (int cjj = 0; cjj < atom->jclusters[cj].natoms; cjj++) {
             if (cj_x[CL_X_OFFSET + cjj] < INFINITY)
                 cj_x[CL_X_OFFSET + cjj] = buf[3 * (displ + cjj) + 0];
@@ -816,13 +821,13 @@ int packGhost(Atom* atom, int cj, MD_FLOAT* buf, int* pbc)
         MD_FLOAT bbminz = INFINITY, bbmaxz = -INFINITY;
 
         buf[m++] = atom->jclusters[cj].natoms;
-
+        
         for (int cjj = 0; cjj < atom->jclusters[cj].natoms; cjj++) {
 
             MD_FLOAT xtmp = cj_x[CL_X_OFFSET + cjj] + pbc[_x] * atom->mybox.xprd;
             MD_FLOAT ytmp = cj_x[CL_Y_OFFSET + cjj] + pbc[_y] * atom->mybox.yprd;
             MD_FLOAT ztmp = cj_x[CL_Z_OFFSET + cjj] + pbc[_z] * atom->mybox.zprd;
-
+        
             buf[m++] = xtmp;
             buf[m++] = ytmp;
             buf[m++] = ztmp;
@@ -965,8 +970,9 @@ int packExchange(Atom* atom, int i, MD_FLOAT* buf)
 
 int unpackExchange(Atom* atom, int i, MD_FLOAT* buf)
 {
-    while (i >= atom->Nmax)
+    while (i >= atom->Nmax){
         growAtom(atom);
+    }
     int m         = 0;
     atom_x(i)     = buf[m++];
     atom_y(i)     = buf[m++];
@@ -981,11 +987,9 @@ int unpackExchange(Atom* atom, int i, MD_FLOAT* buf)
 void pbc(Atom* atom)
 {
     for (int i = 0; i < atom->Nlocal; i++) {
-
         MD_FLOAT xprd = atom->mybox.xprd;
         MD_FLOAT yprd = atom->mybox.yprd;
         MD_FLOAT zprd = atom->mybox.zprd;
-
         if (atom_x(i) < 0.0) atom_x(i) += xprd;
         if (atom_y(i) < 0.0) atom_y(i) += yprd;
         if (atom_z(i) < 0.0) atom_z(i) += zprd;

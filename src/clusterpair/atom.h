@@ -6,6 +6,10 @@
  */
 #include <box.h>
 #include <parameter.h>
+#ifdef _MPI
+    #include <mpi.h>
+#endif
+
 
 #ifndef __ATOM_H_
 #define __ATOM_H_

@@ -5,7 +5,6 @@
  * license that can be found in the LICENSE file.
  */
 #include <box.h>
-#include <mpi.h>
 #include <parameter.h>
 #include <stdio.h>
 #include <util.h>

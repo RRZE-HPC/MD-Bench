@@ -142,7 +142,6 @@ double computeForceLJRef(Parameter* param, Atom* atom, Neighbor* neighbor, Stats
                                     cj_f[CL_Y_OFFSET + cjj] -= dely * force;
                                     cj_f[CL_Z_OFFSET + cjj] -= delz * force;
                                 }
-
                                 fix += delx * force;
                                 fiy += dely * force;
                                 fiz += delz * force;
@@ -372,7 +371,7 @@ double computeForceLJ2xnnHalfNeigh(
                 fiz2 += tz2;
 
 #ifdef HALF_NEIGHBOR_LISTS_CHECK_CJ
-                if (cj < CJ1_FROM_CI(atom->Nlocal) || param->method) {
+                if (cj < CJ1_FROM_CI(atom->Nlocal)) {
                     simd_h_decr3(cj_f, tx0 + tx2, ty0 + ty2, tz0 + tz2);
                 }
 #else
@@ -429,7 +428,7 @@ double computeForceLJ2xnnHalfNeigh(
                 fiz2 += tz2;
 
 #ifdef HALF_NEIGHBOR_LISTS_CHECK_CJ
-                if (cj < CJ1_FROM_CI(atom->Nlocal) || param->method) {
+                if (cj < CJ1_FROM_CI(atom->Nlocal)) {
                     simd_h_decr3(cj_f, tx0 + tx2, ty0 + ty2, tz0 + tz2);
                 }
 #else

@@ -16,7 +16,7 @@
 #include <unistd.h>
 #include <util.h>
 
-// static void addDummyCluster(Atom*);
+static void addDummyCluster(Atom*);
 
 double forward(Comm* comm, Atom* atom, Parameter* param)
 {
@@ -72,8 +72,12 @@ void ghostNeighbor(Comm* comm, Atom* atom, Parameter* param)
         for (int iswap = 0; iswap < 6; iswap++)
             ghostComm(comm, atom, iswap);
     }
+#ifdef CLUSTER_PAIR    
+    addDummyCluster(atom);    
+#endif
+}
 
-#ifdef CLUSTER_PAIR
+void addDummyCluster(Atom* atom){
     // atom->Nclusters_ghost++; // GHOST J CLUSTERS
     // atom->Nclusters = atom->Nclusters_local + Nghost + 1;
     atom->dummy_cj = LOCAL + GHOST;
@@ -84,11 +88,8 @@ void ghostNeighbor(Comm* comm, Atom* atom, Parameter* param)
     MD_FLOAT* cjX = &atom->cl_x[cjVecBase];
 
     for (int cjj = 0; cjj < CLUSTER_N; cjj++) {
-        // printf("Test 1: x:%f y:%f z:%f\n",cjX[CL_X_OFFSET + cjj], cjX[CL_Y_OFFSET
-        // + cjj], cjX[CL_Z_OFFSET + cjj],atom->dummy_cj);
         cjX[CL_X_OFFSET + cjj] = INFINITY;
         cjX[CL_Y_OFFSET + cjj] = INFINITY;
         cjX[CL_Z_OFFSET + cjj] = INFINITY;
-    }
-#endif
+    } 
 }

@@ -1,8 +1,8 @@
 #include <atom.h>
 #include <box.h>
 #include <force.h>
-#include <grid.h>
 #include <parameter.h>
+#include <grid.h>
 
 #ifndef COMM_H
 #define COMM_H
@@ -12,8 +12,6 @@
 #define REVERSE_SIZE  (3 * CLUSTER_N)
 #define GHOST_SIZE    (4 * CLUSTER_N + 10)
 #define EXCHANGE_SIZE 7
-#define LOCAL         atom->Nclusters_local
-#define GHOST         atom->Ncluster_ghost
 #define JFAC          MAX(1, CLUSTER_N / CLUSTER_M)
 #define LOCAL         atom->Nclusters_local / JFAC
 #define GHOST         atom->Nclusters_ghost
@@ -101,7 +99,9 @@ void exchangeComm(Comm*, Atom*);     // Exchange info between procs
 void ghostComm(Comm*,
     Atom*,
     int);                       // Build the ghost neighbours to send during next forwards
+void barrierComm(); 
 void growSend(Comm*, int);      // Grows the size of the buffer sender
 void growRecv(Comm*, int);      // Grows the size of the buffer receiver
 void growList(Comm*, int, int); // Grows the size of the list to send
+
 #endif

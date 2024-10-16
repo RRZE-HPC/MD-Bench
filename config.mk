@@ -1,5 +1,5 @@
-# Compiler tool chain (GCC/CLANG/ICC/ICX/ONEAPI/NVCC/MPIICC)
-TOOLCHAIN ?= MPIICC
+# Compiler tool chain (GCC/CLANG/ICC/ICX/ONEAPI/NVCC/AOCC)
+TOOLCHAIN ?= GCC
 # ISA of instruction code (X86/ARM)
 ISA ?= X86
 # Instruction set for instrinsic kernels (NONE/<X86-SIMD>/<ARM-SIMD>)
@@ -12,6 +12,8 @@ OPT_SCHEME ?= clusterpair
 ENABLE_LIKWID ?= false
 # Enable OpenMP parallelization (true or false)
 ENABLE_OPENMP ?= false
+# Enable MPI parallelization
+ENABLE_MPI ?= true
 # SP or DP
 DATA_TYPE ?= SP
 # AOS or SOA
@@ -32,7 +34,7 @@ COMPUTE_STATS ?= false
 
 # Configurations for verletlist optimization scheme
 # Use omp simd pragma when running with half neighbor-lists
-ENABLE_OMP_SIMD ?= false
+ENABLE_OMP_SIMD ?= true
 
 # Configurations for clusterpair optimization scheme
 # Use reference version

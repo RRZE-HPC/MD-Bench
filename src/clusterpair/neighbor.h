@@ -6,6 +6,10 @@
  */
 #include <atom.h>
 #include <parameter.h>
+#ifdef _MPI
+    #include <mpi.h>
+#endif
+
 
 #ifndef __NEIGHBOR_H_
 #define __NEIGHBOR_H_
@@ -19,7 +23,7 @@
 // 4x4 kernel diagonal mask
 #define NBNXN_INTERACTION_MASK_DIAG 0x08ceU // 0000 1000 1100 1110
 // 4x2 kernel diagonal masks
-#define NBNXN_INTERACTION_MASK_DIAG_J2_0 0x0002U // 0000 0000 0000 0001
+#define NBNXN_INTERACTION_MASK_DIAG_J2_0 0x0002U // 0000 0000 0000 0010
 #define NBNXN_INTERACTION_MASK_DIAG_J2_1 0x002fU // 0000 0000 0010 1111
 // 4x8 kernel diagonal masks
 #define NBNXN_INTERACTION_MASK_DIAG_J8_0                                                 \

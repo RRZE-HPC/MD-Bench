@@ -9,10 +9,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef _MPI
-#include <mpi.h>
-#endif
-
 #include <allocate.h>
 #include <atom.h>
 #include <device.h>
@@ -208,7 +204,9 @@ int type_str2int(const char* type)
 int readAtom(Atom* atom, Parameter* param)
 {
     int me = 0;
+#ifdef _MPI
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
+#endif
     int len = strlen(param->input_file);
     if (strncmp(&param->input_file[len - 4], ".pdb", 4) == 0) {
         return readAtom_pdb(atom, param);
@@ -235,7 +233,9 @@ int readAtom(Atom* atom, Parameter* param)
 int readAtom_pdb(Atom* atom, Parameter* param)
 {
     int me = 0;
+#ifdef _MPI
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
+#endif
     FILE* fp = fopen(param->input_file, "r");
     char line[MAXLINE];
     int read_atoms = 0;
@@ -331,7 +331,9 @@ int readAtom_pdb(Atom* atom, Parameter* param)
 int readAtom_gro(Atom* atom, Parameter* param)
 {
     int me = 0;
+#ifdef _MPI
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
+#endif
 
     FILE* fp = fopen(param->input_file, "r");
     char line[MAXLINE];
@@ -427,7 +429,9 @@ int readAtom_gro(Atom* atom, Parameter* param)
 int readAtom_dmp(Atom* atom, Parameter* param)
 {
     int me = 0;
+#ifdef _MPI
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
+#endif
     FILE* fp = fopen(param->input_file, "r");
     char line[MAXLINE];
     int natoms     = 0;
@@ -536,7 +540,9 @@ int readAtom_dmp(Atom* atom, Parameter* param)
 int readAtom_in(Atom* atom, Parameter* param)
 {
     int me = 0;
+#ifdef _MPI
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
+#endif
     FILE* fp = fopen(param->input_file, "r");
     char line[MAXLINE];
     int natoms  = 0;
