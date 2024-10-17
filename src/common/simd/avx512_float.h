@@ -163,3 +163,8 @@ static inline MD_SIMD_INT simd_int_load_h_dual(const int* m)
 {
     return _mm512_inserti32x8(_mm512_broadcastd_epi32(_mm_load_epi32(m)), _mm256_broadcastd_epi32(_mm_load_epi32(m + 1)), 1);
 }
+
+static inline MD_SIMD_INT simd_int_load(const int* m)
+{
+    return _mm512_load_si512((const MD_SIMD_INT*)m);
+}
