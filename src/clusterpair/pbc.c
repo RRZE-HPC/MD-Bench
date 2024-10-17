@@ -60,7 +60,7 @@ void updatePbcCPU(Atom* atom, Parameter* param, bool firstUpdate)
         int* cjT        = &atom->cl_t[cjScaBase];
         MD_FLOAT* cjX   = &atom->cl_x[cjVecBase];
         MD_FLOAT* bmapX = &atom->cl_x[bmapVecBase];
-        MD_FLOAT* bmapT = &atom->cl_t[bmapScaBase];
+        int* bmapT      = &atom->cl_t[bmapScaBase];
         MD_FLOAT bbminx = INFINITY, bbmaxx = -INFINITY;
         MD_FLOAT bbminy = INFINITY, bbmaxy = -INFINITY;
         MD_FLOAT bbminz = INFINITY, bbmaxz = -INFINITY;

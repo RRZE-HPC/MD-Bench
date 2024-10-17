@@ -509,9 +509,6 @@ double computeForceLJ2xnnFullNeigh(
     MD_FLOAT cutforcesq          = param->cutforce * param->cutforce;
     MD_FLOAT sigma6              = param->sigma6;
     MD_FLOAT epsilon             = param->epsilon;
-    MD_SIMD_FLOAT cutforcesq_vec = simd_broadcast(cutforcesq);
-    MD_SIMD_FLOAT sigma6_vec     = simd_broadcast(sigma6);
-    MD_SIMD_FLOAT eps_vec        = simd_broadcast(epsilon);
     MD_SIMD_FLOAT c48_vec        = simd_broadcast(48.0);
     MD_SIMD_FLOAT c05_vec        = simd_broadcast(0.5);
 
