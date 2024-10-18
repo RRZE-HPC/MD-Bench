@@ -91,9 +91,9 @@ Poland, September 11-14, 2022. PPAM 2022 Best Paper Award. Preprint:
 [https://dl.acm.org/doi/10.1007/978-3-031-30442-2_24](https://dl.acm.org/doi/10.1007/978-3-031-30442-2_24)
 
 Rafael Ravedutti Lucio Machado, Jan Eitzinger, Jan Laukemann, Georg Hager, Harald
-Köstler, Gerhard Wellein: MD-Bench: A performance-focused prototyping harness fo
+Köstler and Gerhard Wellein: MD-Bench: A performance-focused prototyping harness fo
  state-of-the-art short-range molecular dynamics algorithms. Future Generation
-Computer Systems, Volume 149, 2023, Pages 25-38, ISSN 0167-739X, DOI:
+Computer Systems ([FGCS](https://www.sciencedirect.com/journal/future-generation-computer-systems)), Volume 149, 2023, Pages 25-38, ISSN 0167-739X, DOI:
 [https://doi.org/10.1016/j.future.2023.06.023](https://doi.org/10.1016/j.future.2023.06.023)
 
 ## Credits
