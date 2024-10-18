@@ -9,6 +9,7 @@
 #include <atom.h>
 #include <force.h>
 #include <likwid-marker.h>
+#include <math.h>
 #include <neighbor.h>
 #include <parameter.h>
 #include <simd.h>
@@ -16,6 +17,7 @@
 #include <timing.h>
 #include <util.h>
 
+void computeForceGhostShell(Parameter*, Atom*, Neighbor*);
 /*
 static inline void gmx_load_simd_2xnn_interactions(
     int excl,
@@ -42,7 +44,6 @@ MD_SIMD_BITMASK filter3, MD_SIMD_MASK *interact0, MD_SIMD_MASK *interact1, MD_SI
     *interact3 = cvtIB2B(simd_test_bits(mask_pr_S & filter3));
 }
 */
-
 #ifdef USE_REFERENCE_VERSION
 double computeForceLJRef(Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
 {
@@ -52,7 +53,6 @@ double computeForceLJRef(Parameter* param, Atom* atom, Neighbor* neighbor, Stats
     MD_FLOAT cutforcesq = param->cutforce * param->cutforce;
     MD_FLOAT sigma6     = param->sigma6;
     MD_FLOAT epsilon    = param->epsilon;
-
     for (int ci = 0; ci < atom->Nclusters_local; ci++) {
         int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
         MD_FLOAT* ci_f  = &atom->cl_f[ci_vec_base];
@@ -60,6 +60,16 @@ double computeForceLJRef(Parameter* param, Atom* atom, Neighbor* neighbor, Stats
             ci_f[CL_X_OFFSET + cii] = 0.0;
             ci_f[CL_Y_OFFSET + cii] = 0.0;
             ci_f[CL_Z_OFFSET + cii] = 0.0;
+        }
+    }
+
+    for (int cg = atom->ncj; cg < atom->ncj + atom->Nclusters_ghost; cg++) {
+        int cj_vec_base = CJ_VECTOR_BASE_INDEX(cg);
+        MD_FLOAT* cj_f  = &atom->cl_f[cj_vec_base];
+        for (int cjj = 0; cjj < atom->jclusters[cg].natoms; cjj++) {
+            cj_f[CL_X_OFFSET + cjj] = 0.0;
+            cj_f[CL_Y_OFFSET + cjj] = 0.0;
+            cj_f[CL_Z_OFFSET + cjj] = 0.0;
         }
     }
 
@@ -85,7 +95,12 @@ double computeForceLJRef(Parameter* param, Atom* atom, Neighbor* neighbor, Stats
                 int any         = 0;
                 MD_FLOAT* cj_x  = &atom->cl_x[cj_vec_base];
                 MD_FLOAT* cj_f  = &atom->cl_f[cj_vec_base];
-
+                // if(ci>atom->Nclusters_local) printf("Ci is bigger k:%d ci:%d cj:%d
+                // ncj:%d ghost:%d ghost+ncj:%d\n",k,ci,cj, atom->ncj,
+                // atom->Nclusters_ghost,atom->ncj+atom->Nclusters_ghost);
+                // if(cj>atom->ncj+atom->Nclusters_ghost) printf("Cj is bigger k:%d ci:%d
+                // cj:%d ncj:%d ghost:%d ghost+ncj:%d\n",k,ci,cj, atom->ncj,
+                // atom->Nclusters_ghost,atom->ncj+atom->Nclusters_ghost);
                 for (int cii = 0; cii < CLUSTER_M; cii++) {
                     MD_FLOAT xtmp = ci_x[CL_X_OFFSET + cii];
                     MD_FLOAT ytmp = ci_x[CL_Y_OFFSET + cii];
@@ -93,7 +108,6 @@ double computeForceLJRef(Parameter* param, Atom* atom, Neighbor* neighbor, Stats
                     MD_FLOAT fix  = 0;
                     MD_FLOAT fiy  = 0;
                     MD_FLOAT fiz  = 0;
-
                     for (int cjj = 0; cjj < CLUSTER_N; cjj++) {
                         int cond;
 #if CLUSTER_M == CLUSTER_N
@@ -111,22 +125,23 @@ double computeForceLJRef(Parameter* param, Atom* atom, Neighbor* neighbor, Stats
                                    : (ci_cj0 != cj || cii != cjj) &&
                                          (ci_cj1 != cj || cii != cjj + CLUSTER_N);
 #endif
+
                         if (cond) {
                             MD_FLOAT delx = xtmp - cj_x[CL_X_OFFSET + cjj];
                             MD_FLOAT dely = ytmp - cj_x[CL_Y_OFFSET + cjj];
                             MD_FLOAT delz = ztmp - cj_x[CL_Z_OFFSET + cjj];
                             MD_FLOAT rsq  = delx * delx + dely * dely + delz * delz;
+
                             if (rsq < cutforcesq) {
                                 MD_FLOAT sr2   = 1.0 / rsq;
                                 MD_FLOAT sr6   = sr2 * sr2 * sr2 * sigma6;
                                 MD_FLOAT force = 48.0 * sr6 * (sr6 - 0.5) * sr2 * epsilon;
 
-                                if (neighbor->half_neigh) {
+                                if (neighbor->half_neigh || param->method) {
                                     cj_f[CL_X_OFFSET + cjj] -= delx * force;
                                     cj_f[CL_Y_OFFSET + cjj] -= dely * force;
                                     cj_f[CL_Z_OFFSET + cjj] -= delz * force;
                                 }
-
                                 fix += delx * force;
                                 fiy += dely * force;
                                 fiz += delz * force;
@@ -137,13 +152,11 @@ double computeForceLJRef(Parameter* param, Atom* atom, Neighbor* neighbor, Stats
                             }
                         }
                     }
-
                     if (any != 0) {
                         addStat(stats->clusters_within_cutoff, 1);
                     } else {
                         addStat(stats->clusters_outside_cutoff, 1);
                     }
-
                     ci_f[CL_X_OFFSET + cii] += fix;
                     ci_f[CL_Y_OFFSET + cii] += fiy;
                     ci_f[CL_Z_OFFSET + cii] += fiz;
@@ -155,7 +168,9 @@ double computeForceLJRef(Parameter* param, Atom* atom, Neighbor* neighbor, Stats
             addStat(stats->force_iters,
                 (long long int)((double)numneighs * CLUSTER_M / CLUSTER_N));
         }
-
+        if (param->method == eightShell) {
+            computeForceGhostShell(param, atom, neighbor);
+        }
         LIKWID_MARKER_STOP("force");
     }
 
@@ -179,13 +194,23 @@ double computeForceLJ2xnnHalfNeigh(
     MD_SIMD_FLOAT c48_vec        = simd_broadcast(48.0);
     MD_SIMD_FLOAT c05_vec        = simd_broadcast(0.5);
 
-    for (int ci = 0; ci < atom->Nclusters_local; ci++) {
+    for (int ci = 0; ci < atom->Nclusters_local + atom->Nclusters_ghost; ci++) {
         int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
         MD_FLOAT* ci_f  = &atom->cl_f[ci_vec_base];
         for (int cii = 0; cii < atom->iclusters[ci].natoms; cii++) {
             ci_f[CL_X_OFFSET + cii] = 0.0;
             ci_f[CL_Y_OFFSET + cii] = 0.0;
             ci_f[CL_Z_OFFSET + cii] = 0.0;
+        }
+    }
+
+    for (int cg = atom->ncj; cg < atom->ncj + atom->Nclusters_ghost; cg++) {
+        int cj_vec_base = CJ_VECTOR_BASE_INDEX(cg);
+        MD_FLOAT* cj_f  = &atom->cl_f[cj_vec_base];
+        for (int cjj = 0; cjj < atom->jclusters[cg].natoms; cjj++) {
+            cj_f[CL_X_OFFSET + cjj] = 0.0;
+            cj_f[CL_Y_OFFSET + cjj] = 0.0;
+            cj_f[CL_Z_OFFSET + cjj] = 0.0;
         }
     }
 
@@ -420,7 +445,9 @@ double computeForceLJ2xnnHalfNeigh(
             addStat(stats->force_iters,
                 (long long int)((double)numneighs * CLUSTER_M / CLUSTER_N));
         }
-
+        if (param->method == eightShell) {
+            computeForceGhostShell(param, atom, neighbor);
+        }
         LIKWID_MARKER_STOP("force");
     }
 
@@ -453,7 +480,6 @@ double computeForceLJ2xnnFullNeigh(
             ci_f[CL_Z_OFFSET + cii] = 0.0;
         }
     }
-
     double S = getTimeStamp();
 
 #pragma omp parallel
@@ -601,10 +627,8 @@ double computeForceLJ2xnnFullNeigh(
             // addStat(stats->force_iters, (long long int)((double)numneighs * CLUSTER_M /
             // CLUSTER_N));
         }
-
         LIKWID_MARKER_STOP("force");
     }
-
     double E = getTimeStamp();
     DEBUG_MESSAGE("computeForceLJ_2xnn end\n");
     return E - S;
@@ -632,6 +656,16 @@ double computeForceLJ4xnHalfNeigh(
             ci_f[CL_X_OFFSET + cii] = 0.0;
             ci_f[CL_Y_OFFSET + cii] = 0.0;
             ci_f[CL_Z_OFFSET + cii] = 0.0;
+        }
+    }
+
+    for (int cg = atom->ncj; cg < atom->ncj + atom->Nclusters_ghost; cg++) {
+        int cj_vec_base = CJ_VECTOR_BASE_INDEX(cg);
+        MD_FLOAT* cj_f  = &atom->cl_f[cj_vec_base];
+        for (int cjj = 0; cjj < atom->jclusters[cg].natoms; cjj++) {
+            cj_f[CL_X_OFFSET + cjj] = 0.0;
+            cj_f[CL_Y_OFFSET + cjj] = 0.0;
+            cj_f[CL_Z_OFFSET + cjj] = 0.0;
         }
     }
 
@@ -796,7 +830,7 @@ double computeForceLJ4xnHalfNeigh(
                 fiz3 = simd_add(fiz3, tz3);
 
 #ifdef HALF_NEIGHBOR_LISTS_CHECK_CJ
-                if (cj < CJ1_FROM_CI(atom->Nlocal)) {
+                if (cj < CJ1_FROM_CI(atom->Nlocal) || param->method) {
                     simd_store(&cj_f[CL_X_OFFSET],
                         simd_load(&cj_f[CL_X_OFFSET]) - (tx0 + tx1 + tx2 + tx3));
                     simd_store(&cj_f[CL_Y_OFFSET],
@@ -899,7 +933,7 @@ double computeForceLJ4xnHalfNeigh(
                 fiz3 = simd_add(fiz3, tz3);
 
 #ifdef HALF_NEIGHBOR_LISTS_CHECK_CJ
-                if (cj < CJ1_FROM_CI(atom->Nlocal)) {
+                if (cj < CJ1_FROM_CI(atom->Nlocal) || param->method) {
                     simd_store(&cj_f[CL_X_OFFSET],
                         simd_load(&cj_f[CL_X_OFFSET]) - (tx0 + tx1 + tx2 + tx3));
                     simd_store(&cj_f[CL_Y_OFFSET],
@@ -926,7 +960,7 @@ double computeForceLJ4xnHalfNeigh(
             addStat(stats->force_iters,
                 (long long int)((double)numneighs * CLUSTER_M / CLUSTER_N));
         }
-
+        if (param->method == eightShell) computeForceGhostShell(param, atom, neighbor);
         LIKWID_MARKER_STOP("force");
     }
 
@@ -1197,3 +1231,70 @@ double computeForceLJ4xnFullNeigh(
     return E - S;
 }
 #endif
+
+// Routine for eight shell method + MPI
+void computeForceGhostShell(Parameter* param, Atom* atom, Neighbor* neighbor)
+{
+    DEBUG_MESSAGE("computeForceLJ begin\n");
+
+    int Nshell = neighbor->Nshell;
+    int* neighs;
+    MD_FLOAT cutforcesq = param->cutforce * param->cutforce;
+    MD_FLOAT sigma6     = param->sigma6;
+    MD_FLOAT epsilon    = param->epsilon;
+
+    for (int ci = 0; ci < Nshell; ci++) {
+        neighs          = &neighbor->neighshell[ci * neighbor->maxneighs];
+        int numneighs   = neighbor->numNeighShell[ci];
+        int cs          = neighbor->listshell[ci];
+        int cs_vec_base = CJ_VECTOR_BASE_INDEX(cs);
+        MD_FLOAT* cs_x  = &atom->cl_x[cs_vec_base];
+        MD_FLOAT* cs_f  = &atom->cl_f[cs_vec_base];
+
+        for (int k = 0; k < numneighs; k++) {
+            int cj          = neighs[k];
+            int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
+            MD_FLOAT* cj_x  = &atom->cl_x[cj_vec_base];
+            MD_FLOAT* cj_f  = &atom->cl_f[cj_vec_base];
+
+            for (int css = 0; css < CLUSTER_N; css++) {
+                MD_FLOAT x = cs_x[CL_X_OFFSET + css];
+                MD_FLOAT y = cs_x[CL_Y_OFFSET + css];
+                MD_FLOAT z = cs_x[CL_Z_OFFSET + css];
+
+                MD_FLOAT fix = 0;
+                MD_FLOAT fiy = 0;
+                MD_FLOAT fiz = 0;
+
+                for (int cjj = 0; cjj < CLUSTER_N; cjj++) {
+
+                    MD_FLOAT delx = x - cj_x[CL_X_OFFSET + cjj];
+                    MD_FLOAT dely = y - cj_x[CL_Y_OFFSET + cjj];
+                    MD_FLOAT delz = z - cj_x[CL_Z_OFFSET + cjj];
+
+                    MD_FLOAT rsq = delx * delx + dely * dely + delz * delz;
+                    if (rsq < cutforcesq) {
+                        MD_FLOAT sr2   = 1.0 / rsq;
+                        MD_FLOAT sr6   = sr2 * sr2 * sr2 * sigma6;
+                        MD_FLOAT force = 48.0 * sr6 * (sr6 - 0.5) * sr2 * epsilon;
+
+                        cj_f[CL_X_OFFSET + cjj] -= delx * force;
+                        cj_f[CL_Y_OFFSET + cjj] -= dely * force;
+                        cj_f[CL_Z_OFFSET + cjj] -= delz * force;
+
+                        fix += delx * force;
+                        fiy += dely * force;
+                        fiz += delz * force;
+                    }
+                }
+
+                cs_f[CL_X_OFFSET + css] += fix;
+                cs_f[CL_Y_OFFSET + css] += fiy;
+                cs_f[CL_Z_OFFSET + css] += fiz;
+            }
+        }
+        // addStat(stats->calculated_forces, 1);
+        // addStat(stats->num_neighs, numneighs);
+        // addStat(stats->force_iters, (long long int)((double)numneighs));
+    }
+}

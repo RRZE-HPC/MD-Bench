@@ -4,8 +4,8 @@
  * Use of this source code is governed by a LGPL-3.0
  * license that can be found in the LICENSE file.
  */
-#include "parameter.h"
 #include <force.h>
+#include <parameter.h>
 #include <stdlib.h>
 
 ComputeForceFunction computeForce;
@@ -17,7 +17,7 @@ void initForce(Parameter* param)
         computeForce = computeForceEam;
         break;
     case FF_LJ:
-        if (param->half_neigh) {
+        if (param->half_neigh || param->method) {
             computeForce = computeForceLJHalfNeigh;
         } else {
 #ifdef CUDA_TARGET

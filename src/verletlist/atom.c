@@ -62,6 +62,11 @@ void initAtom(Atom* atom)
     d_atom->sigma6     = NULL;
     d_atom->cutforcesq = NULL;
     d_atom->cutneighsq = NULL;
+    // MPI
+    Box* mybox  = &(atom->mybox);
+    mybox->xprd = mybox->yprd = mybox->zprd = 0;
+    mybox->lo[_x] = mybox->lo[_y] = mybox->lo[_z] = 0;
+    mybox->hi[_x] = mybox->hi[_y] = mybox->hi[_z] = 0;
 }
 
 void createAtom(Atom* atom, Parameter* param)
@@ -146,7 +151,7 @@ void createAtom(Atom* atom, Parameter* param)
                 }
                 vztmp = myrandom(&n);
 
-                if (atom->Nlocal == atom->Nmax) {
+                while (atom->Nlocal >= atom->Nmax) {
                     growAtom(atom);
                 }
 
@@ -198,6 +203,10 @@ int type_str2int(const char* type)
 
 int readAtom(Atom* atom, Parameter* param)
 {
+    int me = 0;
+#ifdef _MPI
+    MPI_Comm_rank(MPI_COMM_WORLD, &me);
+#endif
     int len = strlen(param->input_file);
     if (strncmp(&param->input_file[len - 4], ".pdb", 4) == 0) {
         return readAtom_pdb(atom, param);
@@ -211,35 +220,44 @@ int readAtom(Atom* atom, Parameter* param)
     if (strncmp(&param->input_file[len - 3], ".in", 3) == 0) {
         return readAtom_in(atom, param);
     }
-    fprintf(stderr,
-        "Invalid input file extension: %s\nValid choices are: pdb, gro, dmp, in\n",
-        param->input_file);
+    if (me == 0) {
+        fprintf(stderr,
+            "Invalid input file extension: %s\nValid choices are: pdb, gro, "
+            "dmp, in\n",
+            param->input_file);
+    }
     exit(-1);
     return -1;
 }
 
 int readAtom_pdb(Atom* atom, Parameter* param)
 {
+    int me = 0;
+#ifdef _MPI
+    MPI_Comm_rank(MPI_COMM_WORLD, &me);
+#endif
     FILE* fp = fopen(param->input_file, "r");
     char line[MAXLINE];
     int read_atoms = 0;
 
     if (!fp) {
-        fprintf(stderr, "Could not open input file: %s\n", param->input_file);
+        if (me == 0) {
+            fprintf(stderr, "Could not open input file: %s\n", param->input_file);
+        }
         exit(-1);
         return -1;
     }
 
     while (!feof(fp)) {
         readline(line, fp);
-        char* item = strtok(line, " ");
+        char* item = strtok(line, "\t ");
         if (strncmp(item, "CRYST1", 6) == 0) {
             param->xlo  = 0.0;
-            param->xhi  = atof(strtok(NULL, " "));
+            param->xhi  = atof(strtok(NULL, "\t "));
             param->ylo  = 0.0;
-            param->yhi  = atof(strtok(NULL, " "));
+            param->yhi  = atof(strtok(NULL, "\t "));
             param->zlo  = 0.0;
-            param->zhi  = atof(strtok(NULL, " "));
+            param->zhi  = atof(strtok(NULL, "\t "));
             param->xprd = param->xhi - param->xlo;
             param->yprd = param->yhi - param->ylo;
             param->zprd = param->zhi - param->zlo;
@@ -248,23 +266,23 @@ int readAtom_pdb(Atom* atom, Parameter* param)
             char* label;
             int atom_id, comp_id;
             MD_FLOAT occupancy, charge;
-            atom_id = atoi(strtok(NULL, " ")) - 1;
+            atom_id = atoi(strtok(NULL, "\t ")) - 1;
 
             while (atom_id + 1 >= atom->Nmax) {
                 growAtom(atom);
             }
 
-            atom->type[atom_id] = type_str2int(strtok(NULL, " "));
-            label               = strtok(NULL, " ");
-            comp_id             = atoi(strtok(NULL, " "));
-            atom_x(atom_id)     = atof(strtok(NULL, " "));
-            atom_y(atom_id)     = atof(strtok(NULL, " "));
-            atom_z(atom_id)     = atof(strtok(NULL, " "));
+            atom->type[atom_id] = type_str2int(strtok(NULL, "\t "));
+            label               = strtok(NULL, "\t ");
+            comp_id             = atoi(strtok(NULL, "\t "));
+            atom_x(atom_id)     = atof(strtok(NULL, "\t "));
+            atom_y(atom_id)     = atof(strtok(NULL, "\t "));
+            atom_z(atom_id)     = atof(strtok(NULL, "\t "));
             atom_vx(atom_id)    = 0.0;
             atom_vy(atom_id)    = 0.0;
             atom_vz(atom_id)    = 0.0;
-            occupancy           = atof(strtok(NULL, " "));
-            charge              = atof(strtok(NULL, " "));
+            occupancy           = atof(strtok(NULL, "\t "));
+            charge              = atof(strtok(NULL, "\t "));
             atom->ntypes        = MAX(atom->type[atom_id] + 1, atom->ntypes);
             atom->Natoms++;
             atom->Nlocal++;
@@ -274,14 +292,18 @@ int readAtom_pdb(Atom* atom, Parameter* param)
                    strncmp(item, "ENDMDL", 6) == 0) {
             // Do nothing
         } else {
-            fprintf(stderr, "Invalid item: %s\n", item);
+            if (me == 0) {
+                fprintf(stderr, "Invalid item: %s\n", item);
+            }
             exit(-1);
             return -1;
         }
     }
 
     if (!read_atoms) {
-        fprintf(stderr, "Input error: No atoms read!\n");
+        if (me == 0) {
+            fprintf(stderr, "Input error: No atoms read!\n");
+        }
         exit(-1);
         return -1;
     }
@@ -299,13 +321,20 @@ int readAtom_pdb(Atom* atom, Parameter* param)
         atom->cutforcesq[i] = param->cutforce * param->cutforce;
     }
 
-    fprintf(stdout, "Read %d atoms from %s\n", read_atoms, param->input_file);
+    if (me == 0) {
+        fprintf(stdout, "Read %d atoms from %s\n", read_atoms, param->input_file);
+    }
     fclose(fp);
     return read_atoms;
 }
 
 int readAtom_gro(Atom* atom, Parameter* param)
 {
+    int me = 0;
+#ifdef _MPI
+    MPI_Comm_rank(MPI_COMM_WORLD, &me);
+#endif
+
     FILE* fp = fopen(param->input_file, "r");
     char line[MAXLINE];
     char desc[MAXLINE];
@@ -314,7 +343,9 @@ int readAtom_gro(Atom* atom, Parameter* param)
     int i             = 0;
 
     if (!fp) {
-        fprintf(stderr, "Could not open input file: %s\n", param->input_file);
+        if (me == 0) {
+            fprintf(stderr, "Could not open input file: %s\n", param->input_file);
+        }
         exit(-1);
         return -1;
     }
@@ -324,26 +355,27 @@ int readAtom_gro(Atom* atom, Parameter* param)
         ;
     desc[i] = '\0';
     readline(line, fp);
-    atoms_to_read = atoi(strtok(line, " "));
-    fprintf(stdout, "System: %s with %d atoms\n", desc, atoms_to_read);
-
+    atoms_to_read = atoi(strtok(line, "\t "));
+    if (me == 0) {
+        fprintf(stdout, "System: %s with %d atoms\n", desc, atoms_to_read);
+    }
     while (!feof(fp) && read_atoms < atoms_to_read) {
         readline(line, fp);
-        char* label = strtok(line, " ");
-        int type    = type_str2int(strtok(NULL, " "));
-        int atom_id = atoi(strtok(NULL, " ")) - 1;
+        char* label = strtok(line, "\t ");
+        int type    = type_str2int(strtok(NULL, "\t "));
+        int atom_id = atoi(strtok(NULL, "\t ")) - 1;
         atom_id     = read_atoms;
         while (atom_id + 1 >= atom->Nmax) {
             growAtom(atom);
         }
 
         atom->type[atom_id] = type;
-        atom_x(atom_id)     = atof(strtok(NULL, " "));
-        atom_y(atom_id)     = atof(strtok(NULL, " "));
-        atom_z(atom_id)     = atof(strtok(NULL, " "));
-        atom_vx(atom_id)    = atof(strtok(NULL, " "));
-        atom_vy(atom_id)    = atof(strtok(NULL, " "));
-        atom_vz(atom_id)    = atof(strtok(NULL, " "));
+        atom_x(atom_id)     = atof(strtok(NULL, "\t "));
+        atom_y(atom_id)     = atof(strtok(NULL, "\t "));
+        atom_z(atom_id)     = atof(strtok(NULL, "\t "));
+        atom_vx(atom_id)    = atof(strtok(NULL, "\t "));
+        atom_vy(atom_id)    = atof(strtok(NULL, "\t "));
+        atom_vz(atom_id)    = atof(strtok(NULL, "\t "));
         atom->ntypes        = MAX(atom->type[atom_id] + 1, atom->ntypes);
         atom->Natoms++;
         atom->Nlocal++;
@@ -353,21 +385,23 @@ int readAtom_gro(Atom* atom, Parameter* param)
     if (!feof(fp)) {
         readline(line, fp);
         param->xlo  = 0.0;
-        param->xhi  = atof(strtok(line, " "));
+        param->xhi  = atof(strtok(line, "\t "));
         param->ylo  = 0.0;
-        param->yhi  = atof(strtok(NULL, " "));
+        param->yhi  = atof(strtok(NULL, "\t "));
         param->zlo  = 0.0;
-        param->zhi  = atof(strtok(NULL, " "));
+        param->zhi  = atof(strtok(NULL, "\t "));
         param->xprd = param->xhi - param->xlo;
         param->yprd = param->yhi - param->ylo;
         param->zprd = param->zhi - param->zlo;
     }
 
     if (read_atoms != atoms_to_read) {
-        fprintf(stderr,
-            "Input error: Number of atoms read do not match (%d/%d).\n",
-            read_atoms,
-            atoms_to_read);
+        if (me == 0) {
+            fprintf(stderr,
+                "Input error: Number of atoms read do not match (%d/%d).\n",
+                read_atoms,
+                atoms_to_read);
+        }
         exit(-1);
         return -1;
     }
@@ -385,13 +419,19 @@ int readAtom_gro(Atom* atom, Parameter* param)
         atom->cutforcesq[i] = param->cutforce * param->cutforce;
     }
 
-    fprintf(stdout, "Read %d atoms from %s\n", read_atoms, param->input_file);
+    if (me == 0) {
+        fprintf(stdout, "Read %d atoms from %s\n", read_atoms, param->input_file);
+    }
     fclose(fp);
     return read_atoms;
 }
 
 int readAtom_dmp(Atom* atom, Parameter* param)
 {
+    int me = 0;
+#ifdef _MPI
+    MPI_Comm_rank(MPI_COMM_WORLD, &me);
+#endif
     FILE* fp = fopen(param->input_file, "r");
     char line[MAXLINE];
     int natoms     = 0;
@@ -400,7 +440,9 @@ int readAtom_dmp(Atom* atom, Parameter* param)
     int ts         = -1;
 
     if (!fp) {
-        fprintf(stderr, "Could not open input file: %s\n", param->input_file);
+        if (me == 0) {
+            fprintf(stderr, "Could not open input file: %s\n", param->input_file);
+        }
         exit(-1);
         return -1;
     }
@@ -423,49 +465,55 @@ int readAtom_dmp(Atom* atom, Parameter* param)
                 }
             } else if (strncmp(item, "BOX BOUNDS pp pp pp", 19) == 0) {
                 readline(line, fp);
-                param->xlo  = atof(strtok(line, " "));
-                param->xhi  = atof(strtok(NULL, " "));
+                param->xlo  = atof(strtok(line, "\t "));
+                param->xhi  = atof(strtok(NULL, "\t "));
                 param->xprd = param->xhi - param->xlo;
 
                 readline(line, fp);
-                param->ylo  = atof(strtok(line, " "));
-                param->yhi  = atof(strtok(NULL, " "));
+                param->ylo  = atof(strtok(line, "\t "));
+                param->yhi  = atof(strtok(NULL, "\t "));
                 param->yprd = param->yhi - param->ylo;
 
                 readline(line, fp);
-                param->zlo  = atof(strtok(line, " "));
-                param->zhi  = atof(strtok(NULL, " "));
+                param->zlo  = atof(strtok(line, "\t "));
+                param->zhi  = atof(strtok(NULL, "\t "));
                 param->zprd = param->zhi - param->zlo;
             } else if (strncmp(item, "ATOMS id type x y z vx vy vz", 28) == 0) {
                 for (int i = 0; i < natoms; i++) {
                     readline(line, fp);
-                    atom_id             = atoi(strtok(line, " ")) - 1;
-                    atom->type[atom_id] = atoi(strtok(NULL, " "));
-                    atom_x(atom_id)     = atof(strtok(NULL, " "));
-                    atom_y(atom_id)     = atof(strtok(NULL, " "));
-                    atom_z(atom_id)     = atof(strtok(NULL, " "));
-                    atom_vx(atom_id)    = atof(strtok(NULL, " "));
-                    atom_vy(atom_id)    = atof(strtok(NULL, " "));
-                    atom_vz(atom_id)    = atof(strtok(NULL, " "));
+                    atom_id             = atoi(strtok(line, "\t ")) - 1;
+                    atom->type[atom_id] = atoi(strtok(NULL, "\t "));
+                    atom_x(atom_id)     = atof(strtok(NULL, "\t "));
+                    atom_y(atom_id)     = atof(strtok(NULL, "\t "));
+                    atom_z(atom_id)     = atof(strtok(NULL, "\t "));
+                    atom_vx(atom_id)    = atof(strtok(NULL, "\t "));
+                    atom_vy(atom_id)    = atof(strtok(NULL, "\t "));
+                    atom_vz(atom_id)    = atof(strtok(NULL, "\t "));
                     atom->ntypes        = MAX(atom->type[atom_id], atom->ntypes);
                     read_atoms++;
                 }
             } else {
-                fprintf(stderr, "Invalid item: %s\n", item);
+                if (me == 0) {
+                    fprintf(stderr, "Invalid item: %s\n", item);
+                }
                 exit(-1);
                 return -1;
             }
         } else {
-            fprintf(stderr,
-                "Invalid input from file, expected item reference but got:\n%s\n",
-                line);
+            if (me == 0) {
+                fprintf(stderr,
+                    "Invalid input from file, expected item reference but got:\n%s\n",
+                    line);
+            }
             exit(-1);
             return -1;
         }
     }
 
     if (ts < 0 || !natoms || !read_atoms) {
-        fprintf(stderr, "Input error: atom data was not read!\n");
+        if (me == 0) {
+            fprintf(stderr, "Input error: atom data was not read!\n");
+        }
         exit(-1);
         return -1;
     }
@@ -483,31 +531,41 @@ int readAtom_dmp(Atom* atom, Parameter* param)
         atom->cutforcesq[i] = param->cutforce * param->cutforce;
     }
 
-    fprintf(stdout, "Read %d atoms from %s\n", natoms, param->input_file);
+    if (me == 0) {
+        fprintf(stdout, "Read %d atoms from %s\n", natoms, param->input_file);
+    }
     return natoms;
 }
 
 int readAtom_in(Atom* atom, Parameter* param)
 {
+    int me = 0;
+#ifdef _MPI
+    MPI_Comm_rank(MPI_COMM_WORLD, &me);
+#endif
     FILE* fp = fopen(param->input_file, "r");
     char line[MAXLINE];
     int natoms  = 0;
     int atom_id = 0;
 
     if (!fp) {
-        fprintf(stderr, "Could not open input file: %s\n", param->input_file);
+        if (me == 0) {
+            fprintf(stderr, "Could not open input file: %s\n", param->input_file);
+        }
         exit(-1);
         return -1;
     }
-
     readline(line, fp);
-    natoms       = atoi(strtok(line, " "));
-    param->xlo   = atof(strtok(NULL, " "));
-    param->xhi   = atof(strtok(NULL, " "));
-    param->ylo   = atof(strtok(NULL, " "));
-    param->yhi   = atof(strtok(NULL, " "));
-    param->zlo   = atof(strtok(NULL, " "));
-    param->zhi   = atof(strtok(NULL, " "));
+    natoms       = atoi(strtok(line, "\t "));
+    param->xlo   = atof(strtok(NULL, "\t "));
+    param->xhi   = atof(strtok(NULL, "\t "));
+    param->ylo   = atof(strtok(NULL, "\t "));
+    param->yhi   = atof(strtok(NULL, "\t "));
+    param->zlo   = atof(strtok(NULL, "\t "));
+    param->zhi   = atof(strtok(NULL, "\t "));
+    param->xprd  = param->xhi - param->xlo;
+    param->yprd  = param->yhi - param->ylo;
+    param->zprd  = param->zhi - param->zlo;
     atom->Natoms = natoms;
     atom->Nlocal = natoms;
     atom->ntypes = 1;
@@ -520,26 +578,27 @@ int readAtom_in(Atom* atom, Parameter* param)
         readline(line, fp);
 
         // TODO: store mass per atom
-        char* s_mass = strtok(line, " ");
+        char* s_mass = strtok(line, "\t ");
         if (strncmp(s_mass, "inf", 3) == 0) {
             // Set atom's mass to INFINITY
         } else {
             param->mass = atof(s_mass);
         }
 
-        atom_x(atom_id)     = atof(strtok(NULL, " "));
-        atom_y(atom_id)     = atof(strtok(NULL, " "));
-        atom_z(atom_id)     = atof(strtok(NULL, " "));
-        atom_vx(atom_id)    = atof(strtok(NULL, " "));
-        atom_vy(atom_id)    = atof(strtok(NULL, " "));
-        atom_vz(atom_id)    = atof(strtok(NULL, " "));
+        atom_x(atom_id)     = atof(strtok(NULL, "\t "));
+        atom_y(atom_id)     = atof(strtok(NULL, "\t "));
+        atom_z(atom_id)     = atof(strtok(NULL, "\t "));
+        atom_vx(atom_id)    = atof(strtok(NULL, "\t "));
+        atom_vy(atom_id)    = atof(strtok(NULL, "\t "));
+        atom_vz(atom_id)    = atof(strtok(NULL, "\t "));
         atom->type[atom_id] = 0;
         atom->ntypes        = MAX(atom->type[atom_id], atom->ntypes);
         atom_id++;
     }
-
     if (!natoms) {
-        fprintf(stderr, "Input error: atom data was not read!\n");
+        if (me == 0) {
+            fprintf(stderr, "Input error: atom data was not read!\n");
+        }
         exit(-1);
         return -1;
     }
@@ -557,7 +616,9 @@ int readAtom_in(Atom* atom, Parameter* param)
         atom->cutforcesq[i] = param->cutforce * param->cutforce;
     }
 
-    fprintf(stdout, "Read %d atoms from %s\n", natoms, param->input_file);
+    if (me == 0) {
+        fprintf(stdout, "Read %d atoms from %s\n", natoms, param->input_file);
+    }
     return natoms;
 }
 
@@ -615,4 +676,124 @@ void growAtom(Atom* atom)
     REALLOC(fz, MD_FLOAT, atom->Nmax * sizeof(MD_FLOAT), nold * sizeof(MD_FLOAT));
 #endif
     REALLOC(type, int, atom->Nmax * sizeof(int), nold * sizeof(int));
+}
+
+/* MPI added*/
+void packForward(Atom* atom, int n, int* list, MD_FLOAT* buf, int* pbc)
+{
+    int i, j;
+    for (i = 0; i < n; i++) {
+        j        = list[i];
+        buf_x(i) = atom_x(j) + pbc[0] * atom->mybox.xprd;
+        buf_y(i) = atom_y(j) + pbc[1] * atom->mybox.yprd;
+        buf_z(i) = atom_z(j) + pbc[2] * atom->mybox.zprd;
+    }
+}
+
+void unpackForward(Atom* atom, int n, int first, MD_FLOAT* buf)
+{
+    for (int i = 0; i < n; i++) {
+        atom_x((first + i)) = buf_x(i);
+        atom_y((first + i)) = buf_y(i);
+        atom_z((first + i)) = buf_z(i);
+    }
+}
+
+int packGhost(Atom* atom, int i, MD_FLOAT* buf, int* pbc)
+{
+    int m    = 0;
+    buf[m++] = atom_x(i) + pbc[_x] * atom->mybox.xprd;
+    buf[m++] = atom_y(i) + pbc[_y] * atom->mybox.yprd;
+    buf[m++] = atom_z(i) + pbc[_z] * atom->mybox.zprd;
+    buf[m++] = atom->type[i];
+    return m;
+}
+
+int unpackGhost(Atom* atom, int i, MD_FLOAT* buf)
+{
+    while (i >= atom->Nmax)
+        growAtom(atom);
+    int m         = 0;
+    atom_x(i)     = buf[m++];
+    atom_y(i)     = buf[m++];
+    atom_z(i)     = buf[m++];
+    atom->type[i] = buf[m++];
+    atom->Nghost++;
+    return m;
+}
+
+void packReverse(Atom* atom, int n, int first, MD_FLOAT* buf)
+{
+    for (int i = 0; i < n; i++) {
+        buf_x(i) = atom_fx(first + i);
+        buf_y(i) = atom_fy(first + i);
+        buf_z(i) = atom_fz(first + i);
+    }
+}
+
+void unpackReverse(Atom* atom, int n, int* list, MD_FLOAT* buf)
+{
+    int i, j;
+    for (i = 0; i < n; i++) {
+        j = list[i];
+        atom_fx(j) += buf_x(i);
+        atom_fy(j) += buf_y(i);
+        atom_fz(j) += buf_z(i);
+    }
+}
+
+int packExchange(Atom* atom, int i, MD_FLOAT* buf)
+{
+    int m    = 0;
+    buf[m++] = atom_x(i);
+    buf[m++] = atom_y(i);
+    buf[m++] = atom_z(i);
+    buf[m++] = atom_vx(i);
+    buf[m++] = atom_vy(i);
+    buf[m++] = atom_vz(i);
+    buf[m++] = atom->type[i];
+    return m;
+}
+
+int unpackExchange(Atom* atom, int i, MD_FLOAT* buf)
+{
+    while (i >= atom->Nmax)
+        growAtom(atom);
+    int m         = 0;
+    atom_x(i)     = buf[m++];
+    atom_y(i)     = buf[m++];
+    atom_z(i)     = buf[m++];
+    atom_vx(i)    = buf[m++];
+    atom_vy(i)    = buf[m++];
+    atom_vz(i)    = buf[m++];
+    atom->type[i] = buf[m++];
+    return m;
+}
+
+void pbc(Atom* atom)
+{
+    for (int i = 0; i < atom->Nlocal; i++) {
+
+        MD_FLOAT xprd = atom->mybox.xprd;
+        MD_FLOAT yprd = atom->mybox.yprd;
+        MD_FLOAT zprd = atom->mybox.zprd;
+
+        if (atom_x(i) < 0.0) atom_x(i) += xprd;
+        if (atom_y(i) < 0.0) atom_y(i) += yprd;
+        if (atom_z(i) < 0.0) atom_z(i) += zprd;
+        if (atom_x(i) >= xprd) atom_x(i) -= xprd;
+        if (atom_y(i) >= yprd) atom_y(i) -= yprd;
+        if (atom_z(i) >= zprd) atom_z(i) -= zprd;
+    }
+}
+
+void copy(Atom* atom, int i, int j)
+{
+    atom_x(i)     = atom_x(j);
+    atom_y(i)     = atom_y(j);
+    atom_z(i)     = atom_z(j);
+    atom_vx(i)    = atom_vx(j);
+    atom_vy(i)    = atom_vy(j);
+    atom_vz(i)    = atom_vz(j);
+    atom->type[i] = atom->type[j];
 }

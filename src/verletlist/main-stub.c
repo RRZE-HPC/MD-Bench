@@ -22,8 +22,7 @@
 #include <timing.h>
 #include <util.h>
 
-#define HLINE                                                                            \
-    "----------------------------------------------------------------------------\n"
+#define HLINE "-----------------------------------------------------------------------\n"
 
 // Patterns
 #define P_SEQ  0
@@ -65,7 +64,8 @@ void createNeighbors(Atom* atom, Neighbor* neighbor, int pattern, int nneighs, i
 
     if (pattern == P_RAND && atom->Nlocal <= nneighs) {
         fprintf(stderr,
-            "Error: When using random pattern, number of atoms should be higher than "
+            "Error: When using random pattern, number of atoms should "
+            "be higher than "
             "number of neighbors per atom!\n");
         exit(-1);
     }
@@ -178,15 +178,15 @@ int main(int argc, const char* argv[])
             printf("MD Bench: A minimalistic re-implementation of miniMD\n");
             printf(HLINE);
             printf("-f <string>:          force field (lj or eam), default lj\n");
-            printf(
-                "-p <string>:          pattern for data accesses (seq, fix or rand)\n");
+            printf("-p <string>:          pattern for data accesses (seq, fix or "
+                   "rand)\n");
             printf("-n / --nsteps <int>:  number of timesteps for simulation\n");
             printf("-na <int>:            number of atoms (default 256)\n");
             printf("-nn <int>:            number of neighbors per atom (default 76)\n");
             printf("-nr <int>:            number of times neighbor lists should be "
                    "replicated (default 1)\n");
-            printf("--freq <real>:        set CPU frequency (GHz) and display average "
-                   "cycles per atom and neighbors\n");
+            printf("--freq <real>:        set CPU frequency (GHz) and display "
+                   "average cycles per atom and neighbors\n");
             printf("--csv:                set output as CSV style\n");
             printf(HLINE);
             exit(EXIT_SUCCESS);
@@ -294,7 +294,8 @@ int main(int argc, const char* argv[])
                 cycles_per_neigh);
         }
     } else {
-        printf("steps,pattern,natoms,nneighs,nreps,total vol.(kB),atoms vol.(kB),neigh "
+        printf("steps,pattern,natoms,nneighs,nreps,total vol.(kB),atoms "
+               "vol.(kB),neigh "
                "vol.(kB),time(s),atom upds/s(M)");
         if (param.proc_freq > 0.0) {
             printf(",cy/atom,cy/neigh");

@@ -18,103 +18,99 @@
 #define MD_SIMD_INT32   __m512i
 #define MD_SIMD_BITMASK MD_SIMD_INT32
 
-static inline MD_SIMD_BITMASK simd_load_bitmask(const int* m)
+static inline MD_SIMD_BITMASK simd_load_bitmask(const int* m) 
 {
     return _mm512_load_si512(m);
 }
 
 static inline MD_SIMD_INT32 simd_int32_broadcast(int a) { return _mm512_set1_epi32(a); }
 
-static inline MD_SIMD_IBOOL simd_test_bits(MD_SIMD_FLOAT a)
+static inline MD_SIMD_IBOOL simd_test_bits(MD_SIMD_FLOAT a) 
 {
     return _mm512_test_epi32_mask(_mm512_castps_si512(a), _mm512_castps_si512(a));
 }
 
 static inline MD_SIMD_MASK cvtIB2B(MD_SIMD_IBOOL a) { return a; }
-static inline MD_SIMD_FLOAT simd_broadcast(float scalar)
-{
-    return _mm512_set1_ps(scalar);
+static inline MD_SIMD_FLOAT simd_broadcast(float scalar) 
+{ 
+    return _mm512_set1_ps(scalar); 
 }
 static inline MD_SIMD_FLOAT simd_zero(void) { return _mm512_set1_ps(0.0f); }
-static inline MD_SIMD_FLOAT simd_add(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b)
-{
-    return _mm512_add_ps(a, b);
+static inline MD_SIMD_FLOAT simd_add(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b) 
+{ 
+    return _mm512_add_ps(a, b); 
 }
-static inline MD_SIMD_FLOAT simd_sub(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b)
-{
-    return _mm512_sub_ps(a, b);
+static inline MD_SIMD_FLOAT simd_sub(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b) 
+{ 
+    return _mm512_sub_ps(a, b); 
 }
-static inline MD_SIMD_FLOAT simd_mul(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b)
-{
-    return _mm512_mul_ps(a, b);
+static inline MD_SIMD_FLOAT simd_mul(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b) 
+{ 
+    return _mm512_mul_ps(a, b); 
 }
-static inline MD_SIMD_FLOAT simd_fma(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b, MD_SIMD_FLOAT c)
-{
-    return _mm512_fmadd_ps(a, b, c);
+static inline MD_SIMD_FLOAT simd_fma(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b, MD_SIMD_FLOAT c) 
+{ 
+    return _mm512_fmadd_ps(a, b, c); 
 }
-static inline MD_SIMD_FLOAT simd_reciprocal(MD_SIMD_FLOAT a)
-{
-    return _mm512_rcp14_ps(a);
+static inline MD_SIMD_FLOAT simd_reciprocal(MD_SIMD_FLOAT a) 
+{ 
+    return _mm512_rcp14_ps(a); 
 }
 static inline MD_SIMD_FLOAT simd_masked_add(
-    MD_SIMD_FLOAT a, MD_SIMD_FLOAT b, MD_SIMD_MASK m)
-{
-    return _mm512_mask_add_ps(a, m, a, b);
+        MD_SIMD_FLOAT a, MD_SIMD_FLOAT b, MD_SIMD_MASK m) 
+{ 
+    return _mm512_mask_add_ps(a, m, a, b); 
 }
-static inline MD_SIMD_MASK simd_mask_and(MD_SIMD_MASK a, MD_SIMD_MASK b)
-{
-    return _kand_mask16(a, b);
+static inline MD_SIMD_MASK simd_mask_and(MD_SIMD_MASK a, MD_SIMD_MASK b) 
+{ 
+    return _kand_mask16(a, b); 
 }
-static inline MD_SIMD_MASK simd_mask_cond_lt(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b)
-{
-    return _mm512_cmp_ps_mask(a, b, _CMP_LT_OQ);
+static inline MD_SIMD_MASK simd_mask_cond_lt(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b) 
+{ 
+    return _mm512_cmp_ps_mask(a, b, _CMP_LT_OQ); 
 }
-static inline MD_SIMD_MASK simd_mask_from_u32(unsigned int a)
-{
-    return _cvtu32_mask16(a);
+static inline MD_SIMD_MASK simd_mask_from_u32(unsigned int a) 
+{ 
+    return _cvtu32_mask16(a); 
 }
 static inline unsigned int simd_mask_to_u32(MD_SIMD_MASK a) { return _cvtmask16_u32(a); }
 static inline MD_SIMD_FLOAT simd_load(MD_FLOAT* p) { return _mm512_load_ps(p); }
 static inline void simd_store(MD_FLOAT* p, MD_SIMD_FLOAT a) { _mm512_store_ps(p, a); }
-static inline MD_SIMD_FLOAT select_by_mask(MD_SIMD_FLOAT a, MD_SIMD_MASK m)
-{
-    return _mm512_mask_mov_ps(_mm512_setzero_ps(), m, a);
+static inline MD_SIMD_FLOAT select_by_mask(MD_SIMD_FLOAT a, MD_SIMD_MASK m) 
+{ 
+    return _mm512_mask_mov_ps(_mm512_setzero_ps(), m, a); 
 }
-static inline MD_FLOAT simd_h_reduce_sum(MD_SIMD_FLOAT a)
+static inline MD_FLOAT simd_h_reduce_sum(MD_SIMD_FLOAT a) 
 {
     // This would only be called in a Mx16 configuration, which is not valid in GROMACS
-    fprintf(stderr,
-        "simd_h_reduce_sum(): Called with AVX512 intrinsics and single-precision which "
-        "is not valid!\n");
+    fprintf(stderr, "simd_h_reduce_sum(): Called with AVX512 intrinsics and single-precision which is not valid!\n");
     exit(-1);
     return 0.0;
 }
 
 static inline MD_FLOAT simd_incr_reduced_sum(
-    MD_FLOAT* m, MD_SIMD_FLOAT v0, MD_SIMD_FLOAT v1, MD_SIMD_FLOAT v2, MD_SIMD_FLOAT v3)
+    MD_FLOAT* m, MD_SIMD_FLOAT v0, MD_SIMD_FLOAT v1, MD_SIMD_FLOAT v2, MD_SIMD_FLOAT v3) 
 {
     // This would only be called in a Mx16 configuration, which is not valid in GROMACS
-    fprintf(stderr,
-        "simd_h_reduce_sum(): Called with AVX512 intrinsics and single-precision which "
-        "is not valid!\n");
+    fprintf(stderr, "simd_h_reduce_sum(): Called with AVX512 intrinsics and single-precision which is not valid!\n");
     exit(-1);
     return 0.0;
 }
 
-static inline MD_SIMD_FLOAT simd_load_h_duplicate(const float* m)
+static inline MD_SIMD_FLOAT simd_load_h_duplicate(const float* m) 
 {
     return _mm512_castpd_ps(_mm512_broadcast_f64x4(_mm256_load_pd((const double*)(m))));
 }
 
-static inline MD_SIMD_FLOAT simd_load_h_dual(const float* m)
+static inline MD_SIMD_FLOAT simd_load_h_dual(const float* m) 
 {
-    return _mm512_shuffle_f32x4(_mm512_broadcastss_ps(_mm_load_ss(m)),
-        _mm512_broadcastss_ps(_mm_load_ss(m + 1)),
-        0x44);
+    return _mm512_shuffle_f32x4(_mm512_broadcastss_ps(_mm_load_ss(m)), 
+                                _mm512_broadcastss_ps(_mm_load_ss(m + 1)), 
+                                0x44);
 }
 
 static inline MD_FLOAT simd_h_dual_incr_reduced_sum(
-    float* m, MD_SIMD_FLOAT v0, MD_SIMD_FLOAT v1)
+    float* m, MD_SIMD_FLOAT v0, MD_SIMD_FLOAT v1) 
 {
     __m512 t0, t1;
     __m128 t2, t3;
@@ -135,7 +131,7 @@ static inline MD_FLOAT simd_h_dual_incr_reduced_sum(
     return _mm_cvtss_f32(t3);
 }
 
-static inline void simd_h_decr(MD_FLOAT* m, MD_SIMD_FLOAT a)
+static inline void simd_h_decr(MD_FLOAT* m, MD_SIMD_FLOAT a) 
 {
     __m256 t;
     a = _mm512_add_ps(a, _mm512_shuffle_f32x4(a, a, 0xee));
@@ -145,7 +141,7 @@ static inline void simd_h_decr(MD_FLOAT* m, MD_SIMD_FLOAT a)
 }
 
 static inline void simd_h_decr3(
-    MD_FLOAT* m, MD_SIMD_FLOAT a0, MD_SIMD_FLOAT a1, MD_SIMD_FLOAT a2)
+    MD_FLOAT* m, MD_SIMD_FLOAT a0, MD_SIMD_FLOAT a1, MD_SIMD_FLOAT a2) 
 {
     simd_h_decr(m, a0);
     simd_h_decr(m + CLUSTER_N, a1);

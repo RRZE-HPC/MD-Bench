@@ -14,7 +14,6 @@ extern "C" {
 //---
 #include <atom.h>
 #include <device.h>
-#include <force.h>
 #include <neighbor.h>
 #include <parameter.h>
 #include <stats.h>

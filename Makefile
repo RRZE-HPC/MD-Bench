@@ -101,6 +101,7 @@ $(BUILD_DIR):
 	@mkdir -p $(BUILD_DIR)
 
 .clangd:
+	$(info ===>  GENERATE clangd config)
 	$(file > .clangd,$(CLANGD_TEMPLATE))
 
 -include $(OBJ:.o=.d)

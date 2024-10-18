@@ -329,15 +329,27 @@ int main(int argc, const char* argv[])
         } else {
             if (param.half_neigh) {
                 if (VECTOR_WIDTH > CLUSTER_M * 2) {
-                    T_accum += computeForceLJ2xnnHalfNeigh(&param, atom, &neighbor, &stats);
+                    T_accum += computeForceLJ2xnnHalfNeigh(&param,
+                        atom,
+                        &neighbor,
+                        &stats);
                 } else {
-                    T_accum += computeForceLJ4xnHalfNeigh(&param, atom, &neighbor, &stats);
+                    T_accum += computeForceLJ4xnHalfNeigh(&param,
+                        atom,
+                        &neighbor,
+                        &stats);
                 }
             } else {
                 if (VECTOR_WIDTH > CLUSTER_M * 2) {
-                    T_accum += computeForceLJ2xnnFullNeigh(&param, atom, &neighbor, &stats);
+                    T_accum += computeForceLJ2xnnFullNeigh(&param,
+                        atom,
+                        &neighbor,
+                        &stats);
                 } else {
-                    T_accum += computeForceLJ4xnFullNeigh(&param, atom, &neighbor, &stats);
+                    T_accum += computeForceLJ4xnFullNeigh(&param,
+                        atom,
+                        &neighbor,
+                        &stats);
                 }
             }
         }

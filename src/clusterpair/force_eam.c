@@ -26,7 +26,7 @@ double computeForceEam(Parameter* param, Atom* atom, Neighbor* neighbor, Stats* 
         eam->fp = (MD_FLOAT *) allocate(ALIGNMENT, atom->Nmax * sizeof(MD_FLOAT));
     }
 
-    int Nlocal = atom->Nlocal;
+        int Nlocal = atom->Nlocal;
     int* neighs;
     MD_FLOAT* fx = atom->fx; MD_FLOAT* fy = atom->fy; MD_FLOAT* fz = atom->fz; int ntypes
     = atom->ntypes; MD_FLOAT* fp = eam->fp; MD_FLOAT* rhor_spline = eam->rhor_spline;
