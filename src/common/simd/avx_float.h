@@ -21,12 +21,18 @@ static inline MD_SIMD_FLOAT simd_load(MD_FLOAT* p) { return _mm256_load_ps(p); }
 static inline void simd_store(MD_FLOAT* p, MD_SIMD_FLOAT a) { _mm256_store_ps(p, a); }
 static inline MD_SIMD_FLOAT select_by_mask(MD_SIMD_FLOAT a, MD_SIMD_MASK m) { return _mm256_and_ps(a, m); }
 static inline MD_SIMD_FLOAT simd_reciprocal(MD_SIMD_FLOAT a) { return _mm256_rcp_ps(a); }
-static inline MD_SIMD_FLOAT simd_fma(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b, MD_SIMD_FLOAT c)
-{
+
+#ifdef __ISA_AVX_FMA__
+static inline MD_SIMD_FLOAT simd_fma(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b, MD_SIMD_FLOAT c) {
     return _mm256_fmadd_ps(a, b, c);
 }
-static inline MD_SIMD_FLOAT simd_masked_add(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b, MD_SIMD_MASK m)
-{
+#else
+static inline MD_SIMD_FLOAT simd_fma(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b, MD_SIMD_FLOAT c) {
+    return simd_add(simd_mul(a, b), c);
+}
+#endif
+
+static inline MD_SIMD_FLOAT simd_masked_add(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b, MD_SIMD_MASK m) {
     return _mm256_add_ps(a, _mm256_and_ps(b, m));
 }
 static inline MD_SIMD_MASK simd_mask_cond_lt(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b) {
@@ -34,13 +40,19 @@ static inline MD_SIMD_MASK simd_mask_cond_lt(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b) {
 }
 static inline MD_SIMD_MASK simd_mask_and(MD_SIMD_MASK a, MD_SIMD_MASK b) { return _mm256_and_ps(a, b); }
 
-static inline MD_SIMD_MASK simd_mask_from_u32(unsigned int a)
-{
-    __m256i broadcast_mask = _mm256_set1_epi32(a);
-    __m256i index = _mm256_setr_epi32(0, 1, 2, 3, 4, 5, 6, 7);
-    __m256i shift = _mm256_and_si256(broadcast_mask, _mm256_sllv_epi32(_mm256_set1_epi32(1), index));
-    __m256i result = _mm256_cmpgt_epi32(shift, _mm256_setzero_si256());
-    return _mm256_castsi256_ps(result);
+static inline MD_SIMD_MASK simd_mask_from_u32(unsigned int a) {
+    const unsigned long int all = 0xFFFFFFFF;
+    const unsigned long int none = 0x0;
+    return _mm256_castsi256_ps(
+        _mm256_set_epi32(
+            (a & 0x80) ? all : none,
+            (a & 0x40) ? all : none,
+            (a & 0x20) ? all : none,
+            (a & 0x10) ? all : none,
+            (a & 0x8) ? all : none,
+            (a & 0x4) ? all : none,
+            (a & 0x2) ? all : none,
+            (a & 0x1) ? all : none));
 }
 
 static inline unsigned int simd_mask_to_u32(MD_SIMD_MASK a) { return _mm256_movemask_ps(a); }
