@@ -18,7 +18,7 @@ options are available:
 SIMD other than NONE.
 - **SIMD:** Instruction set (available options: NONE, SSE, AVX, AVX\_FMA, AVX2, AVX512).
 - **MASK\_REGISTERS:** Use AVX512 mask registers (always true when ISA is set to AVX512).
-- **OPT\_SCHEME:** Optimization algorithm (available options: lammps, gromacs).
+- **OPT\_SCHEME:** Optimization algorithm (available options: verletlist, clusterpair).
 - **ENABLE\_LIKWID:** Enable likwid to make use of HPM counters.
 - **DATA\_TYPE:** Floating-point precision (available options: SP, DP).
 - **DATA\_LAYOUT:** Data layout for atom vector properties (available options: AOS, SOA).
@@ -87,7 +87,14 @@ Wellein: MD-Bench: A generic proxy-app toolbox for state-of-the-art molecular
 dynamics algorithms. Accepted for [PPAM](https://ppam.edu.pl/) 2022, the 14th
 International Conference on Parallel Processing and Applied Mathematics, Gdansk,
 Poland, September 11-14, 2022. PPAM 2022 Best Paper Award. Preprint:
-[arXiv:2207.13094](https://arxiv.org/abs/2207.13094)
+[arXiv:2207.13094](https://arxiv.org/abs/2207.13094), DOI:
+[https://dl.acm.org/doi/10.1007/978-3-031-30442-2_24](https://dl.acm.org/doi/10.1007/978-3-031-30442-2_24)
+
+Rafael Ravedutti Lucio Machado, Jan Eitzinger, Jan Laukemann, Georg Hager, Harald
+Köstler, Gerhard Wellein: MD-Bench: A performance-focused prototyping harness fo
+ state-of-the-art short-range molecular dynamics algorithms. Future Generation
+Computer Systems, Volume 149, 2023, Pages 25-38, ISSN 0167-739X, DOI:
+[https://doi.org/10.1016/j.future.2023.06.023](https://doi.org/10.1016/j.future.2023.06.023)
 
 ## Credits
 
