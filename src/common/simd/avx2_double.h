@@ -12,12 +12,7 @@
 #define MD_SIMD_INT   __m128i
 #define MD_SIMD_MASK  __m256d
 
-static inline int simd_test_any(MD_SIMD_MASK a)
-{
-    __m256i a_si256 = _mm256_castpd_si256(a);
-    return _mm256_testz_si256(a_si256, a_si256) == 0;
-}
-
+static inline int simd_test_any(MD_SIMD_MASK a) { return _mm256_movemask_pd(a) != 0; }
 static inline MD_SIMD_FLOAT simd_broadcast(MD_FLOAT scalar)
 {
     return _mm256_set1_pd(scalar);
@@ -174,4 +169,22 @@ static inline MD_SIMD_INT simd_int_mul(MD_SIMD_INT a, MD_SIMD_INT b)
 static inline MD_SIMD_INT simd_int_mask_load(const int* m, MD_SIMD_MASK k)
 {
     return simd_int_load(m) & _mm256_cvtpd_epi32(k);
+}
+
+static inline MD_SIMD_INT simd_int_load_h_duplicate(const int *m)
+{
+    MD_SIMD_INT ret;
+    fprintf(stderr,
+        "simd_int_load_h_duplicate(): Not implemented for AVX2 with double precision!");
+    exit(-1);
+    return ret;
+}
+
+static inline MD_SIMD_INT simd_int_load_h_dual(const int *m)
+{
+    MD_SIMD_INT ret;
+    fprintf(stderr,
+        "simd_int_load_h_dual(): Not implemented for AVX2 with double precision!");
+    exit(-1);
+    return ret;
 }
