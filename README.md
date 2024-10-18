@@ -83,8 +83,8 @@ TBD
 ## Citations
 
 Rafael Ravedutti Lucio Machado, Jan Eitzinger, Jan Laukemann, Georg Hager, Harald
-Köstler and Gerhard Wellein: MD-Bench: A performance-focused prototyping harness fr
- state-of-the-art short-range molecular dynamics algorithms. Future Generation
+Köstler and Gerhard Wellein: MD-Bench: A performance-focused prototyping harness for
+state-of-the-art short-range molecular dynamics algorithms. Future Generation
 Computer Systems ([FGCS](https://www.sciencedirect.com/journal/future-generation-computer-systems)), Volume 149, 2023, Pages 25-38, ISSN 0167-739X, DOI:
 [https://doi.org/10.1016/j.future.2023.06.023](https://doi.org/10.1016/j.future.2023.06.023)
 
