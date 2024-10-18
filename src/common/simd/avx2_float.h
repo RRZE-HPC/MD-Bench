@@ -8,7 +8,8 @@
 #include <zmmintrin.h>
 
 #define MD_SIMD_FLOAT   __m256
-#define MD_SIMD_MASK    __mmask8
+#define MD_SIMD_MASK    __m256
+#define MD_SIMD_INT     __m256i
 
 static inline int simd_test_any(MD_SIMD_MASK a)
 {
@@ -23,14 +24,23 @@ static inline MD_SIMD_FLOAT simd_sub(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b) { return 
 static inline MD_SIMD_FLOAT simd_mul(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b) { return _mm256_mul_ps(a, b); }
 static inline MD_SIMD_FLOAT simd_load(MD_FLOAT *p) { return _mm256_load_ps(p); }
 static inline void simd_store(MD_FLOAT *p, MD_SIMD_FLOAT a) { _mm256_store_ps(p, a); }
-static inline MD_SIMD_FLOAT select_by_mask(MD_SIMD_FLOAT a, MD_SIMD_MASK m) { return _mm256_mask_mov_ps(_mm256_setzero_ps(), m, a); }
-static inline MD_SIMD_FLOAT simd_reciprocal(MD_SIMD_FLOAT a) { return _mm256_rcp14_ps(a); }
+static inline MD_SIMD_FLOAT select_by_mask(MD_SIMD_FLOAT a, MD_SIMD_MASK m) { return _mm256_and_ps(a, m); }
+static inline MD_SIMD_FLOAT simd_reciprocal(MD_SIMD_FLOAT a) { return _mm256_rcp_ps(a); }
 static inline MD_SIMD_FLOAT simd_fma(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b, MD_SIMD_FLOAT c) { return _mm256_fmadd_ps(a, b, c); }
-static inline MD_SIMD_FLOAT simd_masked_add(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b, MD_SIMD_MASK m) { return _mm256_mask_add_ps(a, m, a, b); }
-static inline MD_SIMD_MASK simd_mask_cond_lt(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b) { return _mm256_cmp_ps_mask(a, b, _CMP_LT_OQ); }
-static inline MD_SIMD_MASK simd_mask_and(MD_SIMD_MASK a, MD_SIMD_MASK b) { return _kand_mask8(a, b); }
-static inline MD_SIMD_MASK simd_mask_from_u32(unsigned int a) { return _cvtu32_mask8(a); }
-static inline unsigned int simd_mask_to_u32(MD_SIMD_MASK a) { return _cvtmask8_u32(a); }
+static inline MD_SIMD_FLOAT simd_masked_add(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b, MD_SIMD_MASK m) { return _mm256_add_ps(a, _mm256_and_ps(b, m)); }
+static inline MD_SIMD_MASK simd_mask_cond_lt(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b) { return _mm256_cmp_ps(a, b, _CMP_LT_OQ); }
+static inline MD_SIMD_MASK simd_mask_and(MD_SIMD_MASK a, MD_SIMD_MASK b) { return _mm256_and_ps(a, b); }
+
+static inline MD_SIMD_MASK simd_mask_from_u32(unsigned int a)
+{
+    __m256i broadcast_mask = _mm256_set1_epi32(a);
+    __m256i index = _mm256_setr_epi32(0, 1, 2, 3, 4, 5, 6, 7);
+    __m256i shift = _mm256_and_si256(broadcast_mask, _mm256_sllv_epi32(_mm256_set1_epi32(1), index));
+    __m256i result = _mm256_cmpgt_epi32(shift, _mm256_setzero_si256());
+    return _mm256_castsi256_ps(result);
+}
+
+static inline unsigned int simd_mask_to_u32(MD_SIMD_MASK a) { return _mm256_movemask_ps(a); }
 static inline MD_FLOAT simd_h_reduce_sum(MD_SIMD_FLOAT a) {
     __m128 t0;
     t0 = _mm_add_ps(_mm256_castps256_ps128(a), _mm256_extractf128_ps(a, 0x1));
@@ -87,4 +97,22 @@ static inline void simd_h_decr3(MD_FLOAT *m, MD_SIMD_FLOAT a0, MD_SIMD_FLOAT a1,
     simd_h_decr(m, a0);
     simd_h_decr(m + CLUSTER_N, a1);
     simd_h_decr(m + CLUSTER_N * 2, a2);
+}
+
+static inline MD_SIMD_INT simd_int_broadcast(int scalar) { return _mm256_set1_epi32(scalar); }
+static inline MD_SIMD_INT simd_int_load(const int *m) { return _mm256_load_si256((MD_SIMD_INT *) m); }
+static inline MD_SIMD_INT simd_int_load_h_duplicate(const int *m) {
+    return _mm256_broadcastsi128_si256(_mm_load_si128((const __m128i *)(m)));
+}
+
+static inline MD_SIMD_INT simd_int_load_h_dual(const int *m)
+{
+    __m128i t0, t1;
+    t0 = _mm_broadcastd_epi32(_mm_load_epi32(m));
+    t1 = _mm_broadcastd_epi32(_mm_load_epi32(m + 1));
+    return _mm256_inserti128_si256(_mm256_castsi128_si256(t0), t1, 0x1);
+}
+
+static inline MD_SIMD_FLOAT simd_gather(MD_SIMD_INT vidx, MD_FLOAT *base, const int scale) {
+    return _mm256_i32gather_ps(base, vidx, scale);
 }
