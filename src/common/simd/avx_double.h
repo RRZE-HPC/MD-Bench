@@ -98,7 +98,6 @@ static inline void simd_h_decr3(MD_FLOAT *m, MD_SIMD_FLOAT a0, MD_SIMD_FLOAT a1,
     exit(-1);
 }
 
-static inline MD_SIMD_FLOAT simd_gather(MD_SIMD_INT vidx, const MD_FLOAT *m, int s) { return _mm256_i32gather_pd(m, vidx, s); }
 static inline MD_SIMD_INT simd_int_broadcast(int scalar) { return _mm_set1_epi32(scalar); }
 static inline MD_SIMD_INT simd_int_zero() { return _mm_setzero_si128(); }
 static inline MD_SIMD_INT simd_int_seq() { return _mm_set_epi32(3, 2, 1, 0); }
@@ -116,11 +115,20 @@ static inline MD_SIMD_INT simd_int_load_h_duplicate(const int *m)
     return ret;
 }
 
-static inline MD_SIMD_INT simd_int_load_h_dual(const int *m)
+static inline MD_SIMD_INT simd_int_load_h_dual_scaled(const int *m, int scale)
 {
     MD_SIMD_INT ret;
     fprintf(stderr,
-        "simd_int_load_h_dual(): Not implemented for AVX2 with double precision!");
+        "simd_int_load_h_dual_scaled(): Not implemented for AVX2 with double precision!");
     exit(-1);
     return ret;
+}
+
+static inline MD_SIMD_FLOAT simd_gather(MD_SIMD_INT vidx, MD_FLOAT *base, const int scale) {
+    __m128i scaled = vidx; // _mm_mullo_epi32(vidx, _mm_set1_epi32(scale));
+    int i0 = _mm_extract_epi32(scaled, 0);
+    int i1 = _mm_extract_epi32(scaled, 1);
+    int i2 = _mm_extract_epi32(scaled, 2);
+    int i3 = _mm_extract_epi32(scaled, 3);
+    return _mm256_set_pd(base[i3], base[i2], base[i1], base[i0]);
 }

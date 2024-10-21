@@ -280,9 +280,8 @@ double computeForceLJ2xnnHalfNeigh(
 #ifndef ONE_ATOM_TYPE
             int ci_sca_base        = CI_SCALAR_BASE_INDEX(ci);
             int* ci_t              = &atom->cl_t[ci_sca_base];
-            MD_SIMD_INT ntypes_vec = simd_int_broadcast(atom->ntypes);
-            MD_SIMD_INT tbase0     = simd_int_load_h_dual(&ci_t[0]) * ntypes_vec;
-            MD_SIMD_INT tbase2     = simd_int_load_h_dual(&ci_t[2]) * ntypes_vec;
+            MD_SIMD_INT tbase0     = simd_int_load_h_dual_scaled(&ci_t[0], atom->ntypes);
+            MD_SIMD_INT tbase2     = simd_int_load_h_dual_scaled(&ci_t[2], atom->ntypes);
 #endif
 
             for (int k = 0; k < numneighs_masked; k++) {
@@ -340,8 +339,8 @@ double computeForceLJ2xnnHalfNeigh(
 
 #ifndef ONE_ATOM_TYPE
                 MD_SIMD_INT tj_tmp = simd_int_load_h_duplicate(cj_t);
-                MD_SIMD_INT tvec0  = tbase0 + tj_tmp;
-                MD_SIMD_INT tvec2  = tbase2 + tj_tmp;
+                MD_SIMD_INT tvec0  = simd_int_add(tbase0, tj_tmp);
+                MD_SIMD_INT tvec2  = simd_int_add(tbase2, tj_tmp);
 
                 MD_SIMD_FLOAT cutforcesq0 = simd_gather(tvec0, atom->cutforcesq, sizeof(MD_FLOAT));
                 MD_SIMD_FLOAT cutforcesq2 = simd_gather(tvec2, atom->cutforcesq, sizeof(MD_FLOAT));
@@ -435,8 +434,8 @@ double computeForceLJ2xnnHalfNeigh(
 
 #ifndef ONE_ATOM_TYPE
                 MD_SIMD_INT tj_tmp = simd_int_load_h_duplicate(cj_t);
-                MD_SIMD_INT tvec0  = tbase0 + tj_tmp;
-                MD_SIMD_INT tvec2  = tbase2 + tj_tmp;
+                MD_SIMD_INT tvec0  = simd_int_add(tbase0, tj_tmp);
+                MD_SIMD_INT tvec2  = simd_int_add(tbase2, tj_tmp);
 
                 MD_SIMD_FLOAT cutforcesq0 = simd_gather(tvec0, atom->cutforcesq, sizeof(MD_FLOAT));
                 MD_SIMD_FLOAT cutforcesq2 = simd_gather(tvec2, atom->cutforcesq, sizeof(MD_FLOAT));
@@ -563,9 +562,8 @@ double computeForceLJ2xnnFullNeigh(
 #ifndef ONE_ATOM_TYPE
             int ci_sca_base        = CI_SCALAR_BASE_INDEX(ci);
             int* ci_t              = &atom->cl_t[ci_sca_base];
-            MD_SIMD_INT ntypes_vec = simd_int_broadcast(atom->ntypes);
-            MD_SIMD_INT tbase0     = simd_int_load_h_dual(&ci_t[0]) * ntypes_vec;
-            MD_SIMD_INT tbase2     = simd_int_load_h_dual(&ci_t[2]) * ntypes_vec;
+            MD_SIMD_INT tbase0     = simd_int_load_h_dual_scaled(&ci_t[0], atom->ntypes);
+            MD_SIMD_INT tbase2     = simd_int_load_h_dual_scaled(&ci_t[2], atom->ntypes);
 #endif
 
             for (int k = 0; k < numneighs_masked; k++) {
@@ -617,8 +615,8 @@ double computeForceLJ2xnnFullNeigh(
 
 #ifndef ONE_ATOM_TYPE
                 MD_SIMD_INT tj_tmp = simd_int_load_h_duplicate(cj_t);
-                MD_SIMD_INT tvec0  = tbase0 + tj_tmp;
-                MD_SIMD_INT tvec2  = tbase2 + tj_tmp;
+                MD_SIMD_INT tvec0  = simd_int_add(tbase0, tj_tmp);
+                MD_SIMD_INT tvec2  = simd_int_add(tbase2, tj_tmp);
 
                 MD_SIMD_FLOAT cutforcesq0 = simd_gather(tvec0, atom->cutforcesq, sizeof(MD_FLOAT));
                 MD_SIMD_FLOAT cutforcesq2 = simd_gather(tvec2, atom->cutforcesq, sizeof(MD_FLOAT));
@@ -683,8 +681,8 @@ double computeForceLJ2xnnFullNeigh(
 
 #ifndef ONE_ATOM_TYPE
                 MD_SIMD_INT tj_tmp = simd_int_load_h_duplicate(cj_t);
-                MD_SIMD_INT tvec0  = tbase0 + tj_tmp;
-                MD_SIMD_INT tvec2  = tbase2 + tj_tmp;
+                MD_SIMD_INT tvec0  = simd_int_add(tbase0, tj_tmp);
+                MD_SIMD_INT tvec2  = simd_int_add(tbase2, tj_tmp);
 
                 MD_SIMD_FLOAT cutforcesq0 = simd_gather(tvec0, atom->cutforcesq, sizeof(MD_FLOAT));
                 MD_SIMD_FLOAT cutforcesq2 = simd_gather(tvec2, atom->cutforcesq, sizeof(MD_FLOAT));
@@ -813,11 +811,10 @@ double computeForceLJ4xnHalfNeigh(
 #ifndef ONE_ATOM_TYPE
             int ci_sca_base        = CI_SCALAR_BASE_INDEX(ci);
             int* ci_t              = &atom->cl_t[ci_sca_base];
-            MD_SIMD_INT ntypes_vec = simd_int_broadcast(atom->ntypes);
-            MD_SIMD_INT tbase0     = simd_int_broadcast(ci_t[0]) * ntypes_vec;
-            MD_SIMD_INT tbase1     = simd_int_broadcast(ci_t[1]) * ntypes_vec;
-            MD_SIMD_INT tbase2     = simd_int_broadcast(ci_t[2]) * ntypes_vec;
-            MD_SIMD_INT tbase3     = simd_int_broadcast(ci_t[3]) * ntypes_vec;
+            MD_SIMD_INT tbase0     = simd_int_broadcast(ci_t[0] * atom->ntypes);
+            MD_SIMD_INT tbase1     = simd_int_broadcast(ci_t[1] * atom->ntypes);
+            MD_SIMD_INT tbase2     = simd_int_broadcast(ci_t[2] * atom->ntypes);
+            MD_SIMD_INT tbase3     = simd_int_broadcast(ci_t[3] * atom->ntypes);
 #endif
 
             for (int k = 0; k < numneighs_masked; k++) {
@@ -890,10 +887,10 @@ double computeForceLJ4xnHalfNeigh(
 
 #ifndef ONE_ATOM_TYPE
                 MD_SIMD_INT tj_tmp = simd_int_load(cj_t);
-                MD_SIMD_INT tvec0  = tbase0 + tj_tmp;
-                MD_SIMD_INT tvec1  = tbase1 + tj_tmp;
-                MD_SIMD_INT tvec2  = tbase2 + tj_tmp;
-                MD_SIMD_INT tvec3  = tbase3 + tj_tmp;
+                MD_SIMD_INT tvec0  = simd_int_add(tbase0, tj_tmp);
+                MD_SIMD_INT tvec1  = simd_int_add(tbase1, tj_tmp);
+                MD_SIMD_INT tvec2  = simd_int_add(tbase2, tj_tmp);
+                MD_SIMD_INT tvec3  = simd_int_add(tbase3, tj_tmp);
 
                 MD_SIMD_FLOAT cutforcesq0 = simd_gather(tvec0, atom->cutforcesq, sizeof(MD_FLOAT));
                 MD_SIMD_FLOAT cutforcesq1 = simd_gather(tvec1, atom->cutforcesq, sizeof(MD_FLOAT));
@@ -1028,10 +1025,10 @@ double computeForceLJ4xnHalfNeigh(
 
 #ifndef ONE_ATOM_TYPE
                 MD_SIMD_INT tj_tmp = simd_int_load(cj_t);
-                MD_SIMD_INT tvec0  = tbase0 + tj_tmp;
-                MD_SIMD_INT tvec1  = tbase1 + tj_tmp;
-                MD_SIMD_INT tvec2  = tbase2 + tj_tmp;
-                MD_SIMD_INT tvec3  = tbase3 + tj_tmp;
+                MD_SIMD_INT tvec0  = simd_int_add(tbase0, tj_tmp);
+                MD_SIMD_INT tvec1  = simd_int_add(tbase1, tj_tmp);
+                MD_SIMD_INT tvec2  = simd_int_add(tbase2, tj_tmp);
+                MD_SIMD_INT tvec3  = simd_int_add(tbase3, tj_tmp);
 
                 MD_SIMD_FLOAT cutforcesq0 = simd_gather(tvec0, atom->cutforcesq, sizeof(MD_FLOAT));
                 MD_SIMD_FLOAT cutforcesq1 = simd_gather(tvec1, atom->cutforcesq, sizeof(MD_FLOAT));
@@ -1213,11 +1210,10 @@ double computeForceLJ4xnFullNeigh(
 #ifndef ONE_ATOM_TYPE
             int ci_sca_base        = CI_SCALAR_BASE_INDEX(ci);
             int* ci_t              = &atom->cl_t[ci_sca_base];
-            MD_SIMD_INT ntypes_vec = simd_int_broadcast(atom->ntypes);
-            MD_SIMD_INT tbase0     = simd_int_broadcast(ci_t[0]) * ntypes_vec;
-            MD_SIMD_INT tbase1     = simd_int_broadcast(ci_t[1]) * ntypes_vec;
-            MD_SIMD_INT tbase2     = simd_int_broadcast(ci_t[2]) * ntypes_vec;
-            MD_SIMD_INT tbase3     = simd_int_broadcast(ci_t[3]) * ntypes_vec;
+            MD_SIMD_INT tbase0     = simd_int_broadcast(ci_t[0] * atom->ntypes);
+            MD_SIMD_INT tbase1     = simd_int_broadcast(ci_t[1] * atom->ntypes);
+            MD_SIMD_INT tbase2     = simd_int_broadcast(ci_t[2] * atom->ntypes);
+            MD_SIMD_INT tbase3     = simd_int_broadcast(ci_t[3] * atom->ntypes);
 #endif
 
             for (int k = 0; k < numneighs_masked; k++) {
@@ -1289,10 +1285,10 @@ double computeForceLJ4xnFullNeigh(
 
 #ifndef ONE_ATOM_TYPE
                 MD_SIMD_INT tj_tmp = simd_int_load(cj_t);
-                MD_SIMD_INT tvec0  = tbase0 + tj_tmp;
-                MD_SIMD_INT tvec1  = tbase1 + tj_tmp;
-                MD_SIMD_INT tvec2  = tbase2 + tj_tmp;
-                MD_SIMD_INT tvec3  = tbase3 + tj_tmp;
+                MD_SIMD_INT tvec0  = simd_int_add(tbase0, tj_tmp);
+                MD_SIMD_INT tvec1  = simd_int_add(tbase1, tj_tmp);
+                MD_SIMD_INT tvec2  = simd_int_add(tbase2, tj_tmp);
+                MD_SIMD_INT tvec3  = simd_int_add(tbase3, tj_tmp);
 
                 MD_SIMD_FLOAT cutforcesq0 = simd_gather(tvec0, atom->cutforcesq, sizeof(MD_FLOAT));
                 MD_SIMD_FLOAT cutforcesq1 = simd_gather(tvec1, atom->cutforcesq, sizeof(MD_FLOAT));
@@ -1404,10 +1400,10 @@ double computeForceLJ4xnFullNeigh(
 
 #ifndef ONE_ATOM_TYPE
                 MD_SIMD_INT tj_tmp = simd_int_load(cj_t);
-                MD_SIMD_INT tvec0  = tbase0 + tj_tmp;
-                MD_SIMD_INT tvec1  = tbase1 + tj_tmp;
-                MD_SIMD_INT tvec2  = tbase2 + tj_tmp;
-                MD_SIMD_INT tvec3  = tbase3 + tj_tmp;
+                MD_SIMD_INT tvec0  = simd_int_add(tbase0, tj_tmp);
+                MD_SIMD_INT tvec1  = simd_int_add(tbase1, tj_tmp);
+                MD_SIMD_INT tvec2  = simd_int_add(tbase2, tj_tmp);
+                MD_SIMD_INT tvec3  = simd_int_add(tbase3, tj_tmp);
 
                 MD_SIMD_FLOAT cutforcesq0 = simd_gather(tvec0, atom->cutforcesq, sizeof(MD_FLOAT));
                 MD_SIMD_FLOAT cutforcesq1 = simd_gather(tvec1, atom->cutforcesq, sizeof(MD_FLOAT));

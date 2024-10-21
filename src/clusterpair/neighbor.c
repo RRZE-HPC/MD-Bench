@@ -299,9 +299,8 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
             MD_SIMD_FLOAT zi2_tmp        = simd_load_h_dual(&ci_x[CL_Z_OFFSET + 2]);
 
 #ifndef ONE_ATOM_TYPE
-            MD_SIMD_INT ntypes_vec       = simd_int_broadcast(atom->ntypes);
-            MD_SIMD_INT tbase0           = simd_int_load_h_dual(&ci_t[0]) * ntypes_vec;
-            MD_SIMD_INT tbase2           = simd_int_load_h_dual(&ci_t[2]) * ntypes_vec;
+            MD_SIMD_INT tbase0           = simd_int_load_h_dual_scaled(&ci_t[0], atom->ntypes);
+            MD_SIMD_INT tbase2           = simd_int_load_h_dual_scaled(&ci_t[2], atom->ntypes);
 #else
             MD_SIMD_FLOAT cutneighsq_vec = simd_broadcast(cutneighsq);
 #endif
@@ -321,11 +320,10 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
             MD_SIMD_FLOAT zi3_tmp        = simd_broadcast(ci_x[CL_Z_OFFSET + 3]);
 
 #ifndef ONE_ATOM_TYPE
-            MD_SIMD_INT ntypes_vec       = simd_int_broadcast(atom->ntypes);
-            MD_SIMD_INT tbase0           = simd_int_broadcast(ci_t[0]) * ntypes_vec;
-            MD_SIMD_INT tbase1           = simd_int_broadcast(ci_t[1]) * ntypes_vec;
-            MD_SIMD_INT tbase2           = simd_int_broadcast(ci_t[2]) * ntypes_vec;
-            MD_SIMD_INT tbase3           = simd_int_broadcast(ci_t[3]) * ntypes_vec;
+            MD_SIMD_INT tbase0           = simd_int_broadcast(ci_t[0] * atom->ntypes);
+            MD_SIMD_INT tbase1           = simd_int_broadcast(ci_t[1] * atom->ntypes);
+            MD_SIMD_INT tbase2           = simd_int_broadcast(ci_t[2] * atom->ntypes);
+            MD_SIMD_INT tbase3           = simd_int_broadcast(ci_t[3] * atom->ntypes);
 #else
             MD_SIMD_FLOAT cutneighsq_vec = simd_broadcast(cutneighsq);
 #endif
@@ -406,8 +404,8 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
 
 #ifndef ONE_ATOM_TYPE
                                     MD_SIMD_INT tj_tmp = simd_int_load_h_duplicate(cj_t);
-                                    MD_SIMD_INT tvec0 = tbase0 + tj_tmp;
-                                    MD_SIMD_INT tvec2 = tbase2 + tj_tmp;
+                                    MD_SIMD_INT tvec0  = simd_int_add(tbase0, tj_tmp);
+                                    MD_SIMD_INT tvec2  = simd_int_add(tbase2, tj_tmp);
 
                                     MD_SIMD_FLOAT cutneighsq0 = simd_gather(tvec0, atom->cutneighsq, sizeof(MD_FLOAT));
                                     MD_SIMD_FLOAT cutneighsq2 = simd_gather(tvec2, atom->cutneighsq, sizeof(MD_FLOAT));
@@ -443,10 +441,10 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
                                     MD_SIMD_FLOAT zj_tmp = simd_load(&cj_x[CL_Z_OFFSET]);
 #ifndef ONE_ATOM_TYPE
                                     MD_SIMD_INT tj_tmp = simd_int_load(cj_t);
-                                    MD_SIMD_INT tvec0  = tbase0 + tj_tmp;
-                                    MD_SIMD_INT tvec1  = tbase1 + tj_tmp;
-                                    MD_SIMD_INT tvec2  = tbase2 + tj_tmp;
-                                    MD_SIMD_INT tvec3  = tbase3 + tj_tmp;
+                                    MD_SIMD_INT tvec0  = simd_int_add(tbase0, tj_tmp);
+                                    MD_SIMD_INT tvec1  = simd_int_add(tbase1, tj_tmp);
+                                    MD_SIMD_INT tvec2  = simd_int_add(tbase2, tj_tmp);
+                                    MD_SIMD_INT tvec3  = simd_int_add(tbase3, tj_tmp);
 
                                     MD_SIMD_FLOAT cutneighsq0 = simd_gather(tvec0, atom->cutneighsq, sizeof(MD_FLOAT));
                                     MD_SIMD_FLOAT cutneighsq1 = simd_gather(tvec1, atom->cutneighsq, sizeof(MD_FLOAT));
