@@ -100,14 +100,18 @@ static inline MD_SIMD_INT simd_int_load_h_duplicate(const int *m) {
     return _mm256_broadcastsi128_si256(_mm_load_si128((const __m128i *)(m)));
 }
 
-static inline MD_SIMD_INT simd_int_load_h_dual(const int *m)
+static inline MD_SIMD_INT simd_int_load_h_dual_scaled(const int *m, int scale)
 {
     __m128i t0, t1;
-    t0 = _mm_broadcastd_epi32(_mm_load_epi32(m));
-    t1 = _mm_broadcastd_epi32(_mm_load_epi32(m + 1));
+    t0 = _mm_set1_epi32(m[0] * scale);
+    t1 = _mm_set1_epi32(m[1] * scale);
     return _mm256_inserti128_si256(_mm256_castsi128_si256(t0), t1, 0x1);
 }
 
 static inline MD_SIMD_FLOAT simd_gather(MD_SIMD_INT vidx, MD_FLOAT *base, const int scale) {
     return _mm256_i32gather_ps(base, vidx, scale);
+}
+
+static inline MD_SIMD_INT simd_int_add(MD_SIMD_INT a, MD_SIMD_INT b) {
+    return _mm256_add_epi32(a, b);
 }
