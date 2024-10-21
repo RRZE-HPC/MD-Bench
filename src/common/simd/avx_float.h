@@ -127,17 +127,35 @@ static inline void simd_h_decr3(
 static inline MD_SIMD_INT simd_int_broadcast(int scalar) { return _mm256_set1_epi32(scalar); }
 static inline MD_SIMD_INT simd_int_load(const int *m) { return _mm256_load_si256((MD_SIMD_INT *) m); }
 static inline MD_SIMD_INT simd_int_load_h_duplicate(const int *m) {
-    return _mm256_broadcastsi128_si256(_mm_load_si128((const __m128i *)(m)));
+    __m128i val = _mm_load_si128((const __m128i *)(m));
+    __m256i res = _mm256_castsi128_si256(val);
+    return _mm256_insertf128_si256(res, val, 1);
 }
 
 static inline MD_SIMD_INT simd_int_load_h_dual(const int *m)
 {
-    __m128i t0, t1;
-    t0 = _mm_broadcastd_epi32(_mm_load_epi32(m));
-    t1 = _mm_broadcastd_epi32(_mm_load_epi32(m + 1));
-    return _mm256_inserti128_si256(_mm256_castsi128_si256(t0), t1, 0x1);
+    __m128i t0 = _mm_set1_epi32(m[0]);
+    __m128i t1 = _mm_set1_epi32(m[1]);
+    __m256i result = _mm256_castsi128_si256(t0);
+    return _mm256_insertf128_si256(result, t1, 0x1);
 }
 
 static inline MD_SIMD_FLOAT simd_gather(MD_SIMD_INT vidx, MD_FLOAT *base, const int scale) {
-    return _mm256_i32gather_ps(base, vidx, scale);
+    __m128i vidx_lo = _mm256_castsi256_si128(vidx);
+    __m128i vidx_hi = _mm256_extractf128_si256(vidx, 1);
+    __m128i scaled_lo = _mm_mullo_epi32(vidx_lo, _mm_set1_epi32(scale));
+    __m128i scaled_hi = _mm_mullo_epi32(vidx_hi, _mm_set1_epi32(scale));
+
+    int i0 = _mm_extract_epi32(scaled_lo, 0);
+    int i1 = _mm_extract_epi32(scaled_lo, 1);
+    int i2 = _mm_extract_epi32(scaled_lo, 2);
+    int i3 = _mm_extract_epi32(scaled_lo, 3);
+    int i4 = _mm_extract_epi32(scaled_hi, 0);
+    int i5 = _mm_extract_epi32(scaled_hi, 1);
+    int i6 = _mm_extract_epi32(scaled_hi, 2);
+    int i7 = _mm_extract_epi32(scaled_hi, 3);
+
+    __m128 gath_lo = _mm_set_ps(base[i3], base[i2], base[i1], base[i0]);
+    __m128 gath_hi = _mm_set_ps(base[i7], base[i6], base[i5], base[i4]);
+    return _mm256_insertf128_ps(_mm256_castps128_ps256(gath_lo), gath_hi, 1);
 }
