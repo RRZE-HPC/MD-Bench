@@ -156,10 +156,6 @@ static inline void simd_h_decr3(
     simd_h_decr(m + CLUSTER_N * 2, a2);
 }
 
-// Functions used in LAMMPS kernel
-// static inline MD_SIMD_FLOAT simd_gather(MD_SIMD_INT vidx, const MD_FLOAT *m, int s) {
-// return _mm512_i32gather_pd(vidx, m, s); }
-#define simd_gather(vidx, m, s) (_mm512_i32gather_pd(vidx, m, s))
 static inline MD_SIMD_INT simd_int_broadcast(int scalar)
 {
     return _mm256_set1_epi32(scalar);
@@ -173,7 +169,6 @@ static inline MD_SIMD_INT simd_int_load(const int* m)
 {
     return _mm256_load_si256((const MD_SIMD_INT*)m);
 }
-// static inline MD_SIMD_INT simd_int_load(const int *m) { return _mm256_load_epi32(m); }
 static inline MD_SIMD_INT simd_int_add(MD_SIMD_INT a, MD_SIMD_INT b)
 {
     return _mm256_add_epi32(a, b);
@@ -196,7 +191,12 @@ static inline MD_SIMD_INT simd_int_load_h_duplicate(const int* m)
     return _mm256_broadcast_i32x4(_mm_load_epi32(m));
 }
 
-static inline MD_SIMD_INT simd_int_load_h_dual(const int* m)
+static inline MD_SIMD_INT simd_int_load_h_dual_scaled(const int* m, int scale)
 {
-    return _mm256_inserti32x4(_mm256_broadcastd_epi32(_mm_load_epi32(m)), _mm_load_epi32(m + 1), 1);
+    return _mm256_inserti32x4(_mm256_set1_epi32(m[0] * scale), _mm_set1_epi32(m[1] * scale), 1);
+}
+
+static inline MD_SIMD_FLOAT simd_gather(MD_SIMD_INT vidx, MD_FLOAT *base, const int scale)
+{
+    return _mm512_i32gather_pd(vidx, base, scale);
 }
