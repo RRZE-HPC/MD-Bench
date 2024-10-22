@@ -1,5 +1,3 @@
-- Cluster Pair: avx\_float and avx2\_float should not use _mmask types
-
 - Allow to resort atoms at a separate frequency independent of the neighboring
 frequency
 - Integrate and fix Super-Cluster GPU code
