@@ -272,7 +272,6 @@ int main(int argc, char** argv)
 #endif
 
         timer[FORCE] += computeForce(&param, &atom, &neighbor, &stats);
-
         finalIntegrate(&param, &atom);
 
         if (!((n + 1) % param.nstat) && (n + 1) < param.ntimes) {

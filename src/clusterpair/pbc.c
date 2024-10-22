@@ -152,7 +152,6 @@ void updateAtomsPbcCPU(Atom* atom, Parameter* param, bool dummy)
  * only creates mapping and coordinate corrections
  * that are then enforced in updatePbc */
 #define ADDGHOST(dx, dy, dz)                                                             \
-    ;                                                                                    \
     Nghost++;                                                                            \
     const int cg               = ncj + Nghost;                                           \
     const int cj_natoms        = atom->jclusters[cj].natoms;                             \

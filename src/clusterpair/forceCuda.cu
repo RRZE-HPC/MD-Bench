@@ -33,9 +33,6 @@ int* natoms;
 int* ngatoms;
 int* cuda_border_map;
 int* cuda_jclusters_natoms;
-MD_FLOAT *cuda_bbminx, *cuda_bbmaxx;
-MD_FLOAT *cuda_bbminy, *cuda_bbmaxy;
-MD_FLOAT *cuda_bbminz, *cuda_bbmaxz;
 int *cuda_PBCx, *cuda_PBCy, *cuda_PBCz;
 int isReneighboured;
 }
@@ -241,9 +238,9 @@ __global__ void computeForceLJCudaFullNeigh(MD_FLOAT* cuda_cl_x,
         }
     }
 
-    // ci_f[CL_X_OFFSET + cii] += fix;
-    // ci_f[CL_Y_OFFSET + cii] += fiy;
-    // ci_f[CL_Z_OFFSET + cii] += fiz;
+    //ci_f[CL_X_OFFSET + cii] = fix;
+    //ci_f[CL_Y_OFFSET + cii] = fiy;
+    //ci_f[CL_Z_OFFSET + cii] = fiz;
     atomicAdd(&ci_f[CL_X_OFFSET + cii], fix);
     atomicAdd(&ci_f[CL_Y_OFFSET + cii], fiy);
     atomicAdd(&ci_f[CL_Z_OFFSET + cii], fiz);
