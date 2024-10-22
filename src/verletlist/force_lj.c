@@ -16,7 +16,7 @@ double computeForceLJFullNeigh(
 {
     int nLocal = atom->Nlocal;
     int* neighs;
-#ifndef EXPLICIT_TYPES
+#ifdef ONE_ATOM_TYPE
     MD_FLOAT cutforcesq = param->cutforce * param->cutforce;
     MD_FLOAT sigma6     = param->sigma6;
     MD_FLOAT epsilon    = param->epsilon;
@@ -47,7 +47,7 @@ double computeForceLJFullNeigh(
             MD_FLOAT fiy  = 0;
             MD_FLOAT fiz  = 0;
 
-#ifdef EXPLICIT_TYPES
+#ifndef ONE_ATOM_TYPE
             const int type_i = atom->type[i];
 #endif
 
@@ -58,7 +58,7 @@ double computeForceLJFullNeigh(
                 MD_FLOAT delz = ztmp - atom_z(j);
                 MD_FLOAT rsq  = delx * delx + dely * dely + delz * delz;
 
-#ifdef EXPLICIT_TYPES
+#ifndef ONE_ATOM_TYPE
                 const int type_j          = atom->type[j];
                 const int type_ij         = type_i * atom->ntypes + type_j;
                 const MD_FLOAT cutforcesq = atom->cutforcesq[type_ij];
@@ -109,7 +109,7 @@ double computeForceLJHalfNeigh(
 {
     int nlocal = atom->Nlocal;
     int* neighs;
-#ifndef EXPLICIT_TYPES
+#ifdef ONE_ATOM_TYPE
     MD_FLOAT cutforcesq = param->cutforce * param->cutforce;
     MD_FLOAT sigma6     = param->sigma6;
     MD_FLOAT epsilon    = param->epsilon;
@@ -141,7 +141,7 @@ double computeForceLJHalfNeigh(
             MD_FLOAT fiy  = 0;
             MD_FLOAT fiz  = 0;
 
-#ifdef EXPLICIT_TYPES
+#ifndef ONE_ATOM_TYPE
             const int type_i = atom->type[i];
 #endif
 
@@ -156,7 +156,7 @@ double computeForceLJHalfNeigh(
                 MD_FLOAT delz = ztmp - atom_z(j);
                 MD_FLOAT rsq  = delx * delx + dely * dely + delz * delz;
 
-#ifdef EXPLICIT_TYPES
+#ifndef ONE_ATOM_TYPE
                 const int type_j          = atom->type[j];
                 const int type_ij         = type_i * atom->ntypes + type_j;
                 const MD_FLOAT cutforcesq = atom->cutforcesq[type_ij];

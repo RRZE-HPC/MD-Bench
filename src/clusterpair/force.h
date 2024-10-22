@@ -35,12 +35,14 @@ extern double computeForceEam(Parameter*, Atom*, Neighbor*, Stats*);
 extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #undef VECTOR_WIDTH
 #define VECTOR_WIDTH 8
+#define CLUSTERPAIR_KERNEL_CUDA
 #define KERNEL_NAME  "CUDA"
 #define CLUSTER_M    8
 #define CLUSTER_N    VECTOR_WIDTH
 #define UNROLL_J     1
 #else
 #ifdef USE_REFERENCE_VERSION
+#define CLUSTERPAIR_KERNEL_REF
 #define KERNEL_NAME "Reference"
 #define CLUSTER_M    1
 #define CLUSTER_N    VECTOR_WIDTH
@@ -48,11 +50,13 @@ extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #define CLUSTER_M 4
 // Simd2xNN (here used for single-precision)
 #if VECTOR_WIDTH > CLUSTER_M * 2
+#define CLUSTERPAIR_KERNEL_2XNN
 #define KERNEL_NAME "Simd2xNN"
 #define CLUSTER_N   (VECTOR_WIDTH / 2)
 #define UNROLL_I    4
 #define UNROLL_J    2
 #else // Simd4xN
+#define CLUSTERPAIR_KERNEL_4XN
 #define KERNEL_NAME "Simd4xN"
 #define CLUSTER_N   VECTOR_WIDTH
 #define UNROLL_I    4

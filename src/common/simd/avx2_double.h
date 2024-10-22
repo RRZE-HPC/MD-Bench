@@ -12,6 +12,7 @@
 #define MD_SIMD_INT   __m128i
 #define MD_SIMD_MASK  __m256d
 
+static inline int simd_test_any(MD_SIMD_MASK a) { return _mm256_movemask_pd(a) != 0; }
 static inline MD_SIMD_FLOAT simd_broadcast(MD_FLOAT scalar)
 {
     return _mm256_set1_pd(scalar);
@@ -145,27 +146,36 @@ static inline void simd_h_decr3(
     exit(-1);
 }
 
-// Functions used in LAMMPS kernel
-#define simd_gather(vidx, m, s) _mm256_i32gather_pd(m, vidx, s);
-static inline MD_SIMD_INT simd_int_broadcast(int scalar)
-{
-    return _mm_set1_epi32(scalar);
-}
+static inline MD_SIMD_INT simd_int_broadcast(int scalar) { return _mm_set1_epi32(scalar); }
 static inline MD_SIMD_INT simd_int_zero(void) { return _mm_setzero_si128(); }
 static inline MD_SIMD_INT simd_int_seq(void) { return _mm_set_epi32(3, 2, 1, 0); }
-static inline MD_SIMD_INT simd_int_load(const int* m)
-{
+static inline MD_SIMD_INT simd_int_add(MD_SIMD_INT a, MD_SIMD_INT b) { return _mm_add_epi32(a, b); }
+static inline MD_SIMD_INT simd_int_mul(MD_SIMD_INT a, MD_SIMD_INT b) { return _mm_mul_epi32(a, b); }
+static inline MD_SIMD_INT simd_int_load(const int* m) {
     return _mm_load_si128((__m128i const*)m);
 }
-static inline MD_SIMD_INT simd_int_add(MD_SIMD_INT a, MD_SIMD_INT b)
-{
-    return _mm_add_epi32(a, b);
-}
-static inline MD_SIMD_INT simd_int_mul(MD_SIMD_INT a, MD_SIMD_INT b)
-{
-    return _mm_mul_epi32(a, b);
-}
-static inline MD_SIMD_INT simd_int_mask_load(const int* m, MD_SIMD_MASK k)
-{
+static inline MD_SIMD_INT simd_int_mask_load(const int* m, MD_SIMD_MASK k) {
     return simd_int_load(m) & _mm256_cvtpd_epi32(k);
+}
+
+static inline MD_SIMD_INT simd_int_load_h_duplicate(const int *m)
+{
+    MD_SIMD_INT ret;
+    fprintf(stderr,
+        "simd_int_load_h_duplicate(): Not implemented for AVX2 with double precision!");
+    exit(-1);
+    return ret;
+}
+
+static inline MD_SIMD_INT simd_int_load_h_dual_scaled(const int *m, int scale)
+{
+    MD_SIMD_INT ret;
+    fprintf(stderr,
+        "simd_int_load_h_dual_scaled(): Not implemented for AVX2 with double precision!");
+    exit(-1);
+    return ret;
+}
+
+static inline MD_SIMD_FLOAT simd_gather(MD_SIMD_INT vidx, MD_FLOAT *base, const int scale) {
+    return _mm256_i32gather_pd(base, vidx, scale);
 }

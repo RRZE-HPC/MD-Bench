@@ -12,6 +12,12 @@
 #define MD_SIMD_INT     __m128i
 #define MD_SIMD_MASK    __m256d
 
+static inline int simd_test_any(MD_SIMD_MASK a)
+{
+    __m256i a_si256 = _mm256_castpd_si256(a);
+    return _mm256_testz_si256(a_si256, a_si256) == 0;
+}
+
 static inline MD_SIMD_FLOAT simd_broadcast(MD_FLOAT scalar) { return _mm256_set1_pd(scalar); }
 static inline MD_SIMD_FLOAT simd_zero() { return _mm256_set1_pd(0.0); }
 static inline MD_SIMD_FLOAT simd_add(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b) { return _mm256_add_pd(a, b); }
@@ -92,8 +98,6 @@ static inline void simd_h_decr3(MD_FLOAT *m, MD_SIMD_FLOAT a0, MD_SIMD_FLOAT a1,
     exit(-1);
 }
 
-// Functions used in LAMMPS kernel
-static inline MD_SIMD_FLOAT simd_gather(MD_SIMD_INT vidx, const MD_FLOAT *m, int s) { return _mm256_i32gather_pd(m, vidx, s); }
 static inline MD_SIMD_INT simd_int_broadcast(int scalar) { return _mm_set1_epi32(scalar); }
 static inline MD_SIMD_INT simd_int_zero() { return _mm_setzero_si128(); }
 static inline MD_SIMD_INT simd_int_seq() { return _mm_set_epi32(3, 2, 1, 0); }
@@ -101,3 +105,30 @@ static inline MD_SIMD_INT simd_int_load(const int *m) { return _mm_load_si128((_
 static inline MD_SIMD_INT simd_int_add(MD_SIMD_INT a, MD_SIMD_INT b) { return _mm_add_epi32(a, b); }
 static inline MD_SIMD_INT simd_int_mul(MD_SIMD_INT a, MD_SIMD_INT b) { return _mm_mul_epi32(a, b); }
 static inline MD_SIMD_INT simd_int_mask_load(const int *m, MD_SIMD_MASK k) { return simd_int_load(m) & _mm256_cvtpd_epi32(k); }
+
+static inline MD_SIMD_INT simd_int_load_h_duplicate(const int *m)
+{
+    MD_SIMD_INT ret;
+    fprintf(stderr,
+        "simd_int_load_h_duplicate(): Not implemented for AVX2 with double precision!");
+    exit(-1);
+    return ret;
+}
+
+static inline MD_SIMD_INT simd_int_load_h_dual_scaled(const int *m, int scale)
+{
+    MD_SIMD_INT ret;
+    fprintf(stderr,
+        "simd_int_load_h_dual_scaled(): Not implemented for AVX2 with double precision!");
+    exit(-1);
+    return ret;
+}
+
+static inline MD_SIMD_FLOAT simd_gather(MD_SIMD_INT vidx, MD_FLOAT *base, const int scale) {
+    __m128i scaled = vidx; // _mm_mullo_epi32(vidx, _mm_set1_epi32(scale));
+    int i0 = _mm_extract_epi32(scaled, 0);
+    int i1 = _mm_extract_epi32(scaled, 1);
+    int i2 = _mm_extract_epi32(scaled, 2);
+    int i3 = _mm_extract_epi32(scaled, 3);
+    return _mm256_set_pd(base[i3], base[i2], base[i1], base[i0]);
+}

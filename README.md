@@ -18,13 +18,13 @@ options are available:
 SIMD other than NONE.
 - **SIMD:** Instruction set (available options: NONE, SSE, AVX, AVX\_FMA, AVX2, AVX512).
 - **MASK\_REGISTERS:** Use AVX512 mask registers (always true when ISA is set to AVX512).
-- **OPT\_SCHEME:** Optimization algorithm (available options: lammps, gromacs).
+- **OPT\_SCHEME:** Optimization algorithm (available options: verletlist, clusterpair).
 - **ENABLE\_LIKWID:** Enable likwid to make use of HPM counters.
 - **DATA\_TYPE:** Floating-point precision (available options: SP, DP).
 - **DATA\_LAYOUT:** Data layout for atom vector properties (available options: AOS, SOA).
 - **ASM\_SYNTAX:** Assembly syntax to use when generating assembly files (available options: ATT, INTEL).
 - **DEBUG:** Toggle debug mode.
-- **EXPLICIT\_TYPES:** Explicitly store and load atom types.
+- **ONE\_ATOM\_TYPE:** Simulate only one atom type and do not perform table lookup for parameters.
 - **MEM\_TRACER:** Trace memory addresses for cache simulator.
 - **INDEX\_TRACER:** Trace indexes and distances for gather-md.
 - **COMPUTE\_STATS:** Compute statistics.
@@ -38,7 +38,6 @@ Configurations for GROMACS MxN optimization scheme:
 
 - **USE\_REFERENCE\_VERSION:** Use reference version (only for correction purposes).
 - **XTC\_OUTPUT:** Enable XTC output.
-- **HALF\_NEIGHBOR\_LISTS\_CHECK\_CJ:** Check if j-clusters are local when decreasing the reaction force.
 
 Configurations for CUDA:
 
@@ -83,12 +82,19 @@ TBD
 
 ## Citations
 
+Rafael Ravedutti Lucio Machado, Jan Eitzinger, Jan Laukemann, Georg Hager, Harald
+Köstler and Gerhard Wellein: MD-Bench: A performance-focused prototyping harness for
+state-of-the-art short-range molecular dynamics algorithms. Future Generation
+Computer Systems ([FGCS](https://www.sciencedirect.com/journal/future-generation-computer-systems)), Volume 149, 2023, Pages 25-38, ISSN 0167-739X, DOI:
+[https://doi.org/10.1016/j.future.2023.06.023](https://doi.org/10.1016/j.future.2023.06.023)
+
 Rafael Ravedutti Lucio Machado, Jan Eitzinger, Harald Köstler, and Gerhard
 Wellein: MD-Bench: A generic proxy-app toolbox for state-of-the-art molecular
 dynamics algorithms. Accepted for [PPAM](https://ppam.edu.pl/) 2022, the 14th
 International Conference on Parallel Processing and Applied Mathematics, Gdansk,
 Poland, September 11-14, 2022. PPAM 2022 Best Paper Award. Preprint:
-[arXiv:2207.13094](https://arxiv.org/abs/2207.13094)
+[arXiv:2207.13094](https://arxiv.org/abs/2207.13094), DOI:
+[https://dl.acm.org/doi/10.1007/978-3-031-30442-2_24](https://dl.acm.org/doi/10.1007/978-3-031-30442-2_24)
 
 ## Credits
 

@@ -25,7 +25,7 @@ void traceAddresses(Parameter* param, Atom* atom, Neighbor* neighbor, int timest
         MEM_TRACE(atom_z(i), 'R');
         INDEX_TRACE_ATOM(i);
 
-#ifdef EXPLICIT_TYPES
+#ifndef ONE_ATOM_TYPE
         MEM_TRACE(atom->type[i], 'R');
 #endif
 
@@ -39,7 +39,7 @@ void traceAddresses(Parameter* param, Atom* atom, Neighbor* neighbor, int timest
             MEM_TRACE(atom_y(j), 'R');
             MEM_TRACE(atom_z(j), 'R');
 
-#ifdef EXPLICIT_TYPES
+#ifndef ONE_ATOM_TYPE
             MEM_TRACE(atom->type[j], 'R');
 #endif
         }
