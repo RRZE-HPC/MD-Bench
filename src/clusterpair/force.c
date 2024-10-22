@@ -32,13 +32,7 @@ void initForce(Parameter* param)
             computeForce = computeForceLJ2xnnFullNeigh;
         }
 #elif defined(CLUSTERPAIR_KERNEL_CUDA)
-        if (param->half_neigh) {
-            fprintf(stderr,
-                "initForce(): No CUDA implementation for half neighbor-lists available!");
-            exit(-1);
-        } else {
-            computeForce = computeForceLJCUDA;
-        }
+        computeForce = computeForceLJCUDA;
 #endif
     }
 }
