@@ -258,11 +258,11 @@ int main(int argc, const char* argv[])
     }
 
     for (int ci = 0; ci < niclusters; ++ci) {
-        int ci_sca_base   = CI_SCALAR_BASE_INDEX(ci);
-        int ci_vec_base   = CI_VECTOR_BASE_INDEX(ci);
-        MD_FLOAT* ci_x    = &atom->cl_x[ci_vec_base];
-        MD_FLOAT* ci_v    = &atom->cl_v[ci_vec_base];
-        int* ci_t         = &atom->cl_t[ci_sca_base];
+        int ci_sca_base = CI_SCALAR_BASE_INDEX(ci);
+        int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
+        MD_FLOAT* ci_x  = &atom->cl_x[ci_vec_base];
+        MD_FLOAT* ci_v  = &atom->cl_v[ci_vec_base];
+        int* ci_t       = &atom->cl_t[ci_sca_base];
 
         for (int cii = 0; cii < iclusters_natoms; ++cii) {
             ci_x[CL_X_OFFSET + cii] = (MD_FLOAT)(ci * iclusters_natoms + cii) * 0.00001;
@@ -329,15 +329,27 @@ int main(int argc, const char* argv[])
         } else {
             if (param.half_neigh) {
                 if (VECTOR_WIDTH > CLUSTER_M * 2) {
-                    T_accum += computeForceLJ2xnnHalfNeigh(&param, atom, &neighbor, &stats);
+                    T_accum += computeForceLJ2xnnHalfNeigh(&param,
+                        atom,
+                        &neighbor,
+                        &stats);
                 } else {
-                    T_accum += computeForceLJ4xnHalfNeigh(&param, atom, &neighbor, &stats);
+                    T_accum += computeForceLJ4xnHalfNeigh(&param,
+                        atom,
+                        &neighbor,
+                        &stats);
                 }
             } else {
                 if (VECTOR_WIDTH > CLUSTER_M * 2) {
-                    T_accum += computeForceLJ2xnnFullNeigh(&param, atom, &neighbor, &stats);
+                    T_accum += computeForceLJ2xnnFullNeigh(&param,
+                        atom,
+                        &neighbor,
+                        &stats);
                 } else {
-                    T_accum += computeForceLJ4xnFullNeigh(&param, atom, &neighbor, &stats);
+                    T_accum += computeForceLJ4xnFullNeigh(&param,
+                        atom,
+                        &neighbor,
+                        &stats);
                 }
             }
         }

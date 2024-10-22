@@ -42,7 +42,7 @@ void displayStatistics(Atom* atom, Parameter* param, Stats* stats, double* timer
 #ifndef ONE_ATOM_TYPE
     forceUsefulVolume += 1e-9 *
                          (double)((atom->Nlocal * (param->ntimes + 1)) +
-                                   stats->num_neighs) *
+                                  stats->num_neighs) *
                          sizeof(int);
 #endif
 

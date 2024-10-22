@@ -7,55 +7,80 @@
 #include <immintrin.h>
 #include <zmmintrin.h>
 
-#define MD_SIMD_FLOAT   __m256
-#define MD_SIMD_MASK    __m256
-#define MD_SIMD_INT     __m256i
+#define MD_SIMD_FLOAT __m256
+#define MD_SIMD_MASK  __m256
+#define MD_SIMD_INT   __m256i
 
 static inline int simd_test_any(MD_SIMD_MASK a) { return _mm256_movemask_ps(a) != 0; }
-static inline MD_SIMD_FLOAT simd_broadcast(MD_FLOAT scalar) { return _mm256_set1_ps(scalar); }
+static inline MD_SIMD_FLOAT simd_broadcast(MD_FLOAT scalar)
+{
+    return _mm256_set1_ps(scalar);
+}
 static inline MD_SIMD_FLOAT simd_zero(void) { return _mm256_set1_ps(0.0); }
-static inline MD_SIMD_FLOAT simd_add(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b) { return _mm256_add_ps(a, b); }
-static inline MD_SIMD_FLOAT simd_sub(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b) { return _mm256_sub_ps(a, b); }
-static inline MD_SIMD_FLOAT simd_mul(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b) { return _mm256_mul_ps(a, b); }
+static inline MD_SIMD_FLOAT simd_add(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b)
+{
+    return _mm256_add_ps(a, b);
+}
+static inline MD_SIMD_FLOAT simd_sub(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b)
+{
+    return _mm256_sub_ps(a, b);
+}
+static inline MD_SIMD_FLOAT simd_mul(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b)
+{
+    return _mm256_mul_ps(a, b);
+}
 static inline MD_SIMD_FLOAT simd_load(MD_FLOAT* p) { return _mm256_load_ps(p); }
 static inline void simd_store(MD_FLOAT* p, MD_SIMD_FLOAT a) { _mm256_store_ps(p, a); }
-static inline MD_SIMD_FLOAT select_by_mask(MD_SIMD_FLOAT a, MD_SIMD_MASK m) { return _mm256_and_ps(a, m); }
+static inline MD_SIMD_FLOAT select_by_mask(MD_SIMD_FLOAT a, MD_SIMD_MASK m)
+{
+    return _mm256_and_ps(a, m);
+}
 static inline MD_SIMD_FLOAT simd_reciprocal(MD_SIMD_FLOAT a) { return _mm256_rcp_ps(a); }
 
 #ifdef __ISA_AVX_FMA__
-static inline MD_SIMD_FLOAT simd_fma(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b, MD_SIMD_FLOAT c) {
+static inline MD_SIMD_FLOAT simd_fma(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b, MD_SIMD_FLOAT c)
+{
     return _mm256_fmadd_ps(a, b, c);
 }
 #else
-static inline MD_SIMD_FLOAT simd_fma(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b, MD_SIMD_FLOAT c) {
+static inline MD_SIMD_FLOAT simd_fma(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b, MD_SIMD_FLOAT c)
+{
     return simd_add(simd_mul(a, b), c);
 }
 #endif
 
-static inline MD_SIMD_FLOAT simd_masked_add(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b, MD_SIMD_MASK m) {
+static inline MD_SIMD_FLOAT simd_masked_add(
+    MD_SIMD_FLOAT a, MD_SIMD_FLOAT b, MD_SIMD_MASK m)
+{
     return _mm256_add_ps(a, _mm256_and_ps(b, m));
 }
-static inline MD_SIMD_MASK simd_mask_cond_lt(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b) {
+static inline MD_SIMD_MASK simd_mask_cond_lt(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b)
+{
     return _mm256_cmp_ps(a, b, _CMP_LT_OQ);
 }
-static inline MD_SIMD_MASK simd_mask_and(MD_SIMD_MASK a, MD_SIMD_MASK b) { return _mm256_and_ps(a, b); }
-
-static inline MD_SIMD_MASK simd_mask_from_u32(unsigned int a) {
-    const unsigned long int all = 0xFFFFFFFF;
-    const unsigned long int none = 0x0;
-    return _mm256_castsi256_ps(
-        _mm256_set_epi32(
-            (a & 0x80) ? all : none,
-            (a & 0x40) ? all : none,
-            (a & 0x20) ? all : none,
-            (a & 0x10) ? all : none,
-            (a & 0x8) ? all : none,
-            (a & 0x4) ? all : none,
-            (a & 0x2) ? all : none,
-            (a & 0x1) ? all : none));
+static inline MD_SIMD_MASK simd_mask_and(MD_SIMD_MASK a, MD_SIMD_MASK b)
+{
+    return _mm256_and_ps(a, b);
 }
 
-static inline unsigned int simd_mask_to_u32(MD_SIMD_MASK a) { return _mm256_movemask_ps(a); }
+static inline MD_SIMD_MASK simd_mask_from_u32(unsigned int a)
+{
+    const unsigned long int all  = 0xFFFFFFFF;
+    const unsigned long int none = 0x0;
+    return _mm256_castsi256_ps(_mm256_set_epi32((a & 0x80) ? all : none,
+        (a & 0x40) ? all : none,
+        (a & 0x20) ? all : none,
+        (a & 0x10) ? all : none,
+        (a & 0x8) ? all : none,
+        (a & 0x4) ? all : none,
+        (a & 0x2) ? all : none,
+        (a & 0x1) ? all : none));
+}
+
+static inline unsigned int simd_mask_to_u32(MD_SIMD_MASK a)
+{
+    return _mm256_movemask_ps(a);
+}
 static inline MD_FLOAT simd_h_reduce_sum(MD_SIMD_FLOAT a)
 {
     __m128 t0;
@@ -124,25 +149,33 @@ static inline void simd_h_decr3(
     simd_h_decr(m + CLUSTER_N * 2, a2);
 }
 
-static inline MD_SIMD_INT simd_int_broadcast(int scalar) { return _mm256_set1_epi32(scalar); }
-static inline MD_SIMD_INT simd_int_load(const int *m) { return _mm256_load_si256((MD_SIMD_INT *) m); }
-static inline MD_SIMD_INT simd_int_load_h_duplicate(const int *m) {
-    __m128i val = _mm_load_si128((const __m128i *)(m));
+static inline MD_SIMD_INT simd_int_broadcast(int scalar)
+{
+    return _mm256_set1_epi32(scalar);
+}
+static inline MD_SIMD_INT simd_int_load(const int* m)
+{
+    return _mm256_load_si256((MD_SIMD_INT*)m);
+}
+static inline MD_SIMD_INT simd_int_load_h_duplicate(const int* m)
+{
+    __m128i val = _mm_load_si128((const __m128i*)(m));
     __m256i res = _mm256_castsi128_si256(val);
     return _mm256_insertf128_si256(res, val, 1);
 }
 
-static inline MD_SIMD_INT simd_int_load_h_dual_scaled(const int *m, int scale)
+static inline MD_SIMD_INT simd_int_load_h_dual_scaled(const int* m, int scale)
 {
-    __m128i t0 = _mm_set1_epi32(m[0] * scale);
-    __m128i t1 = _mm_set1_epi32(m[1] * scale);
+    __m128i t0     = _mm_set1_epi32(m[0] * scale);
+    __m128i t1     = _mm_set1_epi32(m[1] * scale);
     __m256i result = _mm256_castsi128_si256(t0);
     return _mm256_insertf128_si256(result, t1, 0x1);
 }
 
-static inline MD_SIMD_FLOAT simd_gather(MD_SIMD_INT vidx, MD_FLOAT *base, const int scale) {
-    __m128i vidx_lo = _mm256_castsi256_si128(vidx);
-    __m128i vidx_hi = _mm256_extractf128_si256(vidx, 1);
+static inline MD_SIMD_FLOAT simd_gather(MD_SIMD_INT vidx, MD_FLOAT* base, const int scale)
+{
+    __m128i vidx_lo   = _mm256_castsi256_si128(vidx);
+    __m128i vidx_hi   = _mm256_extractf128_si256(vidx, 1);
     __m128i scaled_lo = vidx_lo; // _mm_mullo_epi32(vidx_lo, _mm_set1_epi32(scale));
     __m128i scaled_hi = vidx_hi; // _mm_mullo_epi32(vidx_hi, _mm_set1_epi32(scale));
 
@@ -160,11 +193,12 @@ static inline MD_SIMD_FLOAT simd_gather(MD_SIMD_INT vidx, MD_FLOAT *base, const 
     return _mm256_insertf128_ps(_mm256_castps128_ps256(gath_lo), gath_hi, 1);
 }
 
-static inline MD_SIMD_INT simd_int_add(MD_SIMD_INT a, MD_SIMD_INT b) {
-    __m128i low_add = _mm_add_epi32(
-        _mm256_extractf128_si256(a, 0), _mm256_extractf128_si256(b, 0));
-    __m128i high_add = _mm_add_epi32(
-        _mm256_extractf128_si256(a, 1), _mm256_extractf128_si256(b, 1));
+static inline MD_SIMD_INT simd_int_add(MD_SIMD_INT a, MD_SIMD_INT b)
+{
+    __m128i low_add  = _mm_add_epi32(_mm256_extractf128_si256(a, 0),
+        _mm256_extractf128_si256(b, 0));
+    __m128i high_add = _mm_add_epi32(_mm256_extractf128_si256(a, 1),
+        _mm256_extractf128_si256(b, 1));
 
     return _mm256_set_m128i(high_add, low_add);
 }

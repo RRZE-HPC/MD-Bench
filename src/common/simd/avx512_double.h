@@ -193,10 +193,12 @@ static inline MD_SIMD_INT simd_int_load_h_duplicate(const int* m)
 
 static inline MD_SIMD_INT simd_int_load_h_dual_scaled(const int* m, int scale)
 {
-    return _mm256_inserti32x4(_mm256_set1_epi32(m[0] * scale), _mm_set1_epi32(m[1] * scale), 1);
+    return _mm256_inserti32x4(_mm256_set1_epi32(m[0] * scale),
+        _mm_set1_epi32(m[1] * scale),
+        1);
 }
 
-static inline MD_SIMD_FLOAT simd_gather(MD_SIMD_INT vidx, MD_FLOAT *base, const int scale)
+static inline MD_SIMD_FLOAT simd_gather(MD_SIMD_INT vidx, MD_FLOAT* base, const int scale)
 {
     return _mm512_i32gather_pd(vidx, base, scale);
 }

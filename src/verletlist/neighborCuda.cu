@@ -259,23 +259,21 @@ void buildNeighborCUDA(Atom* atom, Neighbor* neighbor)
             c_binning.mbins * c_binning.atoms_per_bin * sizeof(int));
     }
 
-    Neighbor_params np {
-        .xprd    = xprd,
-        .yprd    = yprd,
-        .zprd    = zprd,
-        .bininvx = bininvx,
-        .bininvy = bininvy,
-        .bininvz = bininvz,
-        .mbinxlo = mbinxlo,
-        .mbinylo = mbinylo,
-        .mbinzlo = mbinzlo,
-        .nbinx   = nbinx,
-        .nbiny   = nbiny,
-        .nbinz   = nbinz,
-        .mbinx   = mbinx,
-        .mbiny   = mbiny,
-        .mbinz   = mbinz
-    };
+    Neighbor_params np { .xprd = xprd,
+        .yprd                  = yprd,
+        .zprd                  = zprd,
+        .bininvx               = bininvx,
+        .bininvy               = bininvy,
+        .bininvz               = bininvz,
+        .mbinxlo               = mbinxlo,
+        .mbinylo               = mbinylo,
+        .mbinzlo               = mbinzlo,
+        .nbinx                 = nbinx,
+        .nbiny                 = nbiny,
+        .nbinz                 = nbinz,
+        .mbinx                 = mbinx,
+        .mbiny                 = mbiny,
+        .mbinz                 = mbinz };
 
     if (c_resize_needed == NULL) {
         c_resize_needed = (int*)allocateGPU(sizeof(int));

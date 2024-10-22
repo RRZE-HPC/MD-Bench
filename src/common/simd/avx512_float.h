@@ -159,12 +159,14 @@ static inline MD_SIMD_INT simd_int_add(MD_SIMD_INT a, MD_SIMD_INT b)
 
 static inline MD_SIMD_INT simd_int_load_h_duplicate(const int* m)
 {
-    return _mm512_broadcast_i32x8(_mm256_load_si256((const __m256i *)m));
+    return _mm512_broadcast_i32x8(_mm256_load_si256((const __m256i*)m));
 }
 
 static inline MD_SIMD_INT simd_int_load_h_dual_scaled(const int* m, int scale)
 {
-    return _mm512_inserti32x8(_mm512_set1_epi32(m[0] * scale), _mm256_set1_epi32(m[1] * scale), 1);
+    return _mm512_inserti32x8(_mm512_set1_epi32(m[0] * scale),
+        _mm256_set1_epi32(m[1] * scale),
+        1);
 }
 
 static inline MD_SIMD_INT simd_int_load(const int* m)
@@ -172,7 +174,7 @@ static inline MD_SIMD_INT simd_int_load(const int* m)
     return _mm512_load_si512((const MD_SIMD_INT*)m);
 }
 
-static inline MD_SIMD_FLOAT simd_gather(MD_SIMD_INT vidx, MD_FLOAT *base, const int scale)
+static inline MD_SIMD_FLOAT simd_gather(MD_SIMD_INT vidx, MD_FLOAT* base, const int scale)
 {
     return _mm512_i32gather_ps(vidx, base, scale);
 }

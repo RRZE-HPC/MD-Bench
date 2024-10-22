@@ -67,7 +67,7 @@ double computeForceLJFullNeigh_simd(
                 MD_SIMD_MASK mask_numneighs = simd_mask_int_cond_lt(
                     simd_int_add(simd_int_broadcast(k), simd_int_seq()),
                     numneighs_vec);
-                MD_SIMD_INT j = simd_int_mask_load(&neighs[k], mask_numneighs);
+                MD_SIMD_INT j      = simd_int_mask_load(&neighs[k], mask_numneighs);
 #ifdef AOS
                 MD_SIMD_INT j3     = simd_int_add(simd_int_add(j, j), j); // j * 3
                 MD_SIMD_FLOAT delx = xtmp -
