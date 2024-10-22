@@ -194,28 +194,28 @@ __global__ void computeForceLJCudaFullNeigh(MD_FLOAT* cuda_cl_x,
     MD_FLOAT epsilon)
 {
 
-    int ci = blockDim.x * blockIdx.x + threadIdx.x;
+    int ci = blockDim.z * blockIdx.z + threadIdx.z;
     if (ci >= Nclusters_local) return;
 
-    int cii         = blockDim.y * blockIdx.y + threadIdx.y;
-    int cjj         = blockDim.z * blockIdx.z + threadIdx.z;
+    int cii         = blockDim.x * blockIdx.x + threadIdx.x;
+    int cjj         = blockDim.y * blockIdx.y + threadIdx.y;
     int ci_cj0      = CJ0_FROM_CI(ci);
     int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
     MD_FLOAT* ci_x  = &cuda_cl_x[ci_vec_base];
     MD_FLOAT* ci_f  = &cuda_cl_f[ci_vec_base];
     int* neighs     = &cuda_neighs[ci * maxneighs];
     int numneighs   = cuda_numneigh[ci];
+    MD_FLOAT xtmp   = ci_x[CL_X_OFFSET + cii];
+    MD_FLOAT ytmp   = ci_x[CL_Y_OFFSET + cii];
+    MD_FLOAT ztmp   = ci_x[CL_Z_OFFSET + cii];
+    MD_FLOAT fix    = 0;
+    MD_FLOAT fiy    = 0;
+    MD_FLOAT fiz    = 0;
 
     for (int k = 0; k < numneighs; k++) {
         int cj          = neighs[k];
         int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
         MD_FLOAT* cj_x  = &cuda_cl_x[cj_vec_base];
-        MD_FLOAT xtmp   = ci_x[CL_X_OFFSET + cii];
-        MD_FLOAT ytmp   = ci_x[CL_Y_OFFSET + cii];
-        MD_FLOAT ztmp   = ci_x[CL_Z_OFFSET + cii];
-        MD_FLOAT fix    = 0;
-        MD_FLOAT fiy    = 0;
-        MD_FLOAT fiz    = 0;
 
         int cond;
 #if CLUSTER_M == CLUSTER_N
@@ -239,11 +239,14 @@ __global__ void computeForceLJCudaFullNeigh(MD_FLOAT* cuda_cl_x,
                 fiz += delz * force;
             }
         }
-
-        atomicAdd(&ci_f[CL_X_OFFSET + cii], fix);
-        atomicAdd(&ci_f[CL_Y_OFFSET + cii], fiy);
-        atomicAdd(&ci_f[CL_Z_OFFSET + cii], fiz);
     }
+
+    // ci_f[CL_X_OFFSET + cii] += fix;
+    // ci_f[CL_Y_OFFSET + cii] += fiy;
+    // ci_f[CL_Z_OFFSET + cii] += fiz;
+    atomicAdd(&ci_f[CL_X_OFFSET + cii], fix);
+    atomicAdd(&ci_f[CL_Y_OFFSET + cii], fiy);
+    atomicAdd(&ci_f[CL_Z_OFFSET + cii], fiz);
 }
 
 __global__ void computeForceLJCudaHalfNeigh(MD_FLOAT* cuda_cl_x,
@@ -258,29 +261,29 @@ __global__ void computeForceLJCudaHalfNeigh(MD_FLOAT* cuda_cl_x,
     MD_FLOAT epsilon)
 {
 
-    int ci = blockDim.x * blockIdx.x + threadIdx.x;
+    int ci = blockDim.z * blockIdx.z + threadIdx.z;
     if (ci >= Nclusters_local) return;
 
-    int cii         = blockDim.y * blockIdx.y + threadIdx.y;
-    int cjj         = blockDim.z * blockIdx.z + threadIdx.z;
+    int cii         = blockDim.x * blockIdx.x + threadIdx.x;
+    int cjj         = blockDim.y * blockIdx.y + threadIdx.y;
     int ci_cj0      = CJ0_FROM_CI(ci);
     int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
     MD_FLOAT* ci_x  = &cuda_cl_x[ci_vec_base];
     MD_FLOAT* ci_f  = &cuda_cl_f[ci_vec_base];
     int* neighs     = &cuda_neighs[ci * maxneighs];
     int numneighs   = cuda_numneigh[ci];
+    MD_FLOAT xtmp   = ci_x[CL_X_OFFSET + cii];
+    MD_FLOAT ytmp   = ci_x[CL_Y_OFFSET + cii];
+    MD_FLOAT ztmp   = ci_x[CL_Z_OFFSET + cii];
+    MD_FLOAT fix    = 0;
+    MD_FLOAT fiy    = 0;
+    MD_FLOAT fiz    = 0;
 
     for (int k = 0; k < numneighs; k++) {
         int cj          = neighs[k];
         int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
         MD_FLOAT* cj_x  = &cuda_cl_x[cj_vec_base];
         MD_FLOAT* cj_f  = &cuda_cl_f[cj_vec_base];
-        MD_FLOAT xtmp   = ci_x[CL_X_OFFSET + cii];
-        MD_FLOAT ytmp   = ci_x[CL_Y_OFFSET + cii];
-        MD_FLOAT ztmp   = ci_x[CL_Z_OFFSET + cii];
-        MD_FLOAT fix    = 0;
-        MD_FLOAT fiy    = 0;
-        MD_FLOAT fiz    = 0;
 
         int cond;
 #if CLUSTER_M == CLUSTER_N
@@ -311,11 +314,11 @@ __global__ void computeForceLJCudaHalfNeigh(MD_FLOAT* cuda_cl_x,
                 fiz += partial_force_z;
             }
         }
-
-        atomicAdd(&ci_f[CL_X_OFFSET + cii], fix);
-        atomicAdd(&ci_f[CL_Y_OFFSET + cii], fiy);
-        atomicAdd(&ci_f[CL_Z_OFFSET + cii], fiz);
     }
+
+    atomicAdd(&ci_f[CL_X_OFFSET + cii], fix);
+    atomicAdd(&ci_f[CL_Y_OFFSET + cii], fiy);
+    atomicAdd(&ci_f[CL_Z_OFFSET + cii], fiz);
 }
 
 __global__ void cudaFinalIntegrate_warp(MD_FLOAT* cuda_cl_v,
@@ -401,8 +404,8 @@ extern "C" double computeForceLJCUDA(
     }
 
     const int threads_num = 1;
-    dim3 block_size       = dim3(threads_num, CLUSTER_M, CLUSTER_N);
-    dim3 grid_size = dim3((atom->Nclusters_local + threads_num - 1) / threads_num, 1, 1);
+    dim3 block_size       = dim3(CLUSTER_M, CLUSTER_N, threads_num);
+    dim3 grid_size = dim3(1, 1, (atom->Nclusters_local + threads_num - 1) / threads_num);
     double S       = getTimeStamp();
     LIKWID_MARKER_START("force");
 
