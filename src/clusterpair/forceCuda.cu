@@ -194,12 +194,11 @@ __global__ void computeForceLJCudaFullNeigh(MD_FLOAT* cuda_cl_x,
     MD_FLOAT epsilon)
 {
 
-    int ci  = blockDim.x * blockIdx.x + threadIdx.x;
-    if (ci >= Nclusters_local)
-        return;
+    int ci = blockDim.x * blockIdx.x + threadIdx.x;
+    if (ci >= Nclusters_local) return;
 
-    int cii = blockDim.y * blockIdx.y + threadIdx.y;
-    int cjj = blockDim.z * blockIdx.z + threadIdx.z;
+    int cii         = blockDim.y * blockIdx.y + threadIdx.y;
+    int cjj         = blockDim.z * blockIdx.z + threadIdx.z;
     int ci_cj0      = CJ0_FROM_CI(ci);
     int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
     MD_FLOAT* ci_x  = &cuda_cl_x[ci_vec_base];
@@ -259,12 +258,11 @@ __global__ void computeForceLJCudaHalfNeigh(MD_FLOAT* cuda_cl_x,
     MD_FLOAT epsilon)
 {
 
-    int ci  = blockDim.x * blockIdx.x + threadIdx.x;
-    if (ci >= Nclusters_local)
-        return;
+    int ci = blockDim.x * blockIdx.x + threadIdx.x;
+    if (ci >= Nclusters_local) return;
 
-    int cii = blockDim.y * blockIdx.y + threadIdx.y;
-    int cjj = blockDim.z * blockIdx.z + threadIdx.z;
+    int cii         = blockDim.y * blockIdx.y + threadIdx.y;
+    int cjj         = blockDim.z * blockIdx.z + threadIdx.z;
     int ci_cj0      = CJ0_FROM_CI(ci);
     int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
     MD_FLOAT* ci_x  = &cuda_cl_x[ci_vec_base];
@@ -450,7 +448,6 @@ extern "C" void finalIntegrateCUDA(Parameter* param, Atom* atom)
         cuda_natoms,
         atom->Nclusters_local,
         param->dt);
-
 
     cuda_assert("cudaFinalIntegrate", cudaPeekAtLastError());
     cuda_assert("cudaFinalIntegrate", cudaDeviceSynchronize());
