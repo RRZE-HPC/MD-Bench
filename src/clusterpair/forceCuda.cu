@@ -62,7 +62,7 @@ extern "C" void initDevice(Atom* atom, Neighbor* neighbor)
     isReneighboured = 1;
 }
 
-extern "C" void copyDataToCUDADevice(Atom* atom)
+extern "C" void copyDataToCUDADevice(Atom* atom, Neighbor* neighbor)
 {
     memcpyToGPU(cuda_cl_x,
         atom->cl_x,
@@ -75,8 +75,6 @@ extern "C" void copyDataToCUDADevice(Atom* atom)
         natoms[ci] = atom->iclusters[ci].natoms;
     }
 
-    memcpyToGPU(cuda_natoms, natoms, atom->Nclusters_local * sizeof(int));
-
     int jfac = MAX(1, CLUSTER_N / CLUSTER_M);
     int ncj  = atom->Nclusters_local / jfac;
     for (int cg = 0; cg < atom->Nclusters_ghost; cg++) {
@@ -84,11 +82,16 @@ extern "C" void copyDataToCUDADevice(Atom* atom)
         ngatoms[cg]  = atom->jclusters[cj].natoms;
     }
 
+    memcpyToGPU(cuda_natoms, natoms, atom->Nclusters_local * sizeof(int));
     memcpyToGPU(cuda_jclusters_natoms, ngatoms, atom->Nclusters_ghost * sizeof(int));
     memcpyToGPU(cuda_border_map, atom->border_map, atom->Nclusters_ghost * sizeof(int));
     memcpyToGPU(cuda_PBCx, atom->PBCx, atom->Nclusters_ghost * sizeof(int));
     memcpyToGPU(cuda_PBCy, atom->PBCy, atom->Nclusters_ghost * sizeof(int));
     memcpyToGPU(cuda_PBCz, atom->PBCz, atom->Nclusters_ghost * sizeof(int));
+    memcpyToGPU(cuda_numneigh, neighbor->numneigh, atom->Nclusters_local * sizeof(int));
+    memcpyToGPU(cuda_neighbors,
+        neighbor->neighbors,
+        atom->Nclusters_local * neighbor->maxneighs * sizeof(int));
 }
 
 extern "C" void copyDataFromCUDADevice(Atom* atom)
@@ -238,9 +241,9 @@ __global__ void computeForceLJCudaFullNeigh(MD_FLOAT* cuda_cl_x,
         }
     }
 
-    //ci_f[CL_X_OFFSET + cii] = fix;
-    //ci_f[CL_Y_OFFSET + cii] = fiy;
-    //ci_f[CL_Z_OFFSET + cii] = fiz;
+    // ci_f[CL_X_OFFSET + cii] = fix;
+    // ci_f[CL_Y_OFFSET + cii] = fiy;
+    // ci_f[CL_Z_OFFSET + cii] = fiz;
     atomicAdd(&ci_f[CL_X_OFFSET + cii], fix);
     atomicAdd(&ci_f[CL_Y_OFFSET + cii], fiy);
     atomicAdd(&ci_f[CL_Z_OFFSET + cii], fiz);
@@ -389,17 +392,6 @@ extern "C" double computeForceLJCUDA(
     MD_FLOAT epsilon    = param->epsilon;
 
     memsetGPU(cuda_cl_f, 0, atom->Nclusters_local * CLUSTER_M * 3 * sizeof(MD_FLOAT));
-    if (isReneighboured) {
-        for (int ci = 0; ci < atom->Nclusters_local; ci++) {
-            memcpyToGPU(&cuda_numneigh[ci], &neighbor->numneigh[ci], sizeof(int));
-            memcpyToGPU(&cuda_neighbors[ci * neighbor->maxneighs],
-                &neighbor->neighbors[ci * neighbor->maxneighs],
-                neighbor->numneigh[ci] * sizeof(int));
-        }
-
-        isReneighboured = 0;
-    }
-
     const int threads_num = 1;
     dim3 block_size       = dim3(CLUSTER_M, CLUSTER_N, threads_num);
     dim3 grid_size = dim3(1, 1, (atom->Nclusters_local + threads_num - 1) / threads_num);
