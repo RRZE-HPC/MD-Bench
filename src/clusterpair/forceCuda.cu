@@ -318,18 +318,26 @@ __global__ void computeForceLJCudaFullNeigh(
 #endif
 }
 
-__global__ void computeForceLJCudaHalfNeigh(MD_FLOAT* cuda_cl_x,
+__global__ void computeForceLJCudaHalfNeigh(
+#ifdef ONE_ATOM_TYPE
+    MD_FLOAT cutforcesq,
+    MD_FLOAT sigma6,
+    MD_FLOAT epsilon,
+#else
+    int* cuda_cl_t,
+    MD_FLOAT* atom_cutforcesq,
+    MD_FLOAT* atom_sigma6,
+    MD_FLOAT* atom_epsilon,
+    int ntypes,
+#endif
+    MD_FLOAT* cuda_cl_x,
     MD_FLOAT* cuda_cl_f,
     int Nclusters_local,
     int Nclusters_max,
     int* cuda_numneigh,
     int* cuda_neighs,
-    int maxneighs,
-    MD_FLOAT cutforcesq,
-    MD_FLOAT sigma6,
-    MD_FLOAT epsilon)
+    int maxneighs)
 {
-
     int ci = blockDim.x * blockIdx.x + threadIdx.x;
     if (ci >= Nclusters_local) return;
 
@@ -348,6 +356,11 @@ __global__ void computeForceLJCudaHalfNeigh(MD_FLOAT* cuda_cl_x,
     MD_FLOAT fiy    = 0;
     MD_FLOAT fiz    = 0;
 
+#ifndef ONE_ATOM_TYPE
+    int ci_sca_base = CI_SCALAR_BASE_INDEX(ci);
+    int type_i      = cuda_cl_t[ci_sca_base + cii];
+#endif
+
     for (int k = 0; k < numneighs; k++) {
         int cj          = neighs[k];
         int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
@@ -365,6 +378,15 @@ __global__ void computeForceLJCudaHalfNeigh(MD_FLOAT* cuda_cl_x,
             MD_FLOAT dely = ytmp - cj_x[CL_Y_OFFSET + cjj];
             MD_FLOAT delz = ztmp - cj_x[CL_Z_OFFSET + cjj];
             MD_FLOAT rsq  = delx * delx + dely * dely + delz * delz;
+
+#ifndef ONE_ATOM_TYPE
+            int cj_sca_base     = CJ_SCALAR_BASE_INDEX(cj);
+            int type_j          = cuda_cl_t[cj_sca_base + cjj];
+            int type_index      = type_i * ntypes + type_j;
+            MD_FLOAT cutforcesq = atom_cutforcesq[type_index];
+            MD_FLOAT sigma6     = atom_sigma6[type_index];
+            MD_FLOAT epsilon    = atom_epsilon[type_index];
+#endif
 
             if (rsq < cutforcesq) {
                 MD_FLOAT sr2             = 1.0 / rsq;
@@ -487,16 +509,25 @@ extern "C" double computeForceLJCUDA(
     LIKWID_MARKER_START("force");
 
     if (neighbor->half_neigh) {
-        computeForceLJCudaHalfNeigh<<<grid_size, block_size>>>(cuda_cl_x,
+        computeForceLJCudaHalfNeigh<<<grid_size, block_size>>>(
+#ifdef ONE_ATOM_TYPE
+            cutforcesq,
+            sigma6,
+            epsilon,
+#else
+            cuda_cl_t,
+            cuda_cutforcesq,
+            cuda_sigma6,
+            cuda_epsilon,
+            atom->ntypes,
+#endif
+            cuda_cl_x,
             cuda_cl_f,
             atom->Nclusters_local,
             atom->Nclusters_max,
             cuda_numneigh,
             cuda_neighbors,
-            neighbor->maxneighs,
-            cutforcesq,
-            sigma6,
-            epsilon);
+            neighbor->maxneighs);
     } else {
         computeForceLJCudaFullNeigh<<<grid_size, block_size>>>(
 #ifdef ONE_ATOM_TYPE
