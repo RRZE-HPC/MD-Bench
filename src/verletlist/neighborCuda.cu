@@ -130,6 +130,7 @@ __global__ void compute_neighborhood(DeviceAtom a,
     Neighbor_params np,
     int nlocal,
     int maxneighs,
+    int halfneigh,
     int nstencil,
     int* stencil,
     int* bins,
@@ -163,8 +164,7 @@ __global__ void compute_neighborhood(DeviceAtom a,
 
         for (int m = 0; m < bincount[jbin]; m++) {
             int j = loc_bin[m];
-
-            if (j == i) {
+            if (j == i || (halfneigh && (j < i))) {
                 continue;
             }
 
@@ -305,6 +305,7 @@ void buildNeighborCUDA(Atom* atom, Neighbor* neighbor)
             np,
             atom->Nlocal,
             neighbor->maxneighs,
+            neighbor->half_neigh,
             nstencil,
             c_stencil,
             c_binning.bins,

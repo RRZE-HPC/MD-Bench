@@ -17,15 +17,15 @@ void initForce(Parameter* param)
         computeForce = computeForceEam;
         break;
     case FF_LJ:
+#ifdef CUDA_TARGET
+        computeForce = computeForceLJCUDA;
+#else
         if (param->half_neigh) {
             computeForce = computeForceLJHalfNeigh;
         } else {
-#ifdef CUDA_TARGET
-            computeForce = computeForceLJFullNeighCUDA;
-#else
             computeForce = computeForceLJFullNeigh;
-#endif
         }
+#endif
         break;
     default:
         fprintf(stderr, "Error: Unknown force field!\n");
