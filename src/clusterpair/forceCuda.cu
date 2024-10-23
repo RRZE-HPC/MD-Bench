@@ -194,11 +194,11 @@ __global__ void computeForceLJCudaFullNeigh(MD_FLOAT* cuda_cl_x,
     MD_FLOAT epsilon)
 {
 
-    int ci = blockDim.z * blockIdx.z + threadIdx.z;
+    int ci = blockDim.x * blockIdx.x + threadIdx.x;
     if (ci >= Nclusters_local) return;
 
-    int cii         = blockDim.x * blockIdx.x + threadIdx.x;
-    int cjj         = blockDim.y * blockIdx.y + threadIdx.y;
+    int cii         = threadIdx.z;
+    int cjj         = threadIdx.y;
     int ci_cj0      = CJ0_FROM_CI(ci);
     int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
     MD_FLOAT* ci_x  = &cuda_cl_x[ci_vec_base];
@@ -241,12 +241,28 @@ __global__ void computeForceLJCudaFullNeigh(MD_FLOAT* cuda_cl_x,
         }
     }
 
-    // ci_f[CL_X_OFFSET + cii] = fix;
-    // ci_f[CL_Y_OFFSET + cii] = fiy;
-    // ci_f[CL_Z_OFFSET + cii] = fiz;
+// If M is less than the warp size, we perform forces reduction via
+// warp shuffles instead of using atomics since it should be cheaper
+// It is very unlikely that M > 32, but we keep this check here to
+// avoid any issues in such situations
+#if CLUSTER_M <= 32
+    unsigned mask = 0xffffffff;
+    for (int offset = CLUSTER_M / 2; offset > 0; offset /= 2) {
+        fix += __shfl_down_sync(mask, fix, offset);
+        fiy += __shfl_down_sync(mask, fiy, offset);
+        fiz += __shfl_down_sync(mask, fiz, offset);
+    }
+
+    if (threadIdx.x == 0) {
+        ci_f[CL_X_OFFSET + cii] = fix;
+        ci_f[CL_Y_OFFSET + cii] = fiy;
+        ci_f[CL_Z_OFFSET + cii] = fiz;
+    }
+#else
     atomicAdd(&ci_f[CL_X_OFFSET + cii], fix);
     atomicAdd(&ci_f[CL_Y_OFFSET + cii], fiy);
     atomicAdd(&ci_f[CL_Z_OFFSET + cii], fiz);
+#endif
 }
 
 __global__ void computeForceLJCudaHalfNeigh(MD_FLOAT* cuda_cl_x,
@@ -261,11 +277,11 @@ __global__ void computeForceLJCudaHalfNeigh(MD_FLOAT* cuda_cl_x,
     MD_FLOAT epsilon)
 {
 
-    int ci = blockDim.z * blockIdx.z + threadIdx.z;
+    int ci = blockDim.x * blockIdx.x + threadIdx.x;
     if (ci >= Nclusters_local) return;
 
-    int cii         = blockDim.x * blockIdx.x + threadIdx.x;
-    int cjj         = blockDim.y * blockIdx.y + threadIdx.y;
+    int cii         = threadIdx.z;
+    int cjj         = threadIdx.y;
     int ci_cj0      = CJ0_FROM_CI(ci);
     int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
     MD_FLOAT* ci_x  = &cuda_cl_x[ci_vec_base];
@@ -316,9 +332,28 @@ __global__ void computeForceLJCudaHalfNeigh(MD_FLOAT* cuda_cl_x,
         }
     }
 
+// If M is less than the warp size, we perform forces reduction via
+// warp shuffles instead of using atomics since it should be cheaper
+// It is very unlikely that M > 32, but we keep this check here to
+// avoid any issues in such situations
+#if CLUSTER_M <= 32
+    unsigned mask = 0xffffffff;
+    for (int offset = CLUSTER_M / 2; offset > 0; offset /= 2) {
+        fix += __shfl_down_sync(mask, fix, offset);
+        fiy += __shfl_down_sync(mask, fiy, offset);
+        fiz += __shfl_down_sync(mask, fiz, offset);
+    }
+
+    if (threadIdx.x == 0) {
+        ci_f[CL_X_OFFSET + cii] += fix;
+        ci_f[CL_Y_OFFSET + cii] += fiy;
+        ci_f[CL_Z_OFFSET + cii] += fiz;
+    }
+#else
     atomicAdd(&ci_f[CL_X_OFFSET + cii], fix);
     atomicAdd(&ci_f[CL_Y_OFFSET + cii], fiy);
     atomicAdd(&ci_f[CL_Z_OFFSET + cii], fiz);
+#endif
 }
 
 __global__ void cudaFinalIntegrate_warp(MD_FLOAT* cuda_cl_v,
@@ -393,8 +428,8 @@ extern "C" double computeForceLJCUDA(
 
     memsetGPU(cuda_cl_f, 0, atom->Nclusters_local * CLUSTER_M * 3 * sizeof(MD_FLOAT));
     const int threads_num = 1;
-    dim3 block_size       = dim3(CLUSTER_M, CLUSTER_N, threads_num);
-    dim3 grid_size = dim3(1, 1, (atom->Nclusters_local + threads_num - 1) / threads_num);
+    dim3 block_size       = dim3(threads_num, CLUSTER_N, CLUSTER_M);
+    dim3 grid_size = dim3((atom->Nclusters_local + threads_num - 1) / threads_num, 1, 1);
     double S       = getTimeStamp();
     LIKWID_MARKER_START("force");
 
