@@ -99,7 +99,9 @@ double computeForceLJRef(Parameter* param, Atom* atom, Neighbor* neighbor, Stats
 #endif
 
                 for (int cii = 0; cii < CLUSTER_M; cii++) {
-                    int type_i    = ci_t[cii];
+#ifndef ONE_ATOM_TYPE
+                    int type_i = ci_t[cii];
+#endif
                     MD_FLOAT xtmp = ci_x[CL_X_OFFSET + cii];
                     MD_FLOAT ytmp = ci_x[CL_Y_OFFSET + cii];
                     MD_FLOAT ztmp = ci_x[CL_Z_OFFSET + cii];
