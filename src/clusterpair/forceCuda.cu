@@ -407,28 +407,9 @@ __global__ void computeForceLJCudaHalfNeigh(
         }
     }
 
-// If M is less than the warp size, we perform forces reduction via
-// warp shuffles instead of using atomics since it should be cheaper
-// It is very unlikely that M > 32, but we keep this check here to
-// avoid any issues in such situations
-#if CLUSTER_M <= 32
-    unsigned mask = 0xffffffff;
-    for (int offset = CLUSTER_M / 2; offset > 0; offset /= 2) {
-        fix += __shfl_down_sync(mask, fix, offset);
-        fiy += __shfl_down_sync(mask, fiy, offset);
-        fiz += __shfl_down_sync(mask, fiz, offset);
-    }
-
-    if (threadIdx.x == 0) {
-        ci_f[CL_X_OFFSET + cii] += fix;
-        ci_f[CL_Y_OFFSET + cii] += fiy;
-        ci_f[CL_Z_OFFSET + cii] += fiz;
-    }
-#else
     atomicAdd(&ci_f[CL_X_OFFSET + cii], fix);
     atomicAdd(&ci_f[CL_Y_OFFSET + cii], fiy);
     atomicAdd(&ci_f[CL_Z_OFFSET + cii], fiz);
-#endif
 }
 
 __global__ void cudaFinalIntegrate_warp(MD_FLOAT* cuda_cl_v,
