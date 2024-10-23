@@ -34,7 +34,6 @@ int* ngatoms;
 int* cuda_border_map;
 int* cuda_jclusters_natoms;
 int *cuda_PBCx, *cuda_PBCy, *cuda_PBCz;
-int isReneighboured;
 
 #ifndef ONE_ATOM_TYPE
 int* cuda_cl_t;
@@ -83,7 +82,6 @@ extern "C" void initDevice(Atom* atom, Neighbor* neighbor)
         atom->Nclusters_max * neighbor->maxneighs * sizeof(int));
     natoms          = (int*)malloc(atom->Nclusters_max * sizeof(int));
     ngatoms         = (int*)malloc(atom->Nclusters_max * sizeof(int));
-    isReneighboured = 1;
 }
 
 extern "C" void copyDataToCUDADevice(Atom* atom, Neighbor* neighbor)
@@ -478,9 +476,11 @@ extern "C" void updatePbcCUDA(Atom* atom, Parameter* param)
 extern "C" double computeForceLJCUDA(
     Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
 {
+#ifdef ONE_ATOM_TYPE
     MD_FLOAT cutforcesq = param->cutforce * param->cutforce;
     MD_FLOAT sigma6     = param->sigma6;
     MD_FLOAT epsilon    = param->epsilon;
+#endif
 
     memsetGPU(cuda_cl_f, 0, atom->Nclusters_local * CLUSTER_M * 3 * sizeof(MD_FLOAT));
     const int threads_num = 1;
