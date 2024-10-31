@@ -80,8 +80,8 @@ extern "C" void initDevice(Atom* atom, Neighbor* neighbor)
     cuda_numneigh         = (int*)allocateGPU(atom->Nclusters_max * sizeof(int));
     cuda_neighbors        = (int*)allocateGPU(
         atom->Nclusters_max * neighbor->maxneighs * sizeof(int));
-    natoms          = (int*)malloc(atom->Nclusters_max * sizeof(int));
-    ngatoms         = (int*)malloc(atom->Nclusters_max * sizeof(int));
+    natoms  = (int*)malloc(atom->Nclusters_max * sizeof(int));
+    ngatoms = (int*)malloc(atom->Nclusters_max * sizeof(int));
 }
 
 extern "C" void copyDataToCUDADevice(Atom* atom, Neighbor* neighbor)
@@ -283,7 +283,8 @@ __global__ void computeForceLJCudaFullNeigh(
             if (rsq < cutforcesq) {
                 MD_FLOAT sr2   = (MD_FLOAT)(1.0) / rsq;
                 MD_FLOAT sr6   = sr2 * sr2 * sr2 * sigma6;
-                MD_FLOAT force = (MD_FLOAT)(48.0) * sr6 * (sr6 - (MD_FLOAT)(0.5)) * sr2 * epsilon;
+                MD_FLOAT force = (MD_FLOAT)(48.0) * sr6 * (sr6 - (MD_FLOAT)(0.5)) * sr2 *
+                                 epsilon;
 
                 fix += delx * force;
                 fiy += dely * force;
@@ -387,9 +388,10 @@ __global__ void computeForceLJCudaHalfNeigh(
 #endif
 
             if (rsq < cutforcesq) {
-                MD_FLOAT sr2             = 1.0 / rsq;
-                MD_FLOAT sr6             = sr2 * sr2 * sr2 * sigma6;
-                MD_FLOAT force           = 48.0 * sr6 * (sr6 - 0.5) * sr2 * epsilon;
+                MD_FLOAT sr2   = (MD_FLOAT)(1.0) / rsq;
+                MD_FLOAT sr6   = sr2 * sr2 * sr2 * sigma6;
+                MD_FLOAT force = (MD_FLOAT)(48.0) * sr6 * (sr6 - (MD_FLOAT)(0.5)) * sr2 *
+                                 epsilon;
                 MD_FLOAT partial_force_x = delx * force;
                 MD_FLOAT partial_force_y = dely * force;
                 MD_FLOAT partial_force_z = delz * force;
