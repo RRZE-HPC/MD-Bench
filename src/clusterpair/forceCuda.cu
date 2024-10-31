@@ -281,9 +281,9 @@ __global__ void computeForceLJCudaFullNeigh(
 #endif
 
             if (rsq < cutforcesq) {
-                MD_FLOAT sr2   = 1.0 / rsq;
+                MD_FLOAT sr2   = (MD_FLOAT)(1.0) / rsq;
                 MD_FLOAT sr6   = sr2 * sr2 * sr2 * sigma6;
-                MD_FLOAT force = 48.0 * sr6 * (sr6 - 0.5) * sr2 * epsilon;
+                MD_FLOAT force = (MD_FLOAT)(48.0) * sr6 * (sr6 - (MD_FLOAT)(0.5)) * sr2 * epsilon;
 
                 fix += delx * force;
                 fiy += dely * force;
