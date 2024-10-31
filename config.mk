@@ -64,11 +64,15 @@ ifeq ($(strip $(SIMD)), NONE)
 else
 ifeq ($(strip $(ISA)),ARM)
     ifeq ($(strip $(SIMD)), NEON)
+        __ISA_NEON__=true
         __SIMD_WIDTH_DBL__=2
     else ifeq ($(strip $(SIMD)), SVE)
+        __ISA_SVE__=true
 		# needs further specification
         __SIMD_WIDTH_DBL__=2
     else ifeq ($(strip $(SIMD)), SVE2)
+        __ISA_SVE__=true
+        __ISA_SVE2__=true
         # needs further specification
         __SIMD_WIDTH_DBL__=2
     endif
@@ -172,6 +176,18 @@ endif
 
 ifeq ($(strip $(__ISA_AVX512__)),true)
     DEFINES += -D__ISA_AVX512__
+endif
+
+ifeq ($(strip $(__ISA_NEON__)),true)
+    DEFINES += -D__ISA_NEON__
+endif
+
+ifeq ($(strip $(__ISA_SVE__)),true)
+    DEFINES += -D__ISA_SVE__
+endif
+
+ifeq ($(strip $(__ISA_SVE2__)),true)
+    DEFINES += -D__ISA_SVE2__
 endif
 
 ifeq ($(strip $(ENABLE_OMP_SIMD)),true)
