@@ -34,7 +34,8 @@ static inline MD_SIMD_FLOAT simd_real_mul(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b)
 {
     return _mm512_mul_pd(a, b);
 }
-static inline MD_SIMD_FLOAT simd_real_fma(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b, MD_SIMD_FLOAT c)
+static inline MD_SIMD_FLOAT simd_real_fma(
+    MD_SIMD_FLOAT a, MD_SIMD_FLOAT b, MD_SIMD_FLOAT c)
 {
     return _mm512_fmadd_pd(a, b, c);
 }
@@ -58,7 +59,10 @@ static inline MD_SIMD_MASK simd_mask_cond_lt(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b)
 static inline MD_SIMD_MASK simd_mask_from_u32(unsigned int a) { return _cvtu32_mask8(a); }
 static inline unsigned int simd_mask_to_u32(MD_SIMD_MASK a) { return _cvtmask8_u32(a); }
 static inline MD_SIMD_FLOAT simd_real_load(MD_FLOAT* p) { return _mm512_load_pd(p); }
-static inline void simd_real_store(MD_FLOAT* p, MD_SIMD_FLOAT a) { _mm512_store_pd(p, a); }
+static inline void simd_real_store(MD_FLOAT* p, MD_SIMD_FLOAT a)
+{
+    _mm512_store_pd(p, a);
+}
 static inline MD_SIMD_FLOAT simd_real_select_by_mask(MD_SIMD_FLOAT a, MD_SIMD_MASK m)
 {
     return _mm512_mask_mov_pd(_mm512_setzero_pd(), m, a);
@@ -198,7 +202,8 @@ static inline MD_SIMD_INT simd_i32_load_h_dual_scaled(const int* m, int scale)
         1);
 }
 
-static inline MD_SIMD_FLOAT simd_real_gather(MD_SIMD_INT vidx, MD_FLOAT* base, const int scale)
+static inline MD_SIMD_FLOAT simd_real_gather(
+    MD_SIMD_INT vidx, MD_FLOAT* base, const int scale)
 {
     return _mm512_i32gather_pd(vidx, base, scale);
 }
