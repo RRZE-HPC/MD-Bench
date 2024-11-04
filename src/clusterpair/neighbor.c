@@ -291,41 +291,41 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
             MD_FLOAT ibb_zmax = atom->iclusters[ci].bbmaxz;
 
 #if defined(CLUSTERPAIR_KERNEL_2XNN)
-            MD_SIMD_FLOAT xi0_tmp = simd_load_h_dual(&ci_x[CL_X_OFFSET + 0]);
-            MD_SIMD_FLOAT xi2_tmp = simd_load_h_dual(&ci_x[CL_X_OFFSET + 2]);
-            MD_SIMD_FLOAT yi0_tmp = simd_load_h_dual(&ci_x[CL_Y_OFFSET + 0]);
-            MD_SIMD_FLOAT yi2_tmp = simd_load_h_dual(&ci_x[CL_Y_OFFSET + 2]);
-            MD_SIMD_FLOAT zi0_tmp = simd_load_h_dual(&ci_x[CL_Z_OFFSET + 0]);
-            MD_SIMD_FLOAT zi2_tmp = simd_load_h_dual(&ci_x[CL_Z_OFFSET + 2]);
+            MD_SIMD_FLOAT xi0_tmp = simd_real_load_h_dual(&ci_x[CL_X_OFFSET + 0]);
+            MD_SIMD_FLOAT xi2_tmp = simd_real_load_h_dual(&ci_x[CL_X_OFFSET + 2]);
+            MD_SIMD_FLOAT yi0_tmp = simd_real_load_h_dual(&ci_x[CL_Y_OFFSET + 0]);
+            MD_SIMD_FLOAT yi2_tmp = simd_real_load_h_dual(&ci_x[CL_Y_OFFSET + 2]);
+            MD_SIMD_FLOAT zi0_tmp = simd_real_load_h_dual(&ci_x[CL_Z_OFFSET + 0]);
+            MD_SIMD_FLOAT zi2_tmp = simd_real_load_h_dual(&ci_x[CL_Z_OFFSET + 2]);
 
 #ifndef ONE_ATOM_TYPE
-            MD_SIMD_INT tbase0 = simd_int_load_h_dual_scaled(&ci_t[0], atom->ntypes);
-            MD_SIMD_INT tbase2 = simd_int_load_h_dual_scaled(&ci_t[2], atom->ntypes);
+            MD_SIMD_INT tbase0 = simd_i32_load_h_dual_scaled(&ci_t[0], atom->ntypes);
+            MD_SIMD_INT tbase2 = simd_i32_load_h_dual_scaled(&ci_t[2], atom->ntypes);
 #else
-            MD_SIMD_FLOAT cutneighsq_vec = simd_broadcast(cutneighsq);
+            MD_SIMD_FLOAT cutneighsq_vec = simd_real_broadcast(cutneighsq);
 #endif
 
 #elif defined(CLUSTERPAIR_KERNEL_4XN)
-            MD_SIMD_FLOAT xi0_tmp = simd_broadcast(ci_x[CL_X_OFFSET + 0]);
-            MD_SIMD_FLOAT xi1_tmp = simd_broadcast(ci_x[CL_X_OFFSET + 1]);
-            MD_SIMD_FLOAT xi2_tmp = simd_broadcast(ci_x[CL_X_OFFSET + 2]);
-            MD_SIMD_FLOAT xi3_tmp = simd_broadcast(ci_x[CL_X_OFFSET + 3]);
-            MD_SIMD_FLOAT yi0_tmp = simd_broadcast(ci_x[CL_Y_OFFSET + 0]);
-            MD_SIMD_FLOAT yi1_tmp = simd_broadcast(ci_x[CL_Y_OFFSET + 1]);
-            MD_SIMD_FLOAT yi2_tmp = simd_broadcast(ci_x[CL_Y_OFFSET + 2]);
-            MD_SIMD_FLOAT yi3_tmp = simd_broadcast(ci_x[CL_Y_OFFSET + 3]);
-            MD_SIMD_FLOAT zi0_tmp = simd_broadcast(ci_x[CL_Z_OFFSET + 0]);
-            MD_SIMD_FLOAT zi1_tmp = simd_broadcast(ci_x[CL_Z_OFFSET + 1]);
-            MD_SIMD_FLOAT zi2_tmp = simd_broadcast(ci_x[CL_Z_OFFSET + 2]);
-            MD_SIMD_FLOAT zi3_tmp = simd_broadcast(ci_x[CL_Z_OFFSET + 3]);
+            MD_SIMD_FLOAT xi0_tmp = simd_real_broadcast(ci_x[CL_X_OFFSET + 0]);
+            MD_SIMD_FLOAT xi1_tmp = simd_real_broadcast(ci_x[CL_X_OFFSET + 1]);
+            MD_SIMD_FLOAT xi2_tmp = simd_real_broadcast(ci_x[CL_X_OFFSET + 2]);
+            MD_SIMD_FLOAT xi3_tmp = simd_real_broadcast(ci_x[CL_X_OFFSET + 3]);
+            MD_SIMD_FLOAT yi0_tmp = simd_real_broadcast(ci_x[CL_Y_OFFSET + 0]);
+            MD_SIMD_FLOAT yi1_tmp = simd_real_broadcast(ci_x[CL_Y_OFFSET + 1]);
+            MD_SIMD_FLOAT yi2_tmp = simd_real_broadcast(ci_x[CL_Y_OFFSET + 2]);
+            MD_SIMD_FLOAT yi3_tmp = simd_real_broadcast(ci_x[CL_Y_OFFSET + 3]);
+            MD_SIMD_FLOAT zi0_tmp = simd_real_broadcast(ci_x[CL_Z_OFFSET + 0]);
+            MD_SIMD_FLOAT zi1_tmp = simd_real_broadcast(ci_x[CL_Z_OFFSET + 1]);
+            MD_SIMD_FLOAT zi2_tmp = simd_real_broadcast(ci_x[CL_Z_OFFSET + 2]);
+            MD_SIMD_FLOAT zi3_tmp = simd_real_broadcast(ci_x[CL_Z_OFFSET + 3]);
 
 #ifndef ONE_ATOM_TYPE
-            MD_SIMD_INT tbase0    = simd_int_broadcast(ci_t[0] * atom->ntypes);
-            MD_SIMD_INT tbase1    = simd_int_broadcast(ci_t[1] * atom->ntypes);
-            MD_SIMD_INT tbase2    = simd_int_broadcast(ci_t[2] * atom->ntypes);
-            MD_SIMD_INT tbase3    = simd_int_broadcast(ci_t[3] * atom->ntypes);
+            MD_SIMD_INT tbase0    = simd_i32_broadcast(ci_t[0] * atom->ntypes);
+            MD_SIMD_INT tbase1    = simd_i32_broadcast(ci_t[1] * atom->ntypes);
+            MD_SIMD_INT tbase2    = simd_i32_broadcast(ci_t[2] * atom->ntypes);
+            MD_SIMD_INT tbase3    = simd_i32_broadcast(ci_t[3] * atom->ntypes);
 #else
-            MD_SIMD_FLOAT cutneighsq_vec = simd_broadcast(cutneighsq);
+            MD_SIMD_FLOAT cutneighsq_vec = simd_real_broadcast(cutneighsq);
 #endif
 
 #endif
@@ -398,22 +398,22 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
 
 #if defined(CLUSTERPAIR_KERNEL_2XNN)
 
-                                    MD_SIMD_FLOAT xj_tmp = simd_load_h_duplicate(
+                                    MD_SIMD_FLOAT xj_tmp = simd_real_load_h_duplicate(
                                         &cj_x[CL_X_OFFSET]);
-                                    MD_SIMD_FLOAT yj_tmp = simd_load_h_duplicate(
+                                    MD_SIMD_FLOAT yj_tmp = simd_real_load_h_duplicate(
                                         &cj_x[CL_Y_OFFSET]);
-                                    MD_SIMD_FLOAT zj_tmp = simd_load_h_duplicate(
+                                    MD_SIMD_FLOAT zj_tmp = simd_real_load_h_duplicate(
                                         &cj_x[CL_Z_OFFSET]);
 
 #ifndef ONE_ATOM_TYPE
-                                    MD_SIMD_INT tj_tmp = simd_int_load_h_duplicate(cj_t);
-                                    MD_SIMD_INT tvec0  = simd_int_add(tbase0, tj_tmp);
-                                    MD_SIMD_INT tvec2  = simd_int_add(tbase2, tj_tmp);
+                                    MD_SIMD_INT tj_tmp = simd_i32_load_h_duplicate(cj_t);
+                                    MD_SIMD_INT tvec0  = simd_i32_add(tbase0, tj_tmp);
+                                    MD_SIMD_INT tvec2  = simd_i32_add(tbase2, tj_tmp);
 
-                                    MD_SIMD_FLOAT cutneighsq0 = simd_gather(tvec0,
+                                    MD_SIMD_FLOAT cutneighsq0 = simd_real_gather(tvec0,
                                         atom->cutneighsq,
                                         sizeof(MD_FLOAT));
-                                    MD_SIMD_FLOAT cutneighsq2 = simd_gather(tvec2,
+                                    MD_SIMD_FLOAT cutneighsq2 = simd_real_gather(tvec2,
                                         atom->cutneighsq,
                                         sizeof(MD_FLOAT));
 #else
@@ -427,12 +427,12 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
                                     MD_SIMD_FLOAT delx2 = xi2_tmp - xj_tmp;
                                     MD_SIMD_FLOAT dely2 = yi2_tmp - yj_tmp;
                                     MD_SIMD_FLOAT delz2 = zi2_tmp - zj_tmp;
-                                    MD_SIMD_FLOAT rsq0  = simd_fma(delx0,
+                                    MD_SIMD_FLOAT rsq0  = simd_real_fma(delx0,
                                         delx0,
-                                        simd_fma(dely0, dely0, delz0 * delz0));
-                                    MD_SIMD_FLOAT rsq2  = simd_fma(delx2,
+                                        simd_real_fma(dely0, dely0, delz0 * delz0));
+                                    MD_SIMD_FLOAT rsq2  = simd_real_fma(delx2,
                                         delx2,
-                                        simd_fma(dely2, dely2, delz2 * delz2));
+                                        simd_real_fma(dely2, dely2, delz2 * delz2));
 
                                     MD_SIMD_MASK cutoff_mask0 = simd_mask_cond_lt(rsq0,
                                         cutneighsq0);
@@ -446,26 +446,29 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
 
 #elif defined(CLUSTERPAIR_KERNEL_4XN)
 
-                                    MD_SIMD_FLOAT xj_tmp = simd_load(&cj_x[CL_X_OFFSET]);
-                                    MD_SIMD_FLOAT yj_tmp = simd_load(&cj_x[CL_Y_OFFSET]);
-                                    MD_SIMD_FLOAT zj_tmp = simd_load(&cj_x[CL_Z_OFFSET]);
+                                    MD_SIMD_FLOAT xj_tmp = simd_real_load(
+                                        &cj_x[CL_X_OFFSET]);
+                                    MD_SIMD_FLOAT yj_tmp = simd_real_load(
+                                        &cj_x[CL_Y_OFFSET]);
+                                    MD_SIMD_FLOAT zj_tmp = simd_real_load(
+                                        &cj_x[CL_Z_OFFSET]);
 #ifndef ONE_ATOM_TYPE
-                                    MD_SIMD_INT tj_tmp   = simd_int_load(cj_t);
-                                    MD_SIMD_INT tvec0    = simd_int_add(tbase0, tj_tmp);
-                                    MD_SIMD_INT tvec1    = simd_int_add(tbase1, tj_tmp);
-                                    MD_SIMD_INT tvec2    = simd_int_add(tbase2, tj_tmp);
-                                    MD_SIMD_INT tvec3    = simd_int_add(tbase3, tj_tmp);
+                                    MD_SIMD_INT tj_tmp = simd_i32_load(cj_t);
+                                    MD_SIMD_INT tvec0  = simd_i32_add(tbase0, tj_tmp);
+                                    MD_SIMD_INT tvec1  = simd_i32_add(tbase1, tj_tmp);
+                                    MD_SIMD_INT tvec2  = simd_i32_add(tbase2, tj_tmp);
+                                    MD_SIMD_INT tvec3  = simd_i32_add(tbase3, tj_tmp);
 
-                                    MD_SIMD_FLOAT cutneighsq0 = simd_gather(tvec0,
+                                    MD_SIMD_FLOAT cutneighsq0 = simd_real_gather(tvec0,
                                         atom->cutneighsq,
                                         sizeof(MD_FLOAT));
-                                    MD_SIMD_FLOAT cutneighsq1 = simd_gather(tvec1,
+                                    MD_SIMD_FLOAT cutneighsq1 = simd_real_gather(tvec1,
                                         atom->cutneighsq,
                                         sizeof(MD_FLOAT));
-                                    MD_SIMD_FLOAT cutneighsq2 = simd_gather(tvec2,
+                                    MD_SIMD_FLOAT cutneighsq2 = simd_real_gather(tvec2,
                                         atom->cutneighsq,
                                         sizeof(MD_FLOAT));
-                                    MD_SIMD_FLOAT cutneighsq3 = simd_gather(tvec3,
+                                    MD_SIMD_FLOAT cutneighsq3 = simd_real_gather(tvec3,
                                         atom->cutneighsq,
                                         sizeof(MD_FLOAT));
 #else
@@ -488,18 +491,18 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
                                     MD_SIMD_FLOAT dely3 = yi3_tmp - yj_tmp;
                                     MD_SIMD_FLOAT delz3 = zi3_tmp - zj_tmp;
 
-                                    MD_SIMD_FLOAT rsq0 = simd_fma(delx0,
+                                    MD_SIMD_FLOAT rsq0 = simd_real_fma(delx0,
                                         delx0,
-                                        simd_fma(dely0, dely0, delz0 * delz0));
-                                    MD_SIMD_FLOAT rsq1 = simd_fma(delx1,
+                                        simd_real_fma(dely0, dely0, delz0 * delz0));
+                                    MD_SIMD_FLOAT rsq1 = simd_real_fma(delx1,
                                         delx1,
-                                        simd_fma(dely1, dely1, delz1 * delz1));
-                                    MD_SIMD_FLOAT rsq2 = simd_fma(delx2,
+                                        simd_real_fma(dely1, dely1, delz1 * delz1));
+                                    MD_SIMD_FLOAT rsq2 = simd_real_fma(delx2,
                                         delx2,
-                                        simd_fma(dely2, dely2, delz2 * delz2));
-                                    MD_SIMD_FLOAT rsq3 = simd_fma(delx3,
+                                        simd_real_fma(dely2, dely2, delz2 * delz2));
+                                    MD_SIMD_FLOAT rsq3 = simd_real_fma(delx3,
                                         delx3,
-                                        simd_fma(dely3, dely3, delz3 * delz3));
+                                        simd_real_fma(dely3, dely3, delz3 * delz3));
 
                                     MD_SIMD_MASK cutoff_mask0 = simd_mask_cond_lt(rsq0,
                                         cutneighsq0);
@@ -677,27 +680,27 @@ void pruneNeighbor(Parameter* param, Atom* atom, Neighbor* neighbor)
         MD_FLOAT* ci_x             = &atom->cl_x[ci_vec_base];
 
 #if defined(CLUSTERPAIR_KERNEL_2XNN)
-        MD_SIMD_FLOAT cutneighsq_vec = simd_broadcast(cutsq);
-        MD_SIMD_FLOAT xi0_tmp        = simd_load_h_dual(&ci_x[CL_X_OFFSET + 0]);
-        MD_SIMD_FLOAT xi2_tmp        = simd_load_h_dual(&ci_x[CL_X_OFFSET + 2]);
-        MD_SIMD_FLOAT yi0_tmp        = simd_load_h_dual(&ci_x[CL_Y_OFFSET + 0]);
-        MD_SIMD_FLOAT yi2_tmp        = simd_load_h_dual(&ci_x[CL_Y_OFFSET + 2]);
-        MD_SIMD_FLOAT zi0_tmp        = simd_load_h_dual(&ci_x[CL_Z_OFFSET + 0]);
-        MD_SIMD_FLOAT zi2_tmp        = simd_load_h_dual(&ci_x[CL_Z_OFFSET + 2]);
+        MD_SIMD_FLOAT cutneighsq_vec = simd_real_broadcast(cutsq);
+        MD_SIMD_FLOAT xi0_tmp        = simd_real_load_h_dual(&ci_x[CL_X_OFFSET + 0]);
+        MD_SIMD_FLOAT xi2_tmp        = simd_real_load_h_dual(&ci_x[CL_X_OFFSET + 2]);
+        MD_SIMD_FLOAT yi0_tmp        = simd_real_load_h_dual(&ci_x[CL_Y_OFFSET + 0]);
+        MD_SIMD_FLOAT yi2_tmp        = simd_real_load_h_dual(&ci_x[CL_Y_OFFSET + 2]);
+        MD_SIMD_FLOAT zi0_tmp        = simd_real_load_h_dual(&ci_x[CL_Z_OFFSET + 0]);
+        MD_SIMD_FLOAT zi2_tmp        = simd_real_load_h_dual(&ci_x[CL_Z_OFFSET + 2]);
 #elif defined(CLUSTERPAIR_KERNEL_4XN)
-        MD_SIMD_FLOAT cutneighsq_vec = simd_broadcast(cutsq);
-        MD_SIMD_FLOAT xi0_tmp        = simd_broadcast(ci_x[CL_X_OFFSET + 0]);
-        MD_SIMD_FLOAT xi1_tmp        = simd_broadcast(ci_x[CL_X_OFFSET + 1]);
-        MD_SIMD_FLOAT xi2_tmp        = simd_broadcast(ci_x[CL_X_OFFSET + 2]);
-        MD_SIMD_FLOAT xi3_tmp        = simd_broadcast(ci_x[CL_X_OFFSET + 3]);
-        MD_SIMD_FLOAT yi0_tmp        = simd_broadcast(ci_x[CL_Y_OFFSET + 0]);
-        MD_SIMD_FLOAT yi1_tmp        = simd_broadcast(ci_x[CL_Y_OFFSET + 1]);
-        MD_SIMD_FLOAT yi2_tmp        = simd_broadcast(ci_x[CL_Y_OFFSET + 2]);
-        MD_SIMD_FLOAT yi3_tmp        = simd_broadcast(ci_x[CL_Y_OFFSET + 3]);
-        MD_SIMD_FLOAT zi0_tmp        = simd_broadcast(ci_x[CL_Z_OFFSET + 0]);
-        MD_SIMD_FLOAT zi1_tmp        = simd_broadcast(ci_x[CL_Z_OFFSET + 1]);
-        MD_SIMD_FLOAT zi2_tmp        = simd_broadcast(ci_x[CL_Z_OFFSET + 2]);
-        MD_SIMD_FLOAT zi3_tmp        = simd_broadcast(ci_x[CL_Z_OFFSET + 3]);
+        MD_SIMD_FLOAT cutneighsq_vec = simd_real_broadcast(cutsq);
+        MD_SIMD_FLOAT xi0_tmp        = simd_real_broadcast(ci_x[CL_X_OFFSET + 0]);
+        MD_SIMD_FLOAT xi1_tmp        = simd_real_broadcast(ci_x[CL_X_OFFSET + 1]);
+        MD_SIMD_FLOAT xi2_tmp        = simd_real_broadcast(ci_x[CL_X_OFFSET + 2]);
+        MD_SIMD_FLOAT xi3_tmp        = simd_real_broadcast(ci_x[CL_X_OFFSET + 3]);
+        MD_SIMD_FLOAT yi0_tmp        = simd_real_broadcast(ci_x[CL_Y_OFFSET + 0]);
+        MD_SIMD_FLOAT yi1_tmp        = simd_real_broadcast(ci_x[CL_Y_OFFSET + 1]);
+        MD_SIMD_FLOAT yi2_tmp        = simd_real_broadcast(ci_x[CL_Y_OFFSET + 2]);
+        MD_SIMD_FLOAT yi3_tmp        = simd_real_broadcast(ci_x[CL_Y_OFFSET + 3]);
+        MD_SIMD_FLOAT zi0_tmp        = simd_real_broadcast(ci_x[CL_Z_OFFSET + 0]);
+        MD_SIMD_FLOAT zi1_tmp        = simd_real_broadcast(ci_x[CL_Z_OFFSET + 1]);
+        MD_SIMD_FLOAT zi2_tmp        = simd_real_broadcast(ci_x[CL_Z_OFFSET + 2]);
+        MD_SIMD_FLOAT zi3_tmp        = simd_real_broadcast(ci_x[CL_Z_OFFSET + 3]);
 #endif
 
         // Remove dummy clusters if necessary
@@ -715,22 +718,21 @@ void pruneNeighbor(Parameter* param, Atom* atom, Neighbor* neighbor)
 
 #if defined(CLUSTERPAIR_KERNEL_2XNN)
 
-            MD_SIMD_FLOAT xj_tmp = simd_load_h_duplicate(&cj_x[CL_X_OFFSET]);
-            MD_SIMD_FLOAT yj_tmp = simd_load_h_duplicate(&cj_x[CL_Y_OFFSET]);
-            MD_SIMD_FLOAT zj_tmp = simd_load_h_duplicate(&cj_x[CL_Z_OFFSET]);
-
-            MD_SIMD_FLOAT delx0 = xi0_tmp - xj_tmp;
-            MD_SIMD_FLOAT dely0 = yi0_tmp - yj_tmp;
-            MD_SIMD_FLOAT delz0 = zi0_tmp - zj_tmp;
-            MD_SIMD_FLOAT delx2 = xi2_tmp - xj_tmp;
-            MD_SIMD_FLOAT dely2 = yi2_tmp - yj_tmp;
-            MD_SIMD_FLOAT delz2 = zi2_tmp - zj_tmp;
-            MD_SIMD_FLOAT rsq0  = simd_fma(delx0,
+            MD_SIMD_FLOAT xj_tmp = simd_real_load_h_duplicate(&cj_x[CL_X_OFFSET]);
+            MD_SIMD_FLOAT yj_tmp = simd_real_load_h_duplicate(&cj_x[CL_Y_OFFSET]);
+            MD_SIMD_FLOAT zj_tmp = simd_real_load_h_duplicate(&cj_x[CL_Z_OFFSET]);
+            MD_SIMD_FLOAT delx0  = simd_real_sub(xi0_tmp, xj_tmp);
+            MD_SIMD_FLOAT dely0  = simd_real_sub(yi0_tmp, yj_tmp);
+            MD_SIMD_FLOAT delz0  = simd_real_sub(zi0_tmp, zj_tmp);
+            MD_SIMD_FLOAT delx2  = simd_real_sub(xi2_tmp, xj_tmp);
+            MD_SIMD_FLOAT dely2  = simd_real_sub(yi2_tmp, yj_tmp);
+            MD_SIMD_FLOAT delz2  = simd_real_sub(zi2_tmp, zj_tmp);
+            MD_SIMD_FLOAT rsq0   = simd_real_fma(delx0,
                 delx0,
-                simd_fma(dely0, dely0, delz0 * delz0));
-            MD_SIMD_FLOAT rsq2  = simd_fma(delx2,
+                simd_real_fma(dely0, dely0, simd_real_mul(delz0, delz0)));
+            MD_SIMD_FLOAT rsq2   = simd_real_fma(delx2,
                 delx2,
-                simd_fma(dely2, dely2, delz2 * delz2));
+                simd_real_fma(dely2, dely2, simd_real_mul(delz2, delz2)));
 
             MD_SIMD_MASK cutoff_mask0 = simd_mask_cond_lt(rsq0, cutneighsq_vec);
             MD_SIMD_MASK cutoff_mask2 = simd_mask_cond_lt(rsq2, cutneighsq_vec);
@@ -741,35 +743,34 @@ void pruneNeighbor(Parameter* param, Atom* atom, Neighbor* neighbor)
 
 #elif defined(CLUSTERPAIR_KERNEL_4XN)
 
-            MD_SIMD_FLOAT xj_tmp = simd_load(&cj_x[CL_X_OFFSET]);
-            MD_SIMD_FLOAT yj_tmp = simd_load(&cj_x[CL_Y_OFFSET]);
-            MD_SIMD_FLOAT zj_tmp = simd_load(&cj_x[CL_Z_OFFSET]);
+            MD_SIMD_FLOAT xj_tmp = simd_real_load(&cj_x[CL_X_OFFSET]);
+            MD_SIMD_FLOAT yj_tmp = simd_real_load(&cj_x[CL_Y_OFFSET]);
+            MD_SIMD_FLOAT zj_tmp = simd_real_load(&cj_x[CL_Z_OFFSET]);
+            MD_SIMD_FLOAT delx0  = simd_real_sub(xi0_tmp, xj_tmp);
+            MD_SIMD_FLOAT dely0  = simd_real_sub(yi0_tmp, yj_tmp);
+            MD_SIMD_FLOAT delz0  = simd_real_sub(zi0_tmp, zj_tmp);
+            MD_SIMD_FLOAT delx1  = simd_real_sub(xi1_tmp, xj_tmp);
+            MD_SIMD_FLOAT dely1  = simd_real_sub(yi1_tmp, yj_tmp);
+            MD_SIMD_FLOAT delz1  = simd_real_sub(zi1_tmp, zj_tmp);
+            MD_SIMD_FLOAT delx2  = simd_real_sub(xi2_tmp, xj_tmp);
+            MD_SIMD_FLOAT dely2  = simd_real_sub(yi2_tmp, yj_tmp);
+            MD_SIMD_FLOAT delz2  = simd_real_sub(zi2_tmp, zj_tmp);
+            MD_SIMD_FLOAT delx3  = simd_real_sub(xi3_tmp, xj_tmp);
+            MD_SIMD_FLOAT dely3  = simd_real_sub(yi3_tmp, yj_tmp);
+            MD_SIMD_FLOAT delz3  = simd_real_sub(zi3_tmp, zj_tmp);
 
-            MD_SIMD_FLOAT delx0 = xi0_tmp - xj_tmp;
-            MD_SIMD_FLOAT dely0 = yi0_tmp - yj_tmp;
-            MD_SIMD_FLOAT delz0 = zi0_tmp - zj_tmp;
-            MD_SIMD_FLOAT delx1 = xi1_tmp - xj_tmp;
-            MD_SIMD_FLOAT dely1 = yi1_tmp - yj_tmp;
-            MD_SIMD_FLOAT delz1 = zi1_tmp - zj_tmp;
-            MD_SIMD_FLOAT delx2 = xi2_tmp - xj_tmp;
-            MD_SIMD_FLOAT dely2 = yi2_tmp - yj_tmp;
-            MD_SIMD_FLOAT delz2 = zi2_tmp - zj_tmp;
-            MD_SIMD_FLOAT delx3 = xi3_tmp - xj_tmp;
-            MD_SIMD_FLOAT dely3 = yi3_tmp - yj_tmp;
-            MD_SIMD_FLOAT delz3 = zi3_tmp - zj_tmp;
-
-            MD_SIMD_FLOAT rsq0 = simd_fma(delx0,
+            MD_SIMD_FLOAT rsq0 = simd_real_fma(delx0,
                 delx0,
-                simd_fma(dely0, dely0, delz0 * delz0));
-            MD_SIMD_FLOAT rsq1 = simd_fma(delx1,
+                simd_real_fma(dely0, dely0, simd_real_mul(delz0, delz0)));
+            MD_SIMD_FLOAT rsq1 = simd_real_fma(delx1,
                 delx1,
-                simd_fma(dely1, dely1, delz1 * delz1));
-            MD_SIMD_FLOAT rsq2 = simd_fma(delx2,
+                simd_real_fma(dely1, dely1, simd_real_mul(delz1, delz1)));
+            MD_SIMD_FLOAT rsq2 = simd_real_fma(delx2,
                 delx2,
-                simd_fma(dely2, dely2, delz2 * delz2));
-            MD_SIMD_FLOAT rsq3 = simd_fma(delx3,
+                simd_real_fma(dely2, dely2, simd_real_mul(delz2, delz2)));
+            MD_SIMD_FLOAT rsq3 = simd_real_fma(delx3,
                 delx3,
-                simd_fma(dely3, dely3, delz3 * delz3));
+                simd_real_fma(dely3, dely3, simd_real_mul(delz3, delz3)));
 
             MD_SIMD_MASK cutoff_mask0 = simd_mask_cond_lt(rsq0, cutneighsq_vec);
             MD_SIMD_MASK cutoff_mask1 = simd_mask_cond_lt(rsq1, cutneighsq_vec);
