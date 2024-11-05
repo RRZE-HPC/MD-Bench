@@ -79,7 +79,6 @@ static inline MD_SIMD_MASK simd_mask_and(MD_SIMD_MASK a, MD_SIMD_MASK b)
     return svand_b_z(svptrue_b32(), a, b);
 }
 
-// Conditional mask based on less than comparison
 static inline MD_SIMD_MASK simd_mask_cond_lt(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b)
 {
     return svcmplt_f32(svptrue_b32(), a, b);
@@ -95,6 +94,21 @@ static inline MD_SIMD_FLOAT simd_real_reciprocal(MD_SIMD_FLOAT a)
 static inline float simd_real_incr_reduced_sum(
     float* m, MD_SIMD_FLOAT v0, MD_SIMD_FLOAT v1, MD_SIMD_FLOAT v2, MD_SIMD_FLOAT v3)
 {
+    /*
+    svbool_t    pg = svptrue_b32();
+    svfloat32_t _m, _s;
+    float32_t   sum[4];
+    sum[0] = svadda_f32(pg, 0.0f, v0);
+    sum[1] = svadda_f32(pg, 0.0f, v1);
+    sum[2] = svadda_f32(pg, 0.0f, v2);
+    sum[3] = svadda_f32(pg, 0.0f, v3);
+    pg     = svptrue_pat_b32(SV_VL4);
+    _m     = svld1_f32(pg, m);
+    _s     = svld1_f32(pg, sum);
+    svst1_f32(pg, m, svadd_f32_x(pg, _m, _s));
+    return svadda_f32(pg, 0.0f, _s);
+    */
+
     MD_SIMD_FLOAT sum0 = svaddp_f32_m(svptrue_b32(), v0, v1);
     MD_SIMD_FLOAT sum1 = svaddp_f32_m(svptrue_b32(), v2, v3);
     MD_SIMD_FLOAT odd  = svuzp2_f32(sum0, sum1);
@@ -114,24 +128,29 @@ static inline MD_SIMD_FLOAT simd_real_masked_add(
     return svadd_f32_m(m, a, b);
 }
 
-// Select elements based on mask
 static inline MD_SIMD_FLOAT simd_real_select_by_mask(MD_SIMD_FLOAT a, MD_SIMD_MASK mask)
 {
     return svsel_f32(mask, a, svdup_f32(0.0f));
 }
 
-// Dummy load functions to match original signatures
 static inline MD_SIMD_FLOAT simd_real_load_h_dual(const MD_FLOAT* m)
 {
-    return svdup_f32(0.0f);
+    MD_SIMD_FLOAT ret;
+    fprintf(stderr,
+        "simd_real_load_h_dual(): Not implemented for SVE with single precision!");
+    exit(-1);
+    return ret;
 }
 
 static inline MD_SIMD_FLOAT simd_real_load_h_duplicate(const MD_FLOAT* m)
 {
-    return svdup_f32(0.0f);
+    MD_SIMD_FLOAT ret;
+    fprintf(stderr,
+        "simd_real_load_h_duplicate(): Not implemented for SVE with single precision!");
+    exit(-1);
+    return ret;
 }
 
-// Dummy function for simd_h_decr3
 static inline void simd_real_h_decr3(
     MD_FLOAT* m, MD_SIMD_FLOAT a0, MD_SIMD_FLOAT a1, MD_SIMD_FLOAT a2)
 {
@@ -140,10 +159,13 @@ static inline void simd_real_h_decr3(
     exit(-1);
 }
 
-// Dummy function for simd_h_dual_incr_reduced_sum
 static inline MD_FLOAT simd_real_h_dual_incr_reduced_sum(
     MD_FLOAT* m, MD_SIMD_FLOAT v0, MD_SIMD_FLOAT v1)
 {
+    fprintf(stderr,
+        "simd_real_h_dual_incr_reduced_sum(): Not implemented for SVE with single "
+        "precision!");
+    exit(-1);
     return 0.0f;
 }
 

@@ -1,188 +1,206 @@
+/*
+ * Copyright (C)  NHR@FAU, University Erlangen-Nuremberg.
+ * All rights reserved. This file is part of MD-Bench.
+ * Use of this source code is governed by a LGPL-3.0
+ * license that can be found in the LICENSE file.
+ */
+#include <stdlib.h>
 
+#define MD_SIMD_FLOAT svfloat64_t
+#define MD_SIMD_MASK  svbool_t
+#define MD_SIMD_INT   svint64_t
 
-#warning SVE_DOUBLE
-typedef svfloat64x2_t MD_SIMD_FLOAT;
-typedef svfloat64x2_t  MD_SIMD_MASK;
-typedef svfloat64_t   MD_SIMD_HALF;
-
-// static inline MD_SIMD_FLOAT simd_padd(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b) {
-//     // Extract vectors from the tuples
-//     svfloat64_t a0 = svget2_f64(a, 0);
-//     svfloat64_t a1 = svget2_f64(a, 1);
-//     svfloat64_t b0 = svget2_f64(b, 0);
-//     svfloat64_t b1 = svget2_f64(b, 1);
-
-//     // Perform pairwise addition
-//     svfloat64_t result0 = svpadd_f64(a0, a1);
-//     svfloat64_t result1 = svpadd_f64(b0, b1);
-
-//     // Construct the result tuple
-//     MD_SIMD_FLOAT result = svcreate2_f64(result0, result1);
-
-//     return result;
-// }
-
-
-// Broadcasting a scalar double value to a SIMD vector tuple
-static inline MD_SIMD_FLOAT simd_broadcast(double value) {
-    MD_SIMD_FLOAT result;
-    result = svcreate2_f64(svdup_f64(value), svdup_f64(value));
-    return result;
-}
-
-static inline MD_SIMD_FLOAT simd_zero() {
-    MD_SIMD_FLOAT result;
-    result = svcreate2_f64(svdup_f64(0), svdup_f64(0));
-    return result;
-}
-
-static inline MD_SIMD_FLOAT simd_sub(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b)
+static inline int simd_test_any(MD_SIMD_MASK a) { return svptest_any(svptrue_b64(), a); }
+static inline MD_SIMD_FLOAT simd_real_broadcast(float value) { return svdup_f64(value); }
+static inline MD_SIMD_FLOAT simd_real_zero(void) { return svdup_f64(0.0f); }
+static inline MD_SIMD_FLOAT simd_real_sub(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b)
 {
-    MD_SIMD_FLOAT result;
-    result = svcreate2_f64(svsub_f64_z(svptrue_b64(), svget2_f64(a, 0), svget2_f64(b, 0)), svsub_f64_z(svptrue_b64(), svget2_f64(a, 1), svget2_f64(b, 1)));
-    return result;
+    return svsub_f64_z(svptrue_b64(), a, b);
 }
 
-// Function to load a vector tuple from memory
-static inline MD_SIMD_FLOAT simd_load(const double *ptr) {
-    svfloat64_t v0 = svld1_f64(svptrue_b64(), ptr);
-    svfloat64_t v1 = svld1_f64(svptrue_b64(), ptr + svcntd());
-    MD_SIMD_FLOAT result = svcreate2_f64(v0, v1);
-    return result;
-}
-
-// Function to store a vector tuple to memory
-static inline void simd_store(double* ptr, MD_SIMD_FLOAT vec) {
-    svst1_f64(svptrue_b64(), ptr, svget2_f64(vec, 0));
-    svst1_f64(svptrue_b64(), ptr + svcntd(), svget2_f64(vec, 1));
-}
-
-static inline MD_SIMD_FLOAT simd_add(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b)
+static inline MD_SIMD_FLOAT simd_real_load(const MD_FLOAT* ptr)
 {
-    MD_SIMD_FLOAT result;
-    result = svcreate2_f64(svadd_f64_z(svptrue_b64(), svget2_f64(a, 0), svget2_f64(b, 0)), svadd_f64_z(svptrue_b64(), svget2_f64(a, 1), svget2_f64(b, 1)));
-    return result;
+    return svld1_f64(svptrue_b64(), ptr);
 }
 
-static inline MD_SIMD_FLOAT simd_mul(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b)
+static inline MD_SIMD_FLOAT simd_real_gather(
+    MD_SIMD_INT vidx, MD_FLOAT* base, const int scale)
 {
-    MD_SIMD_FLOAT result;
-    result = svcreate2_f64(svmul_f64_z(svptrue_b64(), svget2_f64(a, 0), svget2_f64(b, 0)), svmul_f64_z(svptrue_b64(), svget2_f64(a, 1), svget2_f64(b, 1)));
-    return result;
+    return svld1_gather_s64offset_f64(svptrue_b64(), base, vidx);
 }
 
-static inline MD_SIMD_FLOAT simd_fma(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b, MD_SIMD_FLOAT c)
+static inline void simd_real_store(MD_FLOAT* ptr, MD_SIMD_FLOAT vec)
 {
-    MD_SIMD_FLOAT result;
-    result = svcreate2_f64(svmad_f64_z(svptrue_b64(), svget2_f64(a, 0), svget2_f64(b, 0), svget2_f64(c, 0)), svmad_f64_z(svptrue_b64(), svget2_f64(a, 1), svget2_f64(b, 1), svget2_f64(c, 1)));
-    return result;
+    svst1_f64(svptrue_b64(), ptr, vec);
 }
 
-static inline MD_SIMD_FLOAT simd_reciprocal(MD_SIMD_FLOAT a)
+static inline MD_SIMD_FLOAT simd_real_add(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b)
 {
-    // Estimate the reciprocal
-    MD_SIMD_FLOAT reciprocal_estimate;
-    reciprocal_estimate = svcreate2_f64(svrecpe_f64(svget2_f64(a, 0)), svrecpe_f64(svget2_f64(a, 1)));
+    return svadd_f64_z(svptrue_b64(), a, b);
+}
 
-    // Compute the reciprocal correction
-    MD_SIMD_FLOAT reciprocal_correction;
-    reciprocal_correction = svcreate2_f64(svrecps_f64(svget2_f64(reciprocal_estimate, 0), svget2_f64(a, 0)), 
-                                          svrecps_f64(svget2_f64(reciprocal_estimate, 1), svget2_f64(a, 1)));
+static inline MD_SIMD_FLOAT simd_real_mul(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b)
+{
+    return svmul_f64_z(svptrue_b64(), a, b);
+}
 
-    // Multiply the estimate by the correction to improve accuracy
-    MD_SIMD_FLOAT reciprocal_result;
-    reciprocal_result = svcreate2_f64(svmul_f64_z(svptrue_b64(), svget2_f64(reciprocal_estimate, 0), svget2_f64(reciprocal_correction, 0)), 
-                                      svmul_f64_z(svptrue_b64(), svget2_f64(reciprocal_estimate, 1), svget2_f64(reciprocal_correction, 1)));
-
-    return reciprocal_result;
+static inline MD_SIMD_FLOAT simd_real_fma(
+    MD_SIMD_FLOAT a, MD_SIMD_FLOAT b, MD_SIMD_FLOAT c)
+{
+    return svmad_f64_z(svptrue_b64(), a, b, c);
 }
 
 static inline MD_SIMD_MASK simd_mask_from_u32(uint32_t a)
 {
-    const uint64_t all = 0xFFFFFFFFFFFFFFFF;
-    const uint64_t none = 0x0;
-    MD_SIMD_HALF zero_mask = svdupq_n_f64(0, 0);
-    MD_SIMD_HALF result1,result2;
-    result1 = svreinterpret_f64_u64(svdup_u64(0xFFFFFFFFFFFFFFFF));
-    result2 = svreinterpret_f64_u64(svdup_u64(0xFFFFFFFFFFFFFFFF));
-    svbool_t predicate1 = svdupq_n_b64 (a & 0x1 ? 1 :0, a & 0x2 ? 1 :0);
-    svbool_t predicate2 = svdupq_n_b64 (a & 0x4 ? 1 :0,a & 0x8 ? 1 :0);
-    
-    result1 = svmul_f64_z(predicate1, result1, zero_mask);
-    result2 = svmul_f64_z(predicate2, result2, zero_mask);
+    svbool_t predicate = svdupq_n_b64(a & 0x1 ? 1 : 0, a & 0x2 ? 1 : 0);
 
-    return svcreate2_f64(result1, result2);
+    return predicate;
 }
 
+static inline uint32_t simd_mask_to_u32(MD_SIMD_MASK mask)
+{
+    svuint64_t seq    = svindex_u64(0, 1);
+    uint32_t result   = 0;
+    MD_SIMD_MASK next = svpnext_b64(svptrue_b64(), mask);
+
+    while (svptest_any(svptrue_b64(), next)) {
+        result |= 1 << (uint32_t)svaddv_u64(next, seq);
+        mask = svand_b_z(svptrue_b64(), mask, svnot_b_z(svptrue_b64(), next));
+    }
+
+    return result;
+}
 
 static inline MD_SIMD_MASK simd_mask_and(MD_SIMD_MASK a, MD_SIMD_MASK b)
 {
-    MD_SIMD_MASK result;
-    svuint64_t a1i = svreinterpret_u64_f64(svget2_f64(a, 0));
-    svuint64_t b1i = svreinterpret_u64_f64(svget2_f64(b, 0));
-    svuint64_t a2i = svreinterpret_u64_f64(svget2_f64(a, 1));
-    svuint64_t b2i = svreinterpret_u64_f64(svget2_f64(b, 1));
-    
-
-    result = svcreate2_f64(svreinterpret_f64_u64(svand_u64_z(svptrue_b64(), a1i, b1i)), 
-                           svreinterpret_f64_u64(svand_u64_z(svptrue_b64(), a2i, b2i)));
-    return result;
+    return svand_b_z(svptrue_b64(), a, b);
 }
 
 static inline MD_SIMD_MASK simd_mask_cond_lt(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b)
 {
-    // Use an active predicate for all lanes
-    svbool_t pg = svptrue_b32();
-    
-    // Compare elements of a and b, resulting in a predicate
-    svbool_t predicate1 = svcmplt(pg, svget2_f64(a, 0), svget2_f64(b, 0));
-    svbool_t predicate2 = svcmplt(pg, svget2_f64(a, 1), svget2_f64(b, 1));
-
-    MD_SIMD_HALF zero_mask = svdupq_n_f64(0, 0);
-    MD_SIMD_HALF result1 = svreinterpret_f64_u64(svdup_u64(0xFFFFFFFFFFFFFFFF));
-    MD_SIMD_HALF result2 = svreinterpret_f64_u64(svdup_u64(0xFFFFFFFFFFFFFFFF));
-    result1 = svmul_f64_z(predicate1, result1, zero_mask);
-    result2 = svmul_f64_z(predicate2, result2, zero_mask);
-    return svcreate2_f64(result1, result2);
-
+    return svcmplt_f64(svptrue_b64(), a, b);
 }
 
-// Select elements based on mask
-static inline MD_SIMD_FLOAT select_by_mask(MD_SIMD_FLOAT a, MD_SIMD_MASK mask) {
-    // Convert the float mask to a boolean mask
-    svbool_t pg1 = svcmpne_f64(svptrue_b64(), svget2_f64(mask, 0), svdup_f64(0.0f));
-    svbool_t pg2 = svcmpne_f64(svptrue_b64(), svget2_f64(mask, 1), svdup_f64(0.0f));
-    
-    // Select elements from a where the mask is true, otherwise select 0.0f
-    return svcreate2_f64(svsel_f64(pg1, svget2_f64(a, 0), svdup_f64(0.0f)), svsel_f64(pg2, svget2_f64(a, 1), svdup_f64(0.0f)));
-    // return svsel_f32(pg, a, svdup_f32(0.0f));
-
+static inline MD_SIMD_FLOAT simd_real_reciprocal(MD_SIMD_FLOAT a)
+{
+    MD_SIMD_FLOAT reciprocal = svrecpe_f64(a);
+    reciprocal = svmul_f64_z(svptrue_b64(), reciprocal, svrecps_f64(reciprocal, a));
+    return reciprocal;
 }
 
-// Masked add operation
-static inline MD_SIMD_FLOAT simd_masked_add(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b, MD_SIMD_MASK m) {
-    // Convert the float mask to a boolean mask
-    svbool_t pg1 = svcmpne_f64(svptrue_b64(), svget2_f64(m, 0), svdup_f64(0.0f));
-    svbool_t pg2 = svcmpne_f64(svptrue_b64(), svget2_f64(m, 1), svdup_f64(0.0f));
-    
-    // Perform the masked add operation
-    return svcreate2_f64(svadd_f64_m(pg1, svget2_f64(a, 0), svget2_f64(b, 0)), svadd_f64_m(pg2, svget2_f64(a, 1), svget2_f64(b, 1)));
+static inline MD_FLOAT simd_real_incr_reduced_sum(
+    MD_FLOAT* m, MD_SIMD_FLOAT v0, MD_SIMD_FLOAT v1, MD_SIMD_FLOAT v2, MD_SIMD_FLOAT v3)
+{
+    svbool_t pg = svptrue_b64();
+    double   sum[4];
+    sum[0] = svadda_f64(pg, 0.0, v0);
+    sum[1] = svadda_f64(pg, 0.0, v1);
+    sum[2] = svadda_f64(pg, 0.0, v2);
+    sum[3] = svadda_f64(pg, 0.0, v3);
+#if VECTOR_WIDTH >= 4
+    pg             = SVE_DOUBLE4_MASK;
+    svfloat64_t _m = svld1_f64(pg, m);
+    svfloat64_t _s = svld1_f64(pg, sum);
+    svst1_f64(pg, m, svadd_f64_x(pg, _m, _s));
+    return svadda_f64(pg, 0.0, _s);
+#else
+    double res = 0;
+    for (int i = 0; i < 4; i++)
+    {
+        m[i] += sum[i];
+        res += sum[i];
+    }
+    return res;
+#endif
+
+    /*
+    MD_SIMD_FLOAT sum0 = svaddp_f64_m(svptrue_b64(), v0, v1);
+    MD_SIMD_FLOAT sum1 = svaddp_f64_m(svptrue_b64(), v2, v3);
+    MD_SIMD_FLOAT odd  = svuzp2_f64(sum0, sum1);
+    MD_SIMD_FLOAT even = svuzp1_f64(sum0, sum1);
+    MD_SIMD_FLOAT sum  = svaddp_f64_m(svptrue_b64(), even, odd);
+
+    MD_SIMD_FLOAT mem = svld1_f64(svptrue_b64(), m);
+    sum               = svadd_f64_m(svptrue_b64(), sum, mem);
+
+    svst1_f64(svptrue_b64(), m, sum);
+    return svaddv_f64(svptrue_b64(), sum);
+    */
 }
 
-static inline double simd_incr_reduced_sum(double *m, MD_SIMD_FLOAT v0, MD_SIMD_FLOAT v1, MD_SIMD_FLOAT v2, MD_SIMD_FLOAT v3) {
-    MD_SIMD_HALF sum00 = svaddp_f64_m(svptrue_b64(), svget2_f64(v0, 1), svget2_f64(v0, 0));
-    MD_SIMD_HALF sum01 = svaddp_f64_m(svptrue_b64(), svget2_f64(v1, 1), svget2_f64(v1, 0));
-    MD_SIMD_HALF sum10 = svaddp_f64_m(svptrue_b64(), svget2_f64(v2, 1), svget2_f64(v2, 0));
-    MD_SIMD_HALF sum11 = svaddp_f64_m(svptrue_b64(), svget2_f64(v3, 1), svget2_f64(v3, 0));
-    sum00 = svaddp_f64_m(svptrue_b64(),sum00,sum01);
-    sum10 = svaddp_f64_m(svptrue_b64(),sum10,sum11);
-
-    MD_SIMD_FLOAT result_vec = svcreate2_f64(sum00, sum10);
-    result_vec= simd_add(result_vec,simd_load(m));
-    simd_store(m,result_vec);
-
-    double result1 = svaddv_f64(svptrue_b64(), svget2_f64(result_vec,0));
-    double result2 = svaddv_f64(svptrue_b64(), svget2_f64(result_vec,1));
-    return result1 + result2;
+static inline MD_SIMD_FLOAT simd_real_masked_add(
+    MD_SIMD_FLOAT a, MD_SIMD_FLOAT b, MD_SIMD_MASK m)
+{
+    return svadd_f64_m(m, a, b);
 }
 
+static inline MD_SIMD_FLOAT simd_real_select_by_mask(MD_SIMD_FLOAT a, MD_SIMD_MASK mask)
+{
+    return svsel_f64(mask, a, svdup_f64(0.0f));
+}
+
+static inline MD_SIMD_FLOAT simd_real_load_h_dual(const MD_FLOAT* m)
+{
+    MD_SIMD_FLOAT ret;
+    fprintf(stderr,
+        "simd_real_load_h_dual(): Not implemented for SVE with double precision!");
+    exit(-1);
+    return ret;
+}
+
+static inline MD_SIMD_FLOAT simd_real_load_h_duplicate(const MD_FLOAT* m)
+{
+    MD_SIMD_FLOAT ret;
+    fprintf(stderr,
+        "simd_real_load_h_duplicate(): Not implemented for SVE with double precision!");
+    exit(-1);
+    return ret;
+}
+
+static inline void simd_real_h_decr3(
+    MD_FLOAT* m, MD_SIMD_FLOAT a0, MD_SIMD_FLOAT a1, MD_SIMD_FLOAT a2)
+{
+    fprintf(stderr,
+        "simd_real_h_decr3(): Not implemented for SVE with double precision!");
+    exit(-1);
+}
+
+static inline MD_FLOAT simd_real_h_dual_incr_reduced_sum(
+    MD_FLOAT* m, MD_SIMD_FLOAT v0, MD_SIMD_FLOAT v1)
+{
+    fprintf(stderr,
+        "simd_real_h_dual_incr_reduced_sum(): Not implemented for SVE with double "
+        "precision!");
+    exit(-1);
+    return 0.0f;
+}
+
+static inline MD_SIMD_INT simd_i32_broadcast(int a) { return svdup_s64((int64_t)a); }
+
+static inline MD_SIMD_INT simd_i32_add(MD_SIMD_INT a, MD_SIMD_INT b)
+{
+    return svadd_s64_x(svptrue_b64(), a, b);
+}
+
+static inline MD_SIMD_INT simd_i32_load(const int* m)
+{
+    return svunpklo_s64(svld1_s32(svptrue_b64(), m));
+}
+
+static inline MD_SIMD_INT simd_i32_load_h_duplicate(const int* m)
+{
+    MD_SIMD_INT ret;
+    fprintf(stderr,
+        "simd_i32_load_h_duplicate(): Not implemented for SVE with double precision!");
+    exit(-1);
+    return ret;
+}
+
+static inline MD_SIMD_INT simd_i32_load_h_dual_scaled(const int* m, int scale)
+{
+    MD_SIMD_INT ret;
+    fprintf(stderr,
+        "simd_i32_load_h_dual_scaled(): Not implemented for SVE with double precision!");
+    exit(-1);
+    return ret;
+}
