@@ -11,8 +11,8 @@
 #define MD_SIMD_INT   svint64_t
 
 static inline int simd_test_any(MD_SIMD_MASK a) { return svptest_any(svptrue_b64(), a); }
-static inline MD_SIMD_FLOAT simd_real_broadcast(float value) { return svdup_f64(value); }
-static inline MD_SIMD_FLOAT simd_real_zero(void) { return svdup_f64(0.0f); }
+static inline MD_SIMD_FLOAT simd_real_broadcast(MD_FLOAT value) { return svdup_f64(value); }
+static inline MD_SIMD_FLOAT simd_real_zero(void) { return svdup_f64(0.0); }
 static inline MD_SIMD_FLOAT simd_real_sub(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b)
 {
     return svsub_f64_z(svptrue_b64(), a, b);
@@ -52,9 +52,7 @@ static inline MD_SIMD_FLOAT simd_real_fma(
 
 static inline MD_SIMD_MASK simd_mask_from_u32(uint32_t a)
 {
-    svbool_t predicate = svdupq_n_b64(a & 0x1 ? 1 : 0, a & 0x2 ? 1 : 0);
-
-    return predicate;
+    return svdupq_n_b64(a & 0x1 ? 1 : 0, a & 0x2 ? 1 : 0);
 }
 
 static inline uint32_t simd_mask_to_u32(MD_SIMD_MASK mask)
@@ -136,7 +134,7 @@ static inline MD_SIMD_FLOAT simd_real_masked_add(
 
 static inline MD_SIMD_FLOAT simd_real_select_by_mask(MD_SIMD_FLOAT a, MD_SIMD_MASK mask)
 {
-    return svsel_f64(mask, a, svdup_f64(0.0f));
+    return svsel_f64(mask, a, svdup_f64(0.0));
 }
 
 static inline MD_SIMD_FLOAT simd_real_load_h_dual(const MD_FLOAT* m)
@@ -184,7 +182,8 @@ static inline MD_SIMD_INT simd_i32_add(MD_SIMD_INT a, MD_SIMD_INT b)
 
 static inline MD_SIMD_INT simd_i32_load(const int* m)
 {
-    return svunpklo_s64(svld1_s32(svptrue_b64(), m));
+    svbool_t pg = svwhilelt_b32(0, VECTOR_WIDTH);
+    return svunpklo_s64(svld1_s32(pg, m));
 }
 
 static inline MD_SIMD_INT simd_i32_load_h_duplicate(const int* m)
