@@ -1,211 +1,165 @@
-// #include <arm_acle.h>
-// #include <arm_neon.h>
-// #include <stdlib.h>
-// #include <stdio.h>
-#warning neon_double
-// Typedefs for MD_SIMD_FLOAT and MD_SIMD_MASK for double precision
-typedef float64x2x2_t MD_SIMD_FLOAT;
-typedef float64x2x2_t MD_SIMD_MASK;
-typedef float64x2_t   MD_SIMD_HALF;
+#include <arm_neon.h>
+#include <stdlib.h>
 
-static inline MD_SIMD_FLOAT simd_broadcast(double value)
-{
-    // Create a vector with the broadcasted value
-    MD_SIMD_HALF v = vdupq_n_f64(value);
-    MD_SIMD_FLOAT result;
-    result.val[0] = v;
-    result.val[1] = v;
-    // Return the value replicated across both parts of the MD_SIMD_FLOAT structure
-    return result;
-}
+#define MD_SIMD_FLOAT float64x2_t
+#define MD_SIMD_MASK  uint64x2_t
+#define MD_SIMD_INT   int64x2_t
 
-static inline MD_SIMD_FLOAT simd_zero(void)
+static inline int simd_test_any(MD_SIMD_MASK a)
 {
-    // Create a vector with the broadcasted value
-    MD_SIMD_HALF v = vdupq_n_f64(0.0);
-    MD_SIMD_FLOAT result;
-    result.val[0] = v;
-    result.val[1] = v;
-    // Return the value replicated across both parts of the MD_SIMD_FLOAT structure
-    return result;
+    return vgetq_lane_u64(a, 0) != 0 || vgetq_lane_u64(a, 1) != 0;
 }
-
-// Helper function to subtract two MD_SIMD_FLOAT vectors
-static inline MD_SIMD_FLOAT simd_sub(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b)
+static inline MD_SIMD_FLOAT simd_real_broadcast(MD_FLOAT value)
 {
-    MD_SIMD_FLOAT result;
-    result.val[0] = vsubq_f64(a.val[0], b.val[0]);
-    result.val[1] = vsubq_f64(a.val[1], b.val[1]);
-    return result;
+    return vdupq_n_f64(value);
 }
-
-static inline MD_SIMD_FLOAT simd_load(const double* ptr)
+static inline MD_SIMD_FLOAT simd_real_zero(void) { return vdupq_n_f64(0.0f); }
+static inline MD_SIMD_FLOAT simd_real_sub(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b)
 {
-    // Load two 128-bit vectors in one instruction
-    return vld1q_f64_x2(ptr);
+    return vsubq_f64(a, b);
 }
-
-static inline void simd_store(double* ptr, MD_SIMD_FLOAT vec)
+static inline MD_SIMD_FLOAT simd_real_load(const MD_FLOAT* ptr) { return vld1q_f64(ptr); }
+static inline void simd_real_store(MD_FLOAT* ptr, MD_SIMD_FLOAT vec)
 {
-    // Store the first 128-bit vector (first two doubles)
-    vst1q_f64_x2(ptr, vec);
+    vst1q_f64(ptr, vec);
 }
-
-static inline MD_SIMD_FLOAT simd_add(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b)
+static inline MD_SIMD_FLOAT simd_real_add(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b)
 {
-    MD_SIMD_FLOAT result;
-    result.val[0] = vaddq_f64(a.val[0], b.val[0]);
-    result.val[1] = vaddq_f64(a.val[1], b.val[1]);
-    return result;
+    return vaddq_f64(a, b);
 }
-static inline MD_SIMD_FLOAT simd_padd(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b)
+static inline MD_SIMD_FLOAT simd_real_mul(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b)
 {
-    MD_SIMD_FLOAT result;
-    result.val[0] = vpaddq_f64(a.val[0], a.val[1]);
-    result.val[1] = vpaddq_f64(b.val[0], b.val[1]);
-    return result;
+    return vmulq_f64(a, b);
 }
-
-static inline MD_SIMD_FLOAT simd_mul(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b)
+static inline MD_SIMD_FLOAT simd_real_fma(
+    MD_SIMD_FLOAT a, MD_SIMD_FLOAT b, MD_SIMD_FLOAT c)
 {
-    MD_SIMD_FLOAT result;
-    result.val[0] = vmulq_f64(a.val[0], b.val[0]);
-    result.val[1] = vmulq_f64(a.val[1], b.val[1]);
-    return result;
-}
-
-static inline MD_SIMD_FLOAT simd_fma(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b, MD_SIMD_FLOAT c)
-{
-    MD_SIMD_FLOAT result;
-    //@todo doublecheck this
-    result.val[0] = vfmaq_f64(c.val[0], a.val[0], b.val[0]);
-    result.val[1] = vfmaq_f64(c.val[1], a.val[1], b.val[1]);
-    return result;
+    return vfmaq_f64(c, a, b);
 }
 
 static inline MD_SIMD_MASK simd_mask_from_u32(uint32_t a)
 {
     const uint64_t all  = 0xFFFFFFFFFFFFFFFF;
     const uint64_t none = 0x0;
-    MD_SIMD_MASK result;
-    // uint64x2_t mask     = vreinterpretq_u64_u32(vdupq_n_u32((a & 0x8) ? all : none));
-    // mask                = vsetq_lane_u64((a & 0x4) ? 0xFFFFFFFFFFFFFFFFULL : 0x0ULL, mask, 1);
-    // result = simd_broadcast(1.0);
-    result.val[0] = vsetq_lane_f64(vreinterpret_f64_u64(vdup_n_u64((a&0x1) ? all: none)), result.val[0], 0);
-    result.val[0] = vsetq_lane_f64(vreinterpret_f64_u64(vdup_n_u64((a&0x2) ? all: none)), result.val[0], 1);
-    result.val[1] = vsetq_lane_f64(vreinterpret_f64_u64(vdup_n_u64((a&0x4) ? all: none)), result.val[1], 0);
-    result.val[1] = vsetq_lane_f64(vreinterpret_f64_u64(vdup_n_u64((a&0x8) ? all: none)), result.val[1], 1);
-    return result;
+    return vsetq_lane_u64((a & 0x2) ? all : none,
+        vsetq_lane_u64((a & 0x1) ? all : none, vdupq_n_u64(0), 0),
+        1);
 }
 
+static inline uint32_t simd_mask_to_u32(MD_SIMD_MASK mask) { return 0; }
 
 static inline MD_SIMD_MASK simd_mask_and(MD_SIMD_MASK a, MD_SIMD_MASK b)
 {
-    uint64x2_t result0 = vandq_u64(a.val[0], b.val[0]);
-    uint64x2_t result1 = vandq_u64(a.val[1], b.val[1]);
-    MD_SIMD_MASK result;
-    result.val[0] = result0;
-    result.val[1] = result1;
-    return result;
+    return vandq_u64(a, b);
 }
-
 
 static inline MD_SIMD_MASK simd_mask_cond_lt(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b)
 {
-    uint64x2_t mask0 = vcltq_f64(a.val[0], b.val[0]);
-    uint64x2_t mask1 = vcltq_f64(a.val[1], b.val[1]);
-    MD_SIMD_MASK result;
-    result.val[0] = mask0;
-    result.val[1] = mask1;
+    return vcltq_f64(a, b);
+}
+
+static inline MD_SIMD_FLOAT simd_real_reciprocal(MD_SIMD_FLOAT a)
+{
+    MD_SIMD_FLOAT reciprocal = vrecpeq_f64(a);
+    reciprocal               = vmulq_f64(reciprocal, vrecpsq_f64(reciprocal, a));
+    return reciprocal;
+}
+
+static inline MD_FLOAT simd_real_incr_reduced_sum(
+    MD_FLOAT* m, MD_SIMD_FLOAT v0, MD_SIMD_FLOAT v1, MD_SIMD_FLOAT v2, MD_SIMD_FLOAT v3)
+{
+    float64x2_t sum0 = vpaddq_f64(v0, v1);
+    float64x2_t sum1 = vpaddq_f64(v2, v3);
+    float64x2_t sum  = vpaddq_f64(sum0, sum1);
+
+    float64x2_t mem = vld1q_f64(m);
+    sum             = vaddq_f64(sum, mem);
+    vst1q_f64(m, sum);
+    return vget_lane_f64(vget_low_f64(sum) + vget_high_f64(sum), 0);
+}
+
+static inline MD_SIMD_FLOAT simd_real_masked_add(
+    MD_SIMD_FLOAT a, MD_SIMD_FLOAT b, MD_SIMD_MASK m)
+{
+    MD_SIMD_FLOAT masked_b = vreinterpretq_f64_u64(
+        vandq_u64(vreinterpretq_u64_f64(b), m));
+    return vaddq_f64(a, masked_b);
+}
+
+static inline MD_SIMD_FLOAT simd_real_select_by_mask(MD_SIMD_FLOAT a, MD_SIMD_MASK mask)
+{
+    return vbslq_f64(mask, a, vdupq_n_f64(0.0f));
+}
+
+static inline MD_SIMD_INT simd_i32_load(const int* ptr)
+{
+    return vld1q_s64((int64_t*)ptr);
+}
+static inline MD_SIMD_INT simd_i32_broadcast(int value) { return vdupq_n_s64(value); }
+static inline MD_SIMD_INT simd_i32_add(MD_SIMD_INT a, MD_SIMD_INT b)
+{
+    return vaddq_s64(a, b);
+}
+
+static inline MD_SIMD_FLOAT simd_real_gather(
+    MD_SIMD_INT vidx, MD_FLOAT* base, const int scale)
+{
+    MD_SIMD_FLOAT result = vdupq_n_f64(0);
+    result               = vld1q_lane_f64(&base[vgetq_lane_s64(vidx, 0)], result, 0);
+    result               = vld1q_lane_f64(&base[vgetq_lane_s64(vidx, 1)], result, 1);
     return result;
 }
 
-static inline MD_SIMD_FLOAT simd_reciprocal(MD_SIMD_FLOAT a)
+static inline MD_SIMD_FLOAT simd_real_load_h_dual(const MD_FLOAT* m)
 {
-    // Estimate the reciprocal
-    MD_SIMD_FLOAT reciprocal_estimate;
-    reciprocal_estimate.val[0] = vrecpeq_f64(a.val[0]);
-    reciprocal_estimate.val[1] = vrecpeq_f64(a.val[1]);
-
-    // Compute the reciprocal correction
-    MD_SIMD_FLOAT reciprocal_correction;
-    reciprocal_correction.val[0] = vrecpsq_f64(reciprocal_estimate.val[0], a.val[0]);
-    reciprocal_correction.val[1] = vrecpsq_f64(reciprocal_estimate.val[1], a.val[1]);
-
-    // Multiply the estimate by the correction to improve accuracy
-    MD_SIMD_FLOAT reciprocal_result;
-    reciprocal_result.val[0] = vmulq_f64(reciprocal_estimate.val[0],
-        reciprocal_correction.val[0]);
-    reciprocal_result.val[1] = vmulq_f64(reciprocal_estimate.val[1],
-        reciprocal_correction.val[1]);
-
-    return reciprocal_result;
+    MD_SIMD_FLOAT ret;
+    fprintf(stderr,
+        "simd_real_load_h_dual(): Not implemented for NEON with double precision!");
+    exit(-1);
+    return ret;
 }
 
-
-
-static inline double simd_incr_reduced_sum(
-    double* m, MD_SIMD_FLOAT v0, MD_SIMD_FLOAT v1, MD_SIMD_FLOAT v2, MD_SIMD_FLOAT v3)
+static inline MD_SIMD_FLOAT simd_real_load_h_duplicate(const MD_FLOAT* m)
 {
-
-    // Load existing values from memory and add to the sum
-    MD_SIMD_FLOAT sum0 = simd_padd(v0,v1);
-    MD_SIMD_FLOAT sum1 = simd_padd(v2,v3);
-
-    MD_SIMD_FLOAT sum = simd_padd(sum0,sum1);
-
-    MD_SIMD_FLOAT mem  = vld1q_f64_x2(m);
-    sum  = simd_add(sum,mem);
-
-    // Store the result back to memory
-    vst1q_f64_x2(m,sum);//? Here is a bubu??
-
-    // Reduce the final vector to a single double
-    MD_SIMD_HALF sum_parts = vpaddq_f64(sum.val [0], sum.val [1]); // Horizontal add
-    double final_sum = vgetq_lane_f64(sum_parts, 0) + vgetq_lane_f64(sum_parts, 1); // Extract and sum lanes
-    return final_sum;
-}
-
-
-
-static inline MD_SIMD_FLOAT select_by_mask(MD_SIMD_FLOAT a, MD_SIMD_MASK mask) {
-    // Select elements from 'a' based on the mask, and set other elements to 0.0
-    MD_SIMD_FLOAT result;
-    result.val[0] = vandq_u64( a.val[0], mask.val[0]);
-    result.val[1] = vandq_u64( a.val[1], mask.val[1]);
-    return result;
-}
-static inline MD_SIMD_FLOAT simd_masked_add(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b, MD_SIMD_MASK m) {
-    return simd_add(a,select_by_mask(b,m));
-}
-
-static inline MD_SIMD_FLOAT simd_load_h_dual(const double* m) {
+    MD_SIMD_FLOAT ret;
     fprintf(stderr,
-        "simd_h_dual_incr_reduced_sum(): Not implemented for AVX2 with double "
-        "precision!");
-    return (MD_SIMD_FLOAT){vdupq_n_f64(0.0), vdupq_n_f64(0.0)};
+        "simd_real_load_h_duplicate(): Not implemented for NEON with double precision!");
+    exit(-1);
+    return ret;
 }
 
-static inline MD_SIMD_FLOAT simd_load_h_duplicate(const double* m) {
-    double value = *m;
-        fprintf(stderr,
-        "simd_load_h_duplicatem(): Not implemented for AVX2 with double "
-        "precision!");
-    return (MD_SIMD_FLOAT){vdupq_n_f64(value), vdupq_n_f64(value)};
-}
-
-static inline void simd_h_decr3(double* m, MD_SIMD_FLOAT a0, MD_SIMD_FLOAT a1, MD_SIMD_FLOAT a2) {
-    double value = *m;
+static inline void simd_real_h_decr3(
+    MD_FLOAT* m, MD_SIMD_FLOAT a0, MD_SIMD_FLOAT a1, MD_SIMD_FLOAT a2)
+{
     fprintf(stderr,
-        "simd_h_decr3(): Not implemented for AVX2 with double "
-        "precision!");
-    return;
+        "simd_real_h_decr3(): Not implemented for NEON with double precision!");
+    exit(-1);
 }
 
-static inline double simd_h_dual_incr_reduced_sum(double* m, MD_SIMD_FLOAT v0, MD_SIMD_FLOAT v1) {
+static inline MD_FLOAT simd_real_h_dual_incr_reduced_sum(
+    MD_FLOAT* m, MD_SIMD_FLOAT v0, MD_SIMD_FLOAT v1)
+{
     fprintf(stderr,
-        "simd_h_dual_incr_reduced_sum(): Not implemented for AVX2 with double "
+        "simd_real_h_dual_incr_reduced_sum(): Not implemented for NEON with double "
         "precision!");
+    exit(-1);
+    return 0.0f;
+}
 
-    return 0.0;
+static inline MD_SIMD_INT simd_i32_load_h_duplicate(const int* m)
+{
+    MD_SIMD_INT ret;
+    fprintf(stderr,
+        "simd_i32_load_h_duplicate(): Not implemented for NEON with double precision!");
+    exit(-1);
+    return ret;
+}
+
+static inline MD_SIMD_INT simd_i32_load_h_dual_scaled(const int* m, int scale)
+{
+    MD_SIMD_INT ret;
+    fprintf(stderr,
+        "simd_i32_load_h_dual_scaled(): Not implemented for NEON with double precision!");
+    exit(-1);
+    return ret;
 }
