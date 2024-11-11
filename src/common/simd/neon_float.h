@@ -107,7 +107,7 @@ static inline MD_SIMD_INT simd_i32_add(MD_SIMD_INT a, MD_SIMD_INT b)
 static inline MD_SIMD_FLOAT simd_real_gather(
     MD_SIMD_INT vidx, MD_FLOAT* base, const int scale)
 {
-#if defined(__ARM_FEATURE_MTE)
+#if defined(__ARM_FEATURE_MVE)
     return vldrwq_gather_offset_f32(base, vreinterpretq_u32_s32(vidx));
 #else
     MD_SIMD_FLOAT result = vdupq_n_f32(0);
