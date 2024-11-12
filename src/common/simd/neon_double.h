@@ -39,11 +39,13 @@ static inline MD_SIMD_FLOAT simd_real_fma(
 
 static inline MD_SIMD_MASK simd_mask_from_u32(uint32_t a)
 {
-    const uint64_t all  = 0xFFFFFFFFFFFFFFFF;
+    const uint64_t all  = 0xFFFFFFFFFFFFFFFFULL;
     const uint64_t none = 0x0;
-    return vsetq_lane_u64((a & 0x2) ? all : none,
-        vsetq_lane_u64((a & 0x1) ? all : none, vdupq_n_u64(0), 0),
-        1);
+    MD_SIMD_MASK result;
+
+    result = vsetq_lane_u64((a & 0x1) ? all : none, result, 0);
+    result = vsetq_lane_u64((a & 0x2) ? all : none, result, 1);
+    return result;
 }
 
 static inline uint32_t simd_mask_to_u32(MD_SIMD_MASK mask) { return 0; }
