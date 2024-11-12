@@ -30,10 +30,9 @@
 #include <vtk.h>
 #include <xtc.h>
 
-extern void copyDataToCUDADevice(Atom*);
+extern void copyDataToCUDADevice(Atom*, Neighbor*);
 extern void copyDataFromCUDADevice(Atom*);
 extern void cudaDeviceFree(void);
-extern int isReneighboured;
 
 #define HLINE "------------------------------------------------------------------\n"
 
@@ -229,7 +228,7 @@ int main(int argc, char** argv)
 #endif
 
 #ifdef CUDA_TARGET
-    copyDataToCUDADevice(&atom);
+    copyDataToCUDADevice(&atom, &neighbor);
 #endif
 
     timer[FORCE] = computeForce(&param, &atom, &neighbor, &stats);
@@ -262,8 +261,7 @@ int main(int argc, char** argv)
             timer[NEIGH] += reneighbour(&param, &atom, &neighbor);
 
 #ifdef CUDA_TARGET
-            copyDataToCUDADevice(&atom);
-            isReneighboured = 1;
+            copyDataToCUDADevice(&atom, &neighbor);
 #endif
         }
 
@@ -272,7 +270,6 @@ int main(int argc, char** argv)
 #endif
 
         timer[FORCE] += computeForce(&param, &atom, &neighbor, &stats);
-
         finalIntegrate(&param, &atom);
 
         if (!((n + 1) % param.nstat) && (n + 1) < param.ntimes) {

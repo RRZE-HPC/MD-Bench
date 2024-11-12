@@ -17,23 +17,22 @@ void initForce(Parameter* param)
         computeForce = computeForceEam;
         break;
     case FF_LJ:
-#ifdef USE_REFERENCE_VERSION
+#if defined(CLUSTERPAIR_KERNEL_REF)
         computeForce = computeForceLJRef;
-#else
+#elif defined(CLUSTERPAIR_KERNEL_4XN)
         if (param->half_neigh) {
             computeForce = computeForceLJ4xnHalfNeigh;
         } else {
-#ifdef CUDA_TARGET
-            computeForce = computeForceLJCUDA;
-#else
-            // Simd2xNN (here used for single-precision)
-#if VECTOR_WIDTH > CLUSTER_M * 2
-            computeForce = computeForceLJ2xnnFullNeigh;
-#else // Simd4xN
             computeForce = computeForceLJ4xnFullNeigh;
-#endif
-#endif
         }
+#elif defined(CLUSTERPAIR_KERNEL_2XNN)
+        if (param->half_neigh) {
+            computeForce = computeForceLJ2xnnHalfNeigh;
+        } else {
+            computeForce = computeForceLJ2xnnFullNeigh;
+        }
+#elif defined(CLUSTERPAIR_KERNEL_CUDA)
+        computeForce = computeForceLJCUDA;
 #endif
     }
 }

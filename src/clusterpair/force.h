@@ -31,28 +31,57 @@ extern double computeForceEam(Parameter*, Atom*, Neighbor*, Stats*);
 // Simd2xNN: M=4, N=(VECTOR_WIDTH/2)
 // Cuda: M=8, N=VECTOR_WIDTH
 
+/* Comments from GROMACS:
+ *
+ * We need to choose if we want 2x(N+N) or 4xN kernels.
+ * This is based on the SIMD acceleration choice and CPU information
+ * detected at runtime.
+ *
+ * 4xN calculates more (zero) interactions, but has less pair-search
+ * work and much better kernel instruction scheduling.
+ *
+ * Up till now we have only seen that on Intel Sandy/Ivy Bridge,
+ * which doesn't have FMA, both the analytical and tabulated Ewald
+ * kernels have similar pair rates for 4x8 and 2x(4+4), so we choose
+ * 2x(4+4) because it results in significantly fewer pairs.
+ * For RF, the raw pair rate of the 4x8 kernel is higher than 2x(4+4),
+ * 10% with HT, 50% without HT. As we currently don't detect the actual
+ * use of HT, use 4x8 to avoid a potential performance hit.
+ * On Intel Haswell 4x8 is always faster.
+ *
+ *
+ * The nbnxn SIMD 4xN and 2x(N+N) kernels can be added independently.
+ * Currently the 2xNN SIMD kernels only make sense with:
+ *  8-way SIMD: 4x4 setup, performance wise only useful on CPUs without FMA or on AMD Zen1
+ * 16-way SIMD: 4x8 setup, used in single precision with 512 bit wide SIMD
+ */
+
 #ifdef CUDA_TARGET
 extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #undef VECTOR_WIDTH
 #define VECTOR_WIDTH 8
-#define KERNEL_NAME  "CUDA"
-#define CLUSTER_M    8
-#define CLUSTER_N    VECTOR_WIDTH
-#define UNROLL_J     1
+#define CLUSTERPAIR_KERNEL_CUDA
+#define KERNEL_NAME "CUDA"
+#define CLUSTER_M   8
+#define CLUSTER_N   VECTOR_WIDTH
+#define UNROLL_J    1
 #else
 #ifdef USE_REFERENCE_VERSION
+#define CLUSTERPAIR_KERNEL_REF
 #define KERNEL_NAME "Reference"
-#define CLUSTER_M    1
-#define CLUSTER_N    VECTOR_WIDTH
+#define CLUSTER_M   1
+#define CLUSTER_N   VECTOR_WIDTH
 #else
 #define CLUSTER_M 4
 // Simd2xNN (here used for single-precision)
 #if VECTOR_WIDTH > CLUSTER_M * 2
+#define CLUSTERPAIR_KERNEL_2XNN
 #define KERNEL_NAME "Simd2xNN"
 #define CLUSTER_N   (VECTOR_WIDTH / 2)
 #define UNROLL_I    4
 #define UNROLL_J    2
 #else // Simd4xN
+#define CLUSTERPAIR_KERNEL_4XN
 #define KERNEL_NAME "Simd4xN"
 #define CLUSTER_N   VECTOR_WIDTH
 #define UNROLL_I    4

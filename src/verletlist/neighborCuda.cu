@@ -130,6 +130,7 @@ __global__ void compute_neighborhood(DeviceAtom a,
     Neighbor_params np,
     int nlocal,
     int maxneighs,
+    int halfneigh,
     int nstencil,
     int* stencil,
     int* bins,
@@ -154,7 +155,7 @@ __global__ void compute_neighborhood(DeviceAtom a,
     MD_FLOAT ytmp = atom_y(i);
     MD_FLOAT ztmp = atom_z(i);
     int ibin      = coord2bin_device(xtmp, ytmp, ztmp, np);
-#ifdef EXPLICIT_TYPES
+#ifndef ONE_ATOM_TYPE
     int type_i = atom->type[i];
 #endif
     for (int k = 0; k < nstencil; k++) {
@@ -163,8 +164,7 @@ __global__ void compute_neighborhood(DeviceAtom a,
 
         for (int m = 0; m < bincount[jbin]; m++) {
             int j = loc_bin[m];
-
-            if (j == i) {
+            if (j == i || (halfneigh && (j < i))) {
                 continue;
             }
 
@@ -173,7 +173,7 @@ __global__ void compute_neighborhood(DeviceAtom a,
             MD_FLOAT delz = ztmp - atom_z(j);
             MD_FLOAT rsq  = delx * delx + dely * dely + delz * delz;
 
-#ifdef EXPLICIT_TYPES
+#ifndef ONE_ATOM_TYPE
             int type_j            = atom->type[j];
             const MD_FLOAT cutoff = atom->cutneighsq[type_i * ntypes + type_j];
 #else
@@ -305,6 +305,7 @@ void buildNeighborCUDA(Atom* atom, Neighbor* neighbor)
             np,
             atom->Nlocal,
             neighbor->maxneighs,
+            neighbor->half_neigh,
             nstencil,
             c_stencil,
             c_binning.bins,

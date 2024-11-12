@@ -40,7 +40,7 @@ typedef struct {
     MD_FLOAT* cl_x;
     MD_FLOAT* cl_v;
     MD_FLOAT* cl_f;
-    int* cl_type;
+    int* cl_t;
     Cluster *iclusters, *jclusters;
     int* icluster_bin;
     int dummy_cj;

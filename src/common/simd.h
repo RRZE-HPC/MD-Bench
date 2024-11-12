@@ -46,13 +46,32 @@
 #endif
 #endif
 
-#ifdef __ARM_NEON
+#if (defined (__ARM_NEON) || defined(__ARM_FEATURE_SVE))
 #include <arm_acle.h>
+
+#ifdef __ARM_NEON
 #include <arm_neon.h>
 #endif
+
 #ifdef __ARM_FEATURE_SVE
-#include <arm_acle.h>
 #include <arm_sve.h>
+#endif
+
+#if defined(__ISA_NEON__)
+#if PRECISION == 2
+#include "simd/neon_double.h"
+#else
+#include "simd/neon_float.h"
+#endif
+#endif
+
+#if defined(__ISA_SVE__) || defined(__ISA_SVE2__)
+#if PRECISION == 2
+#include "simd/sve_double.h"
+#else
+#include "simd/sve_float.h"
+#endif
+#endif
 #endif
 
 #include <stdio.h>

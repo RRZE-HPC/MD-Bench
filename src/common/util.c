@@ -107,7 +107,7 @@ void readline(char* line, FILE* fp)
 void debug_printf(const char* format, ...)
 {
 #ifdef DEBUG
-    __va_list arg;
+    va_list arg;
     int ret;
 
     va_start(arg, format);
