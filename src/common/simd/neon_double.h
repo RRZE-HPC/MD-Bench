@@ -1,5 +1,6 @@
-#include <arm_neon.h>
 #include <stdlib.h>
+#include <arm_acle.h>
+#include <arm_neon.h>
 
 #define MD_SIMD_FLOAT float64x2_t
 #define MD_SIMD_MASK  uint64x2_t

@@ -5,7 +5,6 @@
  * license that can be found in the LICENSE file.
  */
 #include <immintrin.h>
-#include <zmmintrin.h>
 
 #define MD_SIMD_FLOAT __m256
 #define MD_SIMD_MASK  __m256

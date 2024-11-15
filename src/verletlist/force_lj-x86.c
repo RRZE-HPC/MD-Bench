@@ -39,11 +39,11 @@ double computeForceLJFullNeigh_simd(
     fprintf(stderr, "Error: SIMD kernel not implemented for specified instruction set!");
     exit(-1);
 #else
-    MD_SIMD_FLOAT cutforcesq_vec = simd_broadcast(cutforcesq);
-    MD_SIMD_FLOAT sigma6_vec     = simd_broadcast(sigma6);
-    MD_SIMD_FLOAT eps_vec        = simd_broadcast(epsilon);
-    MD_SIMD_FLOAT c48_vec        = simd_broadcast(48.0);
-    MD_SIMD_FLOAT c05_vec        = simd_broadcast(0.5);
+    MD_SIMD_FLOAT cutforcesq_vec = simd_real_broadcast(cutforcesq);
+    MD_SIMD_FLOAT sigma6_vec     = simd_real_broadcast(sigma6);
+    MD_SIMD_FLOAT eps_vec        = simd_real_broadcast(epsilon);
+    MD_SIMD_FLOAT c48_vec        = simd_real_broadcast(48.0);
+    MD_SIMD_FLOAT c05_vec        = simd_real_broadcast(0.5);
 
 #pragma omp parallel
     {
@@ -71,11 +71,11 @@ double computeForceLJFullNeigh_simd(
 #ifdef AOS
                 MD_SIMD_INT j3     = simd_i32_add(simd_i32_add(j, j), j); // j * 3
                 MD_SIMD_FLOAT delx = xtmp -
-                                     simd_gather(j3, &(atom->x[0]), sizeof(MD_FLOAT));
+                                     simd_real_gather(j3, &(atom->x[0]), sizeof(MD_FLOAT));
                 MD_SIMD_FLOAT dely = ytmp -
-                                     simd_gather(j3, &(atom->x[1]), sizeof(MD_FLOAT));
+                                     simd_real_gather(j3, &(atom->x[1]), sizeof(MD_FLOAT));
                 MD_SIMD_FLOAT delz = ztmp -
-                                     simd_gather(j3, &(atom->x[2]), sizeof(MD_FLOAT));
+                                     simd_real_gather(j3, &(atom->x[2]), sizeof(MD_FLOAT));
 #else
                 MD_SIMD_FLOAT delx = xtmp -
                                      simd_real_gather(j, atom->x, sizeof(MD_FLOAT));
@@ -97,14 +97,14 @@ double computeForceLJFullNeigh_simd(
                         simd_real_mul(simd_real_sub(sr6, c05_vec),
                             simd_real_mul(sr2, eps_vec))));
 
-                fix = simd_masked_add(fix, simd_real_mul(delx, force), cutoff_mask);
-                fiy = simd_masked_add(fiy, simd_real_mul(dely, force), cutoff_mask);
-                fiz = simd_masked_add(fiz, simd_real_mul(delz, force), cutoff_mask);
+                fix = simd_real_masked_add(fix, simd_real_mul(delx, force), cutoff_mask);
+                fiy = simd_real_masked_add(fiy, simd_real_mul(dely, force), cutoff_mask);
+                fiz = simd_real_masked_add(fiz, simd_real_mul(delz, force), cutoff_mask);
             }
 
-            atom_fx(i) += simd_h_reduce_sum(fix);
-            atom_fy(i) += simd_h_reduce_sum(fiy);
-            atom_fz(i) += simd_h_reduce_sum(fiz);
+            atom_fx(i) += simd_real_h_reduce_sum(fix);
+            atom_fy(i) += simd_real_h_reduce_sum(fiy);
+            atom_fz(i) += simd_real_h_reduce_sum(fiz);
         }
 
         LIKWID_MARKER_STOP("force");

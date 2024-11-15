@@ -7,6 +7,10 @@
 #ifndef __SIMD_H__
 #define __SIMD_H__
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #ifndef CLUSTER_M
 #define CLUSTER_M 1
 #endif
@@ -16,10 +20,6 @@
 #endif
 
 #if (defined(__x86_64__) || defined(__i386__))
-#include <immintrin.h>
-#ifndef NO_ZMM_INTRIN
-#include <zmmintrin.h>
-#endif
 
 #if defined(__ISA_AVX512__)
 #if PRECISION == 2
@@ -47,15 +47,6 @@
 #endif
 
 #if (defined (__ARM_NEON) || defined(__ARM_FEATURE_SVE))
-#include <arm_acle.h>
-
-#ifdef __ARM_NEON
-#include <arm_neon.h>
-#endif
-
-#ifdef __ARM_FEATURE_SVE
-#include <arm_sve.h>
-#endif
 
 #if defined(__ISA_NEON__)
 #if PRECISION == 2
@@ -73,10 +64,6 @@
 #endif
 #endif
 #endif
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 #define SIMD_PRINT_REAL(a) simd_print_real(#a, a);
 #define SIMD_PRINT_MASK(a) simd_print_mask(#a, a);
