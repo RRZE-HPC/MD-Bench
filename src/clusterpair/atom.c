@@ -14,6 +14,16 @@
 #include <force.h>
 #include <util.h>
 
+inline int get_ncj_from_nci(int nci) {
+#if CLUSTER_M == CLUSTER_N
+    return nci;
+#elif CLUSTER_M < CLUSTER_N
+    return nci >> 1;
+#else
+    return nci << 1;
+#endif
+}
+
 void initAtom(Atom* atom)
 {
     atom->x               = NULL;

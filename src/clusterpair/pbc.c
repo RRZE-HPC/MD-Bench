@@ -45,8 +45,7 @@ void initPbc(Atom* atom)
 void updatePbcCPU(Atom* atom, Parameter* param, bool firstUpdate)
 {
     DEBUG_MESSAGE("updatePbc start\n");
-    int jfac      = MAX(1, CLUSTER_N / CLUSTER_M);
-    int ncj       = atom->Nclusters_local / jfac;
+    int ncj       = get_ncj_from_nci(atom->Nclusters_local);
     MD_FLOAT xprd = param->xprd;
     MD_FLOAT yprd = param->yprd;
     MD_FLOAT zprd = param->zprd;
@@ -193,7 +192,7 @@ void setupPbc(Atom* atom, Parameter* param)
     MD_FLOAT zprd     = param->zprd;
     MD_FLOAT cutNeigh = param->cutneigh;
     int jfac          = MAX(1, CLUSTER_N / CLUSTER_M);
-    int ncj           = atom->Nclusters_local / jfac;
+    int ncj           = get_ncj_from_nci(atom->Nclusters_local);
     int Nghost        = -1;
     int Nghost_atoms  = 0;
 

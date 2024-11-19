@@ -53,6 +53,7 @@ typedef struct {
     unsigned int masks_4xn_fn[16];
 } Atom;
 
+extern int get_ncj_from_nci(int nci);
 extern void initAtom(Atom*);
 extern void initMasks(Atom*);
 extern void createAtom(Atom*, Parameter*);
