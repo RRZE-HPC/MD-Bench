@@ -5,6 +5,7 @@
  * license that can be found in the LICENSE file.
  */
 #include <stdbool.h>
+#include <stdlib.h>
 
 #include <atom.h>
 #include <force.h>
@@ -38,6 +39,20 @@ void initialIntegrateCPU(Parameter* param, Atom* atom)
             ciX[CL_Y_OFFSET + cii] += param->dt * ciV[CL_Y_OFFSET + cii];
             ciX[CL_Z_OFFSET + cii] += param->dt * ciV[CL_Z_OFFSET + cii];
         }
+
+        /*
+        // Check if there is an invalid cluster
+        for (int cii = 0; cii < atom->iclusters[ci].natoms; cii++) {
+            if(
+                ciX[CL_X_OFFSET + cii] < -100.00 || ciX[CL_X_OFFSET + cii] > 100.0 ||
+                ciX[CL_Y_OFFSET + cii] < -100.00 || ciX[CL_Y_OFFSET + cii] > 100.0 ||
+                ciX[CL_Z_OFFSET + cii] < -100.00 || ciX[CL_Z_OFFSET + cii] > 100.0) {
+                fprintf(stdout, "INVALID CLUSTER: %d\n", ci);
+                exit(-1);
+                break;
+            }
+        }
+        */
     }
 
     DEBUG_MESSAGE("cpuInitialIntegrate end\n");

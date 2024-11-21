@@ -64,7 +64,7 @@ void initNeighbor(Neighbor* neighbor, Parameter* param)
     bin_clusters              = NULL;
     bin_nclusters             = NULL;
     neighbor->half_neigh      = param->half_neigh;
-    neighbor->maxneighs       = 120;
+    neighbor->maxneighs       = 150;
     neighbor->numneigh        = NULL;
     neighbor->numneigh_masked = NULL;
     neighbor->neighbors       = NULL;
@@ -1081,7 +1081,7 @@ void defineJClusters(Atom* atom)
             MD_FLOAT bbminy = INFINITY, bbmaxy = -INFINITY;
             MD_FLOAT bbminz = INFINITY, bbmaxz = -INFINITY;
 
-            for (int cii = 0; cii < MAX(atom->iclusters[ci].natoms, CLUSTER_N); cii++) {
+            for (int cii = 0; cii < MIN(atom->iclusters[ci].natoms, CLUSTER_N); cii++) {
                 MD_FLOAT xtmp = ci_x[CL_X_OFFSET + cii];
                 MD_FLOAT ytmp = ci_x[CL_Y_OFFSET + cii];
                 MD_FLOAT ztmp = ci_x[CL_Z_OFFSET + cii];
@@ -1113,7 +1113,7 @@ void defineJClusters(Atom* atom)
             atom->jclusters[cj0].bbmaxy = bbmaxy;
             atom->jclusters[cj0].bbminz = bbminz;
             atom->jclusters[cj0].bbmaxz = bbmaxz;
-            atom->jclusters[cj0].natoms = MAX(atom->iclusters[ci].natoms, CLUSTER_N);
+            atom->jclusters[cj0].natoms = MIN(atom->iclusters[ci].natoms, CLUSTER_N);
 
             bbminx = INFINITY, bbmaxx = -INFINITY;
             bbminy = INFINITY, bbmaxy = -INFINITY;
