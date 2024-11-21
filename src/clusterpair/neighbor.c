@@ -1204,7 +1204,7 @@ void binClusters(Atom* atom)
 
     const int nlocal = atom->Nclusters_local;
     const int ncj    = get_ncj_from_nci(nlocal);
-    int resize = 1;
+    int resize       = 1;
     while (resize > 0) {
         resize = 0;
 

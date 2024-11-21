@@ -46,7 +46,7 @@
 #endif
 #endif
 
-#if (defined (__ARM_NEON) || defined(__ARM_FEATURE_SVE))
+#if (defined(__ARM_NEON) || defined(__ARM_FEATURE_SVE))
 
 #if defined(__ISA_NEON__)
 #if PRECISION == 2

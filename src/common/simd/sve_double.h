@@ -4,16 +4,19 @@
  * Use of this source code is governed by a LGPL-3.0
  * license that can be found in the LICENSE file.
  */
-#include <stdlib.h>
 #include <arm_acle.h>
 #include <arm_sve.h>
+#include <stdlib.h>
 
 #define MD_SIMD_FLOAT svfloat64_t
 #define MD_SIMD_MASK  svbool_t
 #define MD_SIMD_INT   svint64_t
 
 static inline int simd_test_any(MD_SIMD_MASK a) { return svptest_any(svptrue_b64(), a); }
-static inline MD_SIMD_FLOAT simd_real_broadcast(MD_FLOAT value) { return svdup_f64(value); }
+static inline MD_SIMD_FLOAT simd_real_broadcast(MD_FLOAT value)
+{
+    return svdup_f64(value);
+}
 static inline MD_SIMD_FLOAT simd_real_zero(void) { return svdup_f64(0.0); }
 static inline MD_SIMD_FLOAT simd_real_sub(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b)
 {
@@ -92,7 +95,7 @@ static inline MD_FLOAT simd_real_incr_reduced_sum(
     MD_FLOAT* m, MD_SIMD_FLOAT v0, MD_SIMD_FLOAT v1, MD_SIMD_FLOAT v2, MD_SIMD_FLOAT v3)
 {
     svbool_t pg = svptrue_b64();
-    double   sum[4];
+    double sum[4];
     sum[0] = svadda_f64(pg, 0.0, v0);
     sum[1] = svadda_f64(pg, 0.0, v1);
     sum[2] = svadda_f64(pg, 0.0, v2);
@@ -105,8 +108,7 @@ static inline MD_FLOAT simd_real_incr_reduced_sum(
     return svadda_f64(pg, 0.0, _s);
 #else
     double res = 0;
-    for (int i = 0; i < 4; i++)
-    {
+    for (int i = 0; i < 4; i++) {
         m[i] += sum[i];
         res += sum[i];
     }

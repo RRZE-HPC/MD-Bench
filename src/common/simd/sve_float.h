@@ -4,9 +4,9 @@
  * Use of this source code is governed by a LGPL-3.0
  * license that can be found in the LICENSE file.
  */
-#include <stdlib.h>
 #include <arm_acle.h>
 #include <arm_sve.h>
+#include <stdlib.h>
 
 #define MD_SIMD_FLOAT svfloat32_t
 #define MD_SIMD_MASK  svbool_t
