@@ -14,6 +14,17 @@
 #include <force.h>
 #include <util.h>
 
+inline int get_ncj_from_nci(int nci)
+{
+#if CLUSTER_M == CLUSTER_N
+    return nci;
+#elif CLUSTER_M < CLUSTER_N
+    return nci >> 1;
+#else
+    return nci << 1;
+#endif
+}
+
 void initAtom(Atom* atom)
 {
     atom->x               = NULL;
@@ -588,11 +599,11 @@ void initMasks(Atom* atom)
 
             atom->masks_4xn_fn[cond0 * 8 + cond1 * 4 + 0] = (unsigned int)(0x3 -
                                                                            0x1 * cond0);
-            atom->masks_4xn_fn[cond0 * 8 + cond1 * 4 + 0] = (unsigned int)(0x3 -
+            atom->masks_4xn_fn[cond0 * 8 + cond1 * 4 + 1] = (unsigned int)(0x3 -
                                                                            0x2 * cond0);
-            atom->masks_4xn_fn[cond0 * 8 + cond1 * 4 + 0] = (unsigned int)(0x3 -
+            atom->masks_4xn_fn[cond0 * 8 + cond1 * 4 + 2] = (unsigned int)(0x3 -
                                                                            0x1 * cond1);
-            atom->masks_4xn_fn[cond0 * 8 + cond1 * 4 + 0] = (unsigned int)(0x3 -
+            atom->masks_4xn_fn[cond0 * 8 + cond1 * 4 + 3] = (unsigned int)(0x3 -
                                                                            0x2 * cond1);
 #endif
         }

@@ -1,3 +1,4 @@
+#include <arm_acle.h>
 #include <arm_neon.h>
 #include <stdlib.h>
 
@@ -70,6 +71,27 @@ static inline MD_SIMD_FLOAT simd_real_reciprocal(MD_SIMD_FLOAT a)
 static inline MD_FLOAT simd_real_incr_reduced_sum(
     MD_FLOAT* m, MD_SIMD_FLOAT v0, MD_SIMD_FLOAT v1, MD_SIMD_FLOAT v2, MD_SIMD_FLOAT v3)
 {
+    float64x2_t t1, t2, t3, t4;
+
+    t1 = vuzp1q_f64(v0, v1);
+    t2 = vuzp2q_f64(v0, v1);
+    t3 = vuzp1q_f64(v2, v3);
+    t4 = vuzp2q_f64(v2, v3);
+
+    t1 = vaddq_f64(t1, t2);
+    t3 = vaddq_f64(t3, t4);
+
+    t2 = vaddq_f64(t1, vld1q_f64(m));
+    t4 = vaddq_f64(t3, vld1q_f64(m + 2));
+    vst1q_f64(m, t2);
+    vst1q_f64(m + 2, t4);
+
+    t1 = vaddq_f64(t1, t3);
+    t2 = vpaddq_f64(t1, t1);
+
+    return vgetq_lane_f64(t2, 0);
+
+    /*
     float64x2_t sum0 = vpaddq_f64(v0, v1);
     float64x2_t sum1 = vpaddq_f64(v2, v3);
     float64x2_t sum  = vpaddq_f64(sum0, sum1);
@@ -78,6 +100,7 @@ static inline MD_FLOAT simd_real_incr_reduced_sum(
     sum             = vaddq_f64(sum, mem);
     vst1q_f64(m, sum);
     return vget_lane_f64(vget_low_f64(sum) + vget_high_f64(sum), 0);
+    */
 }
 
 static inline MD_SIMD_FLOAT simd_real_masked_add(

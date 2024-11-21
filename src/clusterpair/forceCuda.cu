@@ -100,8 +100,7 @@ extern "C" void copyDataToCUDADevice(Atom* atom, Neighbor* neighbor)
         natoms[ci] = atom->iclusters[ci].natoms;
     }
 
-    int jfac = MAX(1, CLUSTER_N / CLUSTER_M);
-    int ncj  = atom->Nclusters_local / jfac;
+    int ncj  = get_ncj_from_nci(atom->Nclusters_local);
     for (int cg = 0; cg < atom->Nclusters_ghost; cg++) {
         const int cj = ncj + cg;
         ngatoms[cg]  = atom->jclusters[cj].natoms;
@@ -191,8 +190,7 @@ __global__ void cudaUpdatePbc_warp(MD_FLOAT* cuda_cl_x,
     unsigned int cg = blockDim.x * blockIdx.x + threadIdx.x;
     if (cg >= Nclusters_ghost) return;
 
-    int jfac      = MAX(1, CLUSTER_N / CLUSTER_M);
-    int ncj       = Nclusters_local / jfac;
+    int ncj       = get_ncj_from_nci(Nclusters_local);
     MD_FLOAT xprd = param_xprd;
     MD_FLOAT yprd = param_yprd;
     MD_FLOAT zprd = param_zprd;

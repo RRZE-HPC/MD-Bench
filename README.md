@@ -99,8 +99,7 @@ utilisation and easier SIMD vectorization.
 - `DEBUG`: Enable additional debug output
 - `SORT_ATOMS`: Resort atoms to ensure that atoms that are nearby are also close
 to each other in the data structures
-- `EXPLICIT_TYPES`: Default the atom properties are stored in scalar variables.
-This option enables to support multiple atom types with different properties.
+- `ONE_ATOM_TYPE`: Simulate only one atom type and do not perform table lookup for parameters.
 - `ENABLE_OMP_SIMD`: This enforces the use of `#pragma omp simd` for the
 verletlist half-neighbour list force kernel. Without is the Intel compiler (at
 least ICC) refuses to do SIMD vectorization.

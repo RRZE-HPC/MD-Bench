@@ -62,8 +62,7 @@ void createNeighbors(
     Atom* atom, Neighbor* neighbor, int pattern, int nneighs, int nreps, int masked)
 {
     const int maxneighs       = nneighs * nreps;
-    const int jfac            = MAX(1, CLUSTER_N / CLUSTER_M);
-    const int ncj             = atom->Nclusters_local / jfac;
+    const int ncj             = get_ncj_from_nci(atom->Nclusters_local);
     const unsigned int imask  = NBNXN_INTERACTION_MASK_ALL;
     neighbor->numneigh        = (int*)malloc(atom->Nclusters_max * sizeof(int));
     neighbor->numneigh_masked = (int*)malloc(atom->Nclusters_max * sizeof(int));

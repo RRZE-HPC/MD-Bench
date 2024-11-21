@@ -64,7 +64,7 @@ void initNeighbor(Neighbor* neighbor, Parameter* param)
     bin_clusters              = NULL;
     bin_nclusters             = NULL;
     neighbor->half_neigh      = param->half_neigh;
-    neighbor->maxneighs       = 100;
+    neighbor->maxneighs       = 150;
     neighbor->numneigh        = NULL;
     neighbor->numneigh_masked = NULL;
     neighbor->neighbors       = NULL;
@@ -533,7 +533,6 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
                                     }
 
 #else
-
                                     is_neighbor = 0;
                                     for (int cii = 0; cii < CLUSTER_M; cii++) {
                                         for (int cjj = 0; cjj < CLUSTER_N; cjj++) {
@@ -1082,7 +1081,7 @@ void defineJClusters(Atom* atom)
             MD_FLOAT bbminy = INFINITY, bbmaxy = -INFINITY;
             MD_FLOAT bbminz = INFINITY, bbmaxz = -INFINITY;
 
-            for (int cii = 0; cii < MAX(atom->iclusters[ci].natoms, CLUSTER_N); cii++) {
+            for (int cii = 0; cii < MIN(atom->iclusters[ci].natoms, CLUSTER_N); cii++) {
                 MD_FLOAT xtmp = ci_x[CL_X_OFFSET + cii];
                 MD_FLOAT ytmp = ci_x[CL_Y_OFFSET + cii];
                 MD_FLOAT ztmp = ci_x[CL_Z_OFFSET + cii];
@@ -1114,7 +1113,7 @@ void defineJClusters(Atom* atom)
             atom->jclusters[cj0].bbmaxy = bbmaxy;
             atom->jclusters[cj0].bbminz = bbminz;
             atom->jclusters[cj0].bbmaxz = bbmaxz;
-            atom->jclusters[cj0].natoms = MAX(atom->iclusters[ci].natoms, CLUSTER_N);
+            atom->jclusters[cj0].natoms = MIN(atom->iclusters[ci].natoms, CLUSTER_N);
 
             bbminx = INFINITY, bbmaxx = -INFINITY;
             bbminy = INFINITY, bbmaxy = -INFINITY;
@@ -1152,8 +1151,7 @@ void defineJClusters(Atom* atom)
             atom->jclusters[cj1].bbmaxy = bbmaxy;
             atom->jclusters[cj1].bbminz = bbminz;
             atom->jclusters[cj1].bbmaxz = bbmaxz;
-            atom->jclusters[cj1].natoms = MIN(0, atom->iclusters[ci].natoms - CLUSTER_N);
-
+            atom->jclusters[cj1].natoms = MAX(0, atom->iclusters[ci].natoms - CLUSTER_N);
         } else {
             if (ci % 2 == 0) {
                 const int ci1               = ci + 1;
@@ -1205,10 +1203,8 @@ void binClusters(Atom* atom)
     */
 
     const int nlocal = atom->Nclusters_local;
-    const int jfac   = MAX(1, CLUSTER_N / CLUSTER_M);
-    const int ncj    = atom->Nclusters_local / jfac;
-
-    int resize = 1;
+    const int ncj    = get_ncj_from_nci(nlocal);
+    int resize       = 1;
     while (resize > 0) {
         resize = 0;
 
@@ -1218,7 +1214,7 @@ void binClusters(Atom* atom)
 
         for (int ci = 0; ci < nlocal && !resize; ci++) {
             // Assure we add this j-cluster only once in the bin
-            if (!(CLUSTER_M < CLUSTER_N && ci % 2)) {
+            if (CLUSTER_M >= CLUSTER_N || ci % 2 == 0) {
                 int bin = atom->icluster_bin[ci];
                 int c   = bin_nclusters[bin];
                 if (c + 1 < clusters_per_bin) {
