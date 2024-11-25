@@ -269,7 +269,7 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
         resize            = 0;
 
         for (int ci = 0; ci < atom->Nclusters_local; ci++) {
-            int ci_cj1    = CJ1_FROM_CI(ci);
+            int ci_cj0    = CJ0_FROM_CI(ci);
             int* neighptr = &(neighbor->neighbors[ci * neighbor->maxneighs]);
             unsigned int* neighptr_imask = &(
                 neighbor->neighbors_imask[ci * neighbor->maxneighs]);
@@ -343,7 +343,7 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
                     do {
                         m++;
                         cj = loc_bin[m];
-                        if (neighbor->half_neigh && ci_cj1 > cj) {
+                        if (neighbor->half_neigh && ci_cj0 > cj) {
                             continue;
                         }
                         jbb_zmin = atom->jclusters[cj].bbminz;
@@ -361,7 +361,7 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
                     jbb_ymax = atom->jclusters[cj].bbmaxy;
 
                     while (m < c) {
-                        if (!neighbor->half_neigh || ci_cj1 <= cj) {
+                        if (!neighbor->half_neigh || ci_cj0 <= cj) {
                             dl      = ibb_zmin - jbb_zmax;
                             dh      = jbb_zmin - ibb_zmax;
                             dm      = MAX(dl, dh);
