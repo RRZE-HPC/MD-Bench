@@ -430,7 +430,7 @@ double computeForceLJ2xnnHalfNeigh(
                 fiy2 = simd_real_add(fiy2, ty2);
                 fiz2 = simd_real_add(fiz2, tz2);
 
-                if (cj < CJ1_FROM_CI(atom->Nlocal)) {
+                if (cj < CJ0_FROM_CI(atom->Nclusters_local)) {
                     simd_real_h_decr3(cj_f,
                         simd_real_add(tx0, tx2),
                         simd_real_add(ty0, ty2),
@@ -537,7 +537,7 @@ double computeForceLJ2xnnHalfNeigh(
                 fiy2 = simd_real_add(fiy2, ty2);
                 fiz2 = simd_real_add(fiz2, tz2);
 
-                if (cj < CJ1_FROM_CI(atom->Nlocal)) {
+                if (cj < CJ0_FROM_CI(atom->Nclusters_local)) {
                     simd_real_h_decr3(cj_f,
                         simd_real_add(tx0, tx2),
                         simd_real_add(ty0, ty2),
@@ -1157,7 +1157,7 @@ double computeForceLJ4xnHalfNeigh(
                 fiy3 = simd_real_add(fiy3, ty3);
                 fiz3 = simd_real_add(fiz3, tz3);
 
-                if (cj < CJ1_FROM_CI(atom->Nlocal)) {
+                if (cj < CJ1_FROM_CI(atom->Nclusters_local)) {
                     MD_SIMD_FLOAT tx_sum = simd_real_add(tx0,
                         simd_real_add(tx1, simd_real_add(tx2, tx3)));
                     MD_SIMD_FLOAT ty_sum = simd_real_add(ty0,
@@ -1350,7 +1350,7 @@ double computeForceLJ4xnHalfNeigh(
                 fiy3 = simd_real_add(fiy3, ty3);
                 fiz3 = simd_real_add(fiz3, tz3);
 
-                if (cj < CJ1_FROM_CI(atom->Nlocal)) {
+                if (cj < CJ1_FROM_CI(atom->Nclusters_local)) {
                     MD_SIMD_FLOAT tx_sum = simd_real_add(tx0,
                         simd_real_add(tx1, simd_real_add(tx2, tx3)));
                     MD_SIMD_FLOAT ty_sum = simd_real_add(ty0,
