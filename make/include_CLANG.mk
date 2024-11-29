@@ -44,7 +44,7 @@ ifeq ($(strip $(SIMD)),AVX2)
 OPTS += -march=x86-64 -mavx2 -mfma
 endif
 ifeq ($(strip $(SIMD)),AVX)
-OPTS += -march=x86-64 -mavx -mno-avx2 -mno-bmi -mno-bmi2 -mno-fma4
+OPTS += -march=x86-64 -mavx -mno-avx2 -mno-bmi -mno-bmi2 -mno-fma
 endif
 ifeq ($(strip $(SIMD)),AVX_FMA)
 OPTS += -march=x86-64 -mavx -mno-avx2 -mno-bmi -mno-bmi2 -mfma
