@@ -20,10 +20,10 @@ ifeq ($(strip $(SIMD)),SVE)
 OPTS += -march=armv8.5-a+sve
 endif
 ifeq ($(strip $(SIMD)),NEON)
-OPTS += -march=armv8.5-a
+OPTS += -march=armv8.5-a+simd
 endif
 ifeq ($(strip $(SIMD)),NONE)
-OPTS += -march=armv8.5-a+nosimd
+OPTS += -march=armv8.5-a+nosimd+nosve+nosve2
 endif
 ASFLAGS =
 endif
