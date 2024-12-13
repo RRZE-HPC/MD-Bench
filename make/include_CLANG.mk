@@ -36,18 +36,21 @@ endif
 ifeq ($(strip $(ISA)),X86)
 OPTS = -Ofast
 ifeq ($(strip $(SIMD)),AVX512)
-OPTS += -march=x86-64-v4 -mevex512
+OPTS += -march=x86-64 -mavx512f -mavx512vl -mavx512dq
 else
 DEFINES += -DNO_ZMM_INTRIN
 endif
 ifeq ($(strip $(SIMD)),AVX2)
-OPTS += -march=x86-64-v3 -mavx2
+OPTS += -march=x86-64 -mavx2 -mfma
 endif
 ifeq ($(strip $(SIMD)),AVX)
-OPTS += -march=x86-64-v3 -mno-avx2 -mno-bmi1 -mno-bmi2 -mno-fma4
+OPTS += -march=x86-64 -mavx -mno-avx2 -mno-bmi -mno-bmi2 -mno-fma
+endif
+ifeq ($(strip $(SIMD)),AVX_FMA)
+OPTS += -march=x86-64 -mavx -mno-avx2 -mno-bmi -mno-bmi2 -mfma
 endif
 ifeq ($(strip $(SIMD)),SSE)
-OPTS += -march=x86-64-v2
+OPTS += -march=x86-64
 endif
 ifeq ($(strip $(SIMD)),NONE)
 OPTS += -fno-vectorize -fno-slp-vectorize -fno-tree-vectorize
@@ -57,7 +60,7 @@ endif
 
 CFLAGS = $(PROFILE) $(OPENMP) $(OPTS) -std=c99 $(ANSI_CFLAGS)
 LFLAGS = $(PROFILE) $(OPENMP) $(OPTS)
-DEFINES += -D_GNU_SOURCE
+DEFINES += -D_GNU_SOURCE -DNO_ZMM_INTRIN
 INCLUDES =
 LIBS = -lm
 

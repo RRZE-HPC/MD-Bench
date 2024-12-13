@@ -20,10 +20,10 @@ ifeq ($(strip $(SIMD)),SVE)
 OPTS += -march=armv8.5-a+sve
 endif
 ifeq ($(strip $(SIMD)),NEON)
-OPTS += -march=armv8.5-a
+OPTS += -march=armv8.5-a+simd
 endif
 ifeq ($(strip $(SIMD)),NONE)
-OPTS += -march=armv8.5-a+nosimd
+OPTS += -march=armv8.5-a+nosimd+nosve+nosve2
 endif
 ASFLAGS =
 endif
@@ -39,7 +39,10 @@ ifeq ($(strip $(SIMD)),AVX2)
 OPTS += -march=x86-64-v3 -mavx2
 endif
 ifeq ($(strip $(SIMD)),AVX)
-OPTS += -march=x86-64-v3 -mno-avx2 -mno-bmi -mno-bmi2 -mno-fma4
+OPTS += -march=x86-64-v3 -mno-avx2 -mno-bmi -mno-bmi2 -mno-fma
+endif
+ifeq ($(strip $(SIMD)),AVX_FMA)
+OPTS += -march=x86-64-v3 -mno-avx2 -mno-bmi -mno-bmi2 -mfma
 endif
 ifeq ($(strip $(SIMD)),SSE)
 OPTS += -march=x86-64-v2

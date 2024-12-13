@@ -202,8 +202,14 @@ static inline MD_SIMD_INT simd_i32_load_h_dual_scaled(const int* m, int scale)
         1);
 }
 
+/*
+// ICX complains that argument to the gather intrinsic must be a constant integer
+// when using the following function, so we use a macro instead
 static inline MD_SIMD_FLOAT simd_real_gather(
     MD_SIMD_INT vidx, MD_FLOAT* base, const int scale)
 {
     return _mm512_i32gather_pd(vidx, base, scale);
 }
+*/
+
+#define simd_real_gather(vidx, base, scale) _mm512_i32gather_pd(vidx, base, scale)
