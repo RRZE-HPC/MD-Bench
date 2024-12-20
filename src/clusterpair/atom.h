@@ -4,7 +4,11 @@
  * Use of this source code is governed by a LGPL-3.0
  * license that can be found in the LICENSE file.
  */
+#include <box.h>
 #include <parameter.h>
+#ifdef _MPI
+    #include <mpi.h>
+#endif
 
 #ifndef __ATOM_H_
 #define __ATOM_H_
@@ -25,7 +29,7 @@ typedef struct {
 
 typedef struct {
     int Natoms, Nlocal, Nghost, Nmax;
-    int Nclusters, Nclusters_local, Nclusters_ghost, Nclusters_max;
+    int Nclusters, Nclusters_local, Nclusters_ghost, Nclusters_max, NmaxGhost, ncj;
     MD_FLOAT *x, *y, *z;
     MD_FLOAT *vx, *vy, *vz;
     int* border_map;
@@ -51,6 +55,8 @@ typedef struct {
     unsigned int masks_2xnn_fn[8];
     unsigned int masks_4xn_hn[16];
     unsigned int masks_4xn_fn[16];
+    // Info Subdomain
+    Box mybox;
 } Atom;
 
 extern int get_ncj_from_nci(int nci);
@@ -63,6 +69,17 @@ extern int readAtomGro(Atom*, Parameter*);
 extern int readAtomDmp(Atom*, Parameter*);
 extern void growAtom(Atom*);
 extern void growClusters(Atom*);
+
+int packGhost(Atom*, int, MD_FLOAT*, int*);
+int unpackGhost(Atom*, int, MD_FLOAT*);
+int packExchange(Atom*, int, MD_FLOAT*);
+int unpackExchange(Atom*, int, MD_FLOAT*);
+void packForward(Atom*, int, int*, MD_FLOAT*, int*);
+void unpackForward(Atom*, int, int, MD_FLOAT*);
+void packReverse(Atom*, int, int, MD_FLOAT*);
+void unpackReverse(Atom*, int, int*, MD_FLOAT*);
+void pbc(Atom*);
+void copy(Atom*, int, int);
 
 #ifdef AOS
 #define POS_DATA_LAYOUT "AoS"

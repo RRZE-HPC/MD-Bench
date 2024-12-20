@@ -6,6 +6,10 @@
  */
 #include <atom.h>
 #include <parameter.h>
+#ifdef _MPI
+    #include <mpi.h>
+#endif
+
 
 #ifndef __NEIGHBOR_H_
 #define __NEIGHBOR_H_
@@ -34,6 +38,12 @@ typedef struct {
     int half_neigh;
     int* neighbors;
     unsigned int* neighbors_imask;
+        // MPI
+    int Nshell; // # of cluster in listShell(Cluster here cover all possible ghost
+                // interactions)
+    int* numNeighShell; // # of neighs for each atom in listShell
+    int* neighshell;    // list of neighs for each atom in listShell
+    int* listshell;     // Atoms to compute the force
 } Neighbor;
 
 typedef void (*BuildNeighborFunction)(Atom*, Neighbor*);

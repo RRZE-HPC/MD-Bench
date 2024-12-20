@@ -62,6 +62,10 @@ typedef struct {
     MD_FLOAT xprd, yprd, zprd;
     double proc_freq;
     char* eam_file;
+    // MPI implementation
+    int balance;
+    int method;
+    int balance_every;
 } Parameter;
 
 void initParameter(Parameter*);

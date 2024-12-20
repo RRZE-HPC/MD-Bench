@@ -4,7 +4,11 @@
  * Use of this source code is governed by a LGPL-3.0
  * license that can be found in the LICENSE file.
  */
+#include <box.h>
 #include <parameter.h>
+#ifdef _MPI
+#include <mpi.h>
+#endif
 
 #ifndef __ATOM_H_
 #define __ATOM_H_
@@ -36,6 +40,8 @@ typedef struct {
 
     // Device data
     DeviceAtom d_atom;
+    // Info Subdomain
+    Box mybox;
 } Atom;
 
 extern void initAtom(Atom*);
@@ -47,6 +53,17 @@ extern int readAtom_dmp(Atom*, Parameter*);
 extern int readAtom_in(Atom*, Parameter*);
 extern void writeAtom(Atom*, Parameter*);
 extern void growAtom(Atom*);
+
+int packGhost(Atom*, int, MD_FLOAT*, int*);
+int unpackGhost(Atom*, int, MD_FLOAT*);
+int packExchange(Atom*, int, MD_FLOAT*);
+int unpackExchange(Atom*, int, MD_FLOAT*);
+void packForward(Atom*, int, int*, MD_FLOAT*, int*);
+void unpackForward(Atom*, int, int, MD_FLOAT*);
+void packReverse(Atom*, int, int, MD_FLOAT*);
+void unpackReverse(Atom*, int, int*, MD_FLOAT*);
+void pbc(Atom*);
+void copy(Atom*, int, int);
 
 #ifdef AOS
 #define POS_DATA_LAYOUT "AoS"
@@ -71,5 +88,9 @@ extern void growAtom(Atom*);
 #define atom_fy(i)      atom->fy[i]
 #define atom_fz(i)      atom->fz[i]
 #endif
+
+#define buf_x(i) buf[3 * (i)]
+#define buf_y(i) buf[3 * (i) + 1]
+#define buf_z(i) buf[3 * (i) + 2]
 
 #endif // __ATOM_H_

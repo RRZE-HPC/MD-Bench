@@ -1,6 +1,11 @@
 CC = icc
 LINKER = $(CC)
 
+ifeq ($(strip $(ENABLE_MPI)),true)
+    CC = mpiicc
+    DEFINES += -D_MPI
+endif
+
 ifeq ($(strip $(ENABLE_OPENMP)),true)
 OPENMP      = -qopenmp
 endif
@@ -10,7 +15,7 @@ PROFILE     = #-profile-functions -g  -pg
 # SIMD options
 OPTS        = -Ofast
 ifeq ($(strip $(SIMD)),AVX512)
-OPTS        = -xCORE-AVX512 -qopt-zmm-usage=high
+OPTS       +=   -debug -g # -xCORE-AVX512 -qopt-zmm-usage=high
 else
 DEFINES    += -DNO_ZMM_INTRIN
 endif
@@ -19,9 +24,6 @@ OPTS       += -xCORE-AVX2
 endif
 ifeq ($(strip $(SIMD)),AVX)
 OPTS       += -xAVX
-endif
-ifeq ($(strip $(SIMD)),AVX_FMA)
-OPTS       += -xAVX -fma
 endif
 ifeq ($(strip $(SIMD)),SSE)
 OPTS       += -xSSE4.2

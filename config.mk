@@ -7,13 +7,15 @@ ISA ?= X86
 # with ARM-SIMD options: NONE/NEON/SVE/SVE2 (SVE not width-agnostic yet!)
 SIMD ?= AVX512
 # Optimization scheme (verletlist/clusterpair)
-OPT_SCHEME ?= clusterpair
+OPT_SCHEME ?= verletlist
 # Enable likwid (true or false)
 ENABLE_LIKWID ?= false
 # Enable OpenMP parallelization (true or false)
 ENABLE_OPENMP ?= false
+# Enable MPI parallelization
+ENABLE_MPI ?= true
 # SP or DP
-DATA_TYPE ?= SP
+DATA_TYPE ?= DP
 # AOS or SOA
 DATA_LAYOUT ?= AOS
 # Debug
@@ -22,17 +24,17 @@ DEBUG ?= false
 # Sort atoms when reneighboring (true or false)
 SORT_ATOMS ?= false
 # Simulate only for one atom type, without table lookup for parameters (true or false)
-ONE_ATOM_TYPE ?= false
+ONE_ATOM_TYPE ?= true
 # Trace memory addresses for cache simulator (true or false)
 MEM_TRACER ?= false
 # Trace indexes and distances for gather-md (true or false)
 INDEX_TRACER ?= false
 # Compute statistics
-COMPUTE_STATS ?= true
+COMPUTE_STATS ?= false
 
 # Configurations for verletlist optimization scheme
 # Use omp simd pragma when running with half neighbor-lists
-ENABLE_OMP_SIMD ?= false
+ENABLE_OMP_SIMD ?= true
 
 # Configurations for clusterpair optimization scheme
 # Use reference version
@@ -192,6 +194,10 @@ endif
 
 ifeq ($(strip $(ENABLE_OMP_SIMD)),true)
     DEFINES += -DENABLE_OMP_SIMD
+endif
+
+ifeq ($(strip $(OPT_SCHEME)),clusterpair)
+    DEFINES += -DCLUSTER_PAIR
 endif
 
 ifeq ($(strip $(OPT_SCHEME)),verletlist)

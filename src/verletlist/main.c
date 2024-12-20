@@ -14,15 +14,21 @@
 #ifdef _OPENMP
 #include <omp.h>
 #endif
+#ifdef _MPI
+#include <mpi.h>
+#endif
 
 #include <allocate.h>
 #include <atom.h>
+#include <comm.h>
 #include <device.h>
 #include <eam.h>
 #include <force.h>
+#include <grid.h>
 #include <integrate.h>
 #include <neighbor.h>
 #include <parameter.h>
+#include <shell_methods.h>
 #include <pbc.h>
 #include <stats.h>
 #include <thermo.h>
@@ -30,10 +36,11 @@
 #include <timing.h>
 #include <util.h>
 #include <vtk.h>
+#include <balance.h>
 
-#define HLINE "------------------------------------------------------------------\n"
+#define HLINE "-----------------------------------------------------------------------\n"
 
-double setup(Parameter* param, Eam* eam, Atom* atom, Neighbor* neighbor, Stats* stats)
+double setup(Parameter* param, Eam* eam, Atom* atom, Neighbor* neighbor, Stats* stats, Comm* comm, Grid* grid)
 {
     if (param->force_field == FF_EAM) {
         initEam(param);
@@ -46,7 +53,7 @@ double setup(Parameter* param, Eam* eam, Atom* atom, Neighbor* neighbor, Stats* 
 
     timeStart = getTimeStamp();
     initAtom(atom);
-    initPbc(atom);
+    //initPbc(atom);
     initStats(stats);
     initNeighbor(neighbor, param);
     if (param->input_file == NULL) {
@@ -54,8 +61,12 @@ double setup(Parameter* param, Eam* eam, Atom* atom, Neighbor* neighbor, Stats* 
     } else {
         readAtom(atom, param);
     }
-
+    setupGrid(grid, atom, param);
     setupNeighbor(param);
+    setupComm(comm, param, grid);
+    if (param->balance) {
+        initialBalance(param, atom, neighbor, stats, comm, grid);
+    }
     setupThermo(param, atom->Natoms);
     if (param->input_file == NULL) {
         adjustThermo(param, atom);
@@ -64,21 +75,22 @@ double setup(Parameter* param, Eam* eam, Atom* atom, Neighbor* neighbor, Stats* 
     atom->Nghost = 0;
     sortAtom(atom);
 #endif
-    setupPbc(atom, param);
+    //setupPbc(atom, param);
     initDevice(atom, neighbor);
-    updatePbc(atom, param, true);
+    //updatePbc(atom, param, true);
+    ghostNeighbor(comm, atom, param);
     buildNeighbor(atom, neighbor);
     initForce(param);
-    timeStop = getTimeStamp();
+    timeStop = getTimeStamp(); 
     return timeStop - timeStart;
 }
 
-double reneighbour(int n, Parameter* param, Atom* atom, Neighbor* neighbor)
+double reneighbour(int n, Parameter* param, Atom* atom, Neighbor* neighbor, Comm* comm)
 {
     double timeStart, timeStop;
     timeStart = getTimeStamp();
     LIKWID_MARKER_START("reneighbour");
-    updateAtomsPbc(atom, param, true);
+    //updateAtomsPbc(atom, param, true);
 #ifdef SORT_ATOMS
     if ((n + 1) % param->resort_every == 0) {
         DEBUG_MESSAGE("Resorting atoms");
@@ -86,8 +98,9 @@ double reneighbour(int n, Parameter* param, Atom* atom, Neighbor* neighbor)
         sortAtom(atom);
     }
 #endif
-    setupPbc(atom, param);
-    updatePbc(atom, param, true);
+    //setupPbc(atom, param);
+    //updatePbc(atom, param, true);
+    ghostNeighbor(comm, atom, param);
     buildNeighbor(atom, neighbor);
     LIKWID_MARKER_STOP("reneighbour");
     timeStop = getTimeStamp();
@@ -105,6 +118,15 @@ void printAtomState(Atom* atom)
     // for (int i=0; i<nall; i++) {
     //     printf("%d  %f %f %f\n", i, atom->x[i], atom->y[i], atom->z[i]);
     // }
+}
+
+double updateAtoms(Comm* comm, Atom* atom)
+{
+    double timeStart, timeStop;
+    timeStart = getTimeStamp();
+    exchangeComm(comm, atom);
+    timeStop = getTimeStamp();
+    return timeStop - timeStart;
 }
 
 void writeInput(Parameter* param, Atom* atom)
@@ -133,6 +155,8 @@ int main(int argc, char** argv)
     Neighbor neighbor;
     Stats stats;
     Parameter param;
+    Comm comm;
+    Grid grid;
 
     LIKWID_MARKER_INIT;
 #pragma omp parallel
@@ -141,7 +165,7 @@ int main(int argc, char** argv)
         LIKWID_MARKER_REGISTER("reneighbour");
         // LIKWID_MARKER_REGISTER("pbc");
     }
-
+    initComm(&argc, &argv, &comm);
     initParameter(&param);
     for (int i = 0; i < argc; i++) {
         if ((strcmp(argv[i], "-p") == 0) || strcmp(argv[i], "--params") == 0) {
@@ -183,6 +207,24 @@ int main(int argc, char** argv)
             param.half_neigh = atoi(argv[++i]);
             continue;
         }
+        if ((strcmp(argv[i], "-method") == 0)) {
+            param.method = atoi(argv[++i]);
+            if (param.method > 3 || param.method < 0) {
+                if (comm.myproc == 0) fprintf(stderr, "Method does not exist!\n");
+                endComm(&comm);
+                exit(0);
+            }
+            continue;
+        }
+        if ((strcmp(argv[i], "-bal") == 0)) {
+            param.balance = atoi(argv[++i]);
+            if (param.balance > 3 || param.balance < 0) {
+                if (comm.myproc == 0) fprintf(stderr, "Load Balance does not exist!\n");
+                endComm(&comm);
+                exit(0);
+            }
+            continue;
+        }
         if ((strcmp(argv[i], "-r") == 0) || (strcmp(argv[i], "--radius") == 0)) {
             param.cutforce = atof(argv[++i]);
             continue;
@@ -203,42 +245,60 @@ int main(int argc, char** argv)
             param.write_atom_file = strdup(argv[++i]);
             continue;
         }
+
         if ((strcmp(argv[i], "-h") == 0) || (strcmp(argv[i], "--help") == 0)) {
-            printf("MD Bench: A performance-oriented prototyping harness for MD "
-                   "algorithms\n");
-            printf(HLINE);
-            printf("-p / --params <string>:     file to read parameters from (can be "
-                   "specified more than once)\n");
-            printf("-f <string>:                force field (lj or eam), "
-                   "default lj\n");
-            printf("-i <string>:                input file with atom positions "
-                   "(dump)\n");
-            printf("-e <string>:                input file for EAM\n");
-            printf("-n / --nsteps <int>:        set number of timesteps for "
-                   "simulation\n");
-            printf("-nx/-ny/-nz <int>:          set linear dimension of systembox in "
-                   "x/y/z direction\n");
-            printf("-half <int>:                use half (1) or full (0) neighbor "
-                   "lists\n");
-            printf("-r / --radius <real>:       set cutoff radius\n");
-            printf("-s / --skin <real>:         set skin (verlet buffer)\n");
-            printf("-w <file>:                  write input atoms to file\n");
-            printf("--freq <real>:              processor frequency (GHz)\n");
-            printf("--vtk <string>:             VTK file for visualization\n");
-            printf(HLINE);
+            if (comm.myproc == 0) {
+                printf("MD Bench: A performance-oriented prototyping harness for MD "
+                    "algorithms\n");
+                printf(HLINE);
+                printf("-p / --params <string>:     file to read parameters from (can be "
+                    "specified more than once)\n");
+                printf("-f <string>:                force field (lj or eam), "
+                    "default lj\n");
+                printf("-i <string>:                input file with atom positions "
+                    "(dump)\n");
+                printf("-e <string>:                input file for EAM\n");
+                printf("-n / --nsteps <int>:        set number of timesteps for "
+                    "simulation\n");
+                printf("-nx/-ny/-nz <int>:          set linear dimension of systembox in "
+                    "x/y/z direction\n");
+                printf("-half <int>:                use half (1) or full (0) neighbor "
+                    "lists\n");
+                printf("-r / --radius <real>:       set cutoff radius\n");
+                printf("-s / --skin <real>:         set skin (verlet buffer)\n");
+                printf("-w <file>:                  write input atoms to file\n");
+                printf("--freq <real>:              processor frequency (GHz)\n");
+                printf("--vtk <string>:             VTK file for visualization\n");
+                printf(HLINE);
+            }
             exit(EXIT_SUCCESS);
         }
     }
 
-    param.cutneigh = param.cutforce + param.skin;
-    setup(&param, &eam, &atom, &neighbor, &stats);
-    printParameter(&param);
-    printf(HLINE);
+    if (param.balance > 0 && param.method == 1) {
+        if (comm.myproc == 0)
+            fprintf(stderr, "Half Shell is not supported by load balance!\n");
+        endComm(&comm);
+        exit(0);
+    }
+    
+#ifdef CUDA_TARGET
+        if(param.balance > 0 || param.method > 0) {
+            if (comm.myproc == 0)
+                fprintf(stderr, "CUDA is only supported under full shell communication with not balance\n");
+            endComm(&comm);
+            exit(0);
+        }
+#endif
 
-    printf("step\ttemp\t\tpressure\n");
+    param.cutneigh = param.cutforce + param.skin;
+    timer[SETUP] = setup(&param, &eam, &atom, &neighbor, &stats, &comm, &grid);
+    if (comm.myproc == 0) printParameter(&param);
+    if (comm.myproc == 0) printf(HLINE);
+    if (comm.myproc == 0) printf("step\ttemp\t\tpressure\n");
     computeThermo(0, &param, &atom);
 #if defined(MEM_TRACER) || defined(INDEX_TRACER)
-    traceAddresses(&param, &atom, &neighbor, n + 1);
+    traceAddresses(&param, &atom, &neighbor, n + 1); // TODO: trace adress
 #endif
 
     if (param.write_atom_file != NULL) {
@@ -249,10 +309,16 @@ int main(int argc, char** argv)
 
     timer[FORCE] = computeForce(&param, &atom, &neighbor, &stats);
     timer[NEIGH] = 0.0;
+    timer[FORWARD] = 0.0;
+    timer[UPDATE]  = 0.0;
+    timer[BALANCE] = 0.0;
+    timer[REVERSE] = reverse(&comm, &atom, &param);
+    barrierComm();
     timer[TOTAL] = getTimeStamp();
 
     if (param.vtk_file != NULL) {
-        write_atoms_to_vtk_file(param.vtk_file, &atom, 0);
+        //write_atoms_to_vtk_file(param.vtk_file, &atom, 0);
+        printvtk(param.vtk_file, &comm, &atom, &param, 0);
     }
 
     for (int n = 0; n < param.ntimes; n++) {
@@ -260,9 +326,13 @@ int main(int argc, char** argv)
         initialIntegrate(reneigh, &param, &atom);
 
         if (reneigh) {
-            timer[NEIGH] += reneighbour(n, &param, &atom, &neighbor);
+            timer[UPDATE] += updateAtoms(&comm, &atom);
+            if (param.balance && !((n + 1) % param.balance_every))
+                timer[BALANCE] += dynamicBalance(&comm, &grid, &atom, &param, timer[FORCE]);
+            timer[NEIGH] += reneighbour(n, &param, &atom, &neighbor, &comm);
         } else {
-            updatePbc(&atom, &param, false);
+            timer[FORWARD] += forward(&comm, &atom, &param);
+            //updatePbc(&atom, &param, false);
         }
 
 #if defined(MEM_TRACER) || defined(INDEX_TRACER)
@@ -270,6 +340,7 @@ int main(int argc, char** argv)
 #endif
 
         timer[FORCE] += computeForce(&param, &atom, &neighbor, &stats);
+        timer[REVERSE] += reverse(&comm, &atom, &param);
         finalIntegrate(reneigh, &param, &atom);
 
         if (!((n + 1) % param.nstat) && (n + 1) < param.ntimes) {
@@ -280,24 +351,84 @@ int main(int argc, char** argv)
         }
 
         if (param.vtk_file != NULL) {
-            write_atoms_to_vtk_file(param.vtk_file, &atom, n + 1);
+            //write_atoms_to_vtk_file(param.vtk_file, &atom, n + 1);
+            printvtk(param.vtk_file, &comm, &atom, &param, n + 1);
         }
     }
-
+    barrierComm();
     timer[TOTAL] = getTimeStamp() - timer[TOTAL];
     computeThermo(-1, &param, &atom);
+    timer[REST] = timer[TOTAL] - timer[FORCE] - timer[NEIGH] - timer[BALANCE] -
+                  timer[FORWARD] - timer[REVERSE];
 
+#ifdef _MPI
+    double mint[NUMTIMER];
+    double maxt[NUMTIMER];
+    double sumt[NUMTIMER];
+    int Nghost = atom.Nghost;
+    MPI_Reduce(timer, mint, NUMTIMER, MPI_DOUBLE, MPI_MIN, 0, world);
+    MPI_Reduce(timer, maxt, NUMTIMER, MPI_DOUBLE, MPI_MAX, 0, world);
+    MPI_Reduce(timer, sumt, NUMTIMER, MPI_DOUBLE, MPI_SUM, 0, world);
+    MPI_Reduce(&atom.Nghost, &Nghost, 1, MPI_INT, MPI_SUM, 0, world);
+#else
+    int Nghost = atom.Nghost;
+    double *mint = timer;
+    double *maxt = timer;
+    double *sumt = timer;
+#endif
+
+    if (comm.myproc == 0) {
+    int n = comm.numproc;
     printf(HLINE);
     printf("System: %d atoms %d ghost atoms, Steps: %d\n",
         atom.Natoms,
-        atom.Nghost,
+        Nghost,
         param.ntimes);
-    printf("TOTAL %.2fs FORCE %.2fs NEIGH %.2fs REST %.2fs\n",
-        timer[TOTAL],
-        timer[FORCE],
-        timer[NEIGH],
-        timer[TOTAL] - timer[FORCE] - timer[NEIGH]);
-    printf(HLINE);
+        printf("TOTAL %.2fs\n\n", timer[TOTAL]);
+        printf("%4s|%7s|%7s|%7s|%7s|%7s|%7s|%7s|%7s|\n",
+            "",
+            "FORCE ",
+            "NEIGH ",
+            "BALANCE",
+            "FORWARD",
+            "REVERSE",
+            "UPDATE",
+            "REST ",
+            "SETUP");
+        printf("----|-------|-------|-------|-------|-------|-------|-------|------"
+               "-|\n");
+        printf("%4s|%7.2f|%7.2f|%7.2f|%7.2f|%7.2f|%7.2f|%7.2f|%7.2f|\n",
+            "AVG",
+            sumt[FORCE] / n,
+            sumt[NEIGH] / n,
+            sumt[BALANCE] / n,
+            sumt[FORWARD] / n,
+            sumt[REVERSE] / n,
+            sumt[UPDATE] / n,
+            sumt[REST] / n,
+            sumt[SETUP] / n);
+        printf("%4s|%7.2f|%7.2f|%7.2f|%7.2f|%7.2f|%7.2f|%7.2f|%7.2f|\n",
+            "MIN",
+            mint[FORCE],
+            mint[NEIGH],
+            mint[BALANCE],
+            mint[FORWARD],
+            mint[REVERSE],
+            mint[UPDATE],
+            mint[REST],
+            mint[SETUP]);
+        printf("%4s|%7.2f|%7.2f|%7.2f|%7.2f|%7.2f|%7.2f|%7.2f|%7.2f|\n",
+            "MAX",
+            maxt[FORCE],
+            maxt[NEIGH],
+            maxt[BALANCE],
+            maxt[FORWARD],
+            maxt[REVERSE],
+            maxt[UPDATE],
+            maxt[REST],
+            maxt[SETUP]);
+        printf(HLINE);
+    }
 
 #ifdef _OPENMP
     int nthreads  = 0;
@@ -329,16 +460,20 @@ int main(int argc, char** argv)
 
         nthreads = omp_get_max_threads();
     }
-
-    printf("Num threads: %d\n", nthreads);
-    printf("Schedule: (%s,%d)\n", schedType, chunkSize);
+    if (comm.myproc == 0) {
+        printf("Num threads: %d\n", nthreads);
+        printf("Schedule: (%s,%d)\n", schedType, chunkSize);
+    }
 #endif
-
-    printf("Performance: %.2f million atom updates per second\n",
-        1e-6 * (double)atom.Natoms * param.ntimes / timer[TOTAL]);
+    if (comm.myproc == 0) {
+        printf("Performance: %.2f million atom updates per second\n",
+            1e-6 * (double)atom.Natoms * param.ntimes / timer[TOTAL]);
 #ifdef COMPUTE_STATS
     displayStatistics(&atom, &param, &stats, timer);
 #endif
+    }
+
+endComm(&comm);
     LIKWID_MARKER_CLOSE;
     return EXIT_SUCCESS;
 }

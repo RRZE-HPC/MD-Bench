@@ -6,6 +6,9 @@
  */
 #include <atom.h>
 #include <parameter.h>
+#ifdef _MPI
+    #include <mpi.h>
+#endif
 
 #ifndef __NEIGHBOR_H_
 #define __NEIGHBOR_H_
@@ -25,6 +28,13 @@ typedef struct {
 
     // Device data
     DeviceNeighbor d_neighbor;
+    // MPI
+    int half_stencil;
+    int Nshell;         // # of atoms in listShell
+    int* numNeighShell; // # of neighs for each atom in listShell
+    int* neighshell;    // list of neighs for each atom in listShell
+    int* listshell;     // Atoms to compute the force
+
 } Neighbor;
 
 typedef struct {

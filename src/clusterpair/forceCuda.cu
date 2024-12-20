@@ -20,6 +20,8 @@ extern "C" {
 #include <stats.h>
 #include <timing.h>
 #include <util.h>
+#include <shell_methods.h>
+#include <mpi.h>
 }
 
 extern "C" {
@@ -41,6 +43,9 @@ MD_FLOAT* cuda_cutforcesq;
 MD_FLOAT* cuda_sigma6;
 MD_FLOAT* cuda_epsilon;
 #endif
+
+MD_FLOAT* cuda_buf_recv;
+MD_FLOAT* cuda_buf_send;
 }
 
 extern "C" void initDevice(Atom* atom, Neighbor* neighbor)
@@ -553,3 +558,143 @@ extern "C" void finalIntegrateCUDA(Parameter* param, Atom* atom)
     cuda_assert("cudaFinalIntegrate", cudaPeekAtLastError());
     cuda_assert("cudaFinalIntegrate", cudaDeviceSynchronize());
 }
+
+extern "C" void forwardCommCUDA(Comm* comm, Atom* atom, int iswap)
+{
+    int nrqst = 0, offset = 0, nsend = 0, nrecv = 0;
+    int pbc[3];
+    int size    = comm->forwardSize;
+    int maxrqst = comm->numneigh;
+    int* cuda_sendlist;
+    int max_list_size; 
+    cuda_buf_send =  (MD_FLOAT*)allocateGPU(comm->max_send * sizeof(MD_FLOAT));
+    cuda_buf_recv =  (MD_FLOAT*)allocateGPU(comm->max_recv * sizeof(MD_FLOAT));
+    
+    //use a single buffer and takes the highes list size to move list of cluster to send
+    for (int ineigh = 0; ineigh < comm->numneigh; ineigh){
+        max_list_size = comm->maxsendlist[ineigh];
+    }
+    //allocate the memory for the unique buffer
+    cuda_sendlist = (int*)allocateGPU(max_list_size * sizeof(int));
+
+    for (int ineigh = comm->sendfrom[iswap]; ineigh < comm->sendtill[iswap]; ineigh++) {
+        offset  = comm->off_atom_send[ineigh];
+        pbc[_x] = comm->pbc_x[ineigh];
+        pbc[_y] = comm->pbc_y[ineigh];
+        pbc[_z] = comm->pbc_z[ineigh];
+        //copy lists into the buffer
+        memcpyToGPU(cuda_sendlist, comm->sendlist[ineigh], comm->atom_send[ineigh] * sizeof(int));
+       
+        const int threads_num = 64;
+        dim3 block_size       = dim3(threads_num, 1, 1);
+        dim3 grid_size = dim3(( comm->atom_send[ineigh] + threads_num - 1) / threads_num, 1, 1);
+        packForwardCuda<<<grid_size, block_size>>>(
+                                            cuda_cl_x,                   //MD_FLOAT*  -->need to be in tye device
+                                            cuda_jclusters_natoms,       //int*       -->need to be in tye device
+                                            comm->atom_send[ineigh],     //int  
+                                            cuda_sendlist,               //int*       -->need to be in tye device
+                                            cuda_buf_send[offset*size],  //MD_FLOAT*  -->need to be in tye device
+                                            pbc[_x],                     //int 
+                                            pbc[_y],                     //int
+                                            pbc[_z],                     //int
+                                            atom->xprd,                  //MD_FLOAT
+                                            atom->yrpd,                  //MD_FLOAT
+                                            atom->zprd);                 //MD_FLOAT
+    }
+    
+
+#ifdef _MPI 
+    MPI_Request requests[maxrqst];
+    // Receives elements
+    if (comm->othersend[iswap])
+        for (int ineigh = comm->recvfrom[iswap]; ineigh < comm->recvtill[iswap];ineigh++) {
+            offset = comm->off_atom_recv[ineigh] * size;
+            nrecv  = comm->atom_recv[ineigh] * size;
+            MPI_Irecv(&cuda_buf_recv[offset],
+                    nrecv,
+                    type,
+                    comm->nrecv[ineigh],
+                    0,
+                    world,
+                    &requests[nrqst++]);
+        }
+
+    // Send elements
+    if (comm->othersend[iswap])
+        for (int ineigh = comm->sendfrom[iswap]; ineigh < comm->sendtill[iswap]; ineigh++) {
+            offset = comm->off_atom_send[ineigh] * size;
+            nsend  = comm->atom_send[ineigh] * size;
+            MPI_Send(&cuda_buf_send[offset], nsend, type, comm->nsend[ineigh], 0, world);
+        }
+
+    if (comm->othersend[iswap]) MPI_Waitall(nrqst, requests, MPI_STATUS_IGNORE);
+#endif 
+    
+
+    /* unpack buffer */
+    for (int ineigh = comm->recvfrom[iswap]; ineigh < comm->recvtill[iswap]; ineigh++) {
+        offset = comm->off_atom_recv[ineigh];
+        MD_FLOAT *buf = (comm->othersend[iswap]) ? cuda_buf_recv : cuda_buf_send;   
+        const int threads_num = 64;
+        dim3 block_size       = dim3(threads_num, 1, 1);
+        dim3 grid_size = dim3(( comm->atom_recv[ineigh] + threads_num - 1) / threads_num, 1, 1);     
+        
+        unpackForwardCuda<<<grid_size, block_size>>>(
+                                        cuda_cl_x,                          //MD_FLOAT* --> need to be in the device       
+                                        cuda_jclusters_natoms,              //int*      --> need to be in the device
+                                        comm->atom_recv[ineigh],            //int  
+                                        comm->firstrecv[iswap] + offset,    //int 
+                                        &buf[offset * size]);               //MD_FLOAT* --> need to be in the devic
+    }
+    cuda_assert("cudaDeviceFree", cudaFree(cuda_sendlist));
+    cuda_assert("cudaDeviceFree", cudaFree(cuda_buf_recv));
+    cuda_assert("cudaDeviceFree", cudaFree(cuda_buf_send));
+}
+
+__global__ void packForwardCuda(MD_FLOAT* cuda_cl_x, int* cuda_jclusters_natoms, int nc, int* cuda_list, MD_FLOAT* cuda_buf, int PBCx, int PBCY, int PBCz, MD_FLOAT xprd, MD_FLOAT yrpd, MD_FLOAT zprd)
+{
+    unsigned int j = blockDim.x * blockIdx.x + threadIdx.x;
+    if (j >= nc) return;
+    
+    int cj          = cuda_list[j];
+    int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
+    MD_FLOAT* cj_x  = &cuda_cl_x[cj_vec_base];
+    int displ       = j * CLUSTER_N;   
+
+    for (int cjj = 0; cjj < cuda_jclusters_natoms[cj]; cjj++) {
+        cuda_buf[3 * (displ + cjj) + 0] = cj_x[CL_X_OFFSET + cjj] +
+                                    PBCx * xprd;
+        cuda_buf[3 * (displ + cjj) + 1] = cj_x[CL_Y_OFFSET + cjj] +
+                                    PBCy * yprd;
+        cuda_buf[3 * (displ + cjj) + 2] = cj_x[CL_Z_OFFSET + cjj] +
+                                    PBCz * zprd;
+    }
+
+    for (int cjj = cuda_jclusters_natoms[cj]; cjj < CLUSTER_N; cjj++) {
+        cuda_buf[3 * (displ + cjj) + 0] = -1; // x
+        cuda_buf[3 * (displ + cjj) + 1] = -1; // y
+        cuda_buf[3 * (displ + cjj) + 2] = -1; // z
+    }
+
+}
+
+__global__ void unpackForwardCuda(MD_FLOAT* cuda_cl_x, int* cuda_jclusters_natoms, int nc, int c0, MD_FLOAT* cuda_buf)
+{
+    unsigned int j = blockDim.x * blockIdx.x + threadIdx.x;
+    if (j >= nc) return; 
+    int cj = c0 + j;
+    int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
+    MD_FLOAT* cj_x  = &cuda_cl_x[cj_vec_base];
+    int displ       = j * CLUSTER_N;
+    
+    for (int cjj = 0; cjj < cuda_jclusters_natoms[cj]; cjj++) {
+        if (cj_x[CL_X_OFFSET + cjj] < INFINITY)
+            cj_x[CL_X_OFFSET + cjj] = cuda_buf[3 * (displ + cjj) + 0];
+        if (cj_x[CL_Y_OFFSET + cjj] < INFINITY)
+            cj_x[CL_Y_OFFSET + cjj] = cuda_buf[3 * (displ + cjj) + 1];
+        if (cj_x[CL_Z_OFFSET + cjj] < INFINITY)
+            cj_x[CL_Z_OFFSET + cjj] = cuda_buf[3 * (displ + cjj) + 2];
+    }
+}
+
+
