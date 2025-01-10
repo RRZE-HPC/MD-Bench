@@ -40,10 +40,10 @@ double initialBalance(Parameter* param, Atom* atom, Neighbor* neighbor, Stats* s
         neighComm(comm, param, grid);
     }
     MPI_Allreduce(&atom->Nlocal, &atom->Natoms, 1, MPI_INT, MPI_SUM, world);
-    printf("Processor:%i, Local atoms:%i, Total atoms:%i\n",
-        comm->myproc,
-        atom->Nlocal,
-        atom->Natoms);
+    //printf("Processor:%i, Local atoms:%i, Total atoms:%i\n",
+    //    comm->myproc,
+    //    atom->Nlocal,
+    //    atom->Natoms);
     MPI_Barrier(world);
     E = getTimeStamp();
     return E - S;

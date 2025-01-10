@@ -41,21 +41,6 @@ extern void cudaDeviceFree(void);
 #define HLINE                                                                         \
     "----------------------------------------------------------------------------\n"
 
-void tracing(Atom* atom, int cj, char* str, int iter, int rank){
-    int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
-    MD_FLOAT* cj_x  = &atom->cl_x[cj_vec_base];
-    MD_FLOAT* cj_f  = &atom->cl_f[cj_vec_base];
-    int natom = atom->jclusters[cj].natoms;
-    
-    if(rank==0) printf("======= %s ========\n",str);
-    /*
-    printf("======= %s ========\n",str);
-    for (int cjj = 0; cjj < natom; cjj++){
-        printf("rank :%d natoms: %d x: %f y %f z %f fx: %f fy: %f fz %f ncj %d iter:%d\n",rank, atom->jclusters[cj].natoms, cj_x[CL_X_OFFSET + cjj],cj_x[CL_Y_OFFSET + cjj],cj_x[CL_Z_OFFSET + cjj],cj_f[CL_X_OFFSET + cjj], cj_f[CL_Y_OFFSET + cjj],cj_f[CL_Z_OFFSET + cjj], atom->ncj, iter);
-    }
-   */
-}
-
 double setup(Parameter* param, Eam* eam, Atom* atom, Neighbor* neighbor, Stats* stats, Comm* comm, Grid* grid)
 {
     if (param->force_field == FF_EAM) {
@@ -70,7 +55,7 @@ double setup(Parameter* param, Eam* eam, Atom* atom, Neighbor* neighbor, Stats* 
     timeStart = getTimeStamp();
     initAtom(atom);
     initForce(param);
-    //initPbc(atom);
+    initPbc(atom);
     initStats(stats);
     initNeighbor(neighbor, param);
     if (param->input_file == NULL) {
@@ -78,20 +63,25 @@ double setup(Parameter* param, Eam* eam, Atom* atom, Neighbor* neighbor, Stats* 
     } else {
         readAtom(atom, param);
     }
-    setupGrid(grid, atom, param);
     setupNeighbor(param, atom);
+#ifdef _MPI
+    setupGrid(grid, atom, param);
     setupComm(comm, param, grid);   
     if (param->balance) {
         initialBalance(param, atom, neighbor, stats, comm, grid);
     }
+#endif
     setupThermo(param, atom->Natoms);
     if (param->input_file == NULL) {
         adjustThermo(param, atom);
     }
     buildClusters(atom);
-    defineJClusters(atom);
-    //setupPbc(atom, param);
+    defineJClusters(atom); 
+#ifdef _MPI
     ghostNeighbor(comm, atom, param);
+#else
+    setupPbc(atom, param);
+#endif
     binClusters(atom);
     buildNeighbor(atom, neighbor);
     initDevice(atom, neighbor);
@@ -108,8 +98,11 @@ double reneighbour(Comm* comm, Parameter* param, Atom* atom, Neighbor* neighbor)
     //updateAtomsPbc(atom, param, false);
     buildClusters(atom);
     defineJClusters(atom);
-    //setupPbc(atom, param);
+#ifdef _MPI
     ghostNeighbor(comm, atom, param);
+#else
+    setupPbc(atom, param);
+#endif
     binClusters(atom);
     buildNeighbor(atom, neighbor);
     LIKWID_MARKER_STOP("reneighbour");
@@ -132,12 +125,16 @@ void printAtomState(Atom* atom)
     /*     } */
 }
 
-double updateAtoms(Comm* comm, Atom* atom)
+double updateAtoms(Comm* comm, Atom* atom, Parameter* param)
 {
     double timeStart, timeStop;
     timeStart = getTimeStamp();
     updateSingleAtoms(atom);
+#ifdef _MPI 
     exchangeComm(comm, atom);
+#else 
+    updateAtomsPbc(atom, param, false);
+#endif 
     timeStop = getTimeStamp();
     return timeStop - timeStart;
 }
@@ -282,16 +279,6 @@ int main(int argc, char** argv)
         exit(0);
     }
 
-#ifdef CUDA_TARGET 
-        if(param.balance > 0 || param.method > 0) {
-            if (comm.myproc == 0)
-                fprintf(stderr, "CUDA+MPI is only supported with full shell and not balance\n");
-            endComm(&comm);
-            exit(0);
-        }
-#endif
-
-
     param.cutneigh = param.cutforce + param.skin;
     timer[SETUP] = setup(&param, &eam, &atom, &neighbor, &stats, &comm, &grid);
     if (comm.myproc == 0) printParameter(&param);
@@ -304,7 +291,7 @@ int main(int argc, char** argv)
 
 #ifdef CUDA_TARGET
     copyDataToCUDADevice(&atom, &neighbor);
-#endif
+#endif 
     timer[FORCE]   = computeForce(&param, &atom, &neighbor, &stats);
     timer[NEIGH]   = 0.0;
     timer[FORWARD] = 0.0;
@@ -324,17 +311,17 @@ int main(int argc, char** argv)
     }
     for (int n = 0; n < param.ntimes; n++) {
         initialIntegrate(&param, &atom);
-        if ((n + 1) % param.reneigh_every) {
-        timer[FORWARD] += forward(&comm, &atom, &param);  
-        if (!((n + 1) % param.prune_every)) {
+        if ((n + 1) % param.reneigh_every) { 
+            if (!((n + 1) % param.prune_every)) {
                 pruneNeighbor(&param, &atom, &neighbor);
             }
+            timer[FORWARD] += forward(&comm, &atom, &param); 
             //updatePbc(&atom, &param, 0);
         } else {
 #ifdef CUDA_TARGET
             copyDataFromCUDADevice(&atom);
 #endif
-            timer[UPDATE] += updateAtoms(&comm, &atom); 
+            timer[UPDATE] += updateAtoms(&comm, &atom, &param); 
             if (param.balance && !((n + 1) % param.balance_every)){
                 timer[BALANCE] += dynamicBalance(&comm, &grid, &atom, &param, timer[FORCE]);
             
@@ -374,7 +361,7 @@ int main(int argc, char** argv)
 #endif
     barrierComm();
     timer[TOTAL] = getTimeStamp() - timer[TOTAL];
-    updateAtoms(&comm, &atom);
+    updateAtoms(&comm, &atom,&param);
     computeThermo(-1, &param, &atom);
      // TODO: xtc file
     if (param.xtc_file != NULL) {

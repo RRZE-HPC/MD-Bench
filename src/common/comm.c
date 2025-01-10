@@ -5,17 +5,15 @@
 #include <string.h>
 #include <util.h>
 
-
 #define NEIGHMIN  6
 #define BUFFACTOR 2
 #define BUFMIN    1000
 #define BUFEXTRA  100
+#define world     MPI_COMM_WORLD
+
 
 #ifdef _MPI
-    #include <mpi.h>    
-    #define world     MPI_COMM_WORLD
-    //MPI_Datatype type = (sizeof(MD_FLOAT) == 4) ? MPI_FLOAT : MPI_DOUBLE;
-#endif
+#include <mpi.h>    
 
 static inline void allocDynamicBuffers(Comm*);
 static inline void freeDynamicBuffers(Comm*);
@@ -182,47 +180,6 @@ void neighComm(Comm* comm, Parameter* param, Grid* grid)
     defineReverseList(comm);
 }
 
-void initComm(int* argc, char*** argv, Comm* comm)
-{
-    comm->numproc       = 1;
-    comm->myproc        = 0;
-    comm->numneigh      = 0;
-    comm->numneighexch  = 0;
-    comm->nrecv         = NULL;
-    comm->nsend         = NULL;
-    comm->nexch         = NULL;
-    comm->pbc_x         = NULL;
-    comm->pbc_y         = NULL;
-    comm->pbc_z         = NULL;
-    comm->boxes         = NULL;
-    comm->atom_send     = NULL;
-    comm->atom_recv     = NULL;
-    comm->off_atom_send = NULL;
-    comm->off_atom_recv = NULL;
-    comm->maxsendlist   = NULL;
-    comm->sendlist      = NULL;
-    comm->buf_send      = NULL;
-    comm->buf_recv      = NULL;
-    // MPI Initialize
-#ifdef _MPI    
-        MPI_Init(argc, argv);
-        MPI_Comm_size(MPI_COMM_WORLD, &(comm->numproc));
-        MPI_Comm_rank(MPI_COMM_WORLD, &(comm->myproc));
-#endif 
-}
-
-void endComm(Comm* comm)
-{
-    comm->maxneigh     = 0;
-    comm->maxneighexch = 0;
-    comm->maxsend      = 0;
-    comm->maxrecv      = 0;
-    freeBuffers(comm);
-#ifdef _MPI
-    MPI_Finalize();
-#endif
-}
-
 void setupComm(Comm* comm, Parameter* param, Grid* grid)
 {
 
@@ -293,7 +250,6 @@ void forwardComm(Comm* comm, Atom* atom, int iswap)
             pbc);
     }
 
-#ifdef _MPI 
     MPI_Request requests[maxrqst];
     // Receives elements
     if (comm->othersend[iswap])
@@ -320,7 +276,6 @@ void forwardComm(Comm* comm, Atom* atom, int iswap)
         }
 
     if (comm->othersend[iswap]) MPI_Waitall(nrqst, requests, MPI_STATUS_IGNORE);
-#endif 
     
     if (comm->othersend[iswap]){ 
         buf = comm->buf_recv;
@@ -353,7 +308,7 @@ void reverseComm(Comm* comm, Atom* atom, int iswap)
             &comm->buf_send[offset * size]);
     }
 
-#ifdef _MPI    
+
     MPI_Request requests[maxrqst];
     // Receives elements
     if (comm->othersend[iswap])
@@ -378,8 +333,7 @@ void reverseComm(Comm* comm, Atom* atom, int iswap)
             MPI_Send(&comm->buf_send[offset], nsend, type, comm->nrecv[ineigh], 0, world);
         }
     if (comm->othersend[iswap]) MPI_Waitall(nrqst, requests, MPI_STATUS_IGNORE);
-#endif   
-
+  
     if (comm->othersend[iswap]){
         buf = comm->buf_recv;
     } else {
@@ -418,7 +372,7 @@ void ghostComm(Comm* comm, Atom* atom, int iswap)
         pbc[_y]   = comm->pbc_y[ineigh];
         pbc[_z]   = comm->pbc_z[ineigh];
         nsend     = 0;
-        //printf("me:%d neigh:%d iswap:%d min(%f,%f,%f) - max(%f,%f,%f)\n",comm->myproc,iswap,ineigh,xlo,ylo,zlo,xhi,yhi,zhi);
+
         for (int i = 0; i < comm->iterAtom; i++) {
             if (IsinRegionToSend(i)) {
                 if (nsend >= comm->maxsendlist[ineigh]) growList(comm, ineigh, nsend);
@@ -432,7 +386,6 @@ void ghostComm(Comm* comm, Atom* atom, int iswap)
         all_send += nsend; // all atoms send
     }
 
-#ifdef _MPI
     MPI_Request requests[maxrqrst];
     for (int i = 0; i < maxrqrst; i++)
         requests[maxrqrst] = MPI_REQUEST_NULL;
@@ -479,6 +432,7 @@ void ghostComm(Comm* comm, Atom* atom, int iswap)
                 world,
                 &requests[nrqst++]);
         }
+
     // Send elements
     if (comm->othersend[iswap])
         for (int ineigh = comm->sendfrom[iswap]; ineigh < comm->sendtill[iswap];
@@ -488,17 +442,13 @@ void ghostComm(Comm* comm, Atom* atom, int iswap)
             MPI_Send(&comm->buf_send[offset], nsend, type, comm->nsend[ineigh], 0, world);
         }
     if (comm->othersend[iswap]) MPI_Waitall(nrqst, requests, MPI_STATUS_IGNORE);
-#else
-    ineigh = comm->recvfrom[iswap];
-    comm->off_atom_recv[ineigh] = 0;
-    all_recv = comm->atom_recv[ineigh] = comm->atom_send[ineigh];    
-#endif
 
     if (comm->othersend[iswap]){ 
         buf = comm->buf_recv;
     } else {
         buf = comm->buf_send;
     }
+
     // unpack elements
     comm->firstrecv[iswap] = LOCAL + GHOST;
     for (int i = 0; i < all_recv; i++){
@@ -544,7 +494,6 @@ void exchangeComm(Comm* comm, Atom* atom)
     }
     atom->Nlocal = nlocal;
     
-#ifdef _MPI
     MPI_Request requests[numneigh];
     /* send/recv number of to share atoms with neighbouring procs*/
     for (int ineigh = 0; ineigh < numneigh; ineigh++)
@@ -587,10 +536,7 @@ void exchangeComm(Comm* comm, Atom* atom)
     } 
     MPI_Waitall(nrqst, requests, MPI_STATUS_IGNORE);
     buf = comm->buf_recv;
-#else 
-    buf = comm->buf_send; 
-    nrecv = nsend;
-#endif
+
     m      = 0;
     while (m < nrecv) {
         x = buf[m + _x];
@@ -606,24 +552,14 @@ void exchangeComm(Comm* comm, Atom* atom)
     }
 
     int all_atoms = 0;
-#ifdef _MPI
     MPI_Allreduce(&atom->Nlocal, &all_atoms, 1, MPI_INT, MPI_SUM, world);
-#else
-    all_atoms = atom->Nlocal;
-#endif
+
     if (atom->Natoms != all_atoms && comm->myproc == 0) {
         printf("Losing atoms! current atoms:%d expected atoms:%d\n",
             all_atoms,
             atom->Natoms);
     }
 }
-
-void barrierComm(){
-#ifdef _MPI       
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
-}
-
 
 // Internal functions
 
@@ -711,4 +647,52 @@ static inline void freeBuffers(Comm* comm)
 
     if (comm->buf_send) free(comm->buf_send);
     if (comm->buf_recv) free(comm->buf_recv);
+}
+#endif
+
+void barrierComm(){
+#ifdef _MPI       
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+}
+
+void initComm(int* argc, char*** argv, Comm* comm)
+{
+    comm->numproc       = 1;
+    comm->myproc        = 0;
+    comm->numneigh      = 0;
+    comm->numneighexch  = 0;
+    comm->nrecv         = NULL;
+    comm->nsend         = NULL;
+    comm->nexch         = NULL;
+    comm->pbc_x         = NULL;
+    comm->pbc_y         = NULL;
+    comm->pbc_z         = NULL;
+    comm->boxes         = NULL;
+    comm->atom_send     = NULL;
+    comm->atom_recv     = NULL;
+    comm->off_atom_send = NULL;
+    comm->off_atom_recv = NULL;
+    comm->maxsendlist   = NULL;
+    comm->sendlist      = NULL;
+    comm->buf_send      = NULL;
+    comm->buf_recv      = NULL;
+    // MPI Initialize
+#ifdef _MPI
+    MPI_Init(argc, argv);
+    MPI_Comm_size(MPI_COMM_WORLD, &(comm->numproc));
+    MPI_Comm_rank(MPI_COMM_WORLD, &(comm->myproc));
+#endif
+}
+
+void endComm(Comm* comm)
+{
+    comm->maxneigh     = 0;
+    comm->maxneighexch = 0;
+    comm->maxsend      = 0;
+    comm->maxrecv      = 0;
+#ifdef _MPI
+    freeBuffers(comm);
+    MPI_Finalize();
+#endif
 }

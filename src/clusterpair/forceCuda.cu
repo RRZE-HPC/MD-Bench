@@ -20,8 +20,6 @@ extern "C" {
 #include <stats.h>
 #include <timing.h>
 #include <util.h>
-#include <shell_methods.h>
-#include <mpi.h>
 }
 
 extern "C" {
@@ -43,9 +41,6 @@ MD_FLOAT* cuda_cutforcesq;
 MD_FLOAT* cuda_sigma6;
 MD_FLOAT* cuda_epsilon;
 #endif
-
-MD_FLOAT* cuda_buf_recv;
-MD_FLOAT* cuda_buf_send;
 }
 
 extern "C" void initDevice(Atom* atom, Neighbor* neighbor)
@@ -105,7 +100,8 @@ extern "C" void copyDataToCUDADevice(Atom* atom, Neighbor* neighbor)
         natoms[ci] = atom->iclusters[ci].natoms;
     }
 
-    int ncj  = get_ncj_from_nci(atom->Nclusters_local);
+    //int ncj  = get_ncj_from_nci(atom->Nclusters_local);
+    int ncj    = CJ0_FROM_CI(atom->Nclusters_local);
     for (int cg = 0; cg < atom->Nclusters_ghost; cg++) {
         const int cj = ncj + cg;
         ngatoms[cg]  = atom->jclusters[cj].natoms;
@@ -195,7 +191,8 @@ __global__ void cudaUpdatePbc_warp(MD_FLOAT* cuda_cl_x,
     unsigned int cg = blockDim.x * blockIdx.x + threadIdx.x;
     if (cg >= Nclusters_ghost) return;
 
-    int ncj       = get_ncj_from_nci(Nclusters_local);
+    //int ncj       = get_ncj_from_nci(Nclusters_local);
+    int ncj         = CJ0_FROM_CI(Nclusters_local);
     MD_FLOAT xprd = param_xprd;
     MD_FLOAT yprd = param_yprd;
     MD_FLOAT zprd = param_zprd;
@@ -559,6 +556,7 @@ extern "C" void finalIntegrateCUDA(Parameter* param, Atom* atom)
     cuda_assert("cudaFinalIntegrate", cudaDeviceSynchronize());
 }
 
+/*
 extern "C" void forwardCommCUDA(Comm* comm, Atom* atom, int iswap)
 {
     int nrqst = 0, offset = 0, nsend = 0, nrecv = 0;
@@ -631,7 +629,7 @@ extern "C" void forwardCommCUDA(Comm* comm, Atom* atom, int iswap)
 #endif 
     
 
-    /* unpack buffer */
+    //unpack buffer 
     for (int ineigh = comm->recvfrom[iswap]; ineigh < comm->recvtill[iswap]; ineigh++) {
         offset = comm->off_atom_recv[ineigh];
         MD_FLOAT *buf = (comm->othersend[iswap]) ? cuda_buf_recv : cuda_buf_send;   
@@ -677,7 +675,6 @@ __global__ void packForwardCuda(MD_FLOAT* cuda_cl_x, int* cuda_jclusters_natoms,
     }
 
 }
-
 __global__ void unpackForwardCuda(MD_FLOAT* cuda_cl_x, int* cuda_jclusters_natoms, int nc, int c0, MD_FLOAT* cuda_buf)
 {
     unsigned int j = blockDim.x * blockIdx.x + threadIdx.x;
@@ -696,5 +693,4 @@ __global__ void unpackForwardCuda(MD_FLOAT* cuda_cl_x, int* cuda_jclusters_natom
             cj_x[CL_Z_OFFSET + cjj] = cuda_buf[3 * (displ + cjj) + 2];
     }
 }
-
-
+*/

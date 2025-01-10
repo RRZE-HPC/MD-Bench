@@ -15,6 +15,8 @@
 #include <timing.h>
 #include <unistd.h>
 #include <util.h>
+#include <pbc.h>
+
 
 static void addDummyCluster(Atom*);
 
@@ -22,6 +24,7 @@ double forward(Comm* comm, Atom* atom, Parameter* param)
 {
     double S, E;
     S = getTimeStamp();
+#ifdef _MPI
     if (param->method == halfShell) {
         for (int iswap = 0; iswap < 5; iswap++)
             forwardComm(comm, atom, iswap);
@@ -30,12 +33,11 @@ double forward(Comm* comm, Atom* atom, Parameter* param)
             forwardComm(comm, atom, iswap);
     } else {
         for (int iswap = 0; iswap < 6; iswap++)
-#ifdef CUDA_TARGET
-            forwardCommCUDA(comm, atom, iswap);
-#else 
             forwardComm(comm, atom, iswap);
-#endif
     }
+#else 
+    updatePbc(atom, param, false);
+#endif
     E = getTimeStamp();
     return E - S;
 }
@@ -44,6 +46,7 @@ double reverse(Comm* comm, Atom* atom, Parameter* param)
 {
     double S, E;
     S = getTimeStamp();
+#ifdef _MPI
     if (param->method == halfShell) {
         for (int iswap = 4; iswap >= 0; iswap--)
             reverseComm(comm, atom, iswap);
@@ -55,13 +58,14 @@ double reverse(Comm* comm, Atom* atom, Parameter* param)
             reverseComm(comm, atom, iswap);
     } else {
     } // Full Shell Reverse does nothing
+#endif
     E = getTimeStamp();
     return E - S;
 }
 
+#ifdef _MPI
 void ghostNeighbor(Comm* comm, Atom* atom, Parameter* param)
 {
-
 #ifdef CLUSTER_PAIR
     atom->Nclusters_ghost = 0;
 #endif
@@ -80,6 +84,7 @@ void ghostNeighbor(Comm* comm, Atom* atom, Parameter* param)
     addDummyCluster(atom);    
 #endif
 }
+#endif
 
 #ifdef CLUSTER_PAIR
 void addDummyCluster(Atom* atom){

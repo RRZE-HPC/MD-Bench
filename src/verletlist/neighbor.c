@@ -143,6 +143,7 @@ void setupNeighbor(Parameter* param)
         bininvy  = 1.0 / binsizey;
         bininvz  = 1.0 / binsizez;
     }
+   
     pad_x = (int)(cutneigh * bininvx);
     while (pad_x * binsizex < FACTOR * cutneigh)
         pad_x++;
@@ -153,7 +154,7 @@ void setupNeighbor(Parameter* param)
     while (pad_z * binsizez < FACTOR * cutneigh)
         pad_z++;
     
-/*
+
     coord   = xlo - cutneigh - SMALL * xprd;
     mbinxlo = (int)(coord * bininvx);
     if (coord < 0.0) {
@@ -178,6 +179,16 @@ void setupNeighbor(Parameter* param)
     coord   = zhi + cutneigh + SMALL * zprd;
     mbinzhi = (int)(coord * bininvz);
 
+    mbinxlo = mbinxlo - 1;
+    mbinxhi = mbinxhi + 1;
+    
+    mbinylo = mbinylo - 1;
+    mbinyhi = mbinyhi + 1;
+
+    mbinzlo = mbinzlo - 1;
+    mbinzhi = mbinzhi + 1;
+
+/*
     mbinxlo = mbinxlo - 1;
     mbinxhi = mbinxhi + 1;
     mbinx   = mbinxhi - mbinxlo + 1;

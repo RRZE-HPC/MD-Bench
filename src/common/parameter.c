@@ -205,6 +205,7 @@ void printParameter(Parameter* param)
     fprintf(stdout,"\tProcessor frequency (GHz): %.4f\n", param->proc_freq);
 
         // ================ New MPI features =============
+#ifdef _MPI
     char str[20];
     strcpy(str,
         (param->method == 1)   ? "Half Shell"
@@ -220,5 +221,6 @@ void printParameter(Parameter* param)
     fprintf(stdout,"\tPartition: %s\n", str);
     if (param->balance)
         fprintf(stdout,"\tRebalancing every (timesteps): %d\n", param->balance_every);
+#endif
     fflush(stdout);
 }

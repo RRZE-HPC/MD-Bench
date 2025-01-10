@@ -7,13 +7,13 @@ ISA ?= X86
 # with ARM-SIMD options: NONE/NEON/SVE/SVE2 (SVE not width-agnostic yet!)
 SIMD ?= AVX512
 # Optimization scheme (verletlist/clusterpair)
-OPT_SCHEME ?= verletlist
+OPT_SCHEME ?= clusterpair
 # Enable likwid (true or false)
 ENABLE_LIKWID ?= false
 # Enable OpenMP parallelization (true or false)
 ENABLE_OPENMP ?= false
 # Enable MPI parallelization
-ENABLE_MPI ?= true
+ENABLE_MPI ?= false
 # SP or DP
 DATA_TYPE ?= DP
 # AOS or SOA
@@ -24,7 +24,7 @@ DEBUG ?= false
 # Sort atoms when reneighboring (true or false)
 SORT_ATOMS ?= false
 # Simulate only for one atom type, without table lookup for parameters (true or false)
-ONE_ATOM_TYPE ?= true
+ONE_ATOM_TYPE ?= false
 # Trace memory addresses for cache simulator (true or false)
 MEM_TRACER ?= false
 # Trace indexes and distances for gather-md (true or false)
@@ -44,7 +44,7 @@ XTC_OUTPUT ?= false
 
 # Configurations for CUDA
 # Use CUDA pinned memory to optimize transfers
-USE_CUDA_HOST_MEMORY ?= false
+USE_CUDA_HOST_MEMORY ?= true
 
 #Feature options
 OPTIONS =  -DALIGNMENT=64

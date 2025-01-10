@@ -453,7 +453,6 @@ void cartisian3d(Grid* grid, Parameter* param, Box* box)
     MPI_Allgather(domain, 6, type, grid->map, 6, type, world);
     MPI_Comm_free(&cartesian);
 }
-#endif
 
 // Other Functions from the grid
 void initGrid(Grid* grid, int nprocs)
@@ -474,10 +473,8 @@ void setupGrid(Grid* grid, Atom* atom, Parameter* param)
     int me = 0;
     int nprocs = 1;
     MD_FLOAT xlo, ylo, zlo, xhi, yhi, zhi;
-#ifdef _MPI
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
     MPI_Comm_size(world, &nprocs);
-#endif
     initGrid(grid,nprocs);
     // Set the origin at (0,0,0)
     if (param->input_file) {
@@ -487,22 +484,9 @@ void setupGrid(Grid* grid, Atom* atom, Parameter* param)
             atom_z(i) = atom_z(i) - param->zlo;
         }
     }
-     
 // MAP is stored as follows: xlo,ylo,zlo,xhi,yhi,zhi
-#ifdef _MPI
     cartisian3d(grid, param, &atom->mybox);
-#else 
-    atom->mybox.xprd = param->xprd;
-    atom->mybox.yprd = param->yprd;
-    atom->mybox.zprd = param->zprd;  
-    grid->map[0] = atom->mybox.lo[_x] = 0;
-    grid->map[1] = atom->mybox.lo[_y] = 0;
-    grid->map[2] = atom->mybox.lo[_z] = 0;
-    grid->map[3] = atom->mybox.hi[_x] = param->xprd;
-    grid->map[4] = atom->mybox.hi[_y] = param->yprd;
-    grid->map[5] = atom->mybox.hi[_z] = param->zprd;
-#endif   
-
+    
     // Define the same cutneighbour in all dimensions for the exchange
     // communication
     for (int dim = _x; dim <= _z; dim++){
@@ -529,17 +513,13 @@ void setupGrid(Grid* grid, Atom* atom, Parameter* param)
     
      //printGrid(grid);
     if (!param->balance) {
-#ifdef _MPI
         MPI_Allreduce(&atom->Nlocal, &atom->Natoms, 1, MPI_INT, MPI_SUM, world);
-#endif
-        fprintf(stdout,"Processor:%i, Local atoms:%i, Total atoms:%i\n",
-            me,
-            atom->Nlocal,
-            atom->Natoms);
-        fflush(stdout);
-#ifdef _MPI
+        //fprintf(stdout,"Processor:%i, Local atoms:%i, Total atoms:%i\n",
+        //    me,
+        //    atom->Nlocal,
+        //   atom->Natoms);
+        //fflush(stdout);
         MPI_Barrier(world);
-#endif
     }
 }
 
@@ -547,10 +527,8 @@ void printGrid(Grid* grid)
 {
     int me = 0; 
     int nprocs = 1;
-#ifdef _MPI
     MPI_Comm_size(world, &nprocs);
     MPI_Comm_rank(world, &me);
-#endif
     MD_FLOAT* map = grid->map;
     if (me == 0) {
 
@@ -571,7 +549,6 @@ void printGrid(Grid* grid)
         // zlo:%.4f\tzhi:%.4f\n",
         // i,map[6*i],map[6*i+3],map[6*i+1],map[6*i+4],map[6*i+2],map[6*i+5]);
     }
-#ifdef _MPI
     MPI_Barrier(world);
-#endif
 }
+#endif

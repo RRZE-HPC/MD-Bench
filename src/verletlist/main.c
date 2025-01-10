@@ -53,7 +53,7 @@ double setup(Parameter* param, Eam* eam, Atom* atom, Neighbor* neighbor, Stats* 
 
     timeStart = getTimeStamp();
     initAtom(atom);
-    //initPbc(atom);
+    initPbc(atom);
     initStats(stats);
     initNeighbor(neighbor, param);
     if (param->input_file == NULL) {
@@ -61,12 +61,14 @@ double setup(Parameter* param, Eam* eam, Atom* atom, Neighbor* neighbor, Stats* 
     } else {
         readAtom(atom, param);
     }
-    setupGrid(grid, atom, param);
     setupNeighbor(param);
+#ifdef _MPI
+    setupGrid(grid, atom, param);
     setupComm(comm, param, grid);
     if (param->balance) {
         initialBalance(param, atom, neighbor, stats, comm, grid);
     }
+#endif
     setupThermo(param, atom->Natoms);
     if (param->input_file == NULL) {
         adjustThermo(param, atom);
@@ -75,10 +77,13 @@ double setup(Parameter* param, Eam* eam, Atom* atom, Neighbor* neighbor, Stats* 
     atom->Nghost = 0;
     sortAtom(atom);
 #endif
-    //setupPbc(atom, param);
+    setupPbc(atom, param);
     initDevice(atom, neighbor);
-    //updatePbc(atom, param, true);
+#ifdef _MPI    
     ghostNeighbor(comm, atom, param);
+#else
+    updatePbc(atom, param, true);
+#endif 
     buildNeighbor(atom, neighbor);
     initForce(param);
     timeStop = getTimeStamp(); 
@@ -90,7 +95,7 @@ double reneighbour(int n, Parameter* param, Atom* atom, Neighbor* neighbor, Comm
     double timeStart, timeStop;
     timeStart = getTimeStamp();
     LIKWID_MARKER_START("reneighbour");
-    //updateAtomsPbc(atom, param, true);
+    //updateAtomsPbc(atom, param, true); function called at updateAtoms
 #ifdef SORT_ATOMS
     if ((n + 1) % param->resort_every == 0) {
         DEBUG_MESSAGE("Resorting atoms");
@@ -98,9 +103,12 @@ double reneighbour(int n, Parameter* param, Atom* atom, Neighbor* neighbor, Comm
         sortAtom(atom);
     }
 #endif
-    //setupPbc(atom, param);
-    //updatePbc(atom, param, true);
+#ifdef _MPI
     ghostNeighbor(comm, atom, param);
+#else 
+    setupPbc(atom, param);
+    updatePbc(atom, param, true);
+#endif 
     buildNeighbor(atom, neighbor);
     LIKWID_MARKER_STOP("reneighbour");
     timeStop = getTimeStamp();
@@ -120,11 +128,15 @@ void printAtomState(Atom* atom)
     // }
 }
 
-double updateAtoms(Comm* comm, Atom* atom)
+double updateAtoms(Comm* comm, Atom* atom, Parameter* param)
 {
     double timeStart, timeStop;
     timeStart = getTimeStamp();
+#ifdef _MPI
     exchangeComm(comm, atom);
+#else 
+    updateAtomsPbc(atom, param, true);
+#endif
     timeStop = getTimeStamp();
     return timeStop - timeStart;
 }
@@ -165,6 +177,7 @@ int main(int argc, char** argv)
         LIKWID_MARKER_REGISTER("reneighbour");
         // LIKWID_MARKER_REGISTER("pbc");
     }
+
     initComm(&argc, &argv, &comm);
     initParameter(&param);
     for (int i = 0; i < argc; i++) {
@@ -282,14 +295,7 @@ int main(int argc, char** argv)
         exit(0);
     }
     
-#ifdef CUDA_TARGET
-        if(param.balance > 0 || param.method > 0) {
-            if (comm.myproc == 0)
-                fprintf(stderr, "CUDA is only supported under full shell communication with not balance\n");
-            endComm(&comm);
-            exit(0);
-        }
-#endif
+
 
     param.cutneigh = param.cutforce + param.skin;
     timer[SETUP] = setup(&param, &eam, &atom, &neighbor, &stats, &comm, &grid);
@@ -306,7 +312,6 @@ int main(int argc, char** argv)
     }
 
     // writeInput(&param, &atom);
-
     timer[FORCE] = computeForce(&param, &atom, &neighbor, &stats);
     timer[NEIGH] = 0.0;
     timer[FORWARD] = 0.0;
@@ -320,13 +325,12 @@ int main(int argc, char** argv)
         //write_atoms_to_vtk_file(param.vtk_file, &atom, 0);
         printvtk(param.vtk_file, &comm, &atom, &param, 0);
     }
-
     for (int n = 0; n < param.ntimes; n++) {
         bool reneigh = (n + 1) % param.reneigh_every == 0;
         initialIntegrate(reneigh, &param, &atom);
 
         if (reneigh) {
-            timer[UPDATE] += updateAtoms(&comm, &atom);
+            timer[UPDATE] += updateAtoms(&comm, &atom, &param);
             if (param.balance && !((n + 1) % param.balance_every))
                 timer[BALANCE] += dynamicBalance(&comm, &grid, &atom, &param, timer[FORCE]);
             timer[NEIGH] += reneighbour(n, &param, &atom, &neighbor, &comm);
@@ -472,8 +476,7 @@ int main(int argc, char** argv)
     displayStatistics(&atom, &param, &stats, timer);
 #endif
     }
-
-endComm(&comm);
+    endComm(&comm);
     LIKWID_MARKER_CLOSE;
     return EXIT_SUCCESS;
 }

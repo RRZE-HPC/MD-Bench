@@ -37,10 +37,9 @@ typedef struct {
 } Grid;
 
 enum { RCB = 1, meanTimeRCB, Staggered };
-void setupGrid(Grid*, Atom*, Parameter*);
-void printGrid(Grid*);
-
 #ifdef _MPI
+    void setupGrid(Grid*, Atom*, Parameter*);
+    void printGrid(Grid*);
     typedef MD_FLOAT (*RCB_Method)(Atom*, MPI_Comm, int, double);
     void cartisian3d(Grid*, Parameter*, Box*);
     void rcbBalance(Grid*, Atom*, Parameter*, RCB_Method, int, double);

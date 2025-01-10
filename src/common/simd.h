@@ -69,7 +69,7 @@
 #define SIMD_PRINT_MASK(a) simd_print_mask(#a, a);
 
 // extern unsigned int simd_mask_to_u32(MD_SIMD_MASK a);
-
+/*
 static inline void simd_print_real(const char* ref, MD_SIMD_FLOAT a)
 {
     double x[VECTOR_WIDTH];
@@ -87,5 +87,5 @@ static inline void simd_print_mask(const char* ref, MD_SIMD_MASK a)
 {
     fprintf(stdout, "%s: %x\n", ref, simd_mask_to_u32(a));
 }
-
+*/
 #endif // __SIMD_H__

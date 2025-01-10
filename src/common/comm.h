@@ -7,6 +7,7 @@
 #ifndef COMM_H
 #define COMM_H
 
+
 #ifdef CLUSTER_PAIR
 #define FORWARD_SIZE  (3 * CLUSTER_N)
 #define REVERSE_SIZE  (3 * CLUSTER_N)
@@ -88,6 +89,9 @@ typedef struct {
 
 void initComm(int*, char***, Comm*);      // Init MPI
 void endComm(Comm*);                      // End MPI
+void barrierComm();                       // Barrier comm
+
+#ifdef _MPI
 void setupComm(Comm*, Parameter*, Grid*); // Creates a 3d grid or rcb grid
 void neighComm(Comm*,
     Parameter*,
@@ -98,10 +102,9 @@ void reverseComm(Comm*, Atom*, int); // Return info after forward
 void exchangeComm(Comm*, Atom*);     // Exchange info between procs
 void ghostComm(Comm*,
     Atom*,
-    int);                       // Build the ghost neighbours to send during next forwards
-void barrierComm(); 
+    int);                       // Build the ghost neighbours to send during next forwards 
 void growSend(Comm*, int);      // Grows the size of the buffer sender
 void growRecv(Comm*, int);      // Grows the size of the buffer receiver
 void growList(Comm*, int, int); // Grows the size of the list to send
-
 #endif
+#endif 
