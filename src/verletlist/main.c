@@ -312,15 +312,15 @@ int main(int argc, char** argv)
     }
 
     // writeInput(&param, &atom);
+    barrierComm();
+    timer[TOTAL] = getTimeStamp();
     timer[FORCE] = computeForce(&param, &atom, &neighbor, &stats);
     timer[NEIGH] = 0.0;
     timer[FORWARD] = 0.0;
     timer[UPDATE]  = 0.0;
     timer[BALANCE] = 0.0;
     timer[REVERSE] = reverse(&comm, &atom, &param);
-    barrierComm();
-    timer[TOTAL] = getTimeStamp();
-
+    
     if (param.vtk_file != NULL) {
         //write_atoms_to_vtk_file(param.vtk_file, &atom, 0);
         printvtk(param.vtk_file, &comm, &atom, &param, 0);

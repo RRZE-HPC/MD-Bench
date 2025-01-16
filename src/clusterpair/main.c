@@ -292,15 +292,15 @@ int main(int argc, char** argv)
 #ifdef CUDA_TARGET
     copyDataToCUDADevice(&atom, &neighbor);
 #endif 
+    barrierComm();
+    timer[TOTAL] = getTimeStamp();
     timer[FORCE]   = computeForce(&param, &atom, &neighbor, &stats);
     timer[NEIGH]   = 0.0;
     timer[FORWARD] = 0.0;
     timer[UPDATE]  = 0.0;
     timer[BALANCE] = 0.0;
     timer[REVERSE] = reverse(&comm, &atom, &param);
-    barrierComm();
-    timer[TOTAL] = getTimeStamp();
-
+    
     if (param.vtk_file != NULL) {
         //write_data_to_vtk_file(param.vtk_file, &atom, 0);
         printvtk(param.vtk_file, &comm, &atom, &param, 0);
