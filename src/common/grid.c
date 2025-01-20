@@ -441,8 +441,8 @@ void cartisian3d(Grid* grid, Parameter* param, Box* box)
     box->hi[_z] = (mycoord[_z] + 1) * len[_z];
 
     if (box->hi[_x]+eps > param->xprd) box->hi[_x]=param->xprd;
-    if (box->hi[_y]+eps > param->xprd) box->hi[_y]=param->yprd;
-    if (box->hi[_z]+eps > param->xprd) box->hi[_z]=param->zprd;
+    if (box->hi[_y]+eps > param->yprd) box->hi[_y]=param->yprd;
+    if (box->hi[_z]+eps > param->zprd) box->hi[_z]=param->zprd;
 
     MD_FLOAT domain[6] = { box->lo[_x],
         box->lo[_y],
