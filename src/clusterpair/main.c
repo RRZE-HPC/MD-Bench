@@ -249,6 +249,11 @@ int main(int argc, char** argv)
             continue;
         }
 
+        if ((strcmp(argv[i], "-setup") == 0)) {
+            param.setup = atoi(argv[++i]);
+            continue;
+        }
+
         if ((strcmp(argv[i], "-h") == 0) || (strcmp(argv[i], "--help") == 0)) {
             printf("MD Bench: A minimalistic re-implementation of miniMD\n");
             printf(HLINE);
@@ -269,7 +274,6 @@ int main(int argc, char** argv)
             exit(EXIT_SUCCESS);
         }
     }
-
 
     if (param.balance > 0 && param.method == 1) {
         if (comm.myproc == 0){

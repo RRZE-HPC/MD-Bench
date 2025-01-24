@@ -17,7 +17,7 @@
 #ifdef _MPI
     #include <mpi.h>
     #define world       MPI_COMM_WORLD
-    static MPI_Datatype type = (sizeof(MD_FLOAT) == 4) ? MPI_FLOAT : MPI_DOUBLE;
+    static MPI_Datatype type_float = (sizeof(MD_FLOAT) == 4) ? MPI_FLOAT : MPI_DOUBLE;
 #endif
 
 typedef struct {

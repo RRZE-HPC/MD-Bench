@@ -56,6 +56,7 @@ void initParameter(Parameter* param)
     param->balance       = 0;
     param->method        = 0;
     param->balance_every = param->reneigh_every;
+    param->setup         = 1;
 }
 
 void readParameter(Parameter* param, const char* filename)

@@ -14,7 +14,7 @@
 
 #ifdef _MPI
     #include <mpi.h>
-    static MPI_Datatype type = (sizeof(MD_FLOAT) == 4) ? MPI_FLOAT : MPI_DOUBLE;
+    static MPI_Datatype type_float = (sizeof(MD_FLOAT) == 4) ? MPI_FLOAT : MPI_DOUBLE;
 #endif
 
 static int* steparr;
@@ -74,7 +74,7 @@ void computeThermo(int iflag, Parameter* param, Atom* atom)
              param->mass;
     }
 #ifdef _MPI
-    MPI_Reduce(&t, &t_sum, 1, type, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&t, &t_sum, 1, type_float, MPI_SUM, 0, MPI_COMM_WORLD);
     t=t_sum;
 #endif 
 
@@ -118,7 +118,7 @@ void adjustThermo(Parameter* param, Atom* atom)
 
 #ifdef _MPI
     MD_FLOAT v_sum[3];
-    MPI_Allreduce(vtot, v_sum, 3, type, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(vtot, v_sum, 3, type_float, MPI_SUM, MPI_COMM_WORLD);
     vtot[0] = v_sum[0];
     vtot[1] = v_sum[1];
     vtot[2] = v_sum[2];
@@ -144,7 +144,7 @@ void adjustThermo(Parameter* param, Atom* atom)
     }
     
 #ifdef _MPI
-    MPI_Allreduce(&t, &t_sum, 1, type, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(&t, &t_sum, 1, type_float, MPI_SUM, MPI_COMM_WORLD);
     t = t_sum;
 #endif
 

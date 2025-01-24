@@ -24,6 +24,33 @@
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #endif
 
+int write_atoms_to_file(Atom* atom)
+{
+    // file system variable
+    char *file_system = getenv("FASTTMP");
+    
+    // Check if $FASTTMP is set
+    if (file_system == NULL) {
+        fprintf(stderr, "Error: FASTTMP environment variable is not set!\n");
+        return -1;
+    }
+
+    char file_path[256]; 
+    snprintf(file_path, sizeof(file_path), "%s/tmp_atoms.txt", file_system);
+
+    FILE *fp = fopen(file_path, "wb");
+    if (fp == NULL) {
+        perror("Error opening file");
+        return -1;
+    }
+
+    for (int i = 0; i < atom->Nlocal; ++i) {
+        fprintf(fp, "%lf %lf %lf %lf %lf %lf %d\n", atom_x(i), atom_y(i), atom_z(i), atom_vx(i), atom_vy(i),atom_vz(i),atom->type[i]);
+    }
+    fclose(fp);
+    return 0;
+}
+
 void initAtom(Atom* atom)
 {
     atom->x          = NULL;
@@ -71,6 +98,11 @@ void initAtom(Atom* atom)
 
 void createAtom(Atom* atom, Parameter* param)
 {
+    int me = 0;
+    #ifdef _MPI
+        MPI_Comm_rank(MPI_COMM_WORLD, &me);
+    #endif
+
     MD_FLOAT xlo  = 0.0;
     MD_FLOAT xhi  = param->xprd;
     MD_FLOAT ylo  = 0.0;
@@ -118,6 +150,7 @@ void createAtom(Atom* atom, Parameter* param)
     int oz        = 0;
     int subboxdim = 8;
 
+if(me == 0 && param->setup) {
     while (oz * subboxdim <= khi) {
 
         k = oz * subboxdim + sz;
@@ -188,6 +221,8 @@ void createAtom(Atom* atom, Parameter* param)
             oy = 0;
             oz++;
         }
+    }
+        write_atoms_to_file(atom);
     }
 }
 

@@ -61,7 +61,7 @@ double setup(Parameter* param, Eam* eam, Atom* atom, Neighbor* neighbor, Stats* 
     } else {
         readAtom(atom, param);
     }
-    setupNeighbor(param);
+    setupNeighbor(param);   
 #ifdef _MPI
     setupGrid(grid, atom, param);
     setupComm(comm, param, grid);
@@ -258,7 +258,10 @@ int main(int argc, char** argv)
             param.write_atom_file = strdup(argv[++i]);
             continue;
         }
-
+        if ((strcmp(argv[i], "-setup") == 0)) {
+            param.setup = atoi(argv[++i]);
+            continue;
+        }
         if ((strcmp(argv[i], "-h") == 0) || (strcmp(argv[i], "--help") == 0)) {
             if (comm.myproc == 0) {
                 printf("MD Bench: A performance-oriented prototyping harness for MD "
@@ -294,8 +297,6 @@ int main(int argc, char** argv)
         endComm(&comm);
         exit(0);
     }
-    
-
 
     param.cutneigh = param.cutforce + param.skin;
     timer[SETUP] = setup(&param, &eam, &atom, &neighbor, &stats, &comm, &grid);

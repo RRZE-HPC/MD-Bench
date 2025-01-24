@@ -259,7 +259,7 @@ void forwardComm(Comm* comm, Atom* atom, int iswap)
             nrecv  = comm->atom_recv[ineigh] * size;
             MPI_Irecv(&comm->buf_recv[offset],
                 nrecv,
-                type,
+                type_float,
                 comm->nrecv[ineigh],
                 0,
                 world,
@@ -272,7 +272,7 @@ void forwardComm(Comm* comm, Atom* atom, int iswap)
              ineigh++) {
             offset = comm->off_atom_send[ineigh] * size;
             nsend  = comm->atom_send[ineigh] * size;
-            MPI_Send(&comm->buf_send[offset], nsend, type, comm->nsend[ineigh], 0, world);
+            MPI_Send(&comm->buf_send[offset], nsend, type_float, comm->nsend[ineigh], 0, world);
         }
 
     if (comm->othersend[iswap]) MPI_Waitall(nrqst, requests, MPI_STATUS_IGNORE);
@@ -318,7 +318,7 @@ void reverseComm(Comm* comm, Atom* atom, int iswap)
             nrecv  = comm->atom_send[ineigh] * size;
             MPI_Irecv(&comm->buf_recv[offset],
                 nrecv,
-                type,
+                type_float,
                 comm->nsend[ineigh],
                 0,
                 world,
@@ -330,7 +330,7 @@ void reverseComm(Comm* comm, Atom* atom, int iswap)
              ineigh++) {
             offset = comm->off_atom_recv[ineigh] * size;
             nsend  = comm->atom_recv[ineigh] * size;
-            MPI_Send(&comm->buf_send[offset], nsend, type, comm->nrecv[ineigh], 0, world);
+            MPI_Send(&comm->buf_send[offset], nsend, type_float, comm->nrecv[ineigh], 0, world);
         }
     if (comm->othersend[iswap]) MPI_Waitall(nrqst, requests, MPI_STATUS_IGNORE);
   
@@ -426,7 +426,7 @@ void ghostComm(Comm* comm, Atom* atom, int iswap)
             nrecv  = comm->atom_recv[ineigh] * size;
             MPI_Irecv(&comm->buf_recv[offset],
                 nrecv,
-                type,
+                type_float,
                 comm->nrecv[ineigh],
                 0,
                 world,
@@ -439,7 +439,7 @@ void ghostComm(Comm* comm, Atom* atom, int iswap)
              ineigh++) {
             offset = comm->off_atom_send[ineigh] * size;
             nsend  = comm->atom_send[ineigh] * size;
-            MPI_Send(&comm->buf_send[offset], nsend, type, comm->nsend[ineigh], 0, world);
+            MPI_Send(&comm->buf_send[offset], nsend, type_float, comm->nsend[ineigh], 0, world);
         }
     if (comm->othersend[iswap]) MPI_Waitall(nrqst, requests, MPI_STATUS_IGNORE);
 
@@ -524,7 +524,7 @@ void exchangeComm(Comm* comm, Atom* atom)
         offset = offset_recv[ineigh];
         MPI_Irecv(&comm->buf_recv[offset],
             size_recv[ineigh],
-            type,
+            type_float,
             comm->nexch[ineigh],
             0,
             world,
@@ -532,7 +532,7 @@ void exchangeComm(Comm* comm, Atom* atom)
     }
     // Send elements
     for (int ineigh = 0; ineigh < numneigh; ineigh++){
-        MPI_Send(comm->buf_send, nsend, type, comm->nexch[ineigh], 0, world);
+        MPI_Send(comm->buf_send, nsend, type_float, comm->nexch[ineigh], 0, world);
     } 
     MPI_Waitall(nrqst, requests, MPI_STATUS_IGNORE);
     buf = comm->buf_recv;

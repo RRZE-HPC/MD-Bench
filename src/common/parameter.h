@@ -66,6 +66,7 @@ typedef struct {
     int balance;
     int method;
     int balance_every;
+    int setup;
 } Parameter;
 
 void initParameter(Parameter*);

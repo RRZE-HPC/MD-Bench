@@ -13,9 +13,9 @@ ENABLE_LIKWID ?= false
 # Enable OpenMP parallelization (true or false)
 ENABLE_OPENMP ?= false
 # Enable MPI parallelization
-ENABLE_MPI ?= false
+ENABLE_MPI ?= true
 # SP or DP
-DATA_TYPE ?= DP
+DATA_TYPE ?= SP
 # AOS or SOA
 DATA_LAYOUT ?= AOS
 # Debug
