@@ -523,8 +523,6 @@ int read_atoms_from_file(Atom* atom, char* file){
                 atom_vy(i)=vy;
                 atom_vz(i)=vz;
                 atom->type[i]=type;
-		if(type >= 4)
-			printf("Type error.\n");
                 i++;
             }
     }
