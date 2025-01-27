@@ -469,7 +469,7 @@ void initGrid(Grid* grid, int nprocs)
     grid->Timer = 0.;
 }
 
-int read_atoms_from_file(Atom* atom){
+int read_atoms_from_file(Atom* atom, char* file){
     
     // file system variable
     char *file_system = getenv("FASTTMP");
@@ -481,7 +481,7 @@ int read_atoms_from_file(Atom* atom){
     }
 
     char file_path[256]; 
-    snprintf(file_path, sizeof(file_path), "%s/tmp_atoms.txt", file_system);
+    snprintf(file_path, sizeof(file_path), "%s/%s", file_system, file);
 
     FILE *fp = fopen(file_path, "r");
     if (fp == NULL) {
@@ -523,6 +523,8 @@ int read_atoms_from_file(Atom* atom){
                 atom_vy(i)=vy;
                 atom_vz(i)=vz;
                 atom->type[i]=type;
+		if(type >= 4)
+			printf("Type error.\n");
                 i++;
             }
     }
@@ -559,7 +561,7 @@ void setupGrid(Grid* grid, Atom* atom, Parameter* param)
     }
 
     MPI_Barrier(world);
-    read_atoms_from_file(atom);
+    read_atoms_from_file(atom, param->atom_file_name);
 
 
      //printGrid(grid);

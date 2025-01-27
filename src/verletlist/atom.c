@@ -24,7 +24,7 @@
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #endif
 
-int write_atoms_to_file(Atom* atom)
+int write_atoms_to_file(Atom* atom, char* name)
 {
     // file system variable
     char *file_system = getenv("FASTTMP");
@@ -36,7 +36,7 @@ int write_atoms_to_file(Atom* atom)
     }
 
     char file_path[256]; 
-    snprintf(file_path, sizeof(file_path), "%s/tmp_atoms.txt", file_system);
+    snprintf(file_path, sizeof(file_path), "%s/%s", file_system, name);
 
     FILE *fp = fopen(file_path, "wb");
     if (fp == NULL) {
@@ -222,7 +222,7 @@ if(me == 0 && param->setup) {
             oz++;
         }
     }
-        write_atoms_to_file(atom);
+        write_atoms_to_file(atom, param->atom_file_name);
     }
 }
 
