@@ -1,5 +1,5 @@
 # Compiler tool chain (GCC/CLANG/ICC/ICX/ONEAPI/NVCC)
-TOOLCHAIN ?= ICC
+TOOLCHAIN ?= NVCC
 # ISA of instruction code (X86/ARM)
 ISA ?= X86
 # Instruction set for instrinsic kernels (NONE/<X86-SIMD>/<ARM-SIMD>)
@@ -15,7 +15,7 @@ ENABLE_OPENMP ?= false
 # Enable MPI parallelization
 ENABLE_MPI ?= true
 # SP or DP
-DATA_TYPE ?= SP
+DATA_TYPE ?= DP
 # AOS or SOA
 DATA_LAYOUT ?= AOS
 # Debug

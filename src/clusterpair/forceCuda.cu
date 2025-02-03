@@ -109,7 +109,9 @@ extern "C" void copyDataToCUDADevice(Atom* atom, Neighbor* neighbor)
 
     memcpyToGPU(cuda_natoms, natoms, atom->Nclusters_local * sizeof(int));
     memcpyToGPU(cuda_jclusters_natoms, ngatoms, atom->Nclusters_ghost * sizeof(int));
+#ifndef _MPI
     memcpyToGPU(cuda_border_map, atom->border_map, atom->Nclusters_ghost * sizeof(int));
+#endif
     memcpyToGPU(cuda_PBCx, atom->PBCx, atom->Nclusters_ghost * sizeof(int));
     memcpyToGPU(cuda_PBCy, atom->PBCy, atom->Nclusters_ghost * sizeof(int));
     memcpyToGPU(cuda_PBCz, atom->PBCz, atom->Nclusters_ghost * sizeof(int));
@@ -555,6 +557,43 @@ extern "C" void finalIntegrateCUDA(Parameter* param, Atom* atom)
     cuda_assert("cudaFinalIntegrate", cudaPeekAtLastError());
     cuda_assert("cudaFinalIntegrate", cudaDeviceSynchronize());
 }
+
+extern "C" void copyGhostFromGPU(Atom* atom)
+{
+    memcpyFromGPU(atom->cl_x,
+                cuda_cl_x,
+                atom->Nclusters_local * CLUSTER_M * 3 * sizeof(MD_FLOAT));
+}   
+
+extern "C" void copyGhostToGPU(Atom* atom)
+{
+    int ncj = CJ0_FROM_CI(atom->Nclusters_local);
+    int cj_vec_base = CJ_VECTOR_BASE_INDEX(ncj);
+    MD_FLOAT* host_cl_x  = &atom->cl_x[cj_vec_base];
+    MD_FLOAT* device_cl_x = &cuda_cl_x[cj_vec_base];
+    memcpyToGPU(device_cl_x, 
+                host_cl_x, 
+                atom->Nclusters_ghost * CLUSTER_N * 3 * sizeof(MD_FLOAT));  
+}
+
+extern "C" void copyForceFromGPU(Atom* atom)
+{
+    memcpyFromGPU(atom->cl_f,
+                cuda_cl_f,
+                atom->Nclusters_local * CLUSTER_M * 3 * sizeof(MD_FLOAT));
+}   
+
+extern "C" void copyForceToGPU(Atom* atom)
+{
+    int ncj = CJ0_FROM_CI(atom->Nclusters_local);
+    int cj_vec_base = CJ_VECTOR_BASE_INDEX(ncj);
+    MD_FLOAT* host_cl_f  = &atom->cl_f[cj_vec_base];
+    MD_FLOAT* device_cl_f = &cuda_cl_f[cj_vec_base];
+    memcpyToGPU(device_cl_f, 
+                host_cl_f, 
+                atom->Nclusters_ghost * CLUSTER_N * 3 * sizeof(MD_FLOAT));  
+}
+
 
 /*
 extern "C" void forwardCommCUDA(Comm* comm, Atom* atom, int iswap)

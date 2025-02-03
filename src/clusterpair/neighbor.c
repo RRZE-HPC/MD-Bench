@@ -277,7 +277,6 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
         neighbor->neighbors_imask = (unsigned int*)malloc(
             nmax * neighbor->maxneighs * sizeof(unsigned int));
     }
-
     MD_FLOAT bbx    = 0.5 * (binsizex + binsizex);
     MD_FLOAT bby    = 0.5 * (binsizey + binsizey);
     MD_FLOAT rbb_sq = MAX(0.0, cutneigh - 0.5 * sqrt(bbx * bbx + bby * bby));
@@ -288,7 +287,6 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
     while (resize) {
         int new_maxneighs = neighbor->maxneighs;
         resize            = 0;
-
         for (int ci = 0; ci < atom->Nclusters_local; ci++) {
             int ci_cj0    = CJ0_FROM_CI(ci);
             int* neighptr = &(neighbor->neighbors[ci * neighbor->maxneighs]);
@@ -350,7 +348,6 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
 #endif
 
 #endif
-
             for (int k = 0; k < nstencil; k++) {
                 int jbin     = ibin + stencil[k];
                 int* loc_bin = &bin_clusters[jbin * clusters_per_bin];
@@ -618,7 +615,6 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
                     }
                 }
             }
-
             // Fill neighbor list with dummy values to fit vector width
             if (CLUSTER_N < VECTOR_WIDTH) {
                 while (n % (VECTOR_WIDTH / CLUSTER_N)) {

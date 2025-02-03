@@ -15,7 +15,7 @@ PROFILE     = #-profile-functions -g  -pg
 # SIMD options
 OPTS        = -Ofast
 ifeq ($(strip $(SIMD)),AVX512)
-OPTS       +=  -xCORE-AVX512 -qopt-zmm-usage=high #-debug -g
+OPTS       += -xCORE-AVX512 -qopt-zmm-usage=high #-debug -g
 else
 DEFINES    += -DNO_ZMM_INTRIN
 endif

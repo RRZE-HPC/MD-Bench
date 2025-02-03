@@ -20,11 +20,24 @@
 
 static void addDummyCluster(Atom*);
 
+#ifdef CUDA_TARGET
+void copyGhostFromGPU(Atom*);
+void copyGhostToGPU(Atom*);
+void copyForceFromGPU(Atom*);
+void copyForceToGPU(Atom*);
+#endif 
+
+
 double forward(Comm* comm, Atom* atom, Parameter* param)
 {
     double S, E;
     S = getTimeStamp();
 #ifdef _MPI
+
+#ifdef CUDA_TARGET
+    copyGhostFromGPU(atom); 
+#endif
+
     if (param->method == halfShell) {
         for (int iswap = 0; iswap < 5; iswap++)
             forwardComm(comm, atom, iswap);
@@ -35,6 +48,11 @@ double forward(Comm* comm, Atom* atom, Parameter* param)
         for (int iswap = 0; iswap < 6; iswap++)
             forwardComm(comm, atom, iswap);
     }
+
+#ifdef CUDA_TARGET
+    copyGhostToGPU(atom);
+#endif
+
 #else 
     updatePbc(atom, param, false);
 #endif
@@ -47,6 +65,11 @@ double reverse(Comm* comm, Atom* atom, Parameter* param)
     double S, E;
     S = getTimeStamp();
 #ifdef _MPI
+
+#ifdef CUDA_TARGET
+    copyForceFromGPU(atom); 
+#endif
+
     if (param->method == halfShell) {
         for (int iswap = 4; iswap >= 0; iswap--)
             reverseComm(comm, atom, iswap);
@@ -58,6 +81,11 @@ double reverse(Comm* comm, Atom* atom, Parameter* param)
             reverseComm(comm, atom, iswap);
     } else {
     } // Full Shell Reverse does nothing
+
+#ifdef CUDA_TARGET
+    copyForceToGPU(atom);
+#endif
+
 #endif
     E = getTimeStamp();
     return E - S;
@@ -87,7 +115,9 @@ void ghostNeighbor(Comm* comm, Atom* atom, Parameter* param)
 #endif
 
 #ifdef CLUSTER_PAIR
-void addDummyCluster(Atom* atom){
+
+void addDummyCluster(Atom* atom)
+{
     // atom->Nclusters_ghost++; // GHOST J CLUSTERS
     // atom->Nclusters = atom->Nclusters_local + Nghost + 1;
     atom->dummy_cj = LOCAL + GHOST;

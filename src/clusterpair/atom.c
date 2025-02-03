@@ -28,11 +28,11 @@ inline int get_ncj_from_nci(int nci)
 int write_atoms_to_file(Atom* atom)
 {
     // file system variable
-    char *file_system = getenv("FASTTMP");
+    char *file_system = getenv("TMPDIR");
     
     // Check if $FASTTMP is set
     if (file_system == NULL) {
-        fprintf(stderr, "Error: FASTTMP environment variable is not set!\n");
+        fprintf(stderr, "Error: TMPDIR environment variable is not set!\n");
         return -1;
     }
 

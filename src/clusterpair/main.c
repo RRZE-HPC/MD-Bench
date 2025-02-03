@@ -110,21 +110,6 @@ double reneighbour(Comm* comm, Parameter* param, Atom* atom, Neighbor* neighbor)
     return timeStop - timeStart;
 }
 
-void printAtomState(Atom* atom)
-{
-    printf("Atom counts: Natoms=%d Nlocal=%d Nghost=%d Nmax=%d\n",
-        atom->Natoms,
-        atom->Nlocal,
-        atom->Nghost,
-        atom->Nmax);
-
-    /*     int nall = atom->Nlocal + atom->Nghost; */
-
-    /*     for (int i=0; i<nall; i++) { */
-    /*         printf("%d  %f %f %f\n", i, atom->x[i], atom->y[i], atom->z[i]); */
-    /*     } */
-}
-
 double updateAtoms(Comm* comm, Atom* atom, Parameter* param)
 {
     double timeStart, timeStop;
@@ -236,7 +221,6 @@ int main(int argc, char** argv)
             param.vtk_file = strdup(argv[++i]);
             continue;
         }
-
         if ((strcmp(argv[i], "--xtc") == 0)) {
 #ifndef XTC_OUTPUT
             fprintf(stderr,
@@ -304,7 +288,6 @@ int main(int argc, char** argv)
     timer[UPDATE]  = 0.0;
     timer[BALANCE] = 0.0;
     timer[REVERSE] = reverse(&comm, &atom, &param);
-    
     if (param.vtk_file != NULL) {
         //write_data_to_vtk_file(param.vtk_file, &atom, 0);
         printvtk(param.vtk_file, &comm, &atom, &param, 0);
