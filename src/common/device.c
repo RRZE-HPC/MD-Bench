@@ -41,7 +41,6 @@ void* reallocateGPU(void* ptr, size_t new_bytesize)
         cudaFree(ptr);
 #endif
     }
-
     return allocateGPU(new_bytesize);
 }
 

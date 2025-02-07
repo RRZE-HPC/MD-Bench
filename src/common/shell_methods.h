@@ -17,14 +17,12 @@
 #include <util.h>
 #include <pbc.h>
 
-
 static void addDummyCluster(Atom*);
-
 #ifdef CUDA_TARGET
 void copyGhostFromGPU(Atom*);
-void copyGhostToGPU(Atom*);
-void copyForceFromGPU(Atom*);
-void copyForceToGPU(Atom*);
+extern void copyGhostToGPU(Atom*);
+extern void copyForceFromGPU(Atom*);
+extern void copyForceToGPU(Atom*);
 #endif 
 
 

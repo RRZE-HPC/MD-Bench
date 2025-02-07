@@ -58,4 +58,9 @@ extern void buildClusters(Atom*);
 extern void defineJClusters(Atom*);
 extern void binClusters(Atom*);
 extern void updateSingleAtoms(Atom*);
+
+#ifdef CUDA_TARGET
+extern void growNeighborCUDA(Atom*, Neighbor*);
+#endif
+
 #endif

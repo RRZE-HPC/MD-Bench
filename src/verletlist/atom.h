@@ -53,6 +53,7 @@ extern int readAtom_dmp(Atom*, Parameter*);
 extern int readAtom_in(Atom*, Parameter*);
 extern void writeAtom(Atom*, Parameter*);
 extern void growAtom(Atom*);
+extern void freeAtom(Atom*);
 
 int packGhost(Atom*, int, MD_FLOAT*, int*);
 int unpackGhost(Atom*, int, MD_FLOAT*);

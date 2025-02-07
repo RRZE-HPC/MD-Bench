@@ -66,7 +66,7 @@ double setup(Parameter* param, Eam* eam, Atom* atom, Neighbor* neighbor, Stats* 
     setupNeighbor(param, atom);
 #ifdef _MPI
     setupGrid(grid, atom, param);
-    setupComm(comm, param, grid);   
+    setupComm(comm, param, grid);
     if (param->balance) {
         initialBalance(param, atom, neighbor, stats, comm, grid);
     }
@@ -266,11 +266,11 @@ int main(int argc, char** argv)
         endComm(&comm);
         exit(0);
     }
-
+    
     param.cutneigh = param.cutforce + param.skin;
     timer[SETUP] = setup(&param, &eam, &atom, &neighbor, &stats, &comm, &grid);
     if (comm.myproc == 0) printParameter(&param);
-    if (comm.myproc == 0) printf(HLINE);
+    if (comm.myproc == 0) printf(HLINE); fflush(stdout);
     if (comm.myproc == 0) printf("step\ttemp\t\tpressure\n");
     computeThermo(0, &param, &atom);
 #if defined(MEM_TRACER) || defined(INDEX_TRACER)

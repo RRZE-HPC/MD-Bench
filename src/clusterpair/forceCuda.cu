@@ -20,6 +20,7 @@ extern "C" {
 #include <stats.h>
 #include <timing.h>
 #include <util.h>
+#include <allocate.h>
 }
 
 extern "C" {
@@ -78,8 +79,7 @@ extern "C" void initDevice(Atom* atom, Neighbor* neighbor)
     cuda_PBCy             = (int*)allocateGPU(atom->Nclusters_max * sizeof(int));
     cuda_PBCz             = (int*)allocateGPU(atom->Nclusters_max * sizeof(int));
     cuda_numneigh         = (int*)allocateGPU(atom->Nclusters_max * sizeof(int));
-    cuda_neighbors        = (int*)allocateGPU(
-        atom->Nclusters_max * neighbor->maxneighs * sizeof(int));
+    cuda_neighbors        = (int*)allocateGPU(atom->Nclusters_max * neighbor->maxneighs * sizeof(int));
     natoms  = (int*)malloc(atom->Nclusters_max * sizeof(int));
     ngatoms = (int*)malloc(atom->Nclusters_max * sizeof(int));
 }
@@ -111,10 +111,10 @@ extern "C" void copyDataToCUDADevice(Atom* atom, Neighbor* neighbor)
     memcpyToGPU(cuda_jclusters_natoms, ngatoms, atom->Nclusters_ghost * sizeof(int));
 #ifndef _MPI
     memcpyToGPU(cuda_border_map, atom->border_map, atom->Nclusters_ghost * sizeof(int));
-#endif
     memcpyToGPU(cuda_PBCx, atom->PBCx, atom->Nclusters_ghost * sizeof(int));
     memcpyToGPU(cuda_PBCy, atom->PBCy, atom->Nclusters_ghost * sizeof(int));
     memcpyToGPU(cuda_PBCz, atom->PBCz, atom->Nclusters_ghost * sizeof(int));
+#endif
     memcpyToGPU(cuda_numneigh, neighbor->numneigh, atom->Nclusters_local * sizeof(int));
     memcpyToGPU(cuda_neighbors,
         neighbor->neighbors,
@@ -486,7 +486,8 @@ extern "C" double computeForceLJCUDA(
     MD_FLOAT epsilon    = param->epsilon;
 #endif
 
-    memsetGPU(cuda_cl_f, 0, atom->Nclusters_local * CLUSTER_M * 3 * sizeof(MD_FLOAT));
+    //memsetGPU(cuda_cl_f, 0, atom->Nclusters_local * CLUSTER_M * 3 * sizeof(MD_FLOAT));
+    memsetGPU(cuda_cl_f, 0, atom->Nclusters_max * CLUSTER_M * 3 * sizeof(MD_FLOAT));
     const int threads_num = 1;
     dim3 block_size       = dim3(threads_num, CLUSTER_N, CLUSTER_M);
     dim3 grid_size = dim3((atom->Nclusters_local + threads_num - 1) / threads_num, 1, 1);
@@ -580,20 +581,37 @@ extern "C" void copyForceFromGPU(Atom* atom)
 {
     memcpyFromGPU(atom->cl_f,
                 cuda_cl_f,
-                atom->Nclusters_local * CLUSTER_M * 3 * sizeof(MD_FLOAT));
+                atom->Nclusters_max * CLUSTER_M * 3 * sizeof(MD_FLOAT));
 }   
 
 extern "C" void copyForceToGPU(Atom* atom)
 {
-    int ncj = CJ0_FROM_CI(atom->Nclusters_local);
-    int cj_vec_base = CJ_VECTOR_BASE_INDEX(ncj);
-    MD_FLOAT* host_cl_f  = &atom->cl_f[cj_vec_base];
-    MD_FLOAT* device_cl_f = &cuda_cl_f[cj_vec_base];
-    memcpyToGPU(device_cl_f, 
-                host_cl_f, 
-                atom->Nclusters_ghost * CLUSTER_N * 3 * sizeof(MD_FLOAT));  
+    memcpyToGPU(cuda_cl_f, 
+                atom->cl_f, 
+                atom->Nclusters_max * CLUSTER_N * 3 * sizeof(MD_FLOAT));  
 }
 
+extern "C" void growClustersCUDA(Atom* atom)
+{ 
+    if(cuda_cl_x){
+        cuda_cl_x               = (MD_FLOAT*) reallocateGPU(cuda_cl_x, atom->Nclusters_max * CLUSTER_M * 3 * sizeof(MD_FLOAT));
+        cuda_cl_v               = (MD_FLOAT*) reallocateGPU(cuda_cl_v, atom->Nclusters_max * CLUSTER_M * 3 * sizeof(MD_FLOAT));
+        cuda_cl_f               = (MD_FLOAT*) reallocateGPU(cuda_cl_f, atom->Nclusters_max * CLUSTER_M * 3 * sizeof(MD_FLOAT));
+        cuda_natoms             = (int*)reallocateGPU(cuda_natoms, atom->Nclusters_max * sizeof(int));
+        cuda_jclusters_natoms   = (int*)reallocateGPU(cuda_jclusters_natoms, atom->Nclusters_max * sizeof(int));
+        cuda_numneigh           = (int*)reallocateGPU(cuda_numneigh, atom->Nclusters_max * sizeof(int));
+        free(natoms);
+        free(ngatoms);
+        natoms                  = (int*)allocate(ALIGNMENT, atom->Nclusters_max * sizeof(int));
+        ngatoms                 = (int*)allocate(ALIGNMENT, atom->Nclusters_max * sizeof(int));
+#ifndef ONE_ATOM_TYPE
+        cuda_cl_t = (int*) reallocateGPU(cuda_cl_t,atom->Nclusters_max * CLUSTER_M * sizeof(int)); 
+#endif
+    }
+}
+extern "C" void growNeighborCUDA(Atom* atom,  Neighbor* neighbor){
+    cuda_neighbors  = (int*)reallocateGPU(cuda_neighbors,atom->Nclusters_max * neighbor->maxneighs * sizeof(int));
+}
 
 /*
 extern "C" void forwardCommCUDA(Comm* comm, Atom* atom, int iswap)

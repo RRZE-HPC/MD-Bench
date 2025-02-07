@@ -780,9 +780,31 @@ void growClusters(Atom* atom)
         ALIGNMENT,
         atom->Nclusters_max * CLUSTER_M * sizeof(int),
         nold * CLUSTER_M * sizeof(int));
+
+#ifdef CUDA_TARGET
+    growClustersCUDA(atom);
+#endif     
 }
 
 /* MPI added*/
+
+void freeAtom(Atom* atom)
+{
+ 
+#ifdef AOS
+    free(atom->x);  atom->x= NULL; 
+#else
+    free(atom->x);  atom->x=NULL;
+    free(atom->y);  atom->y=NULL;
+    free(atom->z);  atom->z=NULL;
+#endif
+    free(atom->vx); atom->vx=NULL; 
+    free(atom->vy); atom->vy=NULL;   
+    free(atom->vz); atom->vz=NULL; 
+    free(atom->type); atom->type=NULL;
+}
+
+
 void growPbc(Atom* atom)
 {
     int nold = atom->NmaxGhost;
@@ -866,7 +888,7 @@ int packGhost(Atom* atom, int cj, MD_FLOAT* buf, int* pbc)
         MD_FLOAT bbminy = INFINITY, bbmaxy = -INFINITY;
         MD_FLOAT bbminz = INFINITY, bbmaxz = -INFINITY;
 
-        buf[m++] = atom->jclusters[cj].natoms;
+        buf[m++] = (MD_FLOAT) atom->jclusters[cj].natoms;
         
         for (int cjj = 0; cjj < atom->jclusters[cj].natoms; cjj++) {
 
@@ -877,7 +899,7 @@ int packGhost(Atom* atom, int cj, MD_FLOAT* buf, int* pbc)
             buf[m++] = xtmp;
             buf[m++] = ytmp;
             buf[m++] = ztmp;
-            buf[m++] = atom->cl_t[cj_sca_base + cjj];
+            buf[m++] = (MD_FLOAT) atom->cl_t[cj_sca_base + cjj];
 
             if (bbminx > xtmp) {
                 bbminx = xtmp;
@@ -900,10 +922,10 @@ int packGhost(Atom* atom, int cj, MD_FLOAT* buf, int* pbc)
         }
 
         for (int cjj = atom->jclusters[cj].natoms; cjj < CLUSTER_N; cjj++) {
-            buf[m++] = -1; // x
-            buf[m++] = -1; // y
-            buf[m++] = -1; // z
-            buf[m++] = -1; // type
+            buf[m++] = -1.; // x
+            buf[m++] = -1.; // y
+            buf[m++] = -1.; // z
+            buf[m++] = -1.; // type
         }
 
         buf[m++] = bbminx;
@@ -915,9 +937,9 @@ int packGhost(Atom* atom, int cj, MD_FLOAT* buf, int* pbc)
         // TODO: check atom->ncj
         int ghostId = cj - atom->ncj;
         // check for ghost particles
-        buf[m++] = (cj - atom->ncj >= 0) ? pbc[_x] + atom->PBCx[ghostId] : pbc[_x];
-        buf[m++] = (cj - atom->ncj >= 0) ? pbc[_y] + atom->PBCy[ghostId] : pbc[_y];
-        buf[m++] = (cj - atom->ncj >= 0) ? pbc[_z] + atom->PBCz[ghostId] : pbc[_z];
+        buf[m++] = (MD_FLOAT) (cj - atom->ncj >= 0) ? pbc[_x] + atom->PBCx[ghostId] : pbc[_x];
+        buf[m++] = (MD_FLOAT) (cj - atom->ncj >= 0) ? pbc[_y] + atom->PBCy[ghostId] : pbc[_y];
+        buf[m++] = (MD_FLOAT) (cj - atom->ncj >= 0) ? pbc[_z] + atom->PBCz[ghostId] : pbc[_z];
     }
     return m;
 }
@@ -926,20 +948,22 @@ int unpackGhost(Atom* atom, int cj, MD_FLOAT* buf)
 {
     int m    = 0;
     int jfac = MAX(1, CLUSTER_N / CLUSTER_M);
-    if (cj * jfac >= atom->Nclusters_max) growClusters(atom);
+    if (cj * jfac >= atom->Nclusters_max){
+        growClusters(atom);
+    } 
     if (atom->Nclusters_ghost >= atom->NmaxGhost) growPbc(atom);
 
     int cj_sca_base = CJ_SCALAR_BASE_INDEX(cj);
     int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
     MD_FLOAT* cj_x  = &atom->cl_x[cj_vec_base];
 
-    atom->jclusters[cj].natoms = buf[m++];
+    atom->jclusters[cj].natoms = (int) buf[m++];
     for (int cjj = 0; cjj < atom->jclusters[cj].natoms; cjj++) {
 
         cj_x[CL_X_OFFSET + cjj]          = buf[m++];
         cj_x[CL_Y_OFFSET + cjj]          = buf[m++];
         cj_x[CL_Z_OFFSET + cjj]          = buf[m++];
-        atom->cl_t[cj_sca_base + cjj] = buf[m++];
+        atom->cl_t[cj_sca_base + cjj] = (int) buf[m++];
         atom->Nghost++;
     }
 
@@ -957,9 +981,9 @@ int unpackGhost(Atom* atom, int cj, MD_FLOAT* buf)
     atom->jclusters[cj].bbmaxy        = buf[m++];
     atom->jclusters[cj].bbminz        = buf[m++];
     atom->jclusters[cj].bbmaxz        = buf[m++];
-    atom->PBCx[atom->Nclusters_ghost] = buf[m++];
-    atom->PBCy[atom->Nclusters_ghost] = buf[m++];
-    atom->PBCz[atom->Nclusters_ghost] = buf[m++];
+    atom->PBCx[atom->Nclusters_ghost] = (int) buf[m++];
+    atom->PBCy[atom->Nclusters_ghost] = (int) buf[m++];
+    atom->PBCz[atom->Nclusters_ghost] = (int) buf[m++];
     atom->Nclusters_ghost++;
 }
 

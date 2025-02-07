@@ -488,7 +488,11 @@ int read_atoms_from_file(Atom* atom){
         perror("Error opening file");
         return -1;
     }
-
+ 
+    if(atom->Nmax > 0){
+        freeAtom(atom);
+        atom->Nmax=0;
+    } 
     atom->Nlocal = 0;
     int i = 0;
     
@@ -507,7 +511,6 @@ int read_atoms_from_file(Atom* atom){
 #else
     #define SCANF_FORMAT "%lf %lf %lf %lf %lf %lf %d"
 #endif
-
     while (fscanf(fp, SCANF_FORMAT, &x, &y, &z, &vx, &vy, &vz, &type) == 7) {
         if (x >= xlo && x < xhi && y >= ylo && y < yhi &&
             z >= zlo && z < zhi){

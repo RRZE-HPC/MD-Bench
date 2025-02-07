@@ -6,7 +6,7 @@
 #include <util.h>
 
 #define NEIGHMIN  6
-#define BUFFACTOR 2
+#define BUFFACTOR 1.5
 #define BUFMIN    1000
 #define BUFEXTRA  100
 #define world     MPI_COMM_WORLD
@@ -420,6 +420,7 @@ void ghostComm(Comm* comm, Atom* atom, int iswap)
 
     // Receives elements
     if (comm->othersend[iswap])
+    {
         for (nrqst = 0, ineigh = comm->recvfrom[iswap]; ineigh < comm->recvtill[iswap];
              ineigh++) {
             offset = comm->off_atom_recv[ineigh] * size;
@@ -432,16 +433,22 @@ void ghostComm(Comm* comm, Atom* atom, int iswap)
                 world,
                 &requests[nrqst++]);
         }
+    }
 
     // Send elements
     if (comm->othersend[iswap])
+    {
         for (int ineigh = comm->sendfrom[iswap]; ineigh < comm->sendtill[iswap];
              ineigh++) {
             offset = comm->off_atom_send[ineigh] * size;
             nsend  = comm->atom_send[ineigh] * size;
             MPI_Send(&comm->buf_send[offset], nsend, type_float, comm->nsend[ineigh], 0, world);
         }
-    if (comm->othersend[iswap]) MPI_Waitall(nrqst, requests, MPI_STATUS_IGNORE);
+    }
+
+    if (comm->othersend[iswap]) {
+        MPI_Waitall(nrqst, requests, MPI_STATUS_IGNORE);
+    }
 
     if (comm->othersend[iswap]){ 
         buf = comm->buf_recv;
@@ -562,12 +569,11 @@ void exchangeComm(Comm* comm, Atom* atom)
 }
 
 // Internal functions
-
 inline void growRecv(Comm* comm, int n)
 {
     comm->maxrecv = BUFFACTOR * n;
-    if (comm->buf_recv) free(comm->buf_recv);
-    comm->buf_recv = (MD_FLOAT*)allocate(ALIGNMENT, comm->maxrecv * sizeof(MD_FLOAT));
+    if(comm->buf_recv) free(comm->buf_recv);
+    comm->buf_recv = (MD_FLOAT*) allocate(ALIGNMENT, comm->maxrecv * sizeof(MD_FLOAT));
 }
 
 inline void growSend(Comm* comm, int n)

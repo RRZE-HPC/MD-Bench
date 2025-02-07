@@ -68,6 +68,7 @@ extern int readAtomPdb(Atom*, Parameter*);
 extern int readAtomGro(Atom*, Parameter*);
 extern int readAtomDmp(Atom*, Parameter*);
 extern void growAtom(Atom*);
+extern void freeAtom(Atom*);
 extern void growClusters(Atom*);
 
 int packGhost(Atom*, int, MD_FLOAT*, int*);
@@ -80,6 +81,11 @@ void packReverse(Atom*, int, int, MD_FLOAT*);
 void unpackReverse(Atom*, int, int*, MD_FLOAT*);
 void pbc(Atom*);
 void copy(Atom*, int, int);
+
+#ifdef CUDA_TARGET
+extern void growClustersCUDA(Atom*);  
+#endif 
+
 
 #ifdef AOS
 #define POS_DATA_LAYOUT "AoS"

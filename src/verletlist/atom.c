@@ -716,6 +716,36 @@ void growAtom(Atom* atom)
     REALLOC(type, int, atom->Nmax * sizeof(int), nold * sizeof(int));
 }
 /* MPI added*/
+
+void freeAtom(Atom* atom)
+{
+#undef FREE_ATOM
+#define FREE_ATOM(p, t, ns, os)                                         \
+    ;                                                                   \
+    free(atom->p);                                                      \
+    free(atom->d_atom.p);                                               \
+    atom->p        = NULL;                                              \
+    atom->d_atom.p = NULL;
+  
+#ifdef AOS
+    FREE_ATOM(x);
+    FREE_ATOM(vx);
+    FREE_ATOM(fx); 
+#else
+    FREE_ATOM(x);
+    FREE_ATOM(y);    
+    FREE_ATOM(z); 
+    FREE_ATOM(vx);
+    FREE_ATOM(vy);    
+    FREE_ATOM(vz); 
+    FREE_ATOM(fx);
+    FREE_ATOM(fy);    
+    FREE_ATOM(fz); 
+#endif
+    FREE_ATOM(type);
+}
+
+
 void packForward(Atom* atom, int n, int* list, MD_FLOAT* buf, int* pbc)
 {
     int i, j;

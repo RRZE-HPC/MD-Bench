@@ -638,12 +638,15 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
 
         if (resize) {
             neighbor->maxneighs = new_maxneighs * 1.2;
-            fprintf(stdout, "RESIZE %d, PROC %d\n", neighbor->maxneighs, me);
+            fprintf(stdout, "RESIZE %d, PROC %d\n", neighbor->maxneighs, me); fflush(stdout);
             free(neighbor->neighbors);
             free(neighbor->neighbors_imask);
             neighbor->neighbors = (int*)malloc(nmax * neighbor->maxneighs * sizeof(int));
             neighbor->neighbors_imask = (unsigned int*)malloc(
                 nmax * neighbor->maxneighs * sizeof(unsigned int));
+#ifdef CUDA_TARGET
+            growNeighborCUDA(atom, neighbor);
+#endif    
         }
     }
     if (method == eightShell) neighborGhost(atom, neighbor);

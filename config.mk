@@ -15,7 +15,7 @@ ENABLE_OPENMP ?= false
 # Enable MPI parallelization
 ENABLE_MPI ?= true
 # SP or DP
-DATA_TYPE ?= DP
+DATA_TYPE ?= SP
 # AOS or SOA
 DATA_LAYOUT ?= AOS
 # Debug
@@ -24,7 +24,7 @@ DEBUG ?= false
 # Sort atoms when reneighboring (true or false)
 SORT_ATOMS ?= false
 # Simulate only for one atom type, without table lookup for parameters (true or false)
-ONE_ATOM_TYPE ?= false
+ONE_ATOM_TYPE ?= true
 # Trace memory addresses for cache simulator (true or false)
 MEM_TRACER ?= false
 # Trace indexes and distances for gather-md (true or false)
