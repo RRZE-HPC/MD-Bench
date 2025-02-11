@@ -19,7 +19,7 @@
 
 static void addDummyCluster(Atom*);
 #ifdef CUDA_TARGET
-void copyGhostFromGPU(Atom*);
+extern void copyGhostFromGPU(Atom*);
 extern void copyGhostToGPU(Atom*);
 extern void copyForceFromGPU(Atom*);
 extern void copyForceToGPU(Atom*);
@@ -46,7 +46,6 @@ double forward(Comm* comm, Atom* atom, Parameter* param)
         for (int iswap = 0; iswap < 6; iswap++)
             forwardComm(comm, atom, iswap);
     }
-
 #ifdef CUDA_TARGET
     copyGhostToGPU(atom);
 #endif

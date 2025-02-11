@@ -25,9 +25,6 @@ extern "C" {
 #include <timing.h>
 #include <util.h>
 #include <comm.h>
-
-MD_FLOAT* cuda_buf_recv;
-MD_FLOAT* cuda_buf_send; 
 }
 
 __global__ void computeForceLJCudaFullNeigh(DeviceAtom a,
@@ -231,6 +228,7 @@ double computeForceLJCUDA(Parameter* param, Atom* atom, Neighbor* neighbor, Stat
 {
     const int num_threads_per_block = get_cuda_num_threads();
     int Nlocal                      = atom->Nlocal;
+    int Nmax                        = atom->Nmax; 
     MD_FLOAT cutforcesq             = param->cutforce * param->cutforce;
     MD_FLOAT sigma6                 = param->sigma6;
     MD_FLOAT epsilon                = param->epsilon;
@@ -258,11 +256,11 @@ double computeForceLJCUDA(Parameter* param, Atom* atom, Neighbor* neighbor, Stat
 
     if (neighbor->half_neigh) {
 #ifdef AOS
-        memsetGPU(atom->d_atom.fx, 0, sizeof(MD_FLOAT) * Nlocal * 3);
+        memsetGPU(atom->d_atom.fx, 0, sizeof(MD_FLOAT) * Nmax * 3);
 #else
-        memsetGPU(atom->d_atom.fx, 0, sizeof(MD_FLOAT) * Nlocal);
-        memsetGPU(atom->d_atom.fy, 0, sizeof(MD_FLOAT) * Nlocal);
-        memsetGPU(atom->d_atom.fz, 0, sizeof(MD_FLOAT) * Nlocal);
+        memsetGPU(atom->d_atom.fx, 0, sizeof(MD_FLOAT) * Nmax);
+        memsetGPU(atom->d_atom.fy, 0, sizeof(MD_FLOAT) * Nmax);
+        memsetGPU(atom->d_atom.fz, 0, sizeof(MD_FLOAT) * Nmax);
 #endif
         computeForceLJCudaHalfNeigh<<<num_blocks, num_threads_per_block>>>(atom->d_atom,
             cutforcesq,
@@ -293,6 +291,40 @@ double computeForceLJCUDA(Parameter* param, Atom* atom, Neighbor* neighbor, Stat
     double E = getTimeStamp();
     return E - S;
 }
+}
+
+extern "C" void copyGhostFromGPU(Atom* atom)
+{
+    memcpyFromGPU(atom->x,atom->d_atom.x,atom->Nlocal * sizeof(MD_FLOAT) * 3);
+}   
+
+extern "C" void copyGhostToGPU(Atom* atom)
+{
+    memcpyToGPU(&atom->d_atom.x[atom->Nlocal*3], &atom->x[atom->Nlocal*3], atom->Nghost * sizeof(MD_FLOAT) * 3);
+}
+
+extern "C" void copyForceFromGPU(Atom* atom)
+{
+    memcpyFromGPU(atom->fx, atom->d_atom.fx, atom->Nmax * sizeof(MD_FLOAT) * 3);
+}   
+
+extern "C" void copyForceToGPU(Atom* atom)
+{
+    memcpyToGPU(atom->d_atom.fx, atom->fx, atom->Nmax * sizeof(MD_FLOAT) * 3);
+}
+
+extern "C" void copyDataFromCUDADevice(Atom* atom)
+{
+    memcpyFromGPU(atom->x, atom->d_atom.x, atom->Nmax * sizeof(MD_FLOAT) * 3);
+    memcpyFromGPU(atom->vx, atom->d_atom.vx, atom->Nmax * sizeof(MD_FLOAT) * 3);
+    memcpyFromGPU(atom->type, atom->d_atom.type, atom->Nmax * sizeof(int));
+}
+
+extern "C" void copyDataToCUDADevice(Atom* atom)
+{
+    memcpyToGPU(atom->d_atom.x, atom->x, atom->Nmax * sizeof(MD_FLOAT) * 3);
+    memcpyToGPU(atom->d_atom.vx, atom->vx, atom->Nmax * sizeof(MD_FLOAT) * 3);
+    memcpyToGPU(atom->d_atom.type, atom->type, atom->Nmax * sizeof(int));
 }
 
 /*

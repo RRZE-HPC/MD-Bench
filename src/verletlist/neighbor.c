@@ -60,9 +60,9 @@ void initNeighbor(Neighbor* neighbor, Parameter* param)
     yprd                 = param->ny * param->lattice;
     zprd                 = param->nz * param->lattice;
     cutneigh             = param->cutneigh;
-    nbinx                = neighscale * param->nx;
-    nbiny                = neighscale * param->ny;
-    nbinz                = neighscale * param->nz;
+    nbinx                = MAX(1,neighscale * param->nx);
+    nbiny                = MAX(1,neighscale * param->ny);
+    nbinz                = MAX(1,neighscale * param->nz);
     nmax                 = 0;
     atoms_per_bin        = 8;
     stencil              = NULL;
@@ -202,24 +202,24 @@ void setupNeighbor(Parameter* param)
     mbinz   = mbinzhi - mbinzlo + 1;
 */
     nextx = (int)(cutneigh * bininvx);
-    if (nextx * binsizex < FACTOR * cutneigh) { 
+    while (nextx * binsizex < FACTOR * cutneigh) { 
         nextx++;
         pad_x++;
     }
     nexty = (int)(cutneigh * bininvy);
-    if (nexty * binsizey < FACTOR * cutneigh) {
+    while (nexty * binsizey < FACTOR * cutneigh) {
         nexty++;
         pad_y++;
     } 
     nextz = (int)(cutneigh * bininvz);
-    if (nextz * binsizez < FACTOR * cutneigh) {
+    while (nextz * binsizez < FACTOR * cutneigh) {
         nextz++;
         pad_z++; 
     } 
 
-    mbinx = nbinx + 4 * pad_x;
-    mbiny = nbiny + 4 * pad_y;
-    mbinz = nbinz + 4 * pad_z;
+    mbinx = MAX(1, nbinx + 4 * pad_x);
+    mbiny = MAX(1, nbiny + 4 * pad_y);
+    mbinz = MAX(1, nbinz + 4 * pad_z);
 
     if (stencil) {
         free(stencil);

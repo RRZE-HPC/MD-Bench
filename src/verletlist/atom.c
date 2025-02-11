@@ -27,11 +27,11 @@
 int write_atoms_to_file(Atom* atom)
 {
     // file system variable
-    char *file_system = getenv("FASTTMP");
+    char *file_system = getenv("TMPDIR");
     
     // Check if $FASTTMP is set
     if (file_system == NULL) {
-        fprintf(stderr, "Error: FASTTMP environment variable is not set!\n");
+        fprintf(stderr, "Error: TMPDIR environment variable is not set!\n");
         return -1;
     }
 
@@ -45,7 +45,7 @@ int write_atoms_to_file(Atom* atom)
     }
 
     for (int i = 0; i < atom->Nlocal; ++i) {
-        fprintf(fp, "%lf %lf %lf %lf %lf %lf %d\n", atom_x(i), atom_y(i), atom_z(i), atom_vx(i), atom_vy(i),atom_vz(i),atom->type[i]);
+        fprintf(fp, "%.15lf %.15lf %.15lf %.15lf %.15lf %.15lf %d\n", atom_x(i), atom_y(i), atom_z(i), atom_vx(i), atom_vy(i),atom_vz(i),atom->type[i]);
     }
     fclose(fp);
     return 0;
@@ -720,11 +720,10 @@ void growAtom(Atom* atom)
 void freeAtom(Atom* atom)
 {
 #undef FREE_ATOM
-#define FREE_ATOM(p, t, ns, os)                                         \
-    ;                                                                   \
-    free(atom->p);                                                      \
-    free(atom->d_atom.p);                                               \
-    atom->p        = NULL;                                              \
+#define FREE_ATOM(p);                                       \
+    free(atom->p);                                          \
+    cudaFree(atom->d_atom.p);                               \
+    atom->p        = NULL;                                  \
     atom->d_atom.p = NULL;
   
 #ifdef AOS
@@ -772,19 +771,18 @@ int packGhost(Atom* atom, int i, MD_FLOAT* buf, int* pbc)
     buf[m++] = atom_x(i) + pbc[_x] * atom->mybox.xprd;
     buf[m++] = atom_y(i) + pbc[_y] * atom->mybox.yprd;
     buf[m++] = atom_z(i) + pbc[_z] * atom->mybox.zprd;
-    buf[m++] = atom->type[i];
+    buf[m++] = (MD_FLOAT) atom->type[i];
     return m;
 }
 
 int unpackGhost(Atom* atom, int i, MD_FLOAT* buf)
 {
-    while (i >= atom->Nmax)
-        growAtom(atom);
+    while (i >= atom->Nmax) {growAtom(atom);}
     int m         = 0;
     atom_x(i)     = buf[m++];
     atom_y(i)     = buf[m++];
     atom_z(i)     = buf[m++];
-    atom->type[i] = buf[m++];
+    atom->type[i] = (int) buf[m++];
     atom->Nghost++;
     return m;
 }
@@ -818,14 +816,13 @@ int packExchange(Atom* atom, int i, MD_FLOAT* buf)
     buf[m++] = atom_vx(i);
     buf[m++] = atom_vy(i);
     buf[m++] = atom_vz(i);
-    buf[m++] = atom->type[i];
+    buf[m++] = (MD_FLOAT) atom->type[i];
     return m;
 }
 
 int unpackExchange(Atom* atom, int i, MD_FLOAT* buf)
 {
-    while (i >= atom->Nmax)
-        growAtom(atom);
+    while (i >= atom->Nmax) {growAtom(atom);}
     int m         = 0;
     atom_x(i)     = buf[m++];
     atom_y(i)     = buf[m++];
@@ -833,7 +830,7 @@ int unpackExchange(Atom* atom, int i, MD_FLOAT* buf)
     atom_vx(i)    = buf[m++];
     atom_vy(i)    = buf[m++];
     atom_vz(i)    = buf[m++];
-    atom->type[i] = buf[m++];
+    atom->type[i] = (int) buf[m++];
     return m;
 }
 

@@ -38,6 +38,9 @@
 #include <vtk.h>
 #include <balance.h>
 
+extern void copyDataToCUDADevice(Atom*);
+extern void copyDataFromCUDADevice(Atom*);
+
 #define HLINE "-----------------------------------------------------------------------\n"
 
 double setup(Parameter* param, Eam* eam, Atom* atom, Neighbor* neighbor, Stats* stats, Comm* comm, Grid* grid)
@@ -61,7 +64,7 @@ double setup(Parameter* param, Eam* eam, Atom* atom, Neighbor* neighbor, Stats* 
     } else {
         readAtom(atom, param);
     }
-    setupNeighbor(param);   
+    setupNeighbor(param);  
 #ifdef _MPI
     setupGrid(grid, atom, param);
     setupComm(comm, param, grid);
@@ -81,6 +84,9 @@ double setup(Parameter* param, Eam* eam, Atom* atom, Neighbor* neighbor, Stats* 
     initDevice(atom, neighbor);
 #ifdef _MPI    
     ghostNeighbor(comm, atom, param);
+#ifdef CUDA_TARGET
+    copyDataToCUDADevice(atom);
+#endif
 #else
     updatePbc(atom, param, true);
 #endif 
@@ -105,6 +111,9 @@ double reneighbour(int n, Parameter* param, Atom* atom, Neighbor* neighbor, Comm
 #endif
 #ifdef _MPI
     ghostNeighbor(comm, atom, param);
+#ifdef CUDA_TARGET
+    copyDataToCUDADevice(atom);
+#endif
 #else 
     setupPbc(atom, param);
     updatePbc(atom, param, true);
@@ -133,6 +142,9 @@ double updateAtoms(Comm* comm, Atom* atom, Parameter* param)
     double timeStart, timeStop;
     timeStart = getTimeStamp();
 #ifdef _MPI
+#ifdef CUDA_TARGET
+    copyDataFromCUDADevice(atom);
+#endif
     exchangeComm(comm, atom);
 #else 
     updateAtomsPbc(atom, param, true);
@@ -307,7 +319,6 @@ int main(int argc, char** argv)
 #if defined(MEM_TRACER) || defined(INDEX_TRACER)
     traceAddresses(&param, &atom, &neighbor, n + 1); // TODO: trace adress
 #endif
-
     if (param.write_atom_file != NULL) {
         writeAtom(&atom, &param);
     }
@@ -321,11 +332,10 @@ int main(int argc, char** argv)
     timer[UPDATE]  = 0.0;
     timer[BALANCE] = 0.0;
     timer[REVERSE] = reverse(&comm, &atom, &param);
-    
     if (param.vtk_file != NULL) {
         //write_atoms_to_vtk_file(param.vtk_file, &atom, 0);
         printvtk(param.vtk_file, &comm, &atom, &param, 0);
-    }
+    } 
     for (int n = 0; n < param.ntimes; n++) {
         bool reneigh = (n + 1) % param.reneigh_every == 0;
         initialIntegrate(reneigh, &param, &atom);

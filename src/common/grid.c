@@ -488,14 +488,14 @@ int read_atoms_from_file(Atom* atom){
         perror("Error opening file");
         return -1;
     }
- 
+
     if(atom->Nmax > 0){
         freeAtom(atom);
         atom->Nmax=0;
     } 
     atom->Nlocal = 0;
     int i = 0;
-    
+
     MD_FLOAT xlo = atom->mybox.lo[_x];
     MD_FLOAT xhi = atom->mybox.hi[_x];
     MD_FLOAT ylo = atom->mybox.lo[_y];

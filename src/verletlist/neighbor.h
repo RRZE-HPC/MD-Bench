@@ -53,6 +53,13 @@ typedef struct {
     int mbinx;
     int mbiny;
     int mbinz;
+    //Multigpu
+    int pad_x;
+    int pad_y;
+    int pad_z;
+    MD_FLOAT binsizex;
+    MD_FLOAT binsizey;
+    MD_FLOAT binsizez;
 } Neighbor_params;
 
 typedef struct {
