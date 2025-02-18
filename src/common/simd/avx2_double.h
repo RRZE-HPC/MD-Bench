@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define SIMD_INTRINSICS "avx2_double"
+
 #define MD_SIMD_FLOAT __m256d
 #define MD_SIMD_INT   __m128i
 #define MD_SIMD_MASK  __m256d

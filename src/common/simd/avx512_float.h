@@ -11,6 +11,8 @@
 #include <zmmintrin.h>
 #endif
 
+#define SIMD_INTRINSICS "avx512_float"
+
 #define MD_SIMD_FLOAT   __m512
 #define MD_SIMD_MASK    __mmask16
 #define MD_SIMD_IBOOL   __mmask16

@@ -18,34 +18,8 @@
 #include <util.h>
 
 void computeForceGhostShell(Parameter*, Atom*, Neighbor*);
-/*
-static inline void gmx_load_simd_2xnn_interactions(
-    int excl,
-    MD_SIMD_BITMASK filter0, MD_SIMD_BITMASK filter2,
-    MD_SIMD_MASK *interact0, MD_SIMD_MASK *interact2) {
 
-    //SimdInt32 mask_pr_S(excl);
-    MD_SIMD_INT32 mask_pr_S = simd_i32_broadcast(excl);
-    *interact0 = cvtIB2B(simd_test_bits(mask_pr_S & filter0));
-    *interact2 = cvtIB2B(simd_test_bits(mask_pr_S & filter2));
-}
-
-static inline void gmx_load_simd_4xn_interactions(
-    int excl,
-    MD_SIMD_BITMASK filter0, MD_SIMD_BITMASK filter1, MD_SIMD_BITMASK filter2,
-MD_SIMD_BITMASK filter3, MD_SIMD_MASK *interact0, MD_SIMD_MASK *interact1, MD_SIMD_MASK
-*interact2, MD_SIMD_MASK *interact3) {
-
-    //SimdInt32 mask_pr_S(excl);
-    MD_SIMD_INT32 mask_pr_S = simd_i32_broadcast(excl);
-    *interact0 = cvtIB2B(simd_test_bits(mask_pr_S & filter0));
-    *interact1 = cvtIB2B(simd_test_bits(mask_pr_S & filter1));
-    *interact2 = cvtIB2B(simd_test_bits(mask_pr_S & filter2));
-    *interact3 = cvtIB2B(simd_test_bits(mask_pr_S & filter3));
-}
-*/
-
-#ifdef USE_REFERENCE_VERSION
+#ifdef USE_REFERENCE_KERNEL
 double computeForceLJRef(Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
 {
     DEBUG_MESSAGE("computeForceLJ begin\n");
@@ -245,37 +219,6 @@ double computeForceLJ2xnnHalfNeigh(
     {
         LIKWID_MARKER_START("force");
 
-        /*
-        MD_SIMD_BITMASK filter0 = simd_real_load_bitmask((const int *)
-        &atom->exclusion_filter[0 * (VECTOR_WIDTH / UNROLL_J)]); MD_SIMD_BITMASK filter2 =
-        simd_real_load_bitmask((const int *) &atom->exclusion_filter[2 * (VECTOR_WIDTH /
-        UNROLL_J)]);
-
-        MD_SIMD_FLOAT diagonal_jmi_S = simd_real_load(atom->diagonal_2xnn_j_minus_i);
-        MD_SIMD_FLOAT zero_S = simd_real_broadcast(0.0);
-        MD_SIMD_FLOAT one_S = simd_real_broadcast(1.0);
-
-        #if CLUSTER_M <= CLUSTER_N
-        MD_SIMD_MASK diagonal_mask0, diagonal_mask2;
-        diagonal_mask0 = simd_mask_cond_lt(zero_S, diagonal_jmi_S);
-        diagonal_jmi_S = diagonal_jmi_S - one_S;
-        diagonal_jmi_S = diagonal_jmi_S - one_S;
-        diagonal_mask2 = simd_mask_cond_lt(zero_S, diagonal_jmi_S);
-        #else
-        MD_SIMD_MASK diagonal_mask00, diagonal_mask02, diagonal_mask10, diagonal_mask12;
-        diagonal_mask00 = simd_mask_cond_lt(zero_S, diagonal_jmi_S);
-        diagonal_jmi_S = diagonal_jmi_S - one_S;
-        diagonal_jmi_S = diagonal_jmi_S - one_S;
-        diagonal_mask02 = simd_mask_cond_lt(zero_S, diagonal_jmi_S);
-        diagonal_jmi_S = diagonal_jmi_S - one_S;
-        diagonal_jmi_S = diagonal_jmi_S - one_S;
-        diagonal_mask10 = simd_mask_cond_lt(zero_S, diagonal_jmi_S);
-        diagonal_jmi_S = diagonal_jmi_S - one_S;
-        diagonal_jmi_S = diagonal_jmi_S - one_S;
-        diagonal_mask12 = simd_mask_cond_lt(zero_S, diagonal_jmi_S);
-        #endif
-        */
-
 #pragma omp for schedule(runtime)
         for (int ci = 0; ci < atom->Nclusters_local; ci++) {
             int ci_cj0           = CJ0_FROM_CI(ci);
@@ -398,23 +341,6 @@ double computeForceLJ2xnnHalfNeigh(
                 MD_SIMD_MASK cutoff_mask2 = simd_mask_cond_lt(rsq2, cutforcesq2);
                 cutoff_mask0              = simd_mask_and(cutoff_mask0, excl_mask0);
                 cutoff_mask2              = simd_mask_and(cutoff_mask2, excl_mask2);
-
-                /*
-                #if CLUSTER_M <= CLUSTER_N
-                if(ci == ci_cj0) {
-                    cutoff_mask0 = simd_mask_and(cutoff_mask0, diagonal_mask0);
-                    cutoff_mask2 = simd_mask_and(cutoff_mask2, diagonal_mask2);
-                }
-                #else
-                if(ci == ci_cj0) {
-                    cutoff_mask0 = cutoff_mask0 && diagonal_mask00;
-                    cutoff_mask2 = cutoff_mask2 && diagonal_mask02;
-                } else if(ci == ci_cj1) {
-                    cutoff_mask0 = cutoff_mask0 && diagonal_mask10;
-                    cutoff_mask2 = cutoff_mask2 && diagonal_mask12;
-                }
-                #endif
-                */
 
                 MD_SIMD_FLOAT sr2_0 = simd_real_reciprocal(rsq0);
                 MD_SIMD_FLOAT sr2_2 = simd_real_reciprocal(rsq2);
@@ -1574,6 +1500,14 @@ double computeForceLJ4xnFullNeigh(
                 MD_SIMD_INT tvec1  = simd_i32_add(tbase1, tj_tmp);
                 MD_SIMD_INT tvec2  = simd_i32_add(tbase2, tj_tmp);
                 MD_SIMD_INT tvec3  = simd_i32_add(tbase3, tj_tmp);
+
+                /*
+                simd_print_real("tj_tmp", tj_tmp);
+                simd_print_real("tvec0", tvec0);
+                simd_print_real("tvec1", tvec1);
+                simd_print_real("tvec2", tvec2);
+                simd_print_real("tvec3", tvec3);
+                */
 
                 MD_SIMD_FLOAT cutforcesq0 = simd_real_gather(tvec0,
                     atom->cutforcesq,

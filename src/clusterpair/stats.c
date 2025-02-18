@@ -87,7 +87,7 @@ void displayStatistics(Atom* atom, Parameter* param, Stats* stats, double* timer
         timer[FORCE] * param->proc_freq * 1e9 / stats->force_iters);
     }
 
-#ifdef USE_REFERENCE_VERSION
+#ifdef USE_REFERENCE_KERNEL
 
     int within_cutoff_sum = 0;
     int outside_cutoff_sum = 0;

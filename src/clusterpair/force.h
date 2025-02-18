@@ -66,7 +66,7 @@ extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #define CLUSTER_N   VECTOR_WIDTH
 #define UNROLL_J    1
 #else
-#ifdef USE_REFERENCE_VERSION
+#ifdef USE_REFERENCE_KERNEL
 #define CLUSTERPAIR_KERNEL_REF
 #define KERNEL_NAME "Reference"
 #define CLUSTER_M   1

@@ -6,6 +6,8 @@
  */
 #include <immintrin.h>
 
+#define SIMD_INTRINSICS "avx2_float"
+
 #define MD_SIMD_FLOAT __m256
 #define MD_SIMD_MASK  __m256
 #define MD_SIMD_INT   __m256i

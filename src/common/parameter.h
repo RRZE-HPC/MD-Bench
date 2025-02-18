@@ -12,7 +12,7 @@
 #define MD_FLOAT float
 #define MD_UINT  unsigned int
 /*
-#ifdef USE_REFERENCE_VERSION
+#ifdef USE_REFERENCE_KERNEL
 #define MD_SIMD_FLOAT float
 #define MD_SIMD_MASK  uint16_t
 #endif
@@ -21,7 +21,7 @@
 #define MD_FLOAT double
 #define MD_UINT  unsigned long long int
 /*
-#ifdef USE_REFERENCE_VERSION
+#ifdef USE_REFERENCE_KERNEL
 #define MD_SIMD_FLOAT double
 #define MD_SIMD_MASK  uint8_t
 #endif

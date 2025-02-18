@@ -19,6 +19,12 @@
 #define CLUSTER_N 1
 #endif
 
+#ifdef USE_SCALAR_KERNEL
+
+#include "simd/scalar.h"
+
+#else
+
 #if (defined(__x86_64__) || defined(__i386__))
 
 #if defined(__ISA_AVX512__)
@@ -63,6 +69,8 @@
 #include "simd/sve_float.h"
 #endif
 #endif
+#endif
+
 #endif
 
 #define SIMD_PRINT_REAL(a) simd_print_real(#a, a);

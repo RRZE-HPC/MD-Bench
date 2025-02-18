@@ -8,6 +8,8 @@
 #include <arm_sve.h>
 #include <stdlib.h>
 
+#define SIMD_INTRINSICS "sve_double"
+
 #define MD_SIMD_FLOAT svfloat64_t
 #define MD_SIMD_MASK  svbool_t
 #define MD_SIMD_INT   svint64_t

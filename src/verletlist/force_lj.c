@@ -76,7 +76,7 @@ double computeForceLJFullNeigh(
                     fix += delx * force;
                     fiy += dely * force;
                     fiz += delz * force;
-#ifdef USE_REFERENCE_VERSION
+#ifdef USE_REFERENCE_KERNEL
                     addStat(stats->atoms_within_cutoff, 1);
                 } else {
                     addStat(stats->atoms_outside_cutoff, 1);
@@ -88,7 +88,7 @@ double computeForceLJFullNeigh(
             atom_fy(i) += fiy;
             atom_fz(i) += fiz;
 
-#ifdef USE_REFERENCE_VERSION
+#ifdef USE_REFERENCE_KERNEL
             if (numneighs % VECTOR_WIDTH > 0) {
                 addStat(stats->atoms_outside_cutoff,
                     VECTOR_WIDTH - (numneighs % VECTOR_WIDTH));

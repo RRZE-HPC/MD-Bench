@@ -37,8 +37,10 @@ COMPUTE_STATS ?= false
 ENABLE_OMP_SIMD ?= true
 
 # Configurations for clusterpair optimization scheme
-# Use reference version
-USE_REFERENCE_VERSION ?= false
+# Use scalar version (and pray for the compiler to vectorize it)
+USE_SCALAR_KERNEL ?= true
+# Use reference version (for correction and metrics purposes)
+USE_REFERENCE_KERNEL ?= false
 # Enable XTC output (a GROMACS file format for trajectories)
 XTC_OUTPUT ?= false
 
@@ -58,11 +60,11 @@ DEFINES =
 ifeq ($(strip $(TOOLCHAIN)), NVCC)
 	VECTOR_WIDTH=1
 	SIMD = NONE
-	USE_REFERENCE_VERSION = true
+	USE_REFERENCE_KERNEL = true
 endif
 ifeq ($(strip $(SIMD)), NONE)
 	VECTOR_WIDTH=1
-	USE_REFERENCE_VERSION = true
+	USE_REFERENCE_KERNEL = true
 else
 ifeq ($(strip $(ISA)),ARM)
     ifeq ($(strip $(SIMD)), NEON)
@@ -144,8 +146,12 @@ ifeq ($(strip $(XTC_OUTPUT)),true)
     DEFINES += -DXTC_OUTPUT
 endif
 
-ifeq ($(strip $(USE_REFERENCE_VERSION)),true)
-    DEFINES += -DUSE_REFERENCE_VERSION
+ifeq ($(strip $(USE_SCALAR_KERNEL)),true)
+    DEFINES += -DUSE_SCALAR_KERNEL
+endif
+
+ifeq ($(strip $(USE_REFERENCE_KERNEL)),true)
+    DEFINES += -DUSE_REFERENCE_KERNEL
 endif
 
 ifeq ($(strip $(DEBUG)),true)

@@ -9,6 +9,8 @@
 #include <zmmintrin.h>
 #endif
 
+#define SIMD_INTRINSICS "avx512_double"
+
 #define MD_SIMD_FLOAT   __m512d
 #define MD_SIMD_MASK    __mmask8
 #define MD_SIMD_INT     __m256i
