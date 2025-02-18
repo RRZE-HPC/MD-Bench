@@ -49,7 +49,6 @@ static inline MD_SIMD_FLOAT simd_real_add(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b) {
 }
 
 static inline MD_SIMD_FLOAT simd_real_sub(MD_SIMD_FLOAT a, MD_SIMD_FLOAT b) {
-
     MD_SIMD_FLOAT result;
 
     for (int i = 0; i < VECTOR_WIDTH; i++) {
@@ -136,41 +135,32 @@ static inline MD_SIMD_FLOAT simd_real_select_by_mask(MD_SIMD_FLOAT a, MD_SIMD_MA
     return result;
 }
 
-static inline MD_FLOAT simd_real_h_reduce_sum(MD_SIMD_FLOAT a) {
-    MD_FLOAT sum = 0;
-
-    for (int i = 0; i < VECTOR_WIDTH; i++) {
-        sum += a.val[i];
-    }
-
-    return sum;
-}
-
 static inline MD_FLOAT simd_real_incr_reduced_sum(
     MD_FLOAT* m, MD_SIMD_FLOAT v0, MD_SIMD_FLOAT v1, MD_SIMD_FLOAT v2, MD_SIMD_FLOAT v3) {
     MD_FLOAT sum = 0;
     MD_FLOAT partial_sums[4];
-    
+
     for (int i = 0; i < VECTOR_WIDTH; i++) {
         partial_sums[0] += v0.val[i];
         partial_sums[1] += v1.val[i];
         partial_sums[2] += v2.val[i];
         partial_sums[3] += v3.val[i];
     }
-    
+
     for (int i = 0; i < 4; i++) {
         m[i] += partial_sums[i];
         sum += partial_sums[i];
     }
-    
+
     return sum;
 }
 
 static inline MD_SIMD_FLOAT simd_real_load_h_duplicate(const MD_FLOAT* m) {
     MD_SIMD_FLOAT result;
 
-    for (int i = 0; i < VECTOR_WIDTH; i++) {
-        result.val[i] = m[i % 4];
+    for (int i = 0; i < VECTOR_WIDTH / 2; i++) {
+        result.val[i]                      = m[i];
+        result.val[i + (VECTOR_WIDTH / 2)] = result.val[i];
     }
 
     return result;
@@ -180,11 +170,8 @@ static inline MD_SIMD_FLOAT simd_real_load_h_dual(const MD_FLOAT* m) {
     MD_SIMD_FLOAT result;
 
     for (int i = 0; i < VECTOR_WIDTH / 2; i++) {
-        result.val[i] = m[0];
-    }
-
-    for (int i = VECTOR_WIDTH / 2; i < VECTOR_WIDTH; i++) {
-        result.val[i] = m[1];
+        result.val[i]                      = m[0];
+        result.val[i + (VECTOR_WIDTH / 2)] = m[1];
     }
 
     return result;
@@ -192,32 +179,27 @@ static inline MD_SIMD_FLOAT simd_real_load_h_dual(const MD_FLOAT* m) {
 
 static inline MD_FLOAT simd_real_h_dual_incr_reduced_sum(
     MD_FLOAT* m, MD_SIMD_FLOAT v0, MD_SIMD_FLOAT v1) {
-    MD_FLOAT sum = 0;
+    MD_FLOAT sum = (MD_FLOAT)(0.0);
     MD_FLOAT partial_sums[4] = {0};
-    
+
     for (int i = 0; i < VECTOR_WIDTH / 2; i++) {
         partial_sums[0] += v0.val[i];
-        partial_sums[1] += v1.val[i];
+        partial_sums[1] += v0.val[i + (VECTOR_WIDTH / 2)];
+        partial_sums[2] += v1.val[i];
+        partial_sums[3] += v1.val[i + (VECTOR_WIDTH / 2)];
     }
-    
-    for (int i = VECTOR_WIDTH / 2; i < VECTOR_WIDTH; i++) {
-        partial_sums[2] += v0.val[i];
-        partial_sums[3] += v1.val[i];
-    }
-    
+
     for (int i = 0; i < 4; i++) {
         m[i] += partial_sums[i];
         sum += partial_sums[i];
     }
-    
+
     return sum;
 }
 
 static inline void simd_real_h_decr(MD_FLOAT* m, MD_SIMD_FLOAT a) {
-    MD_FLOAT sum = simd_real_h_reduce_sum(a);
-
-    for (int i = 0; i < 4; i++) {
-        m[i] -= sum;
+    for (int i = 0; i < VECTOR_WIDTH / 2; i++) {
+        m[i] -= a.val[i] + a.val[(VECTOR_WIDTH / 2) + i];
     }
 }
 
@@ -303,8 +285,12 @@ static inline MD_SIMD_MASK simd_mask_int_cond_lt(MD_SIMD_INT a, MD_SIMD_INT b) {
 static inline MD_SIMD_INT simd_i32_load_h_duplicate(const int *m) {
     MD_SIMD_INT result;
 
-    for (int i = 0; i < VECTOR_WIDTH; i++) {
-        result.val[i] = m[i % 4];
+    for (int i = 0; i < VECTOR_WIDTH / 2; i++) {
+        result.val[i] = m[i];
+    }
+
+    for (int i = VECTOR_WIDTH / 2; i < VECTOR_WIDTH; i++) {
+        result.val[i] = m[i - (VECTOR_WIDTH / 2)];
     }
 
     return result;
@@ -332,4 +318,4 @@ static inline MD_SIMD_FLOAT simd_real_gather(MD_SIMD_INT vidx, MD_FLOAT *base, c
     }
 
     return result;
-} 
+}
