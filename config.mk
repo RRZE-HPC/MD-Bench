@@ -24,7 +24,7 @@ DEBUG ?= false
 # Sort atoms when reneighboring (true or false)
 SORT_ATOMS ?= false
 # Simulate only for one atom type, without table lookup for parameters (true or false)
-ONE_ATOM_TYPE ?= true
+ONE_ATOM_TYPE ?= false
 # Trace memory addresses for cache simulator (true or false)
 MEM_TRACER ?= false
 # Trace indexes and distances for gather-md (true or false)
@@ -37,8 +37,10 @@ COMPUTE_STATS ?= false
 ENABLE_OMP_SIMD ?= true
 
 # Configurations for clusterpair optimization scheme
-# Use scalar version (and pray for the compiler to vectorize it)
-USE_SCALAR_KERNEL ?= true
+# Cluster pair kernel variant (auto/4xN/2xNN)
+CLUSTER_PAIR_KERNEL ?= auto
+# Use scalar version (and pray for the compiler to vectorize the code properly)
+USE_SCALAR_KERNEL ?= false
 # Use reference version (for correction and metrics purposes)
 USE_REFERENCE_KERNEL ?= false
 # Enable XTC output (a GROMACS file format for trajectories)
@@ -216,4 +218,16 @@ ifeq ($(strip $(SIMD)),NONE)
 		TOOL_TAG = $(TOOLCHAIN)-$(ISA)
 else
 		TOOL_TAG = $(TOOLCHAIN)-$(ISA)-$(SIMD)
+endif
+
+ifeq ($(strip $(OPT_SCHEME)),clusterpair)
+    ifeq ($(strip $(CLUSTER_PAIR_KERNEL)),auto)
+        DEFINES += -DCLUSTER_PAIR_KERNEL_AUTO
+    else ifeq ($(strip $(CLUSTER_PAIR_KERNEL)),4xN)
+        DEFINES += -DCLUSTERPAIR_KERNEL_4XN
+    else ifeq ($(strip $(CLUSTER_PAIR_KERNEL)),2xNN)
+        DEFINES += -DCLUSTERPAIR_KERNEL_2XNN
+    else
+        $(error Invalid CLUSTER_PAIR_KERNEL, must be one of: auto, 4xN, 2xNN)
+    endif
 endif
