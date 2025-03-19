@@ -11,14 +11,14 @@
 //---
 #include <cuda_profiler_api.h>
 #include <cuda_runtime.h>
-#include <device_launch_parameters.h>
 //---
 #include <likwid-marker.h>
+
+#include <device.h>
 
 extern "C" {
 #include <allocate.h>
 #include <atom.h>
-#include <device.h>
 #include <force.h>
 #include <neighbor.h>
 #include <parameter.h>
@@ -73,9 +73,9 @@ __global__ void computeForceLJCudaFullNeigh(DeviceAtom a,
 #endif
 
         if (rsq < cutforcesq) {
-            MD_FLOAT sr2   = 1.0 / rsq;
+            MD_FLOAT sr2   = (MD_FLOAT) 1.0 / rsq;
             MD_FLOAT sr6   = sr2 * sr2 * sr2 * sigma6;
-            MD_FLOAT force = 48.0 * sr6 * (sr6 - 0.5) * sr2 * epsilon;
+            MD_FLOAT force = (MD_FLOAT) 48.0 * sr6 * (sr6 - (MD_FLOAT) 0.5) * sr2 * epsilon;
             fix += delx * force;
             fiy += dely * force;
             fiz += delz * force;
@@ -133,9 +133,9 @@ __global__ void computeForceLJCudaHalfNeigh(DeviceAtom a,
 #endif
 
         if (rsq < cutforcesq) {
-            MD_FLOAT sr2             = 1.0 / rsq;
+            MD_FLOAT sr2             = (MD_FLOAT) 1.0 / rsq;
             MD_FLOAT sr6             = sr2 * sr2 * sr2 * sigma6;
-            MD_FLOAT force           = 48.0 * sr6 * (sr6 - 0.5) * sr2 * epsilon;
+            MD_FLOAT force           = (MD_FLOAT) 48.0 * sr6 * (sr6 - (MD_FLOAT) 0.5) * sr2 * epsilon;
             MD_FLOAT partial_force_x = delx * force;
             MD_FLOAT partial_force_y = dely * force;
             MD_FLOAT partial_force_z = delz * force;

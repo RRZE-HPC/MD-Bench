@@ -18,7 +18,8 @@ VPATH     = $(SRC_DIR) $(COMMON_DIR) $(CUDA_DIR)
 ASM       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.s,$(wildcard $(SRC_DIR)/*.c))
 OBJ       = $(filter-out $(BUILD_DIR)/main%, $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c)))
 OBJ      += $(patsubst $(COMMON_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(COMMON_DIR)/*.c))
-ifeq ($(strip $(TOOLCHAIN)),NVCC)
+ifneq ($(filter $(strip $(TOOLCHAIN)), NVCC HIPCC),)
+OBJ      += $(patsubst $(COMMON_DIR)/%.cu, $(BUILD_DIR)/%.o,$(wildcard $(COMMON_DIR)/*.cu))
 OBJ      += $(patsubst $(SRC_DIR)/%.cu, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.cu))
 endif
 SOURCES   =  $(wildcard $(SRC_DIR)/*.h $(SRC_DIR)/*.c $(COMMON_DIR)/*.c $(COMMON_DIR)/*.h)
@@ -39,22 +40,34 @@ endif
 
 ${TARGET}: $(BUILD_DIR) .clangd $(OBJ) $(SRC_DIR)/main.c
 	@echo "===>  LINKING  $(TARGET)"
-	$(Q)${LINKER} $(CPPFLAGS) ${LFLAGS} -o $(TARGET) $(SRC_DIR)/main.c $(OBJ) $(LIBS)
+	$(Q)${LINKER} $(CPPFLAGS) ${LFLAGS} -o $(TARGET) $(OBJ) $(SRC_DIR)/main.c $(LIBS)
 
 ${TARGET}-%: $(BUILD_DIR) $(OBJ) $(SRC_DIR)/main-%.c
 	@echo "===>  LINKING  $(TARGET)-$* "
-	$(Q)${LINKER} $(CPPFLAGS) ${LFLAGS} -o $(TARGET)-$* $(SRC_DIR)/main-$*.c $(OBJ) $(LIBS)
+	$(Q)${LINKER} $(CPPFLAGS) ${LFLAGS} -o $(TARGET)-$* $(OBJ) $(SRC_DIR)/main-$*.c $(LIBS)
 
 $(BUILD_DIR)/%.o:  %.c $(MAKE_DIR)/include_$(TOOLCHAIN).mk
 	$(info ===>  COMPILE  $@)
 	$(Q)$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
 	$(Q)$(CC) $(CPPFLAGS) $(CFLAGS) -MT $@ -MM  $< > $(BUILD_DIR)/$*.d
 
+ifeq ($(strip $(TOOLCHAIN)),NVCC)
 $(BUILD_DIR)/%.o:  %.cu
+	$(info ===>  COMPILE  $@)
+	$(Q)$(CC) -c $(CPPFLAGS) $(CFLAGS) $(OPT_CFLAGS) $< -o $@
+	$(Q)$(CC) $(CPPFLAGS) $(OPT_CFLAGS) -MT $@ -MM  $< > $(BUILD_DIR)/$*.d
+endif
+
+ifeq ($(strip $(TOOLCHAIN)),HIPCC)
+$(BUILD_DIR)/%.o:  $(BUILD_DIR)/%.hip
 	$(info ===>  COMPILE  $@)
 	$(Q)$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
 	$(Q)$(CC) $(CPPFLAGS) -MT $@ -MM  $< > $(BUILD_DIR)/$*.d
+endif
 
+$(BUILD_DIR)/%.hip: %.cu
+	$(info ===>  GENERATE HIP  $@)
+	$(Q)hipify-perl $< > $@
 $(BUILD_DIR)/%.s:  %.c
 	$(info ===>  GENERATE ASM  $@)
 	$(Q)$(CC) -S $(ASFLAGS) $(CPPFLAGS) $(CFLAGS) $< -o $@

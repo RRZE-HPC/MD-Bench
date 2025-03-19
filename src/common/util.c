@@ -91,7 +91,7 @@ const char* ff2str(int ff)
 int get_cuda_num_threads(void)
 {
     const char* num_threads_env = getenv("NUM_THREADS");
-    return (num_threads_env == NULL) ? 32 : atoi(num_threads_env);
+    return (num_threads_env == NULL) ? 128 : atoi(num_threads_env);
 }
 
 void readline(char* line, FILE* fp)

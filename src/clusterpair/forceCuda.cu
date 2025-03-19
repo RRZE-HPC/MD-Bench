@@ -4,6 +4,9 @@
  * Use of this source code is governed by a LGPL-3.0
  * license that can be found in the LICENSE file.
  */
+
+#include <device.h>
+
 extern "C" {
 #include <stdio.h>
 //---
@@ -13,7 +16,6 @@ extern "C" {
 #include <likwid-marker.h>
 //---
 #include <atom.h>
-#include <device.h>
 #include <force.h>
 #include <neighbor.h>
 #include <parameter.h>
@@ -302,9 +304,15 @@ __global__ void computeForceLJCudaFullNeigh(
 #if CLUSTER_M <= 32
     unsigned mask = 0xffffffff;
     for (int offset = CLUSTER_M / 2; offset > 0; offset /= 2) {
+        #if CUDA_TARGET == 0
         fix += __shfl_down_sync(mask, fix, offset);
         fiy += __shfl_down_sync(mask, fiy, offset);
         fiz += __shfl_down_sync(mask, fiz, offset);
+        #elif CUDA_TARGET == 1
+        fix += __shfl_down(fix, offset);
+        fiy += __shfl_down(fiy, offset);
+        fiz += __shfl_down(fiz, offset);
+        #endif
     }
 
     if (threadIdx.x == 0) {

@@ -1,4 +1,4 @@
-CC  = nvcc
+CC  = hipcc
 LINKER = $(CC)
 
 ifeq ($(strip $(ENABLE_MPI)),true)
@@ -25,17 +25,13 @@ ANSI_CFLAGS += -pedantic
 ANSI_CFLAGS += -Wextra
 
 #
-# A100 + Native
-CFLAGS   = -O3 -arch=sm_80 -march=native -ffast-math -funroll-loops --forward-unknown-to-host-compiler # -fopenmp
-# A40 + Native
-#CFLAGS   = -O3 -arch=sm_86 -march=native -ffast-math -funroll-loops --forward-unknown-to-host-compiler # -fopenmp
-# Cascade Lake
-#CFLAGS   = -O3 -march=cascadelake  -ffast-math -funroll-loops --forward-unknown-to-host-compiler # -fopenmp
-# For GROMACS kernels, we need at least sm_61 due to atomicAdd with doubles
-# TODO: Check if this is required for full neighbor-lists and just compile kernel for that case if not
-#CFLAGS   = -O3 -g -arch=sm_61 # -fopenmp
+# Mi2XXX + Native
+#CFLAGS   = -O3 --offload-arch=gfx90a -march=native -ffast-math -funroll-loops # -fopenmp
+# Mi300A + Native
+CFLAGS   = -O3 -march=native -ffast-math -funroll-loops # -fopenmp
+#
 ASFLAGS  =  -masm=intel
 LFLAGS   =
-DEFINES  += -D_GNU_SOURCE -DCUDA_TARGET=0 -DNO_ZMM_INTRIN  #-DLIKWID_PERFMON
-INCLUDES = $(MPI_HOME) $(LIKWID_INC)
-LIBS     = -lm -lcuda -lcudart $(LIKWID_LIB) $(MPI_LIB)#-llikwid
+DEFINES  += -D_GNU_SOURCE -DCUDA_TARGET=1 -DNO_ZMM_INTRIN #-DLIKWID_PERFMON
+INCLUDES = $(LIKWID_INC) $(MPI_HOME) -I/opt/rocm/include
+LIBS     = -lm $(LIKWID_LIB) $(MPI_LIB) -lamdhip64 #-llikwid

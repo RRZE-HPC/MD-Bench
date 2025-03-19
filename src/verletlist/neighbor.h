@@ -78,6 +78,9 @@ extern void binatoms(Atom*);
 extern void sortAtom(Atom*);
 extern void buildNeighborCPU(Atom*, Neighbor*);
 #ifdef CUDA_TARGET
+#ifdef __cplusplus
+extern "C"
+#endif
 extern void buildNeighborCUDA(Atom*, Neighbor*);
 #endif
 #endif //__NEIGHBOR_H_

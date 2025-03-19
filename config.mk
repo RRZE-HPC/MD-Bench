@@ -1,5 +1,5 @@
-# Compiler tool chain (GCC/CLANG/ICC/ICX/ONEAPI/NVCC)
-TOOLCHAIN ?= NVCC
+# Compiler tool chain (GCC/CLANG/ICC/ICX/ONEAPI/NVCC/HIPCC)
+TOOLCHAIN ?= HIPCC
 # ISA of instruction code (X86/ARM)
 ISA ?= X86
 # Instruction set for instrinsic kernels (NONE/<X86-SIMD>/<ARM-SIMD>)
@@ -59,6 +59,11 @@ OPTIONS =  -DALIGNMENT=64
 ################################################################
 DEFINES =
 
+ifeq ($(strip $(TOOLCHAIN)), HIPCC)
+	VECTOR_WIDTH=1
+	SIMD = NONE
+	USE_REFERENCE_KERNEL = true
+endif
 ifeq ($(strip $(TOOLCHAIN)), NVCC)
 	VECTOR_WIDTH=1
 	SIMD = NONE
