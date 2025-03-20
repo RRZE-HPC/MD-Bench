@@ -83,7 +83,10 @@ void pbc(Atom*);
 void copy(Atom*, int, int);
 
 #ifdef CUDA_TARGET
-extern void growClustersCUDA(Atom*);  
+#ifdef __cplusplus
+extern "C" 
+#endif
+extern void growClustersCUDA(Atom*);
 #endif 
 
 

@@ -722,7 +722,7 @@ void freeAtom(Atom* atom)
 #undef FREE_ATOM
 #define FREE_ATOM(p);                                       \
     free(atom->p);                                          \
-    cudaFree(atom->d_atom.p);                               \
+    GPUfree(atom->d_atom.p);                               \
     atom->p        = NULL;                                  \
     atom->d_atom.p = NULL;
   

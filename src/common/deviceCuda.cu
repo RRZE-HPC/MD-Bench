@@ -19,6 +19,10 @@ void cuda_assert(const char* label, cudaError_t err)
     }
 }
 
+void GPUfree(void * any) {
+    cuda_assert("GPUfree", cudaFree(any));
+}
+
 void* allocateGPU(size_t bytesize)
 {
     void* ptr;

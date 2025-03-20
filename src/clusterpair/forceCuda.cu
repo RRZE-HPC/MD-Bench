@@ -301,30 +301,30 @@ __global__ void computeForceLJCudaFullNeigh(
 // warp shuffles instead of using atomics since it should be cheaper
 // It is very unlikely that M > 32, but we keep this check here to
 // avoid any issues in such situations
-#if CLUSTER_M <= 32
-    unsigned mask = 0xffffffff;
-    for (int offset = CLUSTER_M / 2; offset > 0; offset /= 2) {
-        #if CUDA_TARGET == 0
-        fix += __shfl_down_sync(mask, fix, offset);
-        fiy += __shfl_down_sync(mask, fiy, offset);
-        fiz += __shfl_down_sync(mask, fiz, offset);
-        #elif CUDA_TARGET == 1
-        fix += __shfl_down(fix, offset);
-        fiy += __shfl_down(fiy, offset);
-        fiz += __shfl_down(fiz, offset);
-        #endif
-    }
+//#if CLUSTER_M <= 32
+//    unsigned mask = 0xffffffff;
+//    for (int offset = CLUSTER_M / 2; offset > 0; offset /= 2) {
+//        #if CUDA_TARGET == 0
+//        fix += __shfl_down_sync(mask, fix, offset);
+//        fiy += __shfl_down_sync(mask, fiy, offset);
+//        fiz += __shfl_down_sync(mask, fiz, offset);
+//        #elif CUDA_TARGET == 1
+//        fix += __shfl_down(fix, offset);
+//        fiy += __shfl_down(fiy, offset);
+//        fiz += __shfl_down(fiz, offset);
+//        #endif
+//    }
 
-    if (threadIdx.x == 0) {
-        ci_f[CL_X_OFFSET + cii] = fix;
-        ci_f[CL_Y_OFFSET + cii] = fiy;
-        ci_f[CL_Z_OFFSET + cii] = fiz;
-    }
-#else
+//    if (threadIdx.x == 0) {
+//        ci_f[CL_X_OFFSET + cii] = fix;
+//        ci_f[CL_Y_OFFSET + cii] = fiy;
+//        ci_f[CL_Z_OFFSET + cii] = fiz;
+//    }
+//#else
     atomicAdd(&ci_f[CL_X_OFFSET + cii], fix);
     atomicAdd(&ci_f[CL_Y_OFFSET + cii], fiy);
     atomicAdd(&ci_f[CL_Z_OFFSET + cii], fiz);
-#endif
+//#endif
 }
 
 __global__ void computeForceLJCudaHalfNeigh(
@@ -617,7 +617,7 @@ extern "C" void growClustersCUDA(Atom* atom)
 #endif
     }
 }
-extern "C" void growNeighborCUDA(Atom* atom,  Neighbor* neighbor){
+extern void growNeighborCUDA(Atom* atom,  Neighbor* neighbor){
     cuda_neighbors  = (int*)reallocateGPU(cuda_neighbors,atom->Nclusters_max * neighbor->maxneighs * sizeof(int));
 }
 

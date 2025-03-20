@@ -27,6 +27,7 @@ extern "C" {
 extern void cuda_assert(const char* msg, error_t err);
 #endif
 
+extern void GPUfree(void *);
 extern void initDevice(Atom*, Neighbor*);
 extern void* allocateGPU(size_t bytesize);
 extern void* reallocateGPU(void* ptr, size_t new_bytesize);
