@@ -274,6 +274,12 @@ int main(int argc, char** argv)
             param.setup = atoi(argv[++i]);
             continue;
         }
+
+        if ((strcmp(argv[i], "--suf") == 0)) {
+            param.atom_file_name = strdup(argv[++i]);
+            continue;
+        }
+
         if ((strcmp(argv[i], "-h") == 0) || (strcmp(argv[i], "--help") == 0)) {
             if (comm.myproc == 0) {
                 printf("MD Bench: A performance-oriented prototyping harness for MD "
