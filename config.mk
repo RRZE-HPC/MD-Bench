@@ -1,11 +1,11 @@
-# Compiler tool chain (GCC/CLANG/ICC/ICX/ONEAPI/NVCC)
-TOOLCHAIN ?= NVCC
+# Compiler tool chain (GCC/CLANG/ICC/ICX/ONEAPI/NVCC/HIPCC)
+TOOLCHAIN ?= HIPCC
 # ISA of instruction code (X86/ARM)
 ISA ?= X86
 # Instruction set for instrinsic kernels (NONE/<X86-SIMD>/<ARM-SIMD>)
 # with X86-SIMD options: NONE/SSE/AVX/AVX_FMA/AVX2/AVX512
 # with ARM-SIMD options: NONE/NEON/SVE/SVE2 (SVE not width-agnostic yet!)
-SIMD ?= AVX512
+SIMD ?= AVX2
 # Optimization scheme (verletlist/clusterpair)
 OPT_SCHEME ?= verletlist
 # Enable likwid (true or false)
@@ -40,7 +40,7 @@ ENABLE_OMP_SIMD ?= true
 # Cluster pair kernel variant (auto/4xN/2xNN)
 CLUSTER_PAIR_KERNEL ?= auto
 # Use scalar version (and pray for the compiler to vectorize the code properly)
-USE_SCALAR_KERNEL ?= false
+USE_SCALAR_KERNEL ?= true
 # Use reference version (for correction and metrics purposes)
 USE_REFERENCE_KERNEL ?= false
 # Enable XTC output (a GROMACS file format for trajectories)
@@ -59,6 +59,11 @@ OPTIONS =  -DALIGNMENT=64
 ################################################################
 DEFINES =
 
+ifeq ($(strip $(TOOLCHAIN)), HIPCC)
+	VECTOR_WIDTH=1
+	SIMD = NONE
+	USE_REFERENCE_KERNEL = true
+endif
 ifeq ($(strip $(TOOLCHAIN)), NVCC)
 	VECTOR_WIDTH=1
 	SIMD = NONE

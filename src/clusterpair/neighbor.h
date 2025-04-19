@@ -60,6 +60,9 @@ extern void binClusters(Atom*);
 extern void updateSingleAtoms(Atom*);
 
 #ifdef CUDA_TARGET
+#ifdef __cplusplus
+extern "C"
+#endif
 extern void growNeighborCUDA(Atom*, Neighbor*);
 #endif
 

@@ -6,15 +6,15 @@
  */
 #include <cuda_profiler_api.h>
 #include <cuda_runtime.h>
-#include <device_launch_parameters.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 //---
 
+#include <device.h>
+
 extern "C" {
 #include <atom.h>
-#include <device.h>
 #include <neighbor.h>
 #include <parameter.h>
 #include <util.h>
