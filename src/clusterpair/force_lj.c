@@ -1867,3 +1867,14 @@ double computeForceLJ4xnFullNeigh(
     return E - S;
 }
 #endif
+
+
+ double computeForceLJ2xnFullNeigh(
+     Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats){
+
+ }
+ 
+ double computeForceLJ2xnHalfNeigh(
+     Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats){
+ 
+ }
