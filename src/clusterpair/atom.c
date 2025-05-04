@@ -522,7 +522,6 @@ void initMasks(Atom* atom)
         atom->masks_4xn_fn[cond0 * 4 + 2] = (unsigned int)(0xf - 0x4 * cond0);
         atom->masks_4xn_fn[cond0 * 4 + 3] = (unsigned int)(0xf - 0x8 * cond0);
 
-
         atom->masks_2xn_hn[cond0 * 2 + 0] = (unsigned int)(0x3 - 0x1 * cond0);
         atom->masks_2xn_hn[cond0 * 2 + 1] = (unsigned int)(0x3 - 0x3 * cond0);
 
