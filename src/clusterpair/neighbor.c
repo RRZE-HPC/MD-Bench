@@ -231,6 +231,7 @@ static unsigned int get_imask_simd_j8(int rdiag, int ci, int cj)
 #define get_imask_simd_2xn get_imask_simd_j4
 #elif VECTOR_WIDTH == 4
 #define get_imask_simd_4xn get_imask_simd_j4
+#define get_imask_simd_2xn get_imask_simd_j8
 #elif VECTOR_WIDTH == 8
 #define get_imask_simd_4xn  get_imask_simd_j8
 #define get_imask_simd_2xnn get_imask_simd_j4
