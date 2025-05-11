@@ -1868,7 +1868,7 @@ double computeForceLJ4xnFullNeigh(
 }
 #endif
 
-
+#ifdef CLUSTERPAIR_KERNEL_2XN
 double computeForceLJ2xnFullNeigh(
     Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats){
     
@@ -2540,3 +2540,4 @@ double computeForceLJ2xnHalfNeigh(
     DEBUG_MESSAGE("computeForceLJ_2xn_Half end\n");
     return E - S;
 }
+#endif
