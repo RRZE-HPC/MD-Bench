@@ -35,6 +35,8 @@ COMPUTE_STATS ?= true
 ENABLE_OMP_SIMD ?= false
 
 # Configurations for clusterpair optimization scheme
+# Cluster pair kernel variant (auto/4xN/2xN/2xNN)
+CLUSTER_PAIR_KERNEL ?= auto
 # Use reference version
 USE_REFERENCE_VERSION ?= false
 # Enable XTC output (a GROMACS file format for trajectories)
@@ -204,4 +206,18 @@ ifeq ($(strip $(SIMD)),NONE)
 		TOOL_TAG = $(TOOLCHAIN)-$(ISA)
 else
 		TOOL_TAG = $(TOOLCHAIN)-$(ISA)-$(SIMD)
+endif
+
+ifeq ($(strip $(OPT_SCHEME)),clusterpair)
+    ifeq ($(strip $(CLUSTER_PAIR_KERNEL)),auto)
+        DEFINES += -DCLUSTER_PAIR_KERNEL_AUTO
+    else ifeq ($(strip $(CLUSTER_PAIR_KERNEL)),4xN)
+        DEFINES += -DCLUSTERPAIR_KERNEL_4XN
+    else ifeq ($(strip $(CLUSTER_PAIR_KERNEL)),2xN)
+        DEFINES += -DCLUSTERPAIR_KERNEL_2XN
+    else ifeq ($(strip $(CLUSTER_PAIR_KERNEL)),2xNN)
+        DEFINES += -DCLUSTERPAIR_KERNEL_2XNN
+    else
+        $(error Invalid CLUSTER_PAIR_KERNEL, must be one of: auto, 4xN, 2xNN)
+    endif
 endif
