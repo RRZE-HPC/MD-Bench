@@ -346,6 +346,8 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
 
 #endif
 
+#endif
+
             for (int k = 0; k < nstencil; k++) {
                 int jbin     = ibin + stencil[k];
                 int* loc_bin = &bin_clusters[jbin * clusters_per_bin];
@@ -548,26 +550,6 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
                                         is_neighbor = 1;
                                     }
 
-#else
-                                    is_neighbor = 0;
-                                    for (int cii = 0; cii < CLUSTER_M; cii++) {
-                                        for (int cjj = 0; cjj < CLUSTER_N; cjj++) {
-                                            MD_FLOAT delx = ci_x[CL_X_OFFSET + cii] -
-                                                            cj_x[CL_X_OFFSET + cjj];
-                                            MD_FLOAT dely = ci_x[CL_Y_OFFSET + cii] -
-                                                            cj_x[CL_Y_OFFSET + cjj];
-                                            MD_FLOAT delz = ci_x[CL_Z_OFFSET + cii] -
-                                                            cj_x[CL_Z_OFFSET + cjj];
-
-                                            if (delx * delx + dely * dely + delz * delz <
-                                                cutneighsq) {
-                                                is_neighbor = 1;
-                                            }
-                                        }
-                                    }
-
-#endif
-
 #elif defined(CLUSTERPAIR_KERNEL_2XN)
 
                                     MD_SIMD_FLOAT xj_tmp = simd_real_load(
@@ -619,7 +601,6 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
                                         simd_test_any(cutoff_mask1)) {
                                         is_neighbor = 1;
                                     }
-
 #else
                                     is_neighbor = 0;
                                     for (int cii = 0; cii < CLUSTER_M; cii++) {
@@ -639,6 +620,7 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
                                     }
 
 #endif
+
                                 }
 
                                 if (is_neighbor) {
