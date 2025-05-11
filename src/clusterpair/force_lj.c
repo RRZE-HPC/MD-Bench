@@ -2300,14 +2300,10 @@ double computeForceLJ2xnHalfNeigh(
                 unsigned int cond0 = (unsigned int)(cj == ci_cj0);
                 unsigned int cond1 = (unsigned int)(cj == ci_cj1);
 #endif
-                MD_SIMD_MASK excl_mask0   = simd_mask_from_u32(
-                    atom->masks_4xn_hn[cond0 * 8 + cond1 * 4 + 0]);
+                MD_SIMD_MASK excl_mask0 = simd_mask_from_u32(
+                    atom->masks_2xn_hn[cond0 * 4 + cond1 * 2 + 0]);
                 MD_SIMD_MASK excl_mask1 = simd_mask_from_u32(
-                    atom->masks_4xn_hn[cond0 * 8 + cond1 * 4 + 1]);
-                MD_SIMD_MASK excl_mask2 = simd_mask_from_u32(
-                    atom->masks_4xn_hn[cond0 * 8 + cond1 * 4 + 2]);
-                MD_SIMD_MASK excl_mask3 = simd_mask_from_u32(
-                    atom->masks_4xn_hn[cond0 * 8 + cond1 * 4 + 3]);
+                    atom->masks_2xn_hn[cond0 * 4 + cond1 * 2 + 1]);
 #endif
 
                 MD_SIMD_FLOAT rsq0 = simd_real_fma(delx0,
