@@ -750,7 +750,7 @@ void growClusters(Atom* atom)
 {
     int nold  = atom->Nclusters_max;
     int jterm = MAX(1,
-        CLUSTER_M / CLUSTER_N); // If M>N, we need to allocate more j-clusters
+        CLUSTER_N / CLUSTER_M); // If M<N, we need to allocate more j-clusters
     atom->Nclusters_max += DELTA;
     atom->iclusters    = (Cluster*)reallocate(atom->iclusters,
         ALIGNMENT,
