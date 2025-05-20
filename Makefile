@@ -1,147 +1,72 @@
 #CONFIGURE BUILD SYSTEM
-TARGET	   = MDBench-$(TAG)-$(OPT_SCHEME)
-BUILD_DIR  = ./$(TAG)-$(OPT_SCHEME)
-SRC_DIR    = ./$(OPT_SCHEME)
-ASM_DIR    = ./asm
-COMMON_DIR = ./common
-CUDA_DIR   = ./$(SRC_DIR)/cuda
-MAKE_DIR   = ./
+TAG = $(OPT_TAG)-$(TOOL_TAG)-$(DATA_TYPE)
+TARGET	   = MDBench-$(TAG)
+BUILD_DIR  = ./build/build-$(TAG)
+SRC_ROOT   = src
+SRC_DIR    = $(SRC_ROOT)/$(OPT_SCHEME)
+COMMON_DIR = $(SRC_ROOT)/common
+MAKE_DIR   = ./make
 Q         ?= @
 
 #DO NOT EDIT BELOW
-include $(MAKE_DIR)/config.mk
-include $(MAKE_DIR)/include_$(TAG).mk
+include config.mk
+include $(MAKE_DIR)/include_$(TOOLCHAIN).mk
 include $(MAKE_DIR)/include_LIKWID.mk
-include $(MAKE_DIR)/include_ISA.mk
-include $(MAKE_DIR)/include_GROMACS.mk
-INCLUDES  += -I./$(SRC_DIR)/includes -I./$(COMMON_DIR)/includes
-
-ifeq ($(strip $(DATA_LAYOUT)),AOS)
-    DEFINES +=  -DAOS
-endif
-ifeq ($(strip $(DATA_TYPE)),SP)
-    DEFINES +=  -DPRECISION=1
-else
-    DEFINES +=  -DPRECISION=2
-endif
-
-ifneq ($(ASM_SYNTAX), ATT)
-    ASFLAGS += -masm=intel
-endif
-
-ifeq ($(strip $(EXPLICIT_TYPES)),true)
-    DEFINES += -DEXPLICIT_TYPES
-endif
-
-ifeq ($(strip $(MEM_TRACER)),true)
-    DEFINES += -DMEM_TRACER
-endif
-
-ifeq ($(strip $(INDEX_TRACER)),true)
-    DEFINES += -DINDEX_TRACER
-endif
-
-ifeq ($(strip $(COMPUTE_STATS)),true)
-    DEFINES += -DCOMPUTE_STATS
-endif
-
-ifeq ($(strip $(XTC_OUTPUT)),true)
-    DEFINES += -DXTC_OUTPUT
-endif
-
-ifeq ($(strip $(USE_REFERENCE_VERSION)),true)
-    DEFINES += -DUSE_REFERENCE_VERSION
-endif
-
-ifeq ($(strip $(HALF_NEIGHBOR_LISTS_CHECK_CJ)),true)
-    DEFINES += -DHALF_NEIGHBOR_LISTS_CHECK_CJ
-endif
-
-ifeq ($(strip $(DEBUG)),true)
-    DEFINES += -DDEBUG
-endif
-
-ifneq ($(VECTOR_WIDTH),)
-    DEFINES += -DVECTOR_WIDTH=$(VECTOR_WIDTH)
-endif
-
-ifeq ($(strip $(__SIMD_KERNEL__)),true)
-    DEFINES += -D__SIMD_KERNEL__
-endif
-
-ifeq ($(strip $(__SSE__)),true)
-    DEFINES += -D__ISA_SSE__
-endif
-
-ifeq ($(strip $(__ISA_AVX__)),true)
-    DEFINES += -D__ISA_AVX__
-endif
-
-ifeq ($(strip $(__ISA_AVX_FMA__)),true)
-    DEFINES += -D__ISA_AVX_FMA__
-endif
-
-ifeq ($(strip $(__ISA_AVX2__)),true)
-    DEFINES += -D__ISA_AVX2__
-endif
-
-ifeq ($(strip $(__ISA_AVX512__)),true)
-    DEFINES += -D__ISA_AVX512__
-endif
-
-ifeq ($(strip $(ENABLE_OMP_SIMD)),true)
-    DEFINES += -DENABLE_OMP_SIMD
-endif
-
-ifeq ($(strip $(USE_SIMD_KERNEL)),true)
-    DEFINES += -DUSE_SIMD_KERNEL
-endif
-
-ifeq ($(strip $(USE_SUPER_CLUSTERS)),true)
-    DEFINES += -DUSE_SUPER_CLUSTERS
-endif
-
-VPATH     = $(SRC_DIR) $(ASM_DIR) $(CUDA_DIR)
+INCLUDES  += -I$(CURDIR)/$(SRC_DIR) -I$(CURDIR)/$(COMMON_DIR)
+VPATH     = $(SRC_DIR) $(COMMON_DIR) $(CUDA_DIR)
 ASM       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.s,$(wildcard $(SRC_DIR)/*.c))
-OVERWRITE:= $(patsubst $(ASM_DIR)/%-new.s, $(BUILD_DIR)/%.o,$(wildcard $(ASM_DIR)/*-new.s))
-OBJ       = $(filter-out $(BUILD_DIR)/main% $(OVERWRITE),$(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c)))
-OBJ      += $(patsubst $(ASM_DIR)/%.s, $(BUILD_DIR)/%.o,$(wildcard $(ASM_DIR)/*.s))
-OBJ      += $(patsubst $(COMMON_DIR)/%.c, $(BUILD_DIR)/%-common.o,$(wildcard $(COMMON_DIR)/*.c))
-ifeq ($(strip $(TAG)),NVCC)
-OBJ      += $(patsubst $(CUDA_DIR)/%.cu, $(BUILD_DIR)/%-cuda.o,$(wildcard $(CUDA_DIR)/*.cu))
+OBJ       = $(filter-out $(BUILD_DIR)/main%, $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c)))
+OBJ      += $(patsubst $(COMMON_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(COMMON_DIR)/*.c))
+ifneq ($(filter $(strip $(TOOLCHAIN)), NVCC HIPCC),)
+OBJ      += $(patsubst $(COMMON_DIR)/%.cu, $(BUILD_DIR)/%.o,$(wildcard $(COMMON_DIR)/*.cu))
+OBJ      += $(patsubst $(SRC_DIR)/%.cu, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.cu))
 endif
+SOURCES   =  $(wildcard $(SRC_DIR)/*.h $(SRC_DIR)/*.c $(COMMON_DIR)/*.c $(COMMON_DIR)/*.h)
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(OPTIONS) $(INCLUDES)
+c := ,
+clist = $(subst $(eval) ,$c,$(strip $1))
 
-# $(warning $(OBJ))
+define CLANGD_TEMPLATE
+CompileFlags:
+  Add: [$(call clist,$(INCLUDES)), $(call clist,$(CPPFLAGS))]
+  Compiler: clang
+endef
 
 ifneq ($(VARIANT),)
 	.DEFAULT_GOAL := ${TARGET}-$(VARIANT)
     DEFINES += -DVARIANT=$(VARIANT)
 endif
 
-${TARGET}: $(BUILD_DIR) $(OBJ) $(SRC_DIR)/main.c
+${TARGET}: $(BUILD_DIR) .clangd $(OBJ) $(SRC_DIR)/main.c
 	@echo "===>  LINKING  $(TARGET)"
-	$(Q)${LINKER} $(CPPFLAGS) ${LFLAGS} -o $(TARGET) $(SRC_DIR)/main.c $(OBJ) $(LIBS)
+	$(Q)${LINKER} $(CPPFLAGS) ${LFLAGS} -o $(TARGET) $(OBJ) $(SRC_DIR)/main.c $(LIBS)
 
 ${TARGET}-%: $(BUILD_DIR) $(OBJ) $(SRC_DIR)/main-%.c
 	@echo "===>  LINKING  $(TARGET)-$* "
-	$(Q)${LINKER} $(CPPFLAGS) ${LFLAGS} -o $(TARGET)-$* $(SRC_DIR)/main-$*.c $(OBJ) $(LIBS)
+	$(Q)${LINKER} $(CPPFLAGS) ${LFLAGS} -o $(TARGET)-$* $(OBJ) $(SRC_DIR)/main-$*.c $(LIBS)
 
-$(BUILD_DIR)/%.o:  %.c
+$(BUILD_DIR)/%.o:  %.c $(MAKE_DIR)/include_$(TOOLCHAIN).mk
+	$(info ===>  COMPILE  $@)
+	$(Q)$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
+	$(Q)$(CC) $(CPPFLAGS) $(CFLAGS) -MT $@ -MM  $< > $(BUILD_DIR)/$*.d
+
+ifeq ($(strip $(TOOLCHAIN)),NVCC)
+$(BUILD_DIR)/%.o:  %.cu
+	$(info ===>  COMPILE  $@)
+	$(Q)$(CC) -c $(CPPFLAGS) $(CFLAGS) $(OPT_CFLAGS) $< -o $@
+	$(Q)$(CC) $(CPPFLAGS) $(OPT_CFLAGS) -MT $@ -MM  $< > $(BUILD_DIR)/$*.d
+endif
+
+ifeq ($(strip $(TOOLCHAIN)),HIPCC)
+$(BUILD_DIR)/%.o:  $(BUILD_DIR)/%.hip
 	$(info ===>  COMPILE  $@)
 	$(Q)$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
 	$(Q)$(CC) $(CPPFLAGS) -MT $@ -MM  $< > $(BUILD_DIR)/$*.d
+endif
 
-$(BUILD_DIR)/%-common.o:  $(COMMON_DIR)/%.c
-	$(info ===>  COMPILE  $@)
-	$(Q)$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
-	$(Q)$(CC) $(CPPFLAGS) -MT $@ -MM  $< > $(BUILD_DIR)/$*.d
-
-$(BUILD_DIR)/%-cuda.o:  %.cu
-	$(info ===>  COMPILE  $@)
-	$(Q)$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
-	$(Q)$(CC) $(CPPFLAGS) -MT $@ -MM  $< > $(BUILD_DIR)/$*.d
-
+$(BUILD_DIR)/%.hip: %.cu
+	$(info ===>  GENERATE HIP  $@)
+	$(Q)hipify-perl $< > $@
 $(BUILD_DIR)/%.s:  %.c
 	$(info ===>  GENERATE ASM  $@)
 	$(Q)$(CC) -S $(ASFLAGS) $(CPPFLAGS) $(CFLAGS) $< -o $@
@@ -150,17 +75,22 @@ $(BUILD_DIR)/%.o:  %.s
 	$(info ===>  ASSEMBLE  $@)
 	$(Q)$(AS) $< -o $@
 
-.PHONY: clean distclean tags info asm
+.PHONY: clean distclean cleanall tags format info asm
 
 clean:
 	$(info ===>  CLEAN)
 	@rm -rf $(BUILD_DIR)
-	@rm -f tags
+
+cleanall:
+	$(info ===>  CLEAN ALL)
+	@rm -rf build
+	@rm -rf MDBench-*
+	@rm -f tags .clangd
 
 distclean: clean
 	$(info ===>  DIST CLEAN)
-	@rm -f $(TARGET)*
-	@rm -f tags
+	@rm -f $(TARGET)
+	@rm -f tags .clangd
 
 info:
 	$(info $(CFLAGS))
@@ -172,7 +102,17 @@ tags:
 	$(info ===>  GENERATE  TAGS)
 	$(Q)ctags -R
 
+format:
+	@for src in $(SOURCES) ; do \
+		echo "Formatting $$src" ; \
+		clang-format -i $$src ; \
+	done
+	@echo "Done"
+
 $(BUILD_DIR):
-	@mkdir $(BUILD_DIR)
+	@mkdir -p $(BUILD_DIR)
+
+.clangd:
+	$(file > .clangd,$(CLANGD_TEMPLATE))
 
 -include $(OBJ:.o=.d)

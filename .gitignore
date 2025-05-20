@@ -51,14 +51,18 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
+# Logs
+*.log
+
+# TODO list
+todo.txt
+
 # Build directories and executables
-GCC/
-ICC/
-ICX/
-CLANG/
-NVCC/
-MDBench-GCC*
-MDBench-ICC*
-MDBench-ICX*
-MDBench-CLANG*
-MDBench-NVCC*
+#GCC-*/
+#ICC-*/
+#ICX-*/
+#CLANG-*/
+#NVCC-*/
+build/*
+MDBench-*
+.clangd
