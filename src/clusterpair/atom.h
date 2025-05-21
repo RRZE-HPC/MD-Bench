@@ -13,7 +13,7 @@
 #ifndef __ATOM_H_
 #define __ATOM_H_
 
-#define DELTA 20000
+#define DELTA 100000
 
 #define CI_SCALAR_BASE_INDEX(a) (CI_BASE_INDEX(a, 1))
 #define CI_VECTOR_BASE_INDEX(a) (CI_BASE_INDEX(a, 3))
