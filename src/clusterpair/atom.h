@@ -96,6 +96,7 @@ extern int readAtomDmp(Atom*, Parameter*);
 extern void growAtom(Atom*);
 extern void freeAtom(Atom*);
 extern void growClusters(Atom*);
+extern void growSuperClusters(Atom*);
 
 int packGhost(Atom*, int, MD_FLOAT*, int*);
 int unpackGhost(Atom*, int, MD_FLOAT*);

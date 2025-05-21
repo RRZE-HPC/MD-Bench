@@ -810,13 +810,13 @@ void growSuperClusters(Atom *atom) {
     int nold = atom->Nsclusters_max;
     atom->Nsclusters_max += DELTA;
     atom->siclusters = (SuperCluster*) reallocate(atom->siclusters, ALIGNMENT, atom->Nsclusters_max * sizeof(SuperCluster), nold * sizeof(SuperCluster));
-    atom->icluster_idx = (int*) reallocate(atom->icluster_idx, ALIGNMENT, atom->Nsclusters_max * SCLUSTER_SIZE * sizeof(int), nold * SCLUSTER_SIZE * sizeof(
+    atom->icluster_idx = (int*) reallocate(atom->icluster_idx, ALIGNMENT, atom->Nsclusters_max * SCLUSTER_SIZE * sizeof(int), nold * SCLUSTER_SIZE * sizeof(int));
     atom->sicluster_bin = (int*) reallocate(atom->sicluster_bin, ALIGNMENT, atom->Nsclusters_max * sizeof(int), nold * sizeof(int));
-    //atom->scl_type = (int*) reallocate(atom->scl_type, ALIGNMENT, atom->Nclusters_max * CLUSTER_M * SCLUSTER_SIZE * sizeof(int), nold * CLUSTER_M * SCLUST
+    //atom->scl_type = (int*) reallocate(atom->scl_type, ALIGNMENT, atom->Nclusters_max * CLUSTER_M * SCLUSTER_SIZE * sizeof(int), nold * CLUSTER_M * SCLUSTER_SIZE * sizeof(int));
 
-    atom->scl_x = (MD_FLOAT*) reallocate(atom->scl_x, ALIGNMENT, atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT), nold * SCLUSTER_M * 3 * sizeof(MD
-    atom->scl_f = (MD_FLOAT*) reallocate(atom->scl_f, ALIGNMENT, atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT), nold * SCLUSTER_M * 3 * sizeof(MD
-    atom->scl_v = (MD_FLOAT*) reallocate(atom->scl_v, ALIGNMENT, atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT), nold * SCLUSTER_M * 3 * sizeof(MD
+    atom->scl_x = (MD_FLOAT*) reallocate(atom->scl_x, ALIGNMENT, atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT), nold * SCLUSTER_M * 3 * sizeof(MD_FLOAT));
+    atom->scl_f = (MD_FLOAT*) reallocate(atom->scl_f, ALIGNMENT, atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT), nold * SCLUSTER_M * 3 * sizeof(MD_FLOAT));
+    atom->scl_v = (MD_FLOAT*) reallocate(atom->scl_v, ALIGNMENT, atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT), nold * SCLUSTER_M * 3 * sizeof(MD_FLOAT));
 }
 #endif
 

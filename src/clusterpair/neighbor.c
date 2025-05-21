@@ -792,7 +792,30 @@ void buildNeighborGPU(Atom *atom, Neighbor *neighbor) {
                             d_bb_sq += dm0 * dm0;
 
                             if(d_bb_sq < cutneighsq) {
-                                if(d_bb_sq < rbb_sq || atomDistanceInRangeGPU(atom, sci, cj, cutneighsq)) {
+                                int is_neighbor = (d_bb_sq < rbb_sq) ? 1 : 0;
+                                if(!is_neighbor) {
+                                    for (int ci = 0; ci < atom->siclusters[sci].nclusters; ci++) {
+                                        const int icluster_idx = atom->icluster_idx[SCLUSTER_SIZE * sci + ci];
+                                        int ci_vec_base = CI_VECTOR_BASE_INDEX(icluster_idx);
+                                        int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
+                                        MD_FLOAT *ci_x = &atom->cl_x[ci_vec_base];
+                                        MD_FLOAT *cj_x = &atom->cl_x[cj_vec_base];
+
+                                        for(int cii = 0; cii < atom->iclusters[icluster_idx].natoms; cii++) {
+                                            for(int cjj = 0; cjj < atom->jclusters[cj].natoms; cjj++) {
+                                                MD_FLOAT delx = ci_x[CL_X_OFFSET + cii] - cj_x[CL_X_OFFSET + cjj];
+                                                MD_FLOAT dely = ci_x[CL_Y_OFFSET + cii] - cj_x[CL_Y_OFFSET + cjj];
+                                                MD_FLOAT delz = ci_x[CL_Z_OFFSET + cii] - cj_x[CL_Z_OFFSET + cjj];
+                                                if(delx * delx + dely * dely + delz * delz < cutneighsq) {
+                                                    is_neighbor = 1;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if(is_neighbor) {
                                     neighptr[n++] = cj;
                                 }
                             }
@@ -1001,6 +1024,8 @@ void pruneNeighbor(Parameter* param, Atom* atom, Neighbor* neighbor)
                 atom_dist_in_range = 1;
             }
 #else
+#ifdef USE_SUPER_CLUSTERS
+#else
             for (int cii = 0; cii < atom->iclusters[ci].natoms; cii++) {
                 for (int cjj = 0; cjj < atom->jclusters[cj].natoms; cjj++) {
                     MD_FLOAT delx = ci_x[CL_X_OFFSET + cii] - cj_x[CL_X_OFFSET + cjj];
@@ -1012,6 +1037,7 @@ void pruneNeighbor(Parameter* param, Atom* atom, Neighbor* neighbor)
                     }
                 }
             }
+#endif
 #endif
 
             if (atom_dist_in_range) {
@@ -1050,9 +1076,6 @@ void pruneNeighborGPU(Parameter *param, Atom *atom, Neighbor *neighbor) {
 
     for (int sci = 0; sci < atom->Nsclusters_local; sci++) {
         for (int scii = 0; scii < atom->siclusters[sci].nclusters; scii++) {
-            //const int ci = atom->siclusters[sci].iclusters[scii];
-            const int ci = atom->icluster_idx[SCLUSTER_SIZE * sci + ci];
-
             int *neighs = &neighbor->neighbors[sci * neighbor->maxneighs];
             int numneighs = neighbor->numneigh[sci];
             int k = 0;
@@ -1065,8 +1088,30 @@ void pruneNeighborGPU(Parameter *param, Atom *atom, Neighbor *neighbor) {
             }
 
             while(k < numneighs) {
+                int is_neighbor = 0;
                 int cj = neighs[k];
-                if(atomDistanceInRange(atom, ci, cj, cutsq)) {
+
+                for (int ci = 0; ci < atom->siclusters[sci].nclusters; ci++) {
+                    const int icluster_idx = atom->icluster_idx[SCLUSTER_SIZE * sci + ci];
+                    int ci_vec_base = CI_VECTOR_BASE_INDEX(icluster_idx);
+                    int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
+                    MD_FLOAT *ci_x = &atom->cl_x[ci_vec_base];
+                    MD_FLOAT *cj_x = &atom->cl_x[cj_vec_base];
+
+                    for(int cii = 0; cii < atom->iclusters[icluster_idx].natoms; cii++) {
+                        for(int cjj = 0; cjj < atom->jclusters[cj].natoms; cjj++) {
+                            MD_FLOAT delx = ci_x[CL_X_OFFSET + cii] - cj_x[CL_X_OFFSET + cjj];
+                            MD_FLOAT dely = ci_x[CL_Y_OFFSET + cii] - cj_x[CL_Y_OFFSET + cjj];
+                            MD_FLOAT delz = ci_x[CL_Z_OFFSET + cii] - cj_x[CL_Z_OFFSET + cjj];
+                            if(delx * delx + dely * dely + delz * delz < cutsq) {
+                                is_neighbor = 1;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if(is_neighbor) {
                     k++;
                 } else {
                     numneighs--;
@@ -1397,7 +1442,7 @@ void buildClustersGPU(Atom *atom) {
                         MD_FLOAT *sci_x = &atom->scl_x[sci_vec_base];
                         MD_FLOAT *sci_v = &atom->scl_v[sci_vec_base];
 
-                        int *ci_type = &atom->cl_type[ci_sca_base];
+                        int *ci_type = &atom->cl_t[ci_sca_base];
                         MD_FLOAT bbminx = INFINITY, bbmaxx = -INFINITY;
                         MD_FLOAT bbminy = INFINITY, bbmaxy = -INFINITY;
                         MD_FLOAT bbminz = INFINITY, bbmaxz = -INFINITY;
