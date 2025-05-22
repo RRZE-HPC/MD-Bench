@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <utils.h>
+#include <force.h>
 
 extern void alignDataToSuperclusters(Atom *atom);
 extern void alignDataFromSuperclusters(Atom *atom);

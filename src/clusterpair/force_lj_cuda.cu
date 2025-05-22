@@ -25,6 +25,26 @@ extern "C" {
 #include <allocate.h>
 }
 
+extern __global__ void cudaInitialIntegrateSup_warp(MD_FLOAT *cuda_cl_x, MD_FLOAT *cuda_cl_v, MD_FLOAT *cuda_cl_f,
+                                                    int *cuda_nclusters,
+                                                    int *cuda_natoms,
+                                                    int Nsclusters_local, MD_FLOAT dtforce, MD_FLOAT dt);
+
+extern __global__ void cudaFinalIntegrateSup_warp(MD_FLOAT *cuda_cl_v, MD_FLOAT *cuda_cl_f,
+                                                  int *cuda_nclusters, int *cuda_natoms,
+                                                  int Nsclusters_local, MD_FLOAT dtforce);
+
+extern __global__ void cudaUpdatePbcSup_warp(MD_FLOAT *cuda_cl_x, int *cuda_border_map,
+                                   int *cuda_jclusters_natoms,
+                                   int *cuda_PBCx,
+                                   int *cuda_PBCy,
+                                   int *cuda_PBCz,
+                                   int Nsclusters_local,
+                                   int Nclusters_ghost,
+                                   MD_FLOAT param_xprd,
+                                   MD_FLOAT param_yprd,
+                                   MD_FLOAT param_zprd);
+
 extern "C" {
 MD_FLOAT* cuda_cl_x;
 MD_FLOAT* cuda_cl_v;
@@ -37,6 +57,15 @@ int* ngatoms;
 int* cuda_border_map;
 int* cuda_jclusters_natoms;
 int *cuda_PBCx, *cuda_PBCy, *cuda_PBCz;
+
+#ifdef USE_SUPER_CLUSTERS
+int *cuda_iclusters;
+int *cuda_nclusters;
+int cuda_max_scl;
+MD_FLOAT *cuda_scl_x;
+MD_FLOAT *cuda_scl_v;
+MD_FLOAT *cuda_scl_f;
+#endif
 
 #ifndef ONE_ATOM_TYPE
 int* cuda_cl_t;
@@ -503,7 +532,7 @@ extern "C" void initialIntegrateCUDA(Parameter* param, Atom* atom)
 {
     const int threads_num = 64;
     dim3 block_size       = dim3(threads_num, 1, 1);
-    dim3 grid_size = dim3((atom->Nclusters_local + threads_num - 1) / threads_num, 1, 1);
+    //dim3 grid_size = dim3((atom->Nclusters_local + threads_num - 1) / threads_num, 1, 1);
 
     #ifdef USE_SUPER_CLUSTERS
     dim3 grid_size = dim3(atom->Nsclusters_local/(threads_num)+1, 1, 1);
@@ -614,7 +643,7 @@ extern "C" void finalIntegrateCUDA(Parameter* param, Atom* atom)
 {
     const int threads_num = 64;
     dim3 block_size       = dim3(threads_num, 1, 1);
-    dim3 grid_size = dim3((atom->Nclusters_local + threads_num - 1) / threads_num, 1, 1);
+    //dim3 grid_size = dim3((atom->Nclusters_local + threads_num - 1) / threads_num, 1, 1);
 
     #ifdef USE_SUPER_CLUSTERS
     dim3 grid_size = dim3(atom->Nsclusters_local/(threads_num)+1, 1, 1);

@@ -168,7 +168,12 @@ void printParameter(Parameter* param)
 #else
     fprintf(stdout,"\tKernel: %s\n", KERNEL_NAME);
 #endif
+
+#ifdef CUDA_TARGET
+    fprintf(stdout,"\tSIMD Intrinsics: CUDA\n");
+#else
     fprintf(stdout,"\tSIMD Intrinsics: %s\n", SIMD_INTRINSICS);
+#endif
     fprintf(stdout,"\tData layout: %s\n", POS_DATA_LAYOUT);
     fprintf(stdout,"\tFloating-point precision: %s\n", PRECISION_STRING);
     fprintf(stdout,"\tUnit cells (nx, ny, nz): %d, %d, %d\n", param->nx, param->ny, param->nz);
