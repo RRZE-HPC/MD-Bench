@@ -183,7 +183,7 @@ __global__ void computeForceLJSup_cuda_warp(MD_FLOAT *cuda_cl_x, MD_FLOAT *cuda_
 
     if (ci_pos >= cuda_nclusters[sci_pos]) return;
 
-    int ci_cj0 = CJ0_FROM_CI(ci_pos);
+    //int ci_cj0 = CJ0_FROM_CI(ci_pos);
     int ci_vec_base = SCI_VECTOR_BASE_INDEX(sci_pos);
     MD_FLOAT *ci_x = &cuda_cl_x[ci_vec_base];
     MD_FLOAT *ci_f = &cuda_cl_f[ci_vec_base];

@@ -57,6 +57,7 @@ int* ngatoms;
 int* cuda_border_map;
 int* cuda_jclusters_natoms;
 int *cuda_PBCx, *cuda_PBCy, *cuda_PBCz;
+int isReneighboured;
 
 #ifdef USE_SUPER_CLUSTERS
 int *cuda_iclusters;
@@ -523,6 +524,17 @@ extern "C"
 void cudaInitialIntegrate(Parameter *param, Atom *atom) {
     const int threads_num = 16;
     dim3 block_size = dim3(threads_num, 1, 1);
+
+    #ifdef USE_SUPER_CLUSTERS
+    dim3 grid_size = dim3(atom->Nsclusters_local/(threads_num)+1, 1, 1); 
+    cudaInitialIntegrateSup_warp<<<grid_size, block_size>>>(cuda_scl_x, cuda_scl_v, cuda_scl_f,
+                                                            cuda_nclusters,
+                                                            cuda_natoms, atom->Nsclusters_local, param->dtforce, param->dt);
+    #else
+    dim3 grid_size = dim3(atom->Nclusters_local/(threads_num)+1, 1, 1); 
+    cudaInitialIntegrate_warp<<<grid_size, block_size>>>(cuda_cl_x, cuda_cl_v, cuda_cl_f,
+                                                         cuda_natoms, atom->Nclusters_local, param->dtforce, param->dt);
+    #endif
 
     cuda_assert("cudaInitialIntegrate", cudaPeekAtLastError());
     cuda_assert("cudaInitialIntegrate", cudaDeviceSynchronize());
