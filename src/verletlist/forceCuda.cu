@@ -313,14 +313,14 @@ extern "C" void copyForceToGPU(Atom* atom)
     memcpyToGPU(atom->d_atom.fx, atom->fx, atom->Nmax * sizeof(MD_FLOAT) * 3);
 }
 
-extern "C" void copyDataFromCUDADevice(Atom* atom)
+extern "C" void copyDataFromCUDADevice(Parameter* param, Atom* atom)
 {
     memcpyFromGPU(atom->x, atom->d_atom.x, atom->Nmax * sizeof(MD_FLOAT) * 3);
     memcpyFromGPU(atom->vx, atom->d_atom.vx, atom->Nmax * sizeof(MD_FLOAT) * 3);
     memcpyFromGPU(atom->type, atom->d_atom.type, atom->Nmax * sizeof(int));
 }
 
-extern "C" void copyDataToCUDADevice(Atom* atom)
+extern "C" void copyDataToCUDADevice(Parameter* param, Atom* atom)
 {
     memcpyToGPU(atom->d_atom.x, atom->x, atom->Nmax * sizeof(MD_FLOAT) * 3);
     memcpyToGPU(atom->d_atom.vx, atom->vx, atom->Nmax * sizeof(MD_FLOAT) * 3);

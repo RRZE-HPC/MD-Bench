@@ -82,23 +82,18 @@ void initAtom(Atom* atom)
     atom->jclusters       = NULL;
     atom->icluster_bin    = NULL;
 
-#ifdef USE_SUPER_CLUSTERS
+    // Data for "super-cluster" strategy
     atom->scl_x = NULL;
     atom->scl_v = NULL;
     atom->scl_f = NULL;
-
     atom->Nsclusters = 0;
     atom->Nsclusters_local = 0;
     atom->Nsclusters_ghost = 0;
     atom->Nsclusters_max = 0;
-
     atom->scl_type = NULL;
-
     atom->siclusters = NULL;
     atom->icluster_idx = NULL;
-
     atom->sicluster_bin = NULL;
-#endif
 
     initMasks(atom);
     // MPI New features
@@ -805,7 +800,6 @@ void growClusters(Atom* atom)
 #endif     
 }
 
-#ifdef USE_SUPER_CLUSTERS
 void growSuperClusters(Atom *atom) {
     int nold = atom->Nsclusters_max;
     atom->Nsclusters_max += DELTA;
@@ -818,7 +812,6 @@ void growSuperClusters(Atom *atom) {
     atom->scl_f = (MD_FLOAT*) reallocate(atom->scl_f, ALIGNMENT, atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT), nold * SCLUSTER_M * 3 * sizeof(MD_FLOAT));
     atom->scl_v = (MD_FLOAT*) reallocate(atom->scl_v, ALIGNMENT, atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT), nold * SCLUSTER_M * 3 * sizeof(MD_FLOAT));
 }
-#endif
 
 /* MPI added*/
 

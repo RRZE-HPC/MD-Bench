@@ -59,6 +59,14 @@ extern double computeForceEam(Parameter*, Atom*, Neighbor*, Stats*);
  * 16-way SIMD: 4x8 setup, used in single precision with 512 bit wide SIMD
  */
 
+// General macros
+#define XX                   0
+#define YY                   1
+#define ZZ                   2
+#define DIM_COORD(dim,coord) ((dim == XX) ? atom_x(coord) : \
+                              (dim == YY) ? atom_y(coord) : \
+                                            atom_z(coord))
+
 #ifdef CUDA_TARGET
 extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #undef VECTOR_WIDTH
@@ -68,19 +76,6 @@ extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #define CLUSTER_M   8
 #define CLUSTER_N   VECTOR_WIDTH
 #define UNROLL_J    1
-
-#ifdef USE_SUPER_CLUSTERS
-#define XX                   0
-#define YY                   1
-#define ZZ                   2
-#define SCLUSTER_SIZE_X      2
-#define SCLUSTER_SIZE_Y      2
-#define SCLUSTER_SIZE_Z      2
-#define SCLUSTER_SIZE        (SCLUSTER_SIZE_X * SCLUSTER_SIZE_Y * SCLUSTER_SIZE_Z)
-#define DIM_COORD(dim,coord) ((dim == XX) ? atom_x(coord) : ((dim == YY) ? atom_y(coord) : atom_z(coord)))
-#define MIN(a,b)             ({int _a = (a), _b = (b); _a < _b ? _a : _b; })
-#define SCLUSTER_M           CLUSTER_M * SCLUSTER_SIZE
-#endif
 
 #else
 #ifdef USE_REFERENCE_KERNEL
@@ -133,21 +128,6 @@ extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #define CL_Z_OFFSET (2 * CLUSTER_N)
 #endif
 
-#ifdef USE_SUPER_CLUSTERS
-#if CLUSTER_M >= CLUSTER_N
-#define SCL_CL_X_OFFSET(ci) (ci * CLUSTER_M + 0 * SCLUSTER_M)
-#define SCL_CL_Y_OFFSET(ci) (ci * CLUSTER_M + 1 * SCLUSTER_M)
-#define SCL_CL_Z_OFFSET(ci) (ci * CLUSTER_M + 2 * SCLUSTER_M)
-#define SCL_X_OFFSET        (0 * SCLUSTER_M)
-#define SCL_Y_OFFSET        (1 * SCLUSTER_M)
-#define SCL_Z_OFFSET        (2 * SCLUSTER_M)
-#else
-#define SCL_X_OFFSET (0 * SCLUSTER_SIZE * CLUSTER_N)
-#define SCL_Y_OFFSET (1 * SCLUSTER_SIZE * CLUSTER_N)
-#define SCL_Z_OFFSET (2 * SCLUSTER_SIZE * CLUSTER_N)
-#endif
-#endif
-
 #if CLUSTER_M == CLUSTER_N
 #define CJ0_FROM_CI(a)      (a)
 #define CJ1_FROM_CI(a)      (a)
@@ -171,7 +151,26 @@ extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #error "Cluster N dimension can be only 2, 4 and 8"
 #endif
 
-#ifdef USE_SUPER_CLUSTERS
+// Super-clustering macros
+#define SCLUSTER_SIZE_X      2
+#define SCLUSTER_SIZE_Y      2
+#define SCLUSTER_SIZE_Z      2
+#define SCLUSTER_SIZE        (SCLUSTER_SIZE_X * SCLUSTER_SIZE_Y * SCLUSTER_SIZE_Z)
+#define SCLUSTER_M           CLUSTER_M * SCLUSTER_SIZE
+
+#if CLUSTER_M >= CLUSTER_N
+#define SCL_CL_X_OFFSET(ci) (ci * CLUSTER_M + 0 * SCLUSTER_M)
+#define SCL_CL_Y_OFFSET(ci) (ci * CLUSTER_M + 1 * SCLUSTER_M)
+#define SCL_CL_Z_OFFSET(ci) (ci * CLUSTER_M + 2 * SCLUSTER_M)
+#define SCL_X_OFFSET        (0 * SCLUSTER_M)
+#define SCL_Y_OFFSET        (1 * SCLUSTER_M)
+#define SCL_Z_OFFSET        (2 * SCLUSTER_M)
+#else
+#define SCL_X_OFFSET (0 * SCLUSTER_SIZE * CLUSTER_N)
+#define SCL_Y_OFFSET (1 * SCLUSTER_SIZE * CLUSTER_N)
+#define SCL_Z_OFFSET (2 * SCLUSTER_SIZE * CLUSTER_N)
+#endif
+
 #if CLUSTER_M == CLUSTER_N
 #define CJ1_FROM_SCI(a)          (a)
 #define SCI_BASE_INDEX(a,b)      ((a) * CLUSTER_N * SCLUSTER_SIZE * (b))
@@ -182,8 +181,6 @@ extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #elif CLUSTER_M == CLUSTER_N / 2 // M < N
 #define SCI_BASE_INDEX(a,b)      (((a) >> 1) * CLUSTER_N * SCLUSTER_SIZE * (b) + ((a) & 0x1) * (CLUSTER_N * SCLUSTER_SIZE >> 1))
 #define SCJ_BASE_INDEX(a,b)      ((a) * CLUSTER_N * SCLUSTER_SIZE * (b))
-#endif
-
 #endif
 
 #endif // __FORCE_H_

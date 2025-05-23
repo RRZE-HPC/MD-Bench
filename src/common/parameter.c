@@ -54,6 +54,11 @@ void initParameter(Parameter* param)
     param->v_out_every     = 5;
     param->half_neigh      = 0;
     param->proc_freq       = 2.4;
+#if defined(CUDA_TARGET) && defined(USE_SUPER_CLUSTERS)
+    param->super_clustering = 1;
+#else
+    param->super_clustering = 0;
+#endif
     // MPI
     param->balance       = 0;
     param->method        = 0;
@@ -124,6 +129,7 @@ void readParameter(Parameter* param, const char* filename)
             PARSE_INT(method);
             PARSE_INT(balance);
             PARSE_INT(balance_every);
+            PARSE_INT(super_clustering);
         }
     }
 
@@ -171,6 +177,7 @@ void printParameter(Parameter* param)
 
 #ifdef CUDA_TARGET
     fprintf(stdout,"\tSIMD Intrinsics: CUDA\n");
+    fprintf(stdout,"\tSuper-clustering: %s\n", (param->super_clustering) ? "yes" : "no");
 #else
     fprintf(stdout,"\tSIMD Intrinsics: %s\n", SIMD_INTRINSICS);
 #endif

@@ -11,7 +11,6 @@
 extern void alignDataToSuperclusters(Atom *atom);
 extern void alignDataFromSuperclusters(Atom *atom);
 
-#ifdef USE_SUPER_CLUSTERS
 /*
 void verifyClusters(Atom *atom) {
     unsigned int count = 0;
@@ -329,5 +328,3 @@ void verifyNeigh(Atom *atom, Neighbor *neighbor) {
 
     printf("%d\t%d\r\n", num_diff, neigh_diff);
 }
-
-#endif //USE_SUPER_CLUSTERS

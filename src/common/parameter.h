@@ -62,6 +62,7 @@ typedef struct {
     MD_FLOAT xlo, xhi, ylo, yhi, zlo, zhi;
     MD_FLOAT xprd, yprd, zprd;
     double proc_freq;
+    int super_clustering;
     char* eam_file;
     // MPI implementation
     int balance;

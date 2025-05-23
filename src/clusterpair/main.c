@@ -34,9 +34,9 @@
 #include <xtc.h>
 #include <balance.h>
 
-extern void copyDataToCUDADevice(Atom*, Neighbor*);
-extern void copyDataFromCUDADevice(Atom*);
-extern void cudaDeviceFree(void);
+extern void copyDataToCUDADevice(Parameter*, Atom*, Neighbor*);
+extern void copyDataFromCUDADevice(Parameter*, Atom*);
+extern void cudaDeviceFree(Parameter*);
 
 #define HLINE                                                                         \
     "----------------------------------------------------------------------------\n"
@@ -84,7 +84,7 @@ double setup(Parameter* param, Eam* eam, Atom* atom, Neighbor* neighbor, Stats* 
 #endif
     binClusters(atom);
     buildNeighbor(atom, neighbor);
-    initDevice(atom, neighbor);
+    initDevice(param, atom, neighbor);
     timeStop = getTimeStamp();
     return timeStop - timeStart;
 }
@@ -283,7 +283,7 @@ int main(int argc, char** argv)
 #endif
 
 #ifdef CUDA_TARGET
-    copyDataToCUDADevice(&atom, &neighbor);
+    copyDataToCUDADevice(&param, &atom, &neighbor);
 #endif 
     barrierComm();
     timer[TOTAL] = getTimeStamp();
@@ -311,7 +311,7 @@ int main(int argc, char** argv)
             //updatePbc(&atom, &param, 0);
         } else {
 #ifdef CUDA_TARGET
-            copyDataFromCUDADevice(&atom);
+            copyDataFromCUDADevice(&param, &atom);
 #endif
             timer[UPDATE] += updateAtoms(&comm, &atom, &param); 
             if (param.balance && !((n + 1) % param.balance_every)){
@@ -320,7 +320,7 @@ int main(int argc, char** argv)
             }
             timer[NEIGH] += reneighbour(&comm, &param, &atom, &neighbor);
 #ifdef CUDA_TARGET
-            copyDataToCUDADevice(&atom, &neighbor);
+            copyDataToCUDADevice(&param, &atom, &neighbor);
 #endif
         }
 #if defined(MEM_TRACER) || defined(INDEX_TRACER)
@@ -349,7 +349,7 @@ int main(int argc, char** argv)
     }
 
 #ifdef CUDA_TARGET
-    copyDataFromCUDADevice(&atom);
+    copyDataFromCUDADevice(&param, &atom);
 #endif
     barrierComm();
     timer[TOTAL] = getTimeStamp() - timer[TOTAL];
@@ -361,7 +361,7 @@ int main(int argc, char** argv)
     }
 
 #ifdef CUDA_TARGET
-    cudaDeviceFree();
+    cudaDeviceFree(&param);
 #endif
     timer[REST] = timer[TOTAL] - timer[FORCE] - timer[NEIGH] - timer[BALANCE] -
                   timer[FORWARD] - timer[REVERSE]; 

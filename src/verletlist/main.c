@@ -38,8 +38,8 @@
 #include <vtk.h>
 #include <balance.h>
 
-extern void copyDataToCUDADevice(Atom*);
-extern void copyDataFromCUDADevice(Atom*);
+extern void copyDataToCUDADevice(Parameter*, Atom*);
+extern void copyDataFromCUDADevice(Parameter*, Atom*);
 
 #define HLINE "-----------------------------------------------------------------------\n"
 
@@ -81,11 +81,11 @@ double setup(Parameter* param, Eam* eam, Atom* atom, Neighbor* neighbor, Stats* 
     sortAtom(atom);
 #endif
     setupPbc(atom, param);
-    initDevice(atom, neighbor);
+    initDevice(param, atom, neighbor);
 #ifdef _MPI    
     ghostNeighbor(comm, atom, param);
 #ifdef CUDA_TARGET
-    copyDataToCUDADevice(atom);
+    copyDataToCUDADevice(param, atom);
 #endif
 #else
     updatePbc(atom, param, true);
@@ -112,7 +112,7 @@ double reneighbour(int n, Parameter* param, Atom* atom, Neighbor* neighbor, Comm
 #ifdef _MPI
     ghostNeighbor(comm, atom, param);
 #ifdef CUDA_TARGET
-    copyDataToCUDADevice(atom);
+    copyDataToCUDADevice(param, atom);
 #endif
 #else 
     setupPbc(atom, param);
@@ -143,7 +143,7 @@ double updateAtoms(Comm* comm, Atom* atom, Parameter* param)
     timeStart = getTimeStamp();
 #ifdef _MPI
 #ifdef CUDA_TARGET
-    copyDataFromCUDADevice(atom);
+    copyDataFromCUDADevice(param, atom);
 #endif
     exchangeComm(comm, atom);
 #else 

@@ -116,13 +116,14 @@ void setupNeighbor(Parameter* param, Atom* atom)
     MD_FLOAT atom_density = ((MD_FLOAT)(atom->Natoms)) /
                             ((xhi - xlo) * (yhi - ylo) * (zhi - zlo));
     MD_FLOAT atoms_in_cell = MAX(CLUSTER_M, CLUSTER_N);
-    #ifdef USE_SUPER_CLUSTERS
-    MD_FLOAT targetsizex = cbrt(atoms_in_cell / atom_density) * (MD_FLOAT)SCLUSTER_SIZE_X;
-    MD_FLOAT targetsizey = cbrt(atoms_in_cell / atom_density) * (MD_FLOAT)SCLUSTER_SIZE_Y;
-    #else
     MD_FLOAT targetsizex = cbrt(atoms_in_cell / atom_density);
     MD_FLOAT targetsizey = cbrt(atoms_in_cell / atom_density);
-    #endif
+
+    if(param->super_clustering) {
+        targetsizex *= (MD_FLOAT)SCLUSTER_SIZE_X;
+        targetsizey *= (MD_FLOAT)SCLUSTER_SIZE_Y;
+    }
+
     nbinx                  = MAX(1, (int)ceil((xhi - xlo) / targetsizex));
     nbiny                  = MAX(1, (int)ceil((yhi - ylo) / targetsizey));
     binsizex               = (xhi - xlo) / nbinx;
@@ -701,9 +702,8 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
     DEBUG_MESSAGE("buildNeighbor end\n");
 }
 
-#ifdef USE_SUPER_CLUSTERS
 // TODO For future parallelization on GPU
-void buildNeighborGPU(Atom *atom, Neighbor *neighbor) {
+void buildNeighborSuperclusters(Atom *atom, Neighbor *neighbor) {
     DEBUG_MESSAGE("buildNeighborGPU start\n");
 
     /* extend atom arrays if necessary */
@@ -904,7 +904,6 @@ void buildNeighborGPU(Atom *atom, Neighbor *neighbor) {
 
     DEBUG_MESSAGE("buildNeighborGPU end\n");
 }
-#endif
 
 void pruneNeighbor(Parameter* param, Atom* atom, Neighbor* neighbor)
 {
@@ -1024,8 +1023,6 @@ void pruneNeighbor(Parameter* param, Atom* atom, Neighbor* neighbor)
                 atom_dist_in_range = 1;
             }
 #else
-#ifdef USE_SUPER_CLUSTERS
-#else
             for (int cii = 0; cii < atom->iclusters[ci].natoms; cii++) {
                 for (int cjj = 0; cjj < atom->jclusters[cj].natoms; cjj++) {
                     MD_FLOAT delx = ci_x[CL_X_OFFSET + cii] - cj_x[CL_X_OFFSET + cjj];
@@ -1037,7 +1034,6 @@ void pruneNeighbor(Parameter* param, Atom* atom, Neighbor* neighbor)
                     }
                 }
             }
-#endif
 #endif
 
             if (atom_dist_in_range) {
@@ -1068,8 +1064,7 @@ void pruneNeighbor(Parameter* param, Atom* atom, Neighbor* neighbor)
     DEBUG_MESSAGE("pruneNeighbor end\n");
 }
 
-#ifdef USE_SUPER_CLUSTERS
-void pruneNeighborGPU(Parameter *param, Atom *atom, Neighbor *neighbor) {
+void pruneNeighborSuperclusters(Parameter *param, Atom *atom, Neighbor *neighbor) {
     DEBUG_MESSAGE("pruneNeighbor start\n");
     //MD_FLOAT cutsq = param->cutforce * param->cutforce;
     MD_FLOAT cutsq = cutneighsq;
@@ -1132,7 +1127,6 @@ void pruneNeighborGPU(Parameter *param, Atom *atom, Neighbor *neighbor) {
 
     DEBUG_MESSAGE("pruneNeighbor end\n");
 }
-#endif
 
 /* internal subroutines */
 MD_FLOAT bindist(int i, int j)
@@ -1385,8 +1379,7 @@ void buildClusters(Atom* atom)
     DEBUG_MESSAGE("buildClusters end\n");
 }
 
-#ifdef USE_SUPER_CLUSTERS
-void buildClustersGPU(Atom *atom) {
+void buildSuperclusters(Atom *atom) {
     DEBUG_MESSAGE("buildClustersGPU start\n");
     atom->Nclusters_local = 0;
     atom->Nsclusters_local = 0;
@@ -1530,7 +1523,6 @@ void buildClustersGPU(Atom *atom) {
 
     DEBUG_MESSAGE("buildClustersGPU end\n");
 }
-#endif
 
 void defineJClusters(Atom* atom)
 {

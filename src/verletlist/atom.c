@@ -20,10 +20,6 @@
 #define MAXLINE 4096
 #endif
 
-#ifndef MAX
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
-#endif
-
 int write_atoms_to_file(Atom* atom, char* name)
 {
     // file system variable

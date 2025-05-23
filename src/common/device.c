@@ -11,7 +11,7 @@
 
 #ifndef CUDA_TARGET
 void GPUfree(void *any) {}
-void initDevice(Atom* atom, Neighbor* neighbor) {}
+void initDevice(Parameter* param, Atom* atom, Neighbor* neighbor) {}
 void* allocateGPU(size_t bytesize) { return NULL; }
 void* reallocateGPU(void* ptr, size_t new_bytesize) { return NULL; }
 void memcpyToGPU(void* d_ptr, void* h_ptr, size_t bytesize) {}

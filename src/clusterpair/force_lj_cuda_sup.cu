@@ -43,7 +43,6 @@ extern "C" {
     extern MD_FLOAT *cuda_scl_f;
 }
 
-#ifdef USE_SUPER_CLUSTERS
 extern "C"
 void alignDataToSuperclusters(Atom *atom) {
     for (int sci = 0; sci < atom->Nsclusters_local; sci++) {
@@ -318,4 +317,3 @@ double computeForceLJSup_cuda(Parameter *param, Atom *atom, Neighbor *neighbor, 
     DEBUG_MESSAGE("computeForceLJSup_cuda stop\r\n");
     return E-S;
 }
-#endif //USE_SUPER_CLUSTERS

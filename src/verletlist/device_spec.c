@@ -8,7 +8,7 @@
 
 #ifdef CUDA_TARGET
 
-void initDevice(Atom* atom, Neighbor* neighbor)
+void initDevice(Parameter* param, Atom* atom, Neighbor* neighbor)
 {
     DeviceAtom* d_atom         = &(atom->d_atom);
     DeviceNeighbor* d_neighbor = &(neighbor->d_neighbor);

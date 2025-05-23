@@ -24,12 +24,9 @@ void write_data_to_vtk_file(const char* filename, Atom* atom, int timestep)
     write_ghost_atoms_to_vtk_file(filename, atom, timestep);
     write_local_cluster_edges_to_vtk_file(filename, atom, timestep);
     write_ghost_cluster_edges_to_vtk_file(filename, atom, timestep);
-#ifdef USE_SUPER_CLUSTERS
-    write_super_clusters_to_vtk_file(filename, atom, timestep);
-#endif //#ifdef USE_SUPER_CLUSTERS
+    //write_super_clusters_to_vtk_file(filename, atom, timestep);
 }
 
-#ifdef USE_SUPER_CLUSTERS
 int write_super_clusters_to_vtk_file(const char* filename, Atom* atom, int timestep) {
     char timestep_filename[128];
     snprintf(timestep_filename, sizeof timestep_filename, "%s_sup_%d.vtk", filename, timestep);
@@ -77,7 +74,6 @@ int write_super_clusters_to_vtk_file(const char* filename, Atom* atom, int times
     fclose(fp);
     return 0;
 }
-#endif
 
 int write_local_atoms_to_vtk_file(const char* filename, Atom* atom, int timestep)
 {

@@ -19,7 +19,5 @@ extern int write_ghost_cluster_edges_to_vtk_file(
     const char* filename, Atom* atom, int timestep);
 extern void printvtk(
     const char* filename, Comm* comm, Atom* atom, Parameter* param, int timestep);
-#ifdef USE_SUPER_CLUSTERS
 extern int write_super_clusters_to_vtk_file(const char* filename, Atom* atom, int timestep);
-#endif
 #endif
