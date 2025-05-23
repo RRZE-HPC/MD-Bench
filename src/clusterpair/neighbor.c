@@ -18,12 +18,10 @@
 #define SMALL  1.0e-6
 #define FACTOR 0.999
 #define eps    1.0e-9
-#ifdef CUDA_TARGET
-BuildNeighborFunction buildNeighbor = buildNeighborCPU;
-// BuildNeighborFunction buildNeighbor = buildNeighborCUDA;
-#else
-BuildNeighborFunction buildNeighbor = buildNeighborCPU;
-#endif
+
+BuildNeighborFunction buildNeighbor;
+PruneNeighborFunction pruneNeighbor;
+BuildClustersFunction buildClusters;
 
 static MD_FLOAT xprd, yprd, zprd;
 static MD_FLOAT bininvx, bininvy;
@@ -91,6 +89,16 @@ void initNeighbor(Neighbor* neighbor, Parameter* param)
     neighbor->numNeighShell = NULL;
     neighbor->neighshell    = NULL;
     neighbor->listshell     = NULL;
+
+    if(param->super_clustering) {
+        buildNeighbor = buildNeighborSuperclusters;
+        pruneNeighbor = pruneNeighborSuperclusters;
+        buildClusters = buildSuperclusters;
+    } else {
+        buildNeighbor = buildNeighborCPU;
+        pruneNeighbor = pruneNeighborCPU;
+        buildClusters = buildClustersCPU;
+    }
 }
 
 void setupNeighbor(Parameter* param, Atom* atom)
@@ -704,7 +712,7 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
 
 // TODO For future parallelization on GPU
 void buildNeighborSuperclusters(Atom *atom, Neighbor *neighbor) {
-    DEBUG_MESSAGE("buildNeighborGPU start\n");
+    DEBUG_MESSAGE("buildNeighborSuperclusters start\n");
 
     /* extend atom arrays if necessary */
     if(atom->Nsclusters_local > nmax) {
@@ -902,10 +910,10 @@ void buildNeighborSuperclusters(Atom *atom, Neighbor *neighbor) {
     }
     */
 
-    DEBUG_MESSAGE("buildNeighborGPU end\n");
+    DEBUG_MESSAGE("buildNeighborSuperclusters end\n");
 }
 
-void pruneNeighbor(Parameter* param, Atom* atom, Neighbor* neighbor)
+void pruneNeighborCPU(Parameter* param, Atom* atom, Neighbor* neighbor)
 {
     DEBUG_MESSAGE("pruneNeighbor start\n");
     // MD_FLOAT cutsq = param->cutforce * param->cutforce;
@@ -1286,8 +1294,7 @@ void sortAtomsByCoord(Atom *atom, int dim, int bin, int start_index, int end_ind
     //DEBUG_MESSAGE("sortAtomsByCoord end\n");
 }
 
-void buildClusters(Atom* atom)
-{
+void buildClustersCPU(Atom* atom) {
     DEBUG_MESSAGE("buildClusters start\n");
     atom->Nclusters_local = 0;
 
@@ -1380,7 +1387,7 @@ void buildClusters(Atom* atom)
 }
 
 void buildSuperclusters(Atom *atom) {
-    DEBUG_MESSAGE("buildClustersGPU start\n");
+    DEBUG_MESSAGE("buildSuperclustersGPU start\n");
     atom->Nclusters_local = 0;
     atom->Nsclusters_local = 0;
 
@@ -1521,7 +1528,7 @@ void buildSuperclusters(Atom *atom) {
         }
     }
 
-    DEBUG_MESSAGE("buildClustersGPU end\n");
+    DEBUG_MESSAGE("buildSuperclustersGPU end\n");
 }
 
 void defineJClusters(Atom* atom)
@@ -1858,9 +1865,7 @@ static int halfZoneCluster(Atom* atom, int cj)
     }
 }
 
-int BoxGhostDistance(Atom* atom, int ci, int cj)
-{
-
+int BoxGhostDistance(Atom* atom, int ci, int cj) {
     MD_FLOAT dl  = atom->jclusters[ci].bbminx - atom->jclusters[cj].bbmaxx;
     MD_FLOAT dh  = atom->jclusters[cj].bbminx - atom->jclusters[ci].bbmaxx;
     MD_FLOAT dm  = MAX(dl, dh);
@@ -1882,8 +1887,7 @@ int BoxGhostDistance(Atom* atom, int ci, int cj)
     return dx2 > cutneighsq ? 0 : dy2 > cutneighsq ? 0 : dz2 > cutneighsq ? 0 : 1;
 }
 
-static int ghostClusterinRange(Atom* atom, int cs, int cg, MD_FLOAT rsq)
-{
+static int ghostClusterinRange(Atom* atom, int cs, int cg, MD_FLOAT rsq) {
     int cs_vec_base = CJ_VECTOR_BASE_INDEX(cs);
     int cj_vec_base = CJ_VECTOR_BASE_INDEX(cg);
     MD_FLOAT* cs_x  = &atom->cl_x[cs_vec_base];
@@ -1899,11 +1903,11 @@ static int ghostClusterinRange(Atom* atom, int cs, int cg, MD_FLOAT rsq)
             }
         }
     }
+
     return 0;
 }
 
-static void neighborGhost(Atom* atom, Neighbor* neighbor)
-{
+static void neighborGhost(Atom* atom, Neighbor* neighbor) {
     int Nshell         = 0;
     int Ncluster_local = atom->Nclusters_local;
     int Nclusterghost  = atom->Nclusters_ghost;
@@ -1984,5 +1988,6 @@ static void neighborGhost(Atom* atom, Neighbor* neighbor)
                 Nshell * neighbor->maxneighs * sizeof(int));
         }
     }
+
     free(listzone);
 }

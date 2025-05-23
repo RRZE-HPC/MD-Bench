@@ -312,7 +312,7 @@ void verifyNeigh(Atom *atom, Neighbor *neighbor) {
     }
 
 
-    buildNeighborGPU(atom, neighbor);
+    buildNeighbor(atom, neighbor);
 
     unsigned int num_diff = 0;
     unsigned int neigh_diff = 0;

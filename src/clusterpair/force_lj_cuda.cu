@@ -528,15 +528,14 @@ extern "C"
 void cudaInitialIntegrate(Parameter *param, Atom *atom) {
     const int N = (param->super_clustering) ? atom->Nsclusters_local : atom->Nclusters_local;
     const int threads_num = 16;
+    dim3 grid_size = dim3(N / (threads_num) + 1, 1, 1); 
     dim3 block_size = dim3(threads_num, 1, 1);
 
     if(param->super_clustering) {
-        dim3 grid_size = dim3(atom->Nsclusters_local/(threads_num)+1, 1, 1); 
         cudaInitialIntegrateSup_warp<<<grid_size, block_size>>>(cuda_scl_x, cuda_scl_v, cuda_scl_f,
                                                                 cuda_nclusters,
                                                                 cuda_natoms, atom->Nsclusters_local, param->dtforce, param->dt);
     } else {
-        dim3 grid_size = dim3(atom->Nclusters_local/(threads_num)+1, 1, 1); 
         cudaInitialIntegrate_warp<<<grid_size, block_size>>>(cuda_cl_x, cuda_cl_v, cuda_cl_f,
                                                              cuda_natoms, atom->Nclusters_local, param->dtforce, param->dt);
     }
@@ -549,7 +548,7 @@ extern "C" void initialIntegrateCUDA(Parameter* param, Atom* atom)
 {
     const int N = (param->super_clustering) ? atom->Nsclusters_local : atom->Nclusters_local;
     const int threads_num = 64;
-    dim3 block_size       = dim3(threads_num, 1, 1);
+    dim3 block_size = dim3(threads_num, 1, 1);
     dim3 grid_size = dim3((N + threads_num - 1) / threads_num, 1, 1);
 
     if(param->super_clustering) {
@@ -571,8 +570,8 @@ extern "C" void updatePbcCUDA(Atom* atom, Parameter* param)
 {
     const int N = (param->super_clustering) ? atom->Nsclusters_local : atom->Nclusters_local;
     const int threads_num = 64;
-    dim3 block_size       = dim3(threads_num, 1, 1);
-    dim3 grid_size = dim3((atom->Nclusters_ghost + threads_num - 1) / threads_num, 1, 1);
+    dim3 block_size = dim3(threads_num, 1, 1);
+    dim3 grid_size = dim3((N + threads_num - 1) / threads_num, 1, 1);
 
     if(param->super_clustering) {
         cudaUpdatePbcSup_warp<<<grid_size, block_size>>>(cuda_scl_x, cuda_border_map,

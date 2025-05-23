@@ -7,7 +7,7 @@
 #include <atom.h>
 #include <parameter.h>
 #ifdef _MPI
-    #include <mpi.h>
+#include <mpi.h>
 #endif
 
 
@@ -47,14 +47,21 @@ typedef struct {
 } Neighbor;
 
 typedef void (*BuildNeighborFunction)(Atom*, Neighbor*);
+typedef void (*PruneNeighborFunction)(Parameter*, Atom*, Neighbor*);
+typedef void (*BuildClustersFunction)(Atom*);
 extern BuildNeighborFunction buildNeighbor;
+extern PruneNeighborFunction pruneNeighbor;
+extern BuildClustersFunction buildClusters;
 
 extern void initNeighbor(Neighbor*, Parameter*);
 extern void setupNeighbor(Parameter*, Atom*);
 extern void binatoms(Atom*);
 extern void buildNeighborCPU(Atom*, Neighbor*);
-extern void pruneNeighbor(Parameter*, Atom*, Neighbor*);
-extern void buildClusters(Atom*);
+extern void buildNeighborSuperclusters(Atom*, Neighbor*);
+extern void pruneNeighborCPU(Parameter*, Atom*, Neighbor*);
+extern void pruneNeighborSuperclusters(Parameter*, Atom*, Neighbor*);
+extern void buildClustersCPU(Atom*);
+extern void buildSuperclusters(Atom*);
 extern void defineJClusters(Atom*);
 extern void binClusters(Atom*);
 extern void updateSingleAtoms(Atom*);
