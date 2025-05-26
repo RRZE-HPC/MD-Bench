@@ -166,11 +166,12 @@ __global__ void cudaFinalIntegrateSup_warp(MD_FLOAT *cuda_cl_v, MD_FLOAT *cuda_c
 
 }
 
-__global__ void computeForceLJSup_cuda_warp(MD_FLOAT *cuda_cl_x, MD_FLOAT *cuda_cl_f,
-                                            int *cuda_nclusters, int *cuda_iclusters,
-                                            int Nsclusters_local,
-                                            int *cuda_numneigh, int *cuda_neighs, int half_neigh, int maxneighs,
-                                            MD_FLOAT cutforcesq, MD_FLOAT sigma6, MD_FLOAT epsilon) {
+__global__ void computeForceLJCudaSup_warp(
+    MD_FLOAT *cuda_cl_x, MD_FLOAT *cuda_cl_f,
+    int *cuda_nclusters, int *cuda_iclusters,
+    int Nsclusters_local,
+    int *cuda_numneigh, int *cuda_neighs, int half_neigh, int maxneighs,
+    MD_FLOAT cutforcesq, MD_FLOAT sigma6, MD_FLOAT epsilon) {
 
     unsigned int sci_pos = blockDim.x * blockIdx.x + threadIdx.x;
     unsigned int scii_pos = blockDim.y * blockIdx.y + threadIdx.y;
@@ -274,8 +275,8 @@ __global__ void cudaUpdatePbcSup_warp(MD_FLOAT *cuda_cl_x, int *cuda_border_map,
 }
 
 extern "C"
-double computeForceLJSup_cuda(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *stats) {
-    DEBUG_MESSAGE("computeForceLJSup_cuda start\r\n");
+double computeForceLJCudaSup(Parameter *param, Atom *atom, Neighbor *neighbor, Stats *stats) {
+    DEBUG_MESSAGE("computeForceLJCudaSup start\r\n");
 
     MD_FLOAT cutforcesq = param->cutforce * param->cutforce;
     MD_FLOAT sigma6 = param->sigma6;
@@ -304,16 +305,16 @@ double computeForceLJSup_cuda(Parameter *param, Atom *atom, Neighbor *neighbor, 
     dim3 grid_size = dim3(atom->Nsclusters_local/threads_num+1, 1, 1);
     double S = getTimeStamp();
     LIKWID_MARKER_START("force");
-    computeForceLJSup_cuda_warp<<<grid_size, block_size>>>(cuda_scl_x, cuda_scl_f,
-                                                           cuda_nclusters, cuda_iclusters,
-                                                           atom->Nsclusters_local,
-                                                           cuda_numneigh, cuda_neighbors,
-                                                           neighbor->half_neigh, neighbor->maxneighs, cutforcesq,
-                                                           sigma6, epsilon);
-    cuda_assert("computeForceLJ_cuda", cudaPeekAtLastError());
-    cuda_assert("computeForceLJ_cuda", cudaDeviceSynchronize());
+
+    computeForceLJCudaSup_warp<<<grid_size, block_size>>>(
+        cuda_scl_x, cuda_scl_f, cuda_nclusters, cuda_iclusters, atom->Nsclusters_local,
+        cuda_numneigh, cuda_neighbors, neighbor->half_neigh, neighbor->maxneighs, cutforcesq,
+        sigma6, epsilon);
+    cuda_assert("computeForceLJCudaSup", cudaPeekAtLastError());
+    cuda_assert("computeForceLJCudaSup", cudaDeviceSynchronize());
+
     LIKWID_MARKER_STOP("force");
     double E = getTimeStamp();
-    DEBUG_MESSAGE("computeForceLJSup_cuda stop\r\n");
+    DEBUG_MESSAGE("computeForceCudaSup stop\r\n");
     return E-S;
 }

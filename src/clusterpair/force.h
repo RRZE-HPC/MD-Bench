@@ -26,6 +26,11 @@ extern double computeForceLJ2xnnHalfNeigh(Parameter*, Atom*, Neighbor*, Stats*);
 extern double computeForceLJ2xnnFullNeigh(Parameter*, Atom*, Neighbor*, Stats*);
 extern double computeForceEam(Parameter*, Atom*, Neighbor*, Stats*);
 
+#ifdef CUDA_TARGET
+double computeForceLJCuda(Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats);
+double computeForceLJCudaSup(Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats);
+#endif
+
 // Nbnxn layouts (as of GROMACS):
 // Simd4xN: M=4, N=VECTOR_WIDTH
 // Simd2xNN: M=4, N=(VECTOR_WIDTH/2)

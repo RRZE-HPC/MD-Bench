@@ -589,7 +589,7 @@ extern "C" void updatePbcCUDA(Atom* atom, Parameter* param)
     cuda_assert("cudaUpdatePbc", cudaDeviceSynchronize());
 }
 
-extern "C" double computeForceLJCUDA(
+extern "C" double computeForceLJCuda(
     Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
 {
 #ifdef ONE_ATOM_TYPE
