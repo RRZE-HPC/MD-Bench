@@ -1423,9 +1423,11 @@ void buildSuperclusters(Atom* atom)
         sortAtomsByCoord(atom, ZZ, bin, 0, c - 1);
         int ac        = 0;
         int nclusters = ((c + CLUSTER_M - 1) / CLUSTER_M);
+
         if (CLUSTER_N > CLUSTER_M && nclusters % 2) {
             nclusters++;
         }
+
         const int supercluster_size = SCLUSTER_SIZE_X * SCLUSTER_SIZE_Y * SCLUSTER_SIZE_Z;
         int nsclusters = ((nclusters + supercluster_size - 1) / supercluster_size);
 
@@ -1448,6 +1450,7 @@ void buildSuperclusters(Atom* atom)
                 const int atom_scl_z_end_idx = MIN(
                     atom_scl_z_offset + SCLUSTER_SIZE_Y * SCLUSTER_SIZE_X * CLUSTER_M - 1,
                     c - 1);
+
                 sortAtomsByCoord(atom, YY, bin, atom_scl_z_offset, atom_scl_z_end_idx);
 
                 for (int scl_y = 0; scl_y < SCLUSTER_SIZE_Y; scl_y++) {
@@ -1455,9 +1458,11 @@ void buildSuperclusters(Atom* atom)
                                                   scl_z * SCLUSTER_SIZE_Y *
                                                       SCLUSTER_SIZE_X * CLUSTER_M +
                                                   scl_y * SCLUSTER_SIZE_Y * CLUSTER_M;
+
                     const int atom_scl_y_end_idx = MIN(
                         atom_scl_y_offset + SCLUSTER_SIZE_X * CLUSTER_M - 1,
                         c - 1);
+
                     sortAtomsByCoord(atom,
                         XX,
                         bin,
@@ -1468,7 +1473,9 @@ void buildSuperclusters(Atom* atom)
                         const int cluster_sup_idx = scl_z * SCLUSTER_SIZE_Z *
                                                         SCLUSTER_SIZE_Y +
                                                     scl_y * SCLUSTER_SIZE_X + scl_x;
+
                         const int ci = atom->Nclusters_local;
+
                         if (ci >= atom->Nclusters_max) {
                             growClusters(atom);
                         }
@@ -1489,6 +1496,7 @@ void buildSuperclusters(Atom* atom)
                         MD_FLOAT bbminz = INFINITY, bbmaxz = -INFINITY;
 
                         atom->iclusters[ci].natoms = 0;
+
                         for (int cii = 0; cii < CLUSTER_M; cii++) {
                             if (ac < c) {
                                 int i         = bins[bin * atoms_per_bin + ac];
