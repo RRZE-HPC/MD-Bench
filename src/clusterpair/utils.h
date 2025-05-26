@@ -8,10 +8,10 @@
 #include <atom.h>
 #include <neighbor.h>
 
-void verifyClusters(Atom *atom);
-void verifyLayout(Atom *atom);
-void checkAlignment(Atom *atom);
-void showSuperclusters(Atom *atom);
-void printNeighs(Atom *atom, Neighbor *neighbor);
+void verifyClusters(Atom* atom);
+void verifyLayout(Atom* atom);
+void checkAlignment(Atom* atom);
+void showSuperclusters(Atom* atom);
+void printNeighs(Atom* atom, Neighbor* neighbor);
 
-#endif //MD_BENCH_UTILS_H
+#endif // MD_BENCH_UTILS_H

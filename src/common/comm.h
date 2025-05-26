@@ -1,12 +1,11 @@
 #include <atom.h>
 #include <box.h>
 #include <force.h>
-#include <parameter.h>
 #include <grid.h>
+#include <parameter.h>
 
 #ifndef COMM_H
 #define COMM_H
-
 
 #ifdef CLUSTER_PAIR
 #define FORWARD_SIZE  (3 * CLUSTER_N)
@@ -18,7 +17,7 @@
 #define GHOST         atom->Nclusters_ghost
 
 #define IsinRegionToSend(cj)                                                             \
-       ((atom->jclusters[(cj)].bbmaxx >= xlo && atom->jclusters[(cj)].bbminx < xhi) &&   \
+    ((atom->jclusters[(cj)].bbmaxx >= xlo && atom->jclusters[(cj)].bbminx < xhi) &&      \
         (atom->jclusters[(cj)].bbmaxy >= ylo && atom->jclusters[(cj)].bbminy < yhi) &&   \
         (atom->jclusters[(cj)].bbmaxz >= zlo && atom->jclusters[(cj)].bbminz < zhi))
 
@@ -31,7 +30,7 @@
 #define GHOST         atom->Nghost
 
 #define IsinRegionToSend(i)                                                              \
-       ((atom_x((i)) >= xlo && atom_x((i)) < xhi) &&                                     \
+    ((atom_x((i)) >= xlo && atom_x((i)) < xhi) &&                                        \
         (atom_y((i)) >= ylo && atom_y((i)) < yhi) &&                                     \
         (atom_z((i)) >= zlo && atom_z((i)) < zhi))
 
@@ -87,9 +86,9 @@ typedef struct {
     Box* boxes;   // Boundaries to  be sent to other procs as ghost.
 } Comm;
 
-void initComm(int*, char***, Comm*);      // Init MPI
-void endComm(Comm*);                      // End MPI
-void barrierComm();                       // Barrier comm
+void initComm(int*, char***, Comm*); // Init MPI
+void endComm(Comm*);                 // End MPI
+void barrierComm();                  // Barrier comm
 
 #ifdef _MPI
 void setupComm(Comm*, Parameter*, Grid*); // Creates a 3d grid or rcb grid
@@ -102,9 +101,9 @@ void reverseComm(Comm*, Atom*, int); // Return info after forward
 void exchangeComm(Comm*, Atom*);     // Exchange info between procs
 void ghostComm(Comm*,
     Atom*,
-    int);                       // Build the ghost neighbours to send during next forwards 
+    int);                       // Build the ghost neighbours to send during next forwards
 void growSend(Comm*, int);      // Grows the size of the buffer sender
 void growRecv(Comm*, int);      // Grows the size of the buffer receiver
 void growList(Comm*, int, int); // Grows the size of the list to send
 #endif
-#endif 
+#endif

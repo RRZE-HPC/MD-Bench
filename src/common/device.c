@@ -10,7 +10,7 @@
 #include <device.h>
 
 #ifndef CUDA_TARGET
-void GPUfree(void *any) {}
+void GPUfree(void* any) {}
 void initDevice(Parameter* param, Atom* atom, Neighbor* neighbor) {}
 void* allocateGPU(size_t bytesize) { return NULL; }
 void* reallocateGPU(void* ptr, size_t new_bytesize) { return NULL; }

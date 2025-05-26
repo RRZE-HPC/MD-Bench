@@ -13,9 +13,9 @@
 #include <vtk.h>
 
 #ifdef _MPI
-    #include <mpi.h>
-    static MPI_File _fh;
-    static inline void flushBuffer(char*);
+#include <mpi.h>
+static MPI_File _fh;
+static inline void flushBuffer(char*);
 #endif
 
 int write_atoms_to_vtk_file(const char* filename, Atom* atom, int timestep)
@@ -108,7 +108,6 @@ int printGhost(const char* filename, Atom* atom, int timestep, int me)
     fclose(fp);
     return 0;
 }
-
 
 #ifdef _MPI
 int vtkOpen(const char* filename, Comm* comm, Atom* atom, int timestep)
@@ -230,7 +229,6 @@ void vtkClose()
     _fh = MPI_FILE_NULL;
 }
 
-
 static inline void flushBuffer(char* msg)
 {
     MPI_Offset displ;
@@ -241,12 +239,12 @@ static inline void flushBuffer(char* msg)
 
 void printvtk(
     const char* filename, Comm* comm, Atom* atom, Parameter* param, int timestep)
-{ 
+{
 #ifdef _MPI
     vtkOpen(filename, comm, atom, timestep);
     vtkVector(comm, atom, param);
     vtkClose();
-#else  
+#else
     write_atoms_to_vtk_file(filename, atom, timestep);
 #endif
 }

@@ -28,25 +28,33 @@ inline int get_ncj_from_nci(int nci)
 int write_atoms_to_file(Atom* atom, char* name)
 {
     // file system variable
-    char *file_system = getenv("TMPDIR");
-    
+    char* file_system = getenv("TMPDIR");
+
     // Check if $FASTTMP is set
     if (file_system == NULL) {
         fprintf(stderr, "Error: TMPDIR environment variable is not set!\n");
         return -1;
     }
 
-    char file_path[256]; 
+    char file_path[256];
     snprintf(file_path, sizeof(file_path), "%s/%s", file_system, name);
 
-    FILE *fp = fopen(file_path, "wb");
+    FILE* fp = fopen(file_path, "wb");
     if (fp == NULL) {
         perror("Error opening file");
         return -1;
     }
 
     for (int i = 0; i < atom->Nlocal; ++i) {
-        fprintf(fp, "%lf %lf %lf %lf %lf %lf %d\n", atom_x(i), atom_y(i), atom_z(i), atom_vx(i), atom_vy(i),atom_vz(i),atom->type[i]);
+        fprintf(fp,
+            "%lf %lf %lf %lf %lf %lf %d\n",
+            atom_x(i),
+            atom_y(i),
+            atom_z(i),
+            atom_vx(i),
+            atom_vy(i),
+            atom_vz(i),
+            atom->type[i]);
     }
     fclose(fp);
     return 0;
@@ -83,17 +91,17 @@ void initAtom(Atom* atom)
     atom->icluster_bin    = NULL;
 
     // Data for "super-cluster" strategy
-    atom->scl_x = NULL;
-    atom->scl_v = NULL;
-    atom->scl_f = NULL;
-    atom->Nsclusters = 0;
+    atom->scl_x            = NULL;
+    atom->scl_v            = NULL;
+    atom->scl_f            = NULL;
+    atom->Nsclusters       = 0;
     atom->Nsclusters_local = 0;
     atom->Nsclusters_ghost = 0;
-    atom->Nsclusters_max = 0;
-    atom->scl_type = NULL;
-    atom->siclusters = NULL;
-    atom->icluster_idx = NULL;
-    atom->sicluster_bin = NULL;
+    atom->Nsclusters_max   = 0;
+    atom->scl_type         = NULL;
+    atom->siclusters       = NULL;
+    atom->icluster_idx     = NULL;
+    atom->sicluster_bin    = NULL;
 
     initMasks(atom);
     // MPI New features
@@ -116,10 +124,10 @@ void initAtom(Atom* atom)
 void createAtom(Atom* atom, Parameter* param)
 {
     int me = 0;
-    #ifdef _MPI
-        MPI_Comm_rank(MPI_COMM_WORLD, &me);
-    #endif
-    
+#ifdef _MPI
+    MPI_Comm_rank(MPI_COMM_WORLD, &me);
+#endif
+
     MD_FLOAT xlo  = 0.0;
     MD_FLOAT xhi  = param->xprd;
     MD_FLOAT ylo  = 0.0;
@@ -168,70 +176,71 @@ void createAtom(Atom* atom, Parameter* param)
     int oz        = 0;
     int subboxdim = 8;
 
-if(me == 0 && param->setup) {
-    while (oz * subboxdim <= khi) {
-        k = oz * subboxdim + sz;
-        j = oy * subboxdim + sy;
-        i = ox * subboxdim + sx;
+    if (me == 0 && param->setup) {
+        while (oz * subboxdim <= khi) {
+            k = oz * subboxdim + sz;
+            j = oy * subboxdim + sy;
+            i = ox * subboxdim + sx;
 
-        if (((i + j + k) % 2 == 0) && (i >= ilo) && (i <= ihi) && (j >= jlo) &&
-            (j <= jhi) && (k >= klo) && (k <= khi)) {
-            xtmp = 0.5 * alat * i;
-            ytmp = 0.5 * alat * j;
-            ztmp = 0.5 * alat * k;
+            if (((i + j + k) % 2 == 0) && (i >= ilo) && (i <= ihi) && (j >= jlo) &&
+                (j <= jhi) && (k >= klo) && (k <= khi)) {
+                xtmp = 0.5 * alat * i;
+                ytmp = 0.5 * alat * j;
+                ztmp = 0.5 * alat * k;
 
-            if (xtmp >= xlo && xtmp < xhi && ytmp >= ylo && ytmp < yhi && ztmp >= zlo &&
-                ztmp < zhi) {
-                n = k * (2 * param->ny) * (2 * param->nx) + j * (2 * param->nx) + i + 1;
-                for (m = 0; m < 5; m++) {
-                    myrandom(&n);
-                }
-                vxtmp = myrandom(&n);
-                for (m = 0; m < 5; m++) {
-                    myrandom(&n);
-                }
-                vytmp = myrandom(&n);
-                for (m = 0; m < 5; m++) {
-                    myrandom(&n);
-                }
-                vztmp = myrandom(&n);
+                if (xtmp >= xlo && xtmp < xhi && ytmp >= ylo && ytmp < yhi &&
+                    ztmp >= zlo && ztmp < zhi) {
+                    n = k * (2 * param->ny) * (2 * param->nx) + j * (2 * param->nx) + i +
+                        1;
+                    for (m = 0; m < 5; m++) {
+                        myrandom(&n);
+                    }
+                    vxtmp = myrandom(&n);
+                    for (m = 0; m < 5; m++) {
+                        myrandom(&n);
+                    }
+                    vytmp = myrandom(&n);
+                    for (m = 0; m < 5; m++) {
+                        myrandom(&n);
+                    }
+                    vztmp = myrandom(&n);
 
-                if (atom->Nlocal == atom->Nmax) {
-                    growAtom(atom);
+                    if (atom->Nlocal == atom->Nmax) {
+                        growAtom(atom);
+                    }
+                    atom_x(atom->Nlocal)     = xtmp;
+                    atom_y(atom->Nlocal)     = ytmp;
+                    atom_z(atom->Nlocal)     = ztmp;
+                    atom->vx[atom->Nlocal]   = vxtmp;
+                    atom->vy[atom->Nlocal]   = vytmp;
+                    atom->vz[atom->Nlocal]   = vztmp;
+                    atom->type[atom->Nlocal] = rand() % atom->ntypes;
+                    atom->Nlocal++;
                 }
-                atom_x(atom->Nlocal)     = xtmp;
-                atom_y(atom->Nlocal)     = ytmp;
-                atom_z(atom->Nlocal)     = ztmp;
-                atom->vx[atom->Nlocal]   = vxtmp;
-                atom->vy[atom->Nlocal]   = vytmp;
-                atom->vz[atom->Nlocal]   = vztmp;
-                atom->type[atom->Nlocal] = rand() % atom->ntypes;
-                atom->Nlocal++;
+            }
+
+            sx++;
+            if (sx == subboxdim) {
+                sx = 0;
+                sy++;
+            }
+            if (sy == subboxdim) {
+                sy = 0;
+                sz++;
+            }
+            if (sz == subboxdim) {
+                sz = 0;
+                ox++;
+            }
+            if (ox * subboxdim > ihi) {
+                ox = 0;
+                oy++;
+            }
+            if (oy * subboxdim > jhi) {
+                oy = 0;
+                oz++;
             }
         }
-
-        sx++;
-        if (sx == subboxdim) {
-            sx = 0;
-            sy++;
-        }
-        if (sy == subboxdim) {
-            sy = 0;
-            sz++;
-        }
-        if (sz == subboxdim) {
-            sz = 0;
-            ox++;
-        }
-        if (ox * subboxdim > ihi) {
-            ox = 0;
-            oy++;
-        }
-        if (oy * subboxdim > jhi) {
-            oy = 0;
-            oz++;
-        }
-    }
         write_atoms_to_file(atom, param->atom_file_name);
     }
 }
@@ -248,7 +257,7 @@ int typeStr2int(const char* type)
 
 int readAtom(Atom* atom, Parameter* param)
 {
-        int me = 0;
+    int me = 0;
 #ifdef _MPI
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
 #endif
@@ -263,9 +272,9 @@ int readAtom(Atom* atom, Parameter* param)
         return readAtomDmp(atom, param);
     }
     if (me == 0) {
-    fprintf(stderr,
-        "Invalid input file extension: %s\nValid choices are: pdb, gro, dmp\n",
-        param->input_file);
+        fprintf(stderr,
+            "Invalid input file extension: %s\nValid choices are: pdb, gro, dmp\n",
+            param->input_file);
     }
     exit(-1);
     return -1;
@@ -273,10 +282,10 @@ int readAtom(Atom* atom, Parameter* param)
 
 int readAtomPdb(Atom* atom, Parameter* param)
 {
-    int me = 0;   
-    #ifdef _MPI
-        MPI_Comm_rank(MPI_COMM_WORLD, &me); // New
-    #endif
+    int me = 0;
+#ifdef _MPI
+    MPI_Comm_rank(MPI_COMM_WORLD, &me); // New
+#endif
 
     FILE* fp = fopen(param->input_file, "r");
     char line[MAXLINE];
@@ -284,7 +293,7 @@ int readAtomPdb(Atom* atom, Parameter* param)
 
     if (!fp) {
         if (me == 0) {
-        fprintf(stderr, "Could not open input file: %s\n", param->input_file);
+            fprintf(stderr, "Could not open input file: %s\n", param->input_file);
         }
         exit(-1);
         return -1;
@@ -335,7 +344,7 @@ int readAtomPdb(Atom* atom, Parameter* param)
             // Do nothing
         } else {
             if (me == 0) {
-            fprintf(stderr, "Invalid item: %s\n", item);
+                fprintf(stderr, "Invalid item: %s\n", item);
             }
             exit(-1);
             return -1;
@@ -373,9 +382,9 @@ int readAtomPdb(Atom* atom, Parameter* param)
 int readAtomGro(Atom* atom, Parameter* param)
 {
     int me = 0;
-    #ifdef _MPI
-        MPI_Comm_rank(MPI_COMM_WORLD, &me); // New
-    #endif
+#ifdef _MPI
+    MPI_Comm_rank(MPI_COMM_WORLD, &me); // New
+#endif
     FILE* fp = fopen(param->input_file, "r");
     char line[MAXLINE];
     char desc[MAXLINE];
@@ -471,9 +480,9 @@ int readAtomGro(Atom* atom, Parameter* param)
 int readAtomDmp(Atom* atom, Parameter* param)
 {
     int me = 0;
-    #ifdef _MPI
-        MPI_Comm_rank(MPI_COMM_WORLD, &me);
-    #endif
+#ifdef _MPI
+    MPI_Comm_rank(MPI_COMM_WORLD, &me);
+#endif
 
     FILE* fp = fopen(param->input_file, "r");
     char line[MAXLINE];
@@ -797,40 +806,68 @@ void growClusters(Atom* atom)
 
 #ifdef CUDA_TARGET
     growClustersCUDA(atom);
-#endif     
+#endif
 }
 
-void growSuperClusters(Atom *atom) {
+void growSuperClusters(Atom* atom)
+{
     int nold = atom->Nsclusters_max;
     atom->Nsclusters_max += DELTA;
-    atom->siclusters = (SuperCluster*) reallocate(atom->siclusters, ALIGNMENT, atom->Nsclusters_max * sizeof(SuperCluster), nold * sizeof(SuperCluster));
-    atom->icluster_idx = (int*) reallocate(atom->icluster_idx, ALIGNMENT, atom->Nsclusters_max * SCLUSTER_SIZE * sizeof(int), nold * SCLUSTER_SIZE * sizeof(int));
-    atom->sicluster_bin = (int*) reallocate(atom->sicluster_bin, ALIGNMENT, atom->Nsclusters_max * sizeof(int), nold * sizeof(int));
-    //atom->scl_type = (int*) reallocate(atom->scl_type, ALIGNMENT, atom->Nclusters_max * CLUSTER_M * SCLUSTER_SIZE * sizeof(int), nold * CLUSTER_M * SCLUSTER_SIZE * sizeof(int));
+    atom->siclusters    = (SuperCluster*)reallocate(atom->siclusters,
+        ALIGNMENT,
+        atom->Nsclusters_max * sizeof(SuperCluster),
+        nold * sizeof(SuperCluster));
+    atom->icluster_idx  = (int*)reallocate(atom->icluster_idx,
+        ALIGNMENT,
+        atom->Nsclusters_max * SCLUSTER_SIZE * sizeof(int),
+        nold * SCLUSTER_SIZE * sizeof(int));
+    atom->sicluster_bin = (int*)reallocate(atom->sicluster_bin,
+        ALIGNMENT,
+        atom->Nsclusters_max * sizeof(int),
+        nold * sizeof(int));
+    // atom->scl_type = (int*) reallocate(atom->scl_type, ALIGNMENT, atom->Nclusters_max *
+    // CLUSTER_M * SCLUSTER_SIZE * sizeof(int), nold * CLUSTER_M * SCLUSTER_SIZE *
+    // sizeof(int));
 
-    atom->scl_x = (MD_FLOAT*) reallocate(atom->scl_x, ALIGNMENT, atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT), nold * SCLUSTER_M * 3 * sizeof(MD_FLOAT));
-    atom->scl_f = (MD_FLOAT*) reallocate(atom->scl_f, ALIGNMENT, atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT), nold * SCLUSTER_M * 3 * sizeof(MD_FLOAT));
-    atom->scl_v = (MD_FLOAT*) reallocate(atom->scl_v, ALIGNMENT, atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT), nold * SCLUSTER_M * 3 * sizeof(MD_FLOAT));
+    atom->scl_x = (MD_FLOAT*)reallocate(atom->scl_x,
+        ALIGNMENT,
+        atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT),
+        nold * SCLUSTER_M * 3 * sizeof(MD_FLOAT));
+    atom->scl_f = (MD_FLOAT*)reallocate(atom->scl_f,
+        ALIGNMENT,
+        atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT),
+        nold * SCLUSTER_M * 3 * sizeof(MD_FLOAT));
+    atom->scl_v = (MD_FLOAT*)reallocate(atom->scl_v,
+        ALIGNMENT,
+        atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT),
+        nold * SCLUSTER_M * 3 * sizeof(MD_FLOAT));
 }
 
 /* MPI added*/
 
 void freeAtom(Atom* atom)
 {
- 
-#ifdef AOS
-    free(atom->x);  atom->x= NULL; 
-#else
-    free(atom->x);  atom->x=NULL;
-    free(atom->y);  atom->y=NULL;
-    free(atom->z);  atom->z=NULL;
-#endif
-    free(atom->vx); atom->vx=NULL; 
-    free(atom->vy); atom->vy=NULL;   
-    free(atom->vz); atom->vz=NULL; 
-    free(atom->type); atom->type=NULL;
-}
 
+#ifdef AOS
+    free(atom->x);
+    atom->x = NULL;
+#else
+    free(atom->x);
+    atom->x = NULL;
+    free(atom->y);
+    atom->y = NULL;
+    free(atom->z);
+    atom->z = NULL;
+#endif
+    free(atom->vx);
+    atom->vx = NULL;
+    free(atom->vy);
+    atom->vy = NULL;
+    free(atom->vz);
+    atom->vz = NULL;
+    free(atom->type);
+    atom->type = NULL;
+}
 
 void growPbc(Atom* atom)
 {
@@ -915,18 +952,18 @@ int packGhost(Atom* atom, int cj, MD_FLOAT* buf, int* pbc)
         MD_FLOAT bbminy = INFINITY, bbmaxy = -INFINITY;
         MD_FLOAT bbminz = INFINITY, bbmaxz = -INFINITY;
 
-        buf[m++] = (MD_FLOAT) atom->jclusters[cj].natoms;
-        
+        buf[m++] = (MD_FLOAT)atom->jclusters[cj].natoms;
+
         for (int cjj = 0; cjj < atom->jclusters[cj].natoms; cjj++) {
 
             MD_FLOAT xtmp = cj_x[CL_X_OFFSET + cjj] + pbc[_x] * atom->mybox.xprd;
             MD_FLOAT ytmp = cj_x[CL_Y_OFFSET + cjj] + pbc[_y] * atom->mybox.yprd;
             MD_FLOAT ztmp = cj_x[CL_Z_OFFSET + cjj] + pbc[_z] * atom->mybox.zprd;
-        
+
             buf[m++] = xtmp;
             buf[m++] = ytmp;
             buf[m++] = ztmp;
-            buf[m++] = (MD_FLOAT) atom->cl_t[cj_sca_base + cjj];
+            buf[m++] = (MD_FLOAT)atom->cl_t[cj_sca_base + cjj];
 
             if (bbminx > xtmp) {
                 bbminx = xtmp;
@@ -964,9 +1001,12 @@ int packGhost(Atom* atom, int cj, MD_FLOAT* buf, int* pbc)
         // TODO: check atom->ncj
         int ghostId = cj - atom->ncj;
         // check for ghost particles
-        buf[m++] = (MD_FLOAT) (cj - atom->ncj >= 0) ? pbc[_x] + atom->PBCx[ghostId] : pbc[_x];
-        buf[m++] = (MD_FLOAT) (cj - atom->ncj >= 0) ? pbc[_y] + atom->PBCy[ghostId] : pbc[_y];
-        buf[m++] = (MD_FLOAT) (cj - atom->ncj >= 0) ? pbc[_z] + atom->PBCz[ghostId] : pbc[_z];
+        buf[m++] = (MD_FLOAT)(cj - atom->ncj >= 0) ? pbc[_x] + atom->PBCx[ghostId]
+                                                   : pbc[_x];
+        buf[m++] = (MD_FLOAT)(cj - atom->ncj >= 0) ? pbc[_y] + atom->PBCy[ghostId]
+                                                   : pbc[_y];
+        buf[m++] = (MD_FLOAT)(cj - atom->ncj >= 0) ? pbc[_z] + atom->PBCz[ghostId]
+                                                   : pbc[_z];
     }
     return m;
 }
@@ -975,29 +1015,29 @@ int unpackGhost(Atom* atom, int cj, MD_FLOAT* buf)
 {
     int m    = 0;
     int jfac = MAX(1, CLUSTER_N / CLUSTER_M);
-    if (cj * jfac >= atom->Nclusters_max){
+    if (cj * jfac >= atom->Nclusters_max) {
         growClusters(atom);
-    } 
+    }
     if (atom->Nclusters_ghost >= atom->NmaxGhost) growPbc(atom);
 
     int cj_sca_base = CJ_SCALAR_BASE_INDEX(cj);
     int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
     MD_FLOAT* cj_x  = &atom->cl_x[cj_vec_base];
 
-    atom->jclusters[cj].natoms = (int) buf[m++];
+    atom->jclusters[cj].natoms = (int)buf[m++];
     for (int cjj = 0; cjj < atom->jclusters[cj].natoms; cjj++) {
 
-        cj_x[CL_X_OFFSET + cjj]          = buf[m++];
-        cj_x[CL_Y_OFFSET + cjj]          = buf[m++];
-        cj_x[CL_Z_OFFSET + cjj]          = buf[m++];
-        atom->cl_t[cj_sca_base + cjj] = (int) buf[m++];
+        cj_x[CL_X_OFFSET + cjj]       = buf[m++];
+        cj_x[CL_Y_OFFSET + cjj]       = buf[m++];
+        cj_x[CL_Z_OFFSET + cjj]       = buf[m++];
+        atom->cl_t[cj_sca_base + cjj] = (int)buf[m++];
         atom->Nghost++;
     }
 
     for (int cjj = atom->jclusters[cj].natoms; cjj < CLUSTER_N; cjj++) {
-        cj_x[CL_X_OFFSET + cjj]          = INFINITY;
-        cj_x[CL_Y_OFFSET + cjj]          = INFINITY;
-        cj_x[CL_Z_OFFSET + cjj]          = INFINITY;
+        cj_x[CL_X_OFFSET + cjj]       = INFINITY;
+        cj_x[CL_Y_OFFSET + cjj]       = INFINITY;
+        cj_x[CL_Z_OFFSET + cjj]       = INFINITY;
         atom->cl_t[cj_sca_base + cjj] = -1;
         m += 4;
     }
@@ -1008,9 +1048,9 @@ int unpackGhost(Atom* atom, int cj, MD_FLOAT* buf)
     atom->jclusters[cj].bbmaxy        = buf[m++];
     atom->jclusters[cj].bbminz        = buf[m++];
     atom->jclusters[cj].bbmaxz        = buf[m++];
-    atom->PBCx[atom->Nclusters_ghost] = (int) buf[m++];
-    atom->PBCy[atom->Nclusters_ghost] = (int) buf[m++];
-    atom->PBCz[atom->Nclusters_ghost] = (int) buf[m++];
+    atom->PBCx[atom->Nclusters_ghost] = (int)buf[m++];
+    atom->PBCy[atom->Nclusters_ghost] = (int)buf[m++];
+    atom->PBCz[atom->Nclusters_ghost] = (int)buf[m++];
     atom->Nclusters_ghost++;
 }
 
@@ -1067,7 +1107,7 @@ int packExchange(Atom* atom, int i, MD_FLOAT* buf)
 
 int unpackExchange(Atom* atom, int i, MD_FLOAT* buf)
 {
-    while (i >= atom->Nmax){
+    while (i >= atom->Nmax) {
         growAtom(atom);
     }
     int m         = 0;

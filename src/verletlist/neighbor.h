@@ -7,7 +7,7 @@
 #include <atom.h>
 #include <parameter.h>
 #ifdef _MPI
-    #include <mpi.h>
+#include <mpi.h>
 #endif
 
 #ifndef __NEIGHBOR_H_
@@ -53,7 +53,7 @@ typedef struct {
     int mbinx;
     int mbiny;
     int mbinz;
-    //Multigpu
+    // Multigpu
     int pad_x;
     int pad_y;
     int pad_z;
@@ -81,6 +81,7 @@ extern void buildNeighborCPU(Atom*, Neighbor*);
 #ifdef __cplusplus
 extern "C"
 #endif
-extern void buildNeighborCUDA(Atom*, Neighbor*);
+    extern void
+    buildNeighborCUDA(Atom*, Neighbor*);
 #endif
 #endif //__NEIGHBOR_H_

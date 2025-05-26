@@ -19,12 +19,12 @@
 extern "C" {
 #include <allocate.h>
 #include <atom.h>
+#include <comm.h>
 #include <force.h>
 #include <neighbor.h>
 #include <parameter.h>
 #include <timing.h>
 #include <util.h>
-#include <comm.h>
 }
 
 __global__ void computeForceLJCudaFullNeigh(DeviceAtom a,
@@ -73,9 +73,9 @@ __global__ void computeForceLJCudaFullNeigh(DeviceAtom a,
 #endif
 
         if (rsq < cutforcesq) {
-            MD_FLOAT sr2   = (MD_FLOAT) 1.0 / rsq;
+            MD_FLOAT sr2   = (MD_FLOAT)1.0 / rsq;
             MD_FLOAT sr6   = sr2 * sr2 * sr2 * sigma6;
-            MD_FLOAT force = (MD_FLOAT) 48.0 * sr6 * (sr6 - (MD_FLOAT) 0.5) * sr2 * epsilon;
+            MD_FLOAT force = (MD_FLOAT)48.0 * sr6 * (sr6 - (MD_FLOAT)0.5) * sr2 * epsilon;
             fix += delx * force;
             fiy += dely * force;
             fiz += delz * force;
@@ -133,9 +133,9 @@ __global__ void computeForceLJCudaHalfNeigh(DeviceAtom a,
 #endif
 
         if (rsq < cutforcesq) {
-            MD_FLOAT sr2             = (MD_FLOAT) 1.0 / rsq;
-            MD_FLOAT sr6             = sr2 * sr2 * sr2 * sigma6;
-            MD_FLOAT force           = (MD_FLOAT) 48.0 * sr6 * (sr6 - (MD_FLOAT) 0.5) * sr2 * epsilon;
+            MD_FLOAT sr2   = (MD_FLOAT)1.0 / rsq;
+            MD_FLOAT sr6   = sr2 * sr2 * sr2 * sigma6;
+            MD_FLOAT force = (MD_FLOAT)48.0 * sr6 * (sr6 - (MD_FLOAT)0.5) * sr2 * epsilon;
             MD_FLOAT partial_force_x = delx * force;
             MD_FLOAT partial_force_y = dely * force;
             MD_FLOAT partial_force_z = delz * force;
@@ -228,7 +228,7 @@ double computeForceLJCUDA(Parameter* param, Atom* atom, Neighbor* neighbor, Stat
 {
     const int num_threads_per_block = get_cuda_num_threads();
     int Nlocal                      = atom->Nlocal;
-    int Nmax                        = atom->Nmax; 
+    int Nmax                        = atom->Nmax;
     MD_FLOAT cutforcesq             = param->cutforce * param->cutforce;
     MD_FLOAT sigma6                 = param->sigma6;
     MD_FLOAT epsilon                = param->epsilon;
@@ -295,18 +295,20 @@ double computeForceLJCUDA(Parameter* param, Atom* atom, Neighbor* neighbor, Stat
 
 extern "C" void copyGhostFromGPU(Atom* atom)
 {
-    memcpyFromGPU(atom->x,atom->d_atom.x,atom->Nlocal * sizeof(MD_FLOAT) * 3);
-}   
+    memcpyFromGPU(atom->x, atom->d_atom.x, atom->Nlocal * sizeof(MD_FLOAT) * 3);
+}
 
 extern "C" void copyGhostToGPU(Atom* atom)
 {
-    memcpyToGPU(&atom->d_atom.x[atom->Nlocal*3], &atom->x[atom->Nlocal*3], atom->Nghost * sizeof(MD_FLOAT) * 3);
+    memcpyToGPU(&atom->d_atom.x[atom->Nlocal * 3],
+        &atom->x[atom->Nlocal * 3],
+        atom->Nghost * sizeof(MD_FLOAT) * 3);
 }
 
 extern "C" void copyForceFromGPU(Atom* atom)
 {
     memcpyFromGPU(atom->fx, atom->d_atom.fx, atom->Nmax * sizeof(MD_FLOAT) * 3);
-}   
+}
 
 extern "C" void copyForceToGPU(Atom* atom)
 {
@@ -328,29 +330,29 @@ extern "C" void copyDataToCUDADevice(Parameter* param, Atom* atom)
 }
 
 /*
-__global__ void pack_forward_Cuda(DeviceAtom a, 
+__global__ void pack_forward_Cuda(DeviceAtom a,
     int n,
-    int* cuda_list, 
-    MD_FLOAT* buf, 
-    int PBCx, 
-    int PBCy, 
-    int PBCz, 
-    MD_FLOAT xprd, 
-    MD_FLOAT yprd, 
+    int* cuda_list,
+    MD_FLOAT* buf,
+    int PBCx,
+    int PBCy,
+    int PBCz,
+    MD_FLOAT xprd,
+    MD_FLOAT yprd,
     MD_FLOAT zprd)
 {
     DeviceAtom* atom    = &a;
     unsigned int i = blockDim.x * blockIdx.x + threadIdx.x;
-    if (i >= n) return; 
+    if (i >= n) return;
     int j        = cuda_list[i];
     buf_x(i) = atom_x(j) + PBCx * xprd;
     buf_y(i) = atom_y(j) + PBCy * yprd;
     buf_z(i) = atom_z(j) + PBCz * zprd;
 }
 
-__global__ void unpack_forward_Cuda(DeviceAtom a, 
-    int n, 
-    int first, 
+__global__ void unpack_forward_Cuda(DeviceAtom a,
+    int n,
+    int first,
     MD_FLOAT* buf)
 {
     DeviceAtom* atom    = &a;
@@ -368,7 +370,7 @@ extern "C" void forwardCommCUDA(Comm* comm, Atom* atom, int iswap)
     int size    = comm->forwardSize;
     int maxrqst = comm->numneigh;
     int* cuda_sendlist;
-    int max_list_size; 
+    int max_list_size;
     cuda_buf_send =  (MD_FLOAT*)allocateGPU(comm->maxsend * sizeof(MD_FLOAT));
     cuda_buf_recv =  (MD_FLOAT*)allocateGPU(comm->maxrecv * sizeof(MD_FLOAT));
 
@@ -385,32 +387,29 @@ extern "C" void forwardCommCUDA(Comm* comm, Atom* atom, int iswap)
         pbc[_y] = comm->pbc_y[ineigh];
         pbc[_z] = comm->pbc_z[ineigh];
         //copy lists into the buffer
-        memcpyToGPU(cuda_sendlist, comm->sendlist[ineigh], comm->atom_send[ineigh] * sizeof(int));
-       
-        const int num_threads_per_block = get_cuda_num_threads(); 
-        const int num_blocks = ceil((float) comm->atom_send[ineigh] / (float)num_threads_per_block);
-        
+        memcpyToGPU(cuda_sendlist, comm->sendlist[ineigh], comm->atom_send[ineigh] *
+sizeof(int));
+
+        const int num_threads_per_block = get_cuda_num_threads();
+        const int num_blocks = ceil((float) comm->atom_send[ineigh] /
+(float)num_threads_per_block);
+
         pack_forward_Cuda<<<num_blocks, num_threads_per_block>>>(
-                                            atom->d_atom,                   //MD_FLOAT*  -->need to be in tye device
-                                            comm->atom_send[ineigh],        //int  
-                                            cuda_sendlist,                  //int*       -->need to be in tye device
-                                            &cuda_buf_send[offset*size],    //MD_FLOAT*  -->need to be in tye device
-                                            pbc[_x],                        //int 
-                                            pbc[_y],                        //int
+                                            atom->d_atom,                   //MD_FLOAT*
+-->need to be in tye device comm->atom_send[ineigh],        //int cuda_sendlist, //int*
+-->need to be in tye device &cuda_buf_send[offset*size],    //MD_FLOAT*  -->need to be in
+tye device pbc[_x],                        //int pbc[_y],                        //int
                                             pbc[_z],                        //int
-                                            atom->mybox.xprd,                     //MD_FLOAT
-                                            atom->mybox.yprd,                     //MD_FLOAT
-                                            atom->mybox.zprd);                    //MD_FLOAT
-            cudaDeviceSynchronize();
+                                            atom->mybox.xprd, //MD_FLOAT atom->mybox.yprd,
+//MD_FLOAT atom->mybox.zprd);                    //MD_FLOAT cudaDeviceSynchronize();
         }
-    
-#ifdef _MPI 
+
+#ifdef _MPI
     MPI_Request requests[maxrqst];
     // Receives elements
     if (comm->othersend[iswap])
-        for (int ineigh = comm->recvfrom[iswap]; ineigh < comm->recvtill[iswap];ineigh++) {
-            offset = comm->off_atom_recv[ineigh] * size;
-            nrecv  = comm->atom_recv[ineigh] * size;
+        for (int ineigh = comm->recvfrom[iswap]; ineigh < comm->recvtill[iswap];ineigh++)
+{ offset = comm->off_atom_recv[ineigh] * size; nrecv  = comm->atom_recv[ineigh] * size;
             MPI_Irecv(&cuda_buf_recv[offset],
                     nrecv,
                     type,
@@ -422,29 +421,29 @@ extern "C" void forwardCommCUDA(Comm* comm, Atom* atom, int iswap)
 
     // Send elements
     if (comm->othersend[iswap])
-        for (int ineigh = comm->sendfrom[iswap]; ineigh < comm->sendtill[iswap]; ineigh++) {
-            offset = comm->off_atom_send[ineigh] * size;
-            nsend  = comm->atom_send[ineigh] * size;
+        for (int ineigh = comm->sendfrom[iswap]; ineigh < comm->sendtill[iswap]; ineigh++)
+{ offset = comm->off_atom_send[ineigh] * size; nsend  = comm->atom_send[ineigh] * size;
             MPI_Send(&cuda_buf_send[offset], nsend, type, comm->nsend[ineigh], 0, world);
         }
 
     if (comm->othersend[iswap]) MPI_Waitall(nrqst, requests, MPI_STATUS_IGNORE);
-#endif 
-    
+#endif
+
     // unpack buffer
     for (int ineigh = comm->recvfrom[iswap]; ineigh < comm->recvtill[iswap]; ineigh++) {
         offset = comm->off_atom_recv[ineigh];
         MD_FLOAT *buf = (comm->othersend[iswap]) ? cuda_buf_recv : cuda_buf_send;
-        
-        const int num_threads_per_block = get_cuda_num_threads(); 
-        const int num_blocks = ceil((float) comm->atom_send[ineigh] / (float)num_threads_per_block);        
-       
+
+        const int num_threads_per_block = get_cuda_num_threads();
+        const int num_blocks = ceil((float) comm->atom_send[ineigh] /
+(float)num_threads_per_block);
+
         unpack_forward_Cuda<<<num_blocks, num_threads_per_block>>>(
-                                        atom->d_atom,                       //MD_FLOAT* --> need to be in the device       
-                                        comm->atom_recv[ineigh],            //int  
-                                        comm->firstrecv[iswap] + offset,    //int 
-                                        &buf[offset * size]);               //MD_FLOAT* --> need to be in the devic
-        cudaDeviceSynchronize();
+                                        atom->d_atom,                       //MD_FLOAT*
+--> need to be in the device comm->atom_recv[ineigh],            //int
+                                        comm->firstrecv[iswap] + offset,    //int
+                                        &buf[offset * size]);               //MD_FLOAT*
+--> need to be in the devic cudaDeviceSynchronize();
         }
     cuda_assert("cudaDeviceFree", cudaFree(cuda_sendlist));
     cuda_assert("cudaDeviceFree", cudaFree(cuda_buf_recv));

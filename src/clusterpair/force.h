@@ -28,7 +28,8 @@ extern double computeForceEam(Parameter*, Atom*, Neighbor*, Stats*);
 
 #ifdef CUDA_TARGET
 double computeForceLJCuda(Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats);
-double computeForceLJCudaSup(Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats);
+double computeForceLJCudaSup(
+    Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats);
 #endif
 
 // Nbnxn layouts (as of GROMACS):
@@ -65,12 +66,11 @@ double computeForceLJCudaSup(Parameter* param, Atom* atom, Neighbor* neighbor, S
  */
 
 // General macros
-#define XX                   0
-#define YY                   1
-#define ZZ                   2
-#define DIM_COORD(dim,coord) ((dim == XX) ? atom_x(coord) : \
-                              (dim == YY) ? atom_y(coord) : \
-                                            atom_z(coord))
+#define XX 0
+#define YY 1
+#define ZZ 2
+#define DIM_COORD(dim, coord)                                                            \
+    ((dim == XX) ? atom_x(coord) : (dim == YY) ? atom_y(coord) : atom_z(coord))
 
 #ifdef CUDA_TARGET
 extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
@@ -93,31 +93,31 @@ extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 
 // Auto selection based on VECTOR_WIDTH and architecture
 #ifdef CLUSTER_PAIR_KERNEL_AUTO
-    #if (VECTOR_WIDTH > (CLUSTER_M * 2))
-        #define CLUSTERPAIR_KERNEL_2XNN
-    #else
-        #define CLUSTERPAIR_KERNEL_4XN
-    #endif
+#if (VECTOR_WIDTH > (CLUSTER_M * 2))
+#define CLUSTERPAIR_KERNEL_2XNN
+#else
+#define CLUSTERPAIR_KERNEL_4XN
+#endif
 #endif
 
 // Define the kernel-specific macros based on which kernel is selected
 #ifdef CLUSTERPAIR_KERNEL_4XN
-    #define KERNEL_NAME "Simd4xN"
-    #define CLUSTER_N   VECTOR_WIDTH
-    #define UNROLL_I    4
-    #define UNROLL_J    1
+#define KERNEL_NAME "Simd4xN"
+#define CLUSTER_N   VECTOR_WIDTH
+#define UNROLL_I    4
+#define UNROLL_J    1
 #endif
 
 #ifdef CLUSTERPAIR_KERNEL_2XNN
-    #define KERNEL_NAME "Simd2xNN"
-    #define CLUSTER_N   (VECTOR_WIDTH / 2)
-    #define UNROLL_I    4
-    #define UNROLL_J    2
+#define KERNEL_NAME "Simd2xNN"
+#define CLUSTER_N   (VECTOR_WIDTH / 2)
+#define UNROLL_I    4
+#define UNROLL_J    2
 #endif
 
 // Verify that one of the kernel variants is selected
 #if !defined(CLUSTERPAIR_KERNEL_4XN) && !defined(CLUSTERPAIR_KERNEL_2XNN)
-    #error "No cluster pair kernel variant selected"
+#error "No cluster pair kernel variant selected"
 #endif
 
 #endif
@@ -157,11 +157,11 @@ extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #endif
 
 // Super-clustering macros
-#define SCLUSTER_SIZE_X      2
-#define SCLUSTER_SIZE_Y      2
-#define SCLUSTER_SIZE_Z      2
-#define SCLUSTER_SIZE        (SCLUSTER_SIZE_X * SCLUSTER_SIZE_Y * SCLUSTER_SIZE_Z)
-#define SCLUSTER_M           CLUSTER_M * SCLUSTER_SIZE
+#define SCLUSTER_SIZE_X 2
+#define SCLUSTER_SIZE_Y 2
+#define SCLUSTER_SIZE_Z 2
+#define SCLUSTER_SIZE   (SCLUSTER_SIZE_X * SCLUSTER_SIZE_Y * SCLUSTER_SIZE_Z)
+#define SCLUSTER_M      CLUSTER_M* SCLUSTER_SIZE
 
 #if CLUSTER_M >= CLUSTER_N
 #define SCL_CL_X_OFFSET(ci) (ci * CLUSTER_M + 0 * SCLUSTER_M)
@@ -177,15 +177,19 @@ extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #endif
 
 #if CLUSTER_M == CLUSTER_N
-#define CJ1_FROM_SCI(a)          (a)
-#define SCI_BASE_INDEX(a,b)      ((a) * CLUSTER_N * SCLUSTER_SIZE * (b))
-#define SCJ_BASE_INDEX(a,b)      ((a) * CLUSTER_N * SCLUSTER_SIZE * (b))
+#define CJ1_FROM_SCI(a)      (a)
+#define SCI_BASE_INDEX(a, b) ((a)*CLUSTER_N * SCLUSTER_SIZE * (b))
+#define SCJ_BASE_INDEX(a, b) ((a)*CLUSTER_N * SCLUSTER_SIZE * (b))
 #elif CLUSTER_M == CLUSTER_N * 2 // M > N
-#define SCI_BASE_INDEX(a,b)      ((a) * CLUSTER_M * SCLUSTER_SIZE * (b))
-#define SCJ_BASE_INDEX(a,b)      (((a) >> 1) * CLUSTER_M * SCLUSTER_SIZE * (b) + ((a) & 0x1) * (SCLUSTER_SIZE * CLUSTER_M >> 1))
+#define SCI_BASE_INDEX(a, b) ((a)*CLUSTER_M * SCLUSTER_SIZE * (b))
+#define SCJ_BASE_INDEX(a, b)                                                             \
+    (((a) >> 1) * CLUSTER_M * SCLUSTER_SIZE * (b) +                                      \
+        ((a)&0x1) * (SCLUSTER_SIZE * CLUSTER_M >> 1))
 #elif CLUSTER_M == CLUSTER_N / 2 // M < N
-#define SCI_BASE_INDEX(a,b)      (((a) >> 1) * CLUSTER_N * SCLUSTER_SIZE * (b) + ((a) & 0x1) * (CLUSTER_N * SCLUSTER_SIZE >> 1))
-#define SCJ_BASE_INDEX(a,b)      ((a) * CLUSTER_N * SCLUSTER_SIZE * (b))
+#define SCI_BASE_INDEX(a, b)                                                             \
+    (((a) >> 1) * CLUSTER_N * SCLUSTER_SIZE * (b) +                                      \
+        ((a)&0x1) * (CLUSTER_N * SCLUSTER_SIZE >> 1))
+#define SCJ_BASE_INDEX(a, b) ((a)*CLUSTER_N * SCLUSTER_SIZE * (b))
 #endif
 
 #endif // __FORCE_H_

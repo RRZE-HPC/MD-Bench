@@ -20,6 +20,7 @@
 
 #include <allocate.h>
 #include <atom.h>
+#include <balance.h>
 #include <comm.h>
 #include <device.h>
 #include <eam.h>
@@ -28,22 +29,27 @@
 #include <integrate.h>
 #include <neighbor.h>
 #include <parameter.h>
-#include <shell_methods.h>
 #include <pbc.h>
+#include <shell_methods.h>
 #include <stats.h>
 #include <thermo.h>
 #include <timers.h>
 #include <timing.h>
 #include <util.h>
 #include <vtk.h>
-#include <balance.h>
 
 extern void copyDataToCUDADevice(Parameter*, Atom*);
 extern void copyDataFromCUDADevice(Parameter*, Atom*);
 
 #define HLINE "-----------------------------------------------------------------------\n"
 
-double setup(Parameter* param, Eam* eam, Atom* atom, Neighbor* neighbor, Stats* stats, Comm* comm, Grid* grid)
+double setup(Parameter* param,
+    Eam* eam,
+    Atom* atom,
+    Neighbor* neighbor,
+    Stats* stats,
+    Comm* comm,
+    Grid* grid)
 {
     if (param->force_field == FF_EAM) {
         initEam(param);
@@ -64,7 +70,7 @@ double setup(Parameter* param, Eam* eam, Atom* atom, Neighbor* neighbor, Stats* 
     } else {
         readAtom(atom, param);
     }
-    setupNeighbor(param);  
+    setupNeighbor(param);
 #ifdef _MPI
     setupGrid(grid, atom, param);
     setupComm(comm, param, grid);
@@ -82,17 +88,17 @@ double setup(Parameter* param, Eam* eam, Atom* atom, Neighbor* neighbor, Stats* 
 #endif
     setupPbc(atom, param);
     initDevice(param, atom, neighbor);
-#ifdef _MPI    
+#ifdef _MPI
     ghostNeighbor(comm, atom, param);
 #ifdef CUDA_TARGET
     copyDataToCUDADevice(param, atom);
 #endif
 #else
     updatePbc(atom, param, true);
-#endif 
+#endif
     buildNeighbor(atom, neighbor);
     initForce(param);
-    timeStop = getTimeStamp(); 
+    timeStop = getTimeStamp();
     return timeStop - timeStart;
 }
 
@@ -101,7 +107,7 @@ double reneighbour(int n, Parameter* param, Atom* atom, Neighbor* neighbor, Comm
     double timeStart, timeStop;
     timeStart = getTimeStamp();
     LIKWID_MARKER_START("reneighbour");
-    //updateAtomsPbc(atom, param, true); function called at updateAtoms
+    // updateAtomsPbc(atom, param, true); function called at updateAtoms
 #ifdef SORT_ATOMS
     if ((n + 1) % param->resort_every == 0) {
         DEBUG_MESSAGE("Resorting atoms");
@@ -114,10 +120,10 @@ double reneighbour(int n, Parameter* param, Atom* atom, Neighbor* neighbor, Comm
 #ifdef CUDA_TARGET
     copyDataToCUDADevice(param, atom);
 #endif
-#else 
+#else
     setupPbc(atom, param);
     updatePbc(atom, param, true);
-#endif 
+#endif
     buildNeighbor(atom, neighbor);
     LIKWID_MARKER_STOP("reneighbour");
     timeStop = getTimeStamp();
@@ -146,7 +152,7 @@ double updateAtoms(Comm* comm, Atom* atom, Parameter* param)
     copyDataFromCUDADevice(param, atom);
 #endif
     exchangeComm(comm, atom);
-#else 
+#else
     updateAtomsPbc(atom, param, true);
 #endif
     timeStop = getTimeStamp();
@@ -283,21 +289,21 @@ int main(int argc, char** argv)
         if ((strcmp(argv[i], "-h") == 0) || (strcmp(argv[i], "--help") == 0)) {
             if (comm.myproc == 0) {
                 printf("MD Bench: A performance-oriented prototyping harness for MD "
-                    "algorithms\n");
+                       "algorithms\n");
                 printf(HLINE);
                 printf("-p / --params <string>:     file to read parameters from (can be "
-                    "specified more than once)\n");
+                       "specified more than once)\n");
                 printf("-f <string>:                force field (lj or eam), "
-                    "default lj\n");
+                       "default lj\n");
                 printf("-i <string>:                input file with atom positions "
-                    "(dump)\n");
+                       "(dump)\n");
                 printf("-e <string>:                input file for EAM\n");
                 printf("-n / --nsteps <int>:        set number of timesteps for "
-                    "simulation\n");
+                       "simulation\n");
                 printf("-nx/-ny/-nz <int>:          set linear dimension of systembox in "
-                    "x/y/z direction\n");
+                       "x/y/z direction\n");
                 printf("-half <int>:                use half (1) or full (0) neighbor "
-                    "lists\n");
+                       "lists\n");
                 printf("-r / --radius <real>:       set cutoff radius\n");
                 printf("-s / --skin <real>:         set skin (verlet buffer)\n");
                 printf("-w <file>:                  write input atoms to file\n");
@@ -317,7 +323,7 @@ int main(int argc, char** argv)
     }
 
     param.cutneigh = param.cutforce + param.skin;
-    timer[SETUP] = setup(&param, &eam, &atom, &neighbor, &stats, &comm, &grid);
+    timer[SETUP]   = setup(&param, &eam, &atom, &neighbor, &stats, &comm, &grid);
     if (comm.myproc == 0) printParameter(&param);
     if (comm.myproc == 0) printf(HLINE);
     if (comm.myproc == 0) printf("step\ttemp\t\tpressure\n");
@@ -331,17 +337,17 @@ int main(int argc, char** argv)
 
     // writeInput(&param, &atom);
     barrierComm();
-    timer[TOTAL] = getTimeStamp();
-    timer[FORCE] = computeForce(&param, &atom, &neighbor, &stats);
-    timer[NEIGH] = 0.0;
+    timer[TOTAL]   = getTimeStamp();
+    timer[FORCE]   = computeForce(&param, &atom, &neighbor, &stats);
+    timer[NEIGH]   = 0.0;
     timer[FORWARD] = 0.0;
     timer[UPDATE]  = 0.0;
     timer[BALANCE] = 0.0;
     timer[REVERSE] = reverse(&comm, &atom, &param);
     if (param.vtk_file != NULL) {
-        //write_atoms_to_vtk_file(param.vtk_file, &atom, 0);
+        // write_atoms_to_vtk_file(param.vtk_file, &atom, 0);
         printvtk(param.vtk_file, &comm, &atom, &param, 0);
-    } 
+    }
     for (int n = 0; n < param.ntimes; n++) {
         bool reneigh = (n + 1) % param.reneigh_every == 0;
         initialIntegrate(reneigh, &param, &atom);
@@ -349,11 +355,15 @@ int main(int argc, char** argv)
         if (reneigh) {
             timer[UPDATE] += updateAtoms(&comm, &atom, &param);
             if (param.balance && !((n + 1) % param.balance_every))
-                timer[BALANCE] += dynamicBalance(&comm, &grid, &atom, &param, timer[FORCE]);
+                timer[BALANCE] += dynamicBalance(&comm,
+                    &grid,
+                    &atom,
+                    &param,
+                    timer[FORCE]);
             timer[NEIGH] += reneighbour(n, &param, &atom, &neighbor, &comm);
         } else {
             timer[FORWARD] += forward(&comm, &atom, &param);
-            //updatePbc(&atom, &param, false);
+            // updatePbc(&atom, &param, false);
         }
 
 #if defined(MEM_TRACER) || defined(INDEX_TRACER)
@@ -372,7 +382,7 @@ int main(int argc, char** argv)
         }
 
         if (param.vtk_file != NULL) {
-            //write_atoms_to_vtk_file(param.vtk_file, &atom, n + 1);
+            // write_atoms_to_vtk_file(param.vtk_file, &atom, n + 1);
             printvtk(param.vtk_file, &comm, &atom, &param, n + 1);
         }
     }
@@ -392,19 +402,19 @@ int main(int argc, char** argv)
     MPI_Reduce(timer, sumt, NUMTIMER, MPI_DOUBLE, MPI_SUM, 0, world);
     MPI_Reduce(&atom.Nghost, &Nghost, 1, MPI_INT, MPI_SUM, 0, world);
 #else
-    int Nghost = atom.Nghost;
-    double *mint = timer;
-    double *maxt = timer;
-    double *sumt = timer;
+    int Nghost   = atom.Nghost;
+    double* mint = timer;
+    double* maxt = timer;
+    double* sumt = timer;
 #endif
 
     if (comm.myproc == 0) {
-    int n = comm.numproc;
-    printf(HLINE);
-    printf("System: %d atoms %d ghost atoms, Steps: %d\n",
-        atom.Natoms,
-        Nghost,
-        param.ntimes);
+        int n = comm.numproc;
+        printf(HLINE);
+        printf("System: %d atoms %d ghost atoms, Steps: %d\n",
+            atom.Natoms,
+            Nghost,
+            param.ntimes);
         printf("TOTAL %.2fs\n\n", timer[TOTAL]);
         printf("%4s|%7s|%7s|%7s|%7s|%7s|%7s|%7s|%7s|\n",
             "",
@@ -490,7 +500,7 @@ int main(int argc, char** argv)
         printf("Performance: %.2f million atom updates per second\n",
             1e-6 * (double)atom.Natoms * param.ntimes / timer[TOTAL]);
 #ifdef COMPUTE_STATS
-    displayStatistics(&atom, &param, &stats, timer);
+        displayStatistics(&atom, &param, &stats, timer);
 #endif
     }
     endComm(&comm);

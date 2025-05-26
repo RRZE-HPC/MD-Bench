@@ -38,9 +38,9 @@ static Binning c_binning {
     .bincount = NULL, .bins = NULL, .mbins = 0, .atoms_per_bin = 0
 };
 
-//Multi GPU
-extern int pad_x, pad_y, pad_z; 
-extern MD_FLOAT binsizex, binsizey, binsizez; 
+// Multi GPU
+extern int pad_x, pad_y, pad_z;
+extern MD_FLOAT binsizex, binsizey, binsizez;
 
 __device__ int coord2bin_device(
     MD_FLOAT xin, MD_FLOAT yin, MD_FLOAT zin, Neighbor_params np)
@@ -86,7 +86,7 @@ __device__ int coord2bin_device(
     ix           = (int)((xin + xlo) * np.bininvx);
     iy           = (int)((yin + ylo) * np.bininvy);
     iz           = (int)((zin + zlo) * np.bininvz);
-    return (iz * np.mbiny * np.mbinx + iy * np.mbinx + ix); 
+    return (iz * np.mbiny * np.mbinx + iy * np.mbinx + ix);
 }
 
 /* sorts the contents of a bin to make it comparable to the CPU version */
@@ -99,7 +99,7 @@ __global__ void sort_bin_contents_kernel(
     if (i >= mbins) {
         return;
     }
-        
+
     int atoms_in_bin = bincount[i];
     int* bin_ptr     = &bins[i * atoms_per_bin];
     int sorted;
@@ -136,7 +136,7 @@ __global__ void binatoms_kernel(DeviceAtom a,
     MD_FLOAT z = atom_z(i);
     int ibin   = coord2bin_device(x, y, z, np);
     int ac     = atomicAdd(&bincount[ibin], 1);
-    
+
     if (ac < atoms_per_bin) {
         bins[ibin * atoms_per_bin + ac] = i;
     } else {
@@ -222,7 +222,7 @@ void binatoms_cuda(Atom* atom,
     int nall             = atom->Nlocal + atom->Nghost;
     int resize           = 1;
     const int num_blocks = ceil((float)nall / (float)threads_per_block);
-   
+
     while (resize > 0) {
         resize = 0;
         memsetGPU(c_binning->bincount, 0, c_binning->mbins * sizeof(int));
@@ -258,17 +258,18 @@ void buildNeighborCUDA(Atom* atom, Neighbor* neighbor)
 {
     DeviceNeighbor* d_neighbor      = &(neighbor->d_neighbor);
     const int num_threads_per_block = get_cuda_num_threads();
-    
+
     cudaProfilerStart();
-    
-    int nall                  = atom->Nlocal + atom->Nghost;
+
+    int nall = atom->Nlocal + atom->Nghost;
     if (nall > nmax) {
         nmax                  = nall;
-        d_neighbor->neighbors = (int*) reallocateGPU(d_neighbor->neighbors, 
-                                                    nmax * neighbor->maxneighs * sizeof(int*));
-        d_neighbor->numneigh  = (int*) reallocateGPU(d_neighbor->numneigh, nmax * sizeof(int));
+        d_neighbor->neighbors = (int*)reallocateGPU(d_neighbor->neighbors,
+            nmax * neighbor->maxneighs * sizeof(int*));
+        d_neighbor->numneigh  = (int*)reallocateGPU(d_neighbor->numneigh,
+            nmax * sizeof(int));
     }
-    
+
     // TODO move all of this initialization into its own method
     if (c_stencil == NULL) {
         c_stencil = (int*)allocateGPU(nstencil * sizeof(int));
@@ -298,14 +299,13 @@ void buildNeighborCUDA(Atom* atom, Neighbor* neighbor)
         .mbinx                 = mbinx,
         .mbiny                 = mbiny,
         .mbinz                 = mbinz,
-        //MultiGPU 
-        .pad_x                 = pad_x,
-        .pad_y                 = pad_y,
-        .pad_z                 = pad_z,
-        .binsizex              = binsizex,
-        .binsizey              = binsizey,
-        .binsizez              = binsizez
-    };
+        // MultiGPU
+        .pad_x    = pad_x,
+        .pad_y    = pad_y,
+        .pad_z    = pad_z,
+        .binsizex = binsizex,
+        .binsizey = binsizey,
+        .binsizez = binsizez };
 
     if (c_resize_needed == NULL) {
         c_resize_needed = (int*)allocateGPU(sizeof(int));
@@ -313,12 +313,12 @@ void buildNeighborCUDA(Atom* atom, Neighbor* neighbor)
 
     /* bin local & ghost atoms */
     binatoms_cuda(atom, &c_binning, c_resize_needed, &np, num_threads_per_block);
-    if (c_new_maxneighs == NULL) { 
+    if (c_new_maxneighs == NULL) {
         c_new_maxneighs = (int*)allocateGPU(sizeof(int));
     }
 
     int resize = 1;
- 
+
     /* loop over each atom, storing neighbors */
     while (resize) {
         resize = 0;

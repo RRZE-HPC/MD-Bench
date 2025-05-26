@@ -24,7 +24,7 @@ BuildNeighborFunction buildNeighbor = buildNeighborCPU;
 
 MD_FLOAT xprd, yprd, zprd;
 MD_FLOAT bininvx, bininvy, bininvz;
-int mbinxlo, mbinylo, mbinzlo; //not used
+int mbinxlo, mbinylo, mbinzlo; // not used
 int nbinx, nbiny, nbinz;
 int mbinx, mbiny, mbinz; // n bins in x, y, z
 int* bincount;
@@ -55,22 +55,22 @@ static inline int skipNeigh(Atom* atom, int i, int j);
 /* exported subroutines */
 void initNeighbor(Neighbor* neighbor, Parameter* param)
 {
-    MD_FLOAT neighscale  = 5.0 / 6.0;
-    xprd                 = param->nx * param->lattice;
-    yprd                 = param->ny * param->lattice;
-    zprd                 = param->nz * param->lattice;
-    cutneigh             = param->cutneigh;
-    nbinx                = MAX(1,neighscale * param->nx);
-    nbiny                = MAX(1,neighscale * param->ny);
-    nbinz                = MAX(1,neighscale * param->nz);
-    nmax                 = 0;
-    atoms_per_bin        = 8;
-    stencil              = NULL;
-    bins                 = NULL;
-    bincount             = NULL;
-    neighbor->maxneighs  = 100;
-    neighbor->numneigh   = NULL;
-    neighbor->neighbors  = NULL;
+    MD_FLOAT neighscale = 5.0 / 6.0;
+    xprd                = param->nx * param->lattice;
+    yprd                = param->ny * param->lattice;
+    zprd                = param->nz * param->lattice;
+    cutneigh            = param->cutneigh;
+    nbinx               = MAX(1, neighscale * param->nx);
+    nbiny               = MAX(1, neighscale * param->ny);
+    nbinz               = MAX(1, neighscale * param->nz);
+    nmax                = 0;
+    atoms_per_bin       = 8;
+    stencil             = NULL;
+    bins                = NULL;
+    bincount            = NULL;
+    neighbor->maxneighs = 100;
+    neighbor->numneigh  = NULL;
+    neighbor->neighbors = NULL;
     //========== MPI =============
     method = param->method;
     if (method == halfShell || method == eightShell) {
@@ -83,7 +83,7 @@ void initNeighbor(Neighbor* neighbor, Parameter* param)
         half_stencil      = 1;
     }
     neighbor->half_neigh = param->half_neigh;
-    
+
     me = 0;
 #ifdef _MPI
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
@@ -143,7 +143,7 @@ void setupNeighbor(Parameter* param)
         bininvy  = 1.0 / binsizey;
         bininvz  = 1.0 / binsizez;
     }
-   
+
     pad_x = (int)(cutneigh * bininvx);
     while (pad_x * binsizex < FACTOR * cutneigh)
         pad_x++;
@@ -153,7 +153,6 @@ void setupNeighbor(Parameter* param)
     pad_z = (int)(cutneigh * bininvz);
     while (pad_z * binsizez < FACTOR * cutneigh)
         pad_z++;
-    
 
     coord   = xlo - cutneigh - SMALL * xprd;
     mbinxlo = (int)(coord * bininvx);
@@ -181,28 +180,28 @@ void setupNeighbor(Parameter* param)
 
     mbinxlo = mbinxlo - 1;
     mbinxhi = mbinxhi + 1;
-    
+
     mbinylo = mbinylo - 1;
     mbinyhi = mbinyhi + 1;
 
     mbinzlo = mbinzlo - 1;
     mbinzhi = mbinzhi + 1;
 
-/*
-    mbinxlo = mbinxlo - 1;
-    mbinxhi = mbinxhi + 1;
-    mbinx   = mbinxhi - mbinxlo + 1;
+    /*
+        mbinxlo = mbinxlo - 1;
+        mbinxhi = mbinxhi + 1;
+        mbinx   = mbinxhi - mbinxlo + 1;
 
-    mbinylo = mbinylo - 1;
-    mbinyhi = mbinyhi + 1;
-    mbiny   = mbinyhi - mbinylo + 1;
+        mbinylo = mbinylo - 1;
+        mbinyhi = mbinyhi + 1;
+        mbiny   = mbinyhi - mbinylo + 1;
 
-    mbinzlo = mbinzlo - 1;
-    mbinzhi = mbinzhi + 1;
-    mbinz   = mbinzhi - mbinzlo + 1;
-*/
+        mbinzlo = mbinzlo - 1;
+        mbinzhi = mbinzhi + 1;
+        mbinz   = mbinzhi - mbinzlo + 1;
+    */
     nextx = (int)(cutneigh * bininvx);
-    while (nextx * binsizex < FACTOR * cutneigh) { 
+    while (nextx * binsizex < FACTOR * cutneigh) {
         nextx++;
         pad_x++;
     }
@@ -210,12 +209,12 @@ void setupNeighbor(Parameter* param)
     while (nexty * binsizey < FACTOR * cutneigh) {
         nexty++;
         pad_y++;
-    } 
+    }
     nextz = (int)(cutneigh * bininvz);
     while (nextz * binsizez < FACTOR * cutneigh) {
         nextz++;
-        pad_z++; 
-    } 
+        pad_z++;
+    }
 
     mbinx = MAX(1, nbinx + 4 * pad_x);
     mbiny = MAX(1, nbiny + 4 * pad_y);
@@ -236,7 +235,7 @@ void setupNeighbor(Parameter* param)
                     int jbin = k * mbiny * mbinx + j * mbinx + i;
                     if (ibin > jbin && half_stencil) continue;
                     stencil[nstencil++] = jbin;
-                    //stencil[nstencil++] = k * mbiny * mbinx + j * mbinx + i;
+                    // stencil[nstencil++] = k * mbiny * mbinx + j * mbinx + i;
                 }
             }
         }
@@ -294,8 +293,8 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
                     if (i == j) continue;
                     if (neighbor->half_neigh && j < i) continue;
                     if (half_stencil && ibin == jbin && skipNeigh(atom, i, j)) continue;
-                    //if ((j == i) || (neighbor->half_neigh && (j < i))) continue;
-                
+                    // if ((j == i) || (neighbor->half_neigh && (j < i))) continue;
+
                     MD_FLOAT delx = xtmp - atom_x(j);
                     MD_FLOAT dely = ytmp - atom_y(j);
                     MD_FLOAT delz = ztmp - atom_z(j);

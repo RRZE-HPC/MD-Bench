@@ -9,13 +9,13 @@
 #include <limits.h>
 #include <math.h>
 #include <parameter.h>
+#include <pbc.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <timing.h>
 #include <unistd.h>
 #include <util.h>
-#include <pbc.h>
 
 static void addDummyCluster(Atom*);
 #ifdef CUDA_TARGET
@@ -23,8 +23,7 @@ extern void copyGhostFromGPU(Atom*);
 extern void copyGhostToGPU(Atom*);
 extern void copyForceFromGPU(Atom*);
 extern void copyForceToGPU(Atom*);
-#endif 
-
+#endif
 
 double forward(Comm* comm, Atom* atom, Parameter* param)
 {
@@ -33,7 +32,7 @@ double forward(Comm* comm, Atom* atom, Parameter* param)
 #ifdef _MPI
 
 #ifdef CUDA_TARGET
-    copyGhostFromGPU(atom); 
+    copyGhostFromGPU(atom);
 #endif
 
     if (param->method == halfShell) {
@@ -50,7 +49,7 @@ double forward(Comm* comm, Atom* atom, Parameter* param)
     copyGhostToGPU(atom);
 #endif
 
-#else 
+#else
     updatePbc(atom, param, false);
 #endif
     E = getTimeStamp();
@@ -64,7 +63,7 @@ double reverse(Comm* comm, Atom* atom, Parameter* param)
 #ifdef _MPI
 
 #ifdef CUDA_TARGET
-    copyForceFromGPU(atom); 
+    copyForceFromGPU(atom);
 #endif
 
     if (param->method == halfShell) {
@@ -105,8 +104,8 @@ void ghostNeighbor(Comm* comm, Atom* atom, Parameter* param)
         for (int iswap = 0; iswap < 6; iswap++)
             ghostComm(comm, atom, iswap);
     }
-#ifdef CLUSTER_PAIR    
-    addDummyCluster(atom);    
+#ifdef CLUSTER_PAIR
+    addDummyCluster(atom);
 #endif
 }
 #endif
@@ -128,6 +127,6 @@ void addDummyCluster(Atom* atom)
         cjX[CL_X_OFFSET + cjj] = INFINITY;
         cjX[CL_Y_OFFSET + cjj] = INFINITY;
         cjX[CL_Z_OFFSET + cjj] = INFINITY;
-    } 
+    }
 }
 #endif

@@ -23,25 +23,33 @@
 int write_atoms_to_file(Atom* atom, char* name)
 {
     // file system variable
-    char *file_system = getenv("TMPDIR");
-    
+    char* file_system = getenv("TMPDIR");
+
     // Check if $FASTTMP is set
     if (file_system == NULL) {
         fprintf(stderr, "Error: TMPDIR environment variable is not set!\n");
         return -1;
     }
 
-    char file_path[256]; 
+    char file_path[256];
     snprintf(file_path, sizeof(file_path), "%s/%s", file_system, name);
 
-    FILE *fp = fopen(file_path, "wb");
+    FILE* fp = fopen(file_path, "wb");
     if (fp == NULL) {
         perror("Error opening file");
         return -1;
     }
 
     for (int i = 0; i < atom->Nlocal; ++i) {
-        fprintf(fp, "%.15lf %.15lf %.15lf %.15lf %.15lf %.15lf %d\n", atom_x(i), atom_y(i), atom_z(i), atom_vx(i), atom_vy(i),atom_vz(i),atom->type[i]);
+        fprintf(fp,
+            "%.15lf %.15lf %.15lf %.15lf %.15lf %.15lf %d\n",
+            atom_x(i),
+            atom_y(i),
+            atom_z(i),
+            atom_vx(i),
+            atom_vy(i),
+            atom_vz(i),
+            atom->type[i]);
     }
     fclose(fp);
     return 0;
@@ -85,7 +93,7 @@ void initAtom(Atom* atom)
     d_atom->sigma6     = NULL;
     d_atom->cutforcesq = NULL;
     d_atom->cutneighsq = NULL;
-        // MPI
+    // MPI
     Box* mybox  = &(atom->mybox);
     mybox->xprd = mybox->yprd = mybox->zprd = 0;
     mybox->lo[_x] = mybox->lo[_y] = mybox->lo[_z] = 0;
@@ -95,9 +103,9 @@ void initAtom(Atom* atom)
 void createAtom(Atom* atom, Parameter* param)
 {
     int me = 0;
-    #ifdef _MPI
-        MPI_Comm_rank(MPI_COMM_WORLD, &me);
-    #endif
+#ifdef _MPI
+    MPI_Comm_rank(MPI_COMM_WORLD, &me);
+#endif
 
     MD_FLOAT xlo  = 0.0;
     MD_FLOAT xhi  = param->xprd;
@@ -146,78 +154,79 @@ void createAtom(Atom* atom, Parameter* param)
     int oz        = 0;
     int subboxdim = 8;
 
-if(me == 0 && param->setup) {
-    while (oz * subboxdim <= khi) {
+    if (me == 0 && param->setup) {
+        while (oz * subboxdim <= khi) {
 
-        k = oz * subboxdim + sz;
-        j = oy * subboxdim + sy;
-        i = ox * subboxdim + sx;
+            k = oz * subboxdim + sz;
+            j = oy * subboxdim + sy;
+            i = ox * subboxdim + sx;
 
-        if (((i + j + k) % 2 == 0) && (i >= ilo) && (i <= ihi) && (j >= jlo) &&
-            (j <= jhi) && (k >= klo) && (k <= khi)) {
+            if (((i + j + k) % 2 == 0) && (i >= ilo) && (i <= ihi) && (j >= jlo) &&
+                (j <= jhi) && (k >= klo) && (k <= khi)) {
 
-            xtmp = 0.5 * alat * i;
-            ytmp = 0.5 * alat * j;
-            ztmp = 0.5 * alat * k;
+                xtmp = 0.5 * alat * i;
+                ytmp = 0.5 * alat * j;
+                ztmp = 0.5 * alat * k;
 
-            if (xtmp >= xlo && xtmp < xhi && ytmp >= ylo && ytmp < yhi && ztmp >= zlo &&
-                ztmp < zhi) {
+                if (xtmp >= xlo && xtmp < xhi && ytmp >= ylo && ytmp < yhi &&
+                    ztmp >= zlo && ztmp < zhi) {
 
-                n = k * (2 * param->ny) * (2 * param->nx) + j * (2 * param->nx) + i + 1;
+                    n = k * (2 * param->ny) * (2 * param->nx) + j * (2 * param->nx) + i +
+                        1;
 
-                for (m = 0; m < 5; m++) {
-                    myrandom(&n);
+                    for (m = 0; m < 5; m++) {
+                        myrandom(&n);
+                    }
+                    vxtmp = myrandom(&n);
+
+                    for (m = 0; m < 5; m++) {
+                        myrandom(&n);
+                    }
+                    vytmp = myrandom(&n);
+
+                    for (m = 0; m < 5; m++) {
+                        myrandom(&n);
+                    }
+                    vztmp = myrandom(&n);
+
+                    if (atom->Nlocal == atom->Nmax) {
+                        growAtom(atom);
+                    }
+
+                    atom_x(atom->Nlocal)     = xtmp;
+                    atom_y(atom->Nlocal)     = ytmp;
+                    atom_z(atom->Nlocal)     = ztmp;
+                    atom_vx(atom->Nlocal)    = vxtmp;
+                    atom_vy(atom->Nlocal)    = vytmp;
+                    atom_vz(atom->Nlocal)    = vztmp;
+                    atom->type[atom->Nlocal] = rand() % atom->ntypes;
+                    atom->Nlocal++;
                 }
-                vxtmp = myrandom(&n);
+            }
 
-                for (m = 0; m < 5; m++) {
-                    myrandom(&n);
-                }
-                vytmp = myrandom(&n);
+            sx++;
 
-                for (m = 0; m < 5; m++) {
-                    myrandom(&n);
-                }
-                vztmp = myrandom(&n);
-
-                if (atom->Nlocal == atom->Nmax) {
-                    growAtom(atom);
-                }
-
-                atom_x(atom->Nlocal)     = xtmp;
-                atom_y(atom->Nlocal)     = ytmp;
-                atom_z(atom->Nlocal)     = ztmp;
-                atom_vx(atom->Nlocal)    = vxtmp;
-                atom_vy(atom->Nlocal)    = vytmp;
-                atom_vz(atom->Nlocal)    = vztmp;
-                atom->type[atom->Nlocal] = rand() % atom->ntypes;
-                atom->Nlocal++;
+            if (sx == subboxdim) {
+                sx = 0;
+                sy++;
+            }
+            if (sy == subboxdim) {
+                sy = 0;
+                sz++;
+            }
+            if (sz == subboxdim) {
+                sz = 0;
+                ox++;
+            }
+            if (ox * subboxdim > ihi) {
+                ox = 0;
+                oy++;
+            }
+            if (oy * subboxdim > jhi) {
+                oy = 0;
+                oz++;
             }
         }
-
-        sx++;
-
-        if (sx == subboxdim) {
-            sx = 0;
-            sy++;
-        }
-        if (sy == subboxdim) {
-            sy = 0;
-            sz++;
-        }
-        if (sz == subboxdim) {
-            sz = 0;
-            ox++;
-        }
-        if (ox * subboxdim > ihi) {
-            ox = 0;
-            oy++;
-        }
-        if (oy * subboxdim > jhi) {
-            oy = 0;
-            oz++;
-        }
-    }
         write_atoms_to_file(atom, param->atom_file_name);
     }
 }
@@ -253,9 +262,9 @@ int readAtom(Atom* atom, Parameter* param)
         return readAtom_in(atom, param);
     }
     if (me == 0) {
-    fprintf(stderr,
-        "Invalid input file extension: %s\nValid choices are: pdb, gro, dmp, in\n",
-        param->input_file);
+        fprintf(stderr,
+            "Invalid input file extension: %s\nValid choices are: pdb, gro, dmp, in\n",
+            param->input_file);
     }
     exit(-1);
     return -1;
@@ -716,30 +725,30 @@ void growAtom(Atom* atom)
 void freeAtom(Atom* atom)
 {
 #undef FREE_ATOM
-#define FREE_ATOM(p);                                       \
-    free(atom->p);                                          \
-    GPUfree(atom->d_atom.p);                               \
-    atom->p        = NULL;                                  \
+#define FREE_ATOM(p)                                                                     \
+    ;                                                                                    \
+    free(atom->p);                                                                       \
+    GPUfree(atom->d_atom.p);                                                             \
+    atom->p        = NULL;                                                               \
     atom->d_atom.p = NULL;
-  
+
 #ifdef AOS
     FREE_ATOM(x);
     FREE_ATOM(vx);
-    FREE_ATOM(fx); 
+    FREE_ATOM(fx);
 #else
     FREE_ATOM(x);
-    FREE_ATOM(y);    
-    FREE_ATOM(z); 
+    FREE_ATOM(y);
+    FREE_ATOM(z);
     FREE_ATOM(vx);
-    FREE_ATOM(vy);    
-    FREE_ATOM(vz); 
+    FREE_ATOM(vy);
+    FREE_ATOM(vz);
     FREE_ATOM(fx);
-    FREE_ATOM(fy);    
-    FREE_ATOM(fz); 
+    FREE_ATOM(fy);
+    FREE_ATOM(fz);
 #endif
     FREE_ATOM(type);
 }
-
 
 void packForward(Atom* atom, int n, int* list, MD_FLOAT* buf, int* pbc)
 {
@@ -767,18 +776,20 @@ int packGhost(Atom* atom, int i, MD_FLOAT* buf, int* pbc)
     buf[m++] = atom_x(i) + pbc[_x] * atom->mybox.xprd;
     buf[m++] = atom_y(i) + pbc[_y] * atom->mybox.yprd;
     buf[m++] = atom_z(i) + pbc[_z] * atom->mybox.zprd;
-    buf[m++] = (MD_FLOAT) atom->type[i];
+    buf[m++] = (MD_FLOAT)atom->type[i];
     return m;
 }
 
 int unpackGhost(Atom* atom, int i, MD_FLOAT* buf)
 {
-    while (i >= atom->Nmax) {growAtom(atom);}
+    while (i >= atom->Nmax) {
+        growAtom(atom);
+    }
     int m         = 0;
     atom_x(i)     = buf[m++];
     atom_y(i)     = buf[m++];
     atom_z(i)     = buf[m++];
-    atom->type[i] = (int) buf[m++];
+    atom->type[i] = (int)buf[m++];
     atom->Nghost++;
     return m;
 }
@@ -812,13 +823,15 @@ int packExchange(Atom* atom, int i, MD_FLOAT* buf)
     buf[m++] = atom_vx(i);
     buf[m++] = atom_vy(i);
     buf[m++] = atom_vz(i);
-    buf[m++] = (MD_FLOAT) atom->type[i];
+    buf[m++] = (MD_FLOAT)atom->type[i];
     return m;
 }
 
 int unpackExchange(Atom* atom, int i, MD_FLOAT* buf)
 {
-    while (i >= atom->Nmax) {growAtom(atom);}
+    while (i >= atom->Nmax) {
+        growAtom(atom);
+    }
     int m         = 0;
     atom_x(i)     = buf[m++];
     atom_y(i)     = buf[m++];
@@ -826,7 +839,7 @@ int unpackExchange(Atom* atom, int i, MD_FLOAT* buf)
     atom_vx(i)    = buf[m++];
     atom_vy(i)    = buf[m++];
     atom_vz(i)    = buf[m++];
-    atom->type[i] = (int) buf[m++];
+    atom->type[i] = (int)buf[m++];
     return m;
 }
 

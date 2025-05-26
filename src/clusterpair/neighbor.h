@@ -10,7 +10,6 @@
 #include <mpi.h>
 #endif
 
-
 #ifndef __NEIGHBOR_H_
 #define __NEIGHBOR_H_
 // Interaction masks from GROMACS, things to remember (maybe these confused just me):
@@ -38,9 +37,9 @@ typedef struct {
     int half_neigh;
     int* neighbors;
     unsigned int* neighbors_imask;
-        // MPI
-    int Nshell; // # of cluster in listShell(Cluster here cover all possible ghost
-                // interactions)
+    // MPI
+    int Nshell;         // # of cluster in listShell(Cluster here cover all possible ghost
+                        // interactions)
     int* numNeighShell; // # of neighs for each atom in listShell
     int* neighshell;    // list of neighs for each atom in listShell
     int* listshell;     // Atoms to compute the force
@@ -70,7 +69,8 @@ extern void updateSingleAtoms(Atom*);
 #ifdef __cplusplus
 extern "C"
 #endif
-extern void growNeighborCUDA(Atom*, Neighbor*);
+    extern void
+    growNeighborCUDA(Atom*, Neighbor*);
 #endif
 
 #endif

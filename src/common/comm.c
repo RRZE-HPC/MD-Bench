@@ -11,9 +11,8 @@
 #define BUFEXTRA  100
 #define world     MPI_COMM_WORLD
 
-
 #ifdef _MPI
-#include <mpi.h>    
+#include <mpi.h>
 
 static inline void allocDynamicBuffers(Comm*);
 static inline void freeDynamicBuffers(Comm*);
@@ -108,7 +107,7 @@ void neighComm(Comm* comm, Parameter* param, Grid* grid)
             if (intersection) addNeighToExchangeList(comm, proc);
         }
     }
-    
+
     // MAP is stored as follows: xlo,ylo,zlo,xhi,yhi,zhi
     for (int iswap = 0; iswap < 6; iswap++) {
         int dir = comm->swapdir[iswap];
@@ -128,7 +127,7 @@ void neighComm(Comm* comm, Parameter* param, Grid* grid)
             // return if two boxes intersect: -100 not intersection, 0, 1 and -1
             // intersection for each different pbc.
             int pbc = overlapBox(dim, dir, &mybox, &other, &cut, prd[dim], cutneigh);
-            //printf("rank:%d proc:%d pbc:%d iswap:%d\n",comm->myproc,proc,pbc,iswap);
+            // printf("rank:%d proc:%d pbc:%d iswap:%d\n",comm->myproc,proc,pbc,iswap);
             if (pbc == -100) continue;
 
             expandBox(iswap, &mybox, &other, &cut, cutneigh);
@@ -237,7 +236,7 @@ void forwardComm(Comm* comm, Atom* atom, int iswap)
     int size    = comm->forwardSize;
     int maxrqst = comm->numneigh;
     MD_FLOAT* buf;
-    
+
     for (int ineigh = comm->sendfrom[iswap]; ineigh < comm->sendtill[iswap]; ineigh++) {
         offset  = comm->off_atom_send[ineigh];
         pbc[_x] = comm->pbc_x[ineigh];
@@ -272,12 +271,17 @@ void forwardComm(Comm* comm, Atom* atom, int iswap)
              ineigh++) {
             offset = comm->off_atom_send[ineigh] * size;
             nsend  = comm->atom_send[ineigh] * size;
-            MPI_Send(&comm->buf_send[offset], nsend, type_float, comm->nsend[ineigh], 0, world);
+            MPI_Send(&comm->buf_send[offset],
+                nsend,
+                type_float,
+                comm->nsend[ineigh],
+                0,
+                world);
         }
 
     if (comm->othersend[iswap]) MPI_Waitall(nrqst, requests, MPI_STATUS_IGNORE);
-    
-    if (comm->othersend[iswap]){ 
+
+    if (comm->othersend[iswap]) {
         buf = comm->buf_recv;
     } else {
         buf = comm->buf_send;
@@ -299,7 +303,7 @@ void reverseComm(Comm* comm, Atom* atom, int iswap)
     int size    = comm->reverseSize;
     int maxrqst = comm->numneigh;
     MD_FLOAT* buf;
-    
+
     for (int ineigh = comm->recvfrom[iswap]; ineigh < comm->recvtill[iswap]; ineigh++) {
         offset = comm->off_atom_recv[ineigh];
         packReverse(atom,
@@ -307,7 +311,6 @@ void reverseComm(Comm* comm, Atom* atom, int iswap)
             comm->firstrecv[iswap] + offset,
             &comm->buf_send[offset * size]);
     }
-
 
     MPI_Request requests[maxrqst];
     // Receives elements
@@ -330,11 +333,16 @@ void reverseComm(Comm* comm, Atom* atom, int iswap)
              ineigh++) {
             offset = comm->off_atom_recv[ineigh] * size;
             nsend  = comm->atom_recv[ineigh] * size;
-            MPI_Send(&comm->buf_send[offset], nsend, type_float, comm->nrecv[ineigh], 0, world);
+            MPI_Send(&comm->buf_send[offset],
+                nsend,
+                type_float,
+                comm->nrecv[ineigh],
+                0,
+                world);
         }
     if (comm->othersend[iswap]) MPI_Waitall(nrqst, requests, MPI_STATUS_IGNORE);
-  
-    if (comm->othersend[iswap]){
+
+    if (comm->othersend[iswap]) {
         buf = comm->buf_recv;
     } else {
         buf = comm->buf_send;
@@ -382,14 +390,15 @@ void ghostComm(Comm* comm, Atom* atom, int iswap)
             }
         }
         comm->atom_send[ineigh] = nsend; // #atoms send per neigh
-        comm->off_atom_send[ineigh] =  all_send; // offset atom respect to neighbours in a swap
+        comm->off_atom_send[ineigh] =
+            all_send;      // offset atom respect to neighbours in a swap
         all_send += nsend; // all atoms send
     }
 
     MPI_Request requests[maxrqrst];
     for (int i = 0; i < maxrqrst; i++)
         requests[maxrqrst] = MPI_REQUEST_NULL;
-    
+
     // Receives an int of how many atoms will  be received.
     if (comm->othersend[iswap])
         for (nrqst = 0, ineigh = comm->recvfrom[iswap]; ineigh < comm->recvtill[iswap];
@@ -419,8 +428,7 @@ void ghostComm(Comm* comm, Atom* atom, int iswap)
     if (all_recv * size >= comm->maxrecv) growRecv(comm, all_recv * size);
 
     // Receives elements
-    if (comm->othersend[iswap])
-    {
+    if (comm->othersend[iswap]) {
         for (nrqst = 0, ineigh = comm->recvfrom[iswap]; ineigh < comm->recvtill[iswap];
              ineigh++) {
             offset = comm->off_atom_recv[ineigh] * size;
@@ -436,13 +444,17 @@ void ghostComm(Comm* comm, Atom* atom, int iswap)
     }
 
     // Send elements
-    if (comm->othersend[iswap])
-    {
+    if (comm->othersend[iswap]) {
         for (int ineigh = comm->sendfrom[iswap]; ineigh < comm->sendtill[iswap];
              ineigh++) {
             offset = comm->off_atom_send[ineigh] * size;
             nsend  = comm->atom_send[ineigh] * size;
-            MPI_Send(&comm->buf_send[offset], nsend, type_float, comm->nsend[ineigh], 0, world);
+            MPI_Send(&comm->buf_send[offset],
+                nsend,
+                type_float,
+                comm->nsend[ineigh],
+                0,
+                world);
         }
     }
 
@@ -450,7 +462,7 @@ void ghostComm(Comm* comm, Atom* atom, int iswap)
         MPI_Waitall(nrqst, requests, MPI_STATUS_IGNORE);
     }
 
-    if (comm->othersend[iswap]){ 
+    if (comm->othersend[iswap]) {
         buf = comm->buf_recv;
     } else {
         buf = comm->buf_send;
@@ -458,7 +470,7 @@ void ghostComm(Comm* comm, Atom* atom, int iswap)
 
     // unpack elements
     comm->firstrecv[iswap] = LOCAL + GHOST;
-    for (int i = 0; i < all_recv; i++){
+    for (int i = 0; i < all_recv; i++) {
         unpackGhost(atom, LOCAL + GHOST, &buf[i * size]);
     }
     // Increases the buffer if needed
@@ -482,7 +494,7 @@ void exchangeComm(Comm* comm, Atom* atom)
     int i = 0, nsend = 0, nrecv = 0;
     int nrqst = 0;
     int nlocal, offset, m;
-    
+
     /* enforce PBC */
     pbc(atom);
 
@@ -500,7 +512,7 @@ void exchangeComm(Comm* comm, Atom* atom)
             i++;
     }
     atom->Nlocal = nlocal;
-    
+
     MPI_Request requests[numneigh];
     /* send/recv number of to share atoms with neighbouring procs*/
     for (int ineigh = 0; ineigh < numneigh; ineigh++)
@@ -512,7 +524,7 @@ void exchangeComm(Comm* comm, Atom* atom)
             world,
             &requests[nrqst++]);
 
-    for (int ineigh = 0; ineigh < numneigh; ineigh++){
+    for (int ineigh = 0; ineigh < numneigh; ineigh++) {
         MPI_Send(&nsend, 1, MPI_INT, comm->nexch[ineigh], 0, world);
     }
     MPI_Waitall(nrqst, requests, MPI_STATUS_IGNORE);
@@ -538,13 +550,13 @@ void exchangeComm(Comm* comm, Atom* atom)
             &requests[nrqst++]);
     }
     // Send elements
-    for (int ineigh = 0; ineigh < numneigh; ineigh++){
+    for (int ineigh = 0; ineigh < numneigh; ineigh++) {
         MPI_Send(comm->buf_send, nsend, type_float, comm->nexch[ineigh], 0, world);
-    } 
+    }
     MPI_Waitall(nrqst, requests, MPI_STATUS_IGNORE);
     buf = comm->buf_recv;
 
-    m      = 0;
+    m = 0;
     while (m < nrecv) {
         x = buf[m + _x];
         y = buf[m + _y];
@@ -553,7 +565,7 @@ void exchangeComm(Comm* comm, Atom* atom)
         if (x >= lo[_x] && x < hi[_x] && y >= lo[_y] && y < hi[_y] && z >= lo[_z] &&
             z < hi[_z]) {
             m += unpackExchange(atom, atom->Nlocal++, &buf[m]);
-        } else {           
+        } else {
             m += size;
         }
     }
@@ -572,8 +584,8 @@ void exchangeComm(Comm* comm, Atom* atom)
 inline void growRecv(Comm* comm, int n)
 {
     comm->maxrecv = BUFFACTOR * n;
-    if(comm->buf_recv) free(comm->buf_recv);
-    comm->buf_recv = (MD_FLOAT*) allocate(ALIGNMENT, comm->maxrecv * sizeof(MD_FLOAT));
+    if (comm->buf_recv) free(comm->buf_recv);
+    comm->buf_recv = (MD_FLOAT*)allocate(ALIGNMENT, comm->maxrecv * sizeof(MD_FLOAT));
 }
 
 inline void growSend(Comm* comm, int n)
@@ -656,8 +668,9 @@ static inline void freeBuffers(Comm* comm)
 }
 #endif
 
-void barrierComm(){
-#ifdef _MPI       
+void barrierComm()
+{
+#ifdef _MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 }

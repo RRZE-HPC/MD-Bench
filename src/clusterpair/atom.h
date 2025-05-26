@@ -7,7 +7,7 @@
 #include <box.h>
 #include <parameter.h>
 #ifdef _MPI
-    #include <mpi.h>
+#include <mpi.h>
 #endif
 
 #ifndef __ATOM_H_
@@ -15,10 +15,10 @@
 
 #define DELTA 20000
 
-#define CI_SCALAR_BASE_INDEX(a) (CI_BASE_INDEX(a, 1))
-#define CI_VECTOR_BASE_INDEX(a) (CI_BASE_INDEX(a, 3))
-#define CJ_SCALAR_BASE_INDEX(a) (CJ_BASE_INDEX(a, 1))
-#define CJ_VECTOR_BASE_INDEX(a) (CJ_BASE_INDEX(a, 3))
+#define CI_SCALAR_BASE_INDEX(a)  (CI_BASE_INDEX(a, 1))
+#define CI_VECTOR_BASE_INDEX(a)  (CI_BASE_INDEX(a, 3))
+#define CJ_SCALAR_BASE_INDEX(a)  (CJ_BASE_INDEX(a, 1))
+#define CJ_VECTOR_BASE_INDEX(a)  (CJ_BASE_INDEX(a, 3))
 #define SCI_SCALAR_BASE_INDEX(a) (SCI_BASE_INDEX(a, 1))
 #define SCI_VECTOR_BASE_INDEX(a) (SCI_BASE_INDEX(a, 3))
 #define SCJ_SCALAR_BASE_INDEX(a) (SCJ_BASE_INDEX(a, 1))
@@ -70,14 +70,14 @@ typedef struct {
     Box mybox;
     // Data in super-cluster format
     int Nsclusters, Nsclusters_local, Nsclusters_ghost, Nsclusters_max;
-    MD_FLOAT *scl_x;
-    MD_FLOAT *scl_v;
-    MD_FLOAT *scl_f;
-    int *scl_t;
-    int *scl_type;
-    int *icluster_idx;
-    SuperCluster *siclusters;
-    int *sicluster_bin;
+    MD_FLOAT* scl_x;
+    MD_FLOAT* scl_v;
+    MD_FLOAT* scl_f;
+    int* scl_t;
+    int* scl_type;
+    int* icluster_idx;
+    SuperCluster* siclusters;
+    int* sicluster_bin;
 } Atom;
 
 extern int get_ncj_from_nci(int nci);
@@ -106,11 +106,11 @@ void copy(Atom*, int, int);
 
 #ifdef CUDA_TARGET
 #ifdef __cplusplus
-extern "C" 
+extern "C"
 #endif
-extern void growClustersCUDA(Atom*);
-#endif 
-
+    extern void
+    growClustersCUDA(Atom*);
+#endif
 
 #ifdef AOS
 #define POS_DATA_LAYOUT "AoS"

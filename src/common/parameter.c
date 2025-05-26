@@ -28,32 +28,32 @@ void initParameter(Parameter* param)
     param->sigma6          = 1.0;
     param->rho             = 0.8442;
 #ifdef ONE_ATOM_TYPE
-    param->ntypes          = 1;
-#else 
-    param->ntypes          = 4;
+    param->ntypes = 1;
+#else
+    param->ntypes           = 4;
 #endif
-    param->ntimes          = 200;
-    param->dt              = 0.005;
-    param->nx              = 32;
-    param->ny              = 32;
-    param->nz              = 32;
-    param->pbc_x           = 1;
-    param->pbc_y           = 1;
-    param->pbc_z           = 1;
-    param->cutforce        = 2.5;
-    param->skin            = 0.3;
-    param->cutneigh        = param->cutforce + param->skin;
-    param->temp            = 1.44;
-    param->nstat           = 100;
-    param->mass            = 1.0;
-    param->dtforce         = 0.5 * param->dt;
-    param->reneigh_every   = 20;
-    param->resort_every    = 400;
-    param->prune_every     = 1000;
-    param->x_out_every     = 20;
-    param->v_out_every     = 5;
-    param->half_neigh      = 0;
-    param->proc_freq       = 2.4;
+    param->ntimes        = 200;
+    param->dt            = 0.005;
+    param->nx            = 32;
+    param->ny            = 32;
+    param->nz            = 32;
+    param->pbc_x         = 1;
+    param->pbc_y         = 1;
+    param->pbc_z         = 1;
+    param->cutforce      = 2.5;
+    param->skin          = 0.3;
+    param->cutneigh      = param->cutforce + param->skin;
+    param->temp          = 1.44;
+    param->nstat         = 100;
+    param->mass          = 1.0;
+    param->dtforce       = 0.5 * param->dt;
+    param->reneigh_every = 20;
+    param->resort_every  = 400;
+    param->prune_every   = 1000;
+    param->x_out_every   = 20;
+    param->v_out_every   = 5;
+    param->half_neigh    = 0;
+    param->proc_freq     = 2.4;
 #if defined(CUDA_TARGET) && defined(USE_SUPER_CLUSTERS)
     param->super_clustering = 1;
 #else
@@ -147,81 +147,88 @@ void readParameter(Parameter* param, const char* filename)
 
 void printParameter(Parameter* param)
 {
-    fprintf(stdout,"Parameters:\n");
+    fprintf(stdout, "Parameters:\n");
     if (param->input_file != NULL) {
-        fprintf(stdout,"\tInput file: %s\n", param->input_file);
+        fprintf(stdout, "\tInput file: %s\n", param->input_file);
     }
 
     if (param->vtk_file != NULL) {
-        fprintf(stdout,"\tVTK file: %s\n", param->vtk_file);
+        fprintf(stdout, "\tVTK file: %s\n", param->vtk_file);
     }
 
     if (param->xtc_file != NULL) {
-        fprintf(stdout,"\tXTC file: %s\n", param->xtc_file);
+        fprintf(stdout, "\tXTC file: %s\n", param->xtc_file);
     }
 
     if (param->eam_file != NULL) {
-        fprintf(stdout,"\tEAM file: %s\n", param->eam_file);
+        fprintf(stdout, "\tEAM file: %s\n", param->eam_file);
     }
 
-    fprintf(stdout,"\tForce field: %s\n", ff2str(param->force_field));
+    fprintf(stdout, "\tForce field: %s\n", ff2str(param->force_field));
 #ifdef CLUSTER_M
-    fprintf(stdout,"\tKernel: %s, MxN: %dx%d, Vector width: %d\n",
+    fprintf(stdout,
+        "\tKernel: %s, MxN: %dx%d, Vector width: %d\n",
         KERNEL_NAME,
         CLUSTER_M,
         CLUSTER_N,
         VECTOR_WIDTH);
 #else
-    fprintf(stdout,"\tKernel: %s\n", KERNEL_NAME);
+    fprintf(stdout, "\tKernel: %s\n", KERNEL_NAME);
 #endif
 
 #ifdef CUDA_TARGET
-    fprintf(stdout,"\tSIMD Intrinsics: CUDA\n");
-    fprintf(stdout,"\tSuper-clustering: %s\n", (param->super_clustering) ? "yes" : "no");
+    fprintf(stdout, "\tSIMD Intrinsics: CUDA\n");
+    fprintf(stdout, "\tSuper-clustering: %s\n", (param->super_clustering) ? "yes" : "no");
 #else
-    fprintf(stdout,"\tSIMD Intrinsics: %s\n", SIMD_INTRINSICS);
+    fprintf(stdout, "\tSIMD Intrinsics: %s\n", SIMD_INTRINSICS);
 #endif
-    fprintf(stdout,"\tData layout: %s\n", POS_DATA_LAYOUT);
-    fprintf(stdout,"\tFloating-point precision: %s\n", PRECISION_STRING);
-    fprintf(stdout,"\tUnit cells (nx, ny, nz): %d, %d, %d\n", param->nx, param->ny, param->nz);
-    fprintf(stdout,"\tDomain box sizes (x, y, z): %e, %e, %e\n",
+    fprintf(stdout, "\tData layout: %s\n", POS_DATA_LAYOUT);
+    fprintf(stdout, "\tFloating-point precision: %s\n", PRECISION_STRING);
+    fprintf(stdout,
+        "\tUnit cells (nx, ny, nz): %d, %d, %d\n",
+        param->nx,
+        param->ny,
+        param->nz);
+    fprintf(stdout,
+        "\tDomain box sizes (x, y, z): %e, %e, %e\n",
         param->xprd,
         param->yprd,
         param->zprd);
-    fprintf(stdout,"\tPeriodic (x, y, z): %d, %d, %d\n",
+    fprintf(stdout,
+        "\tPeriodic (x, y, z): %d, %d, %d\n",
         param->pbc_x,
         param->pbc_y,
         param->pbc_z);
-    fprintf(stdout,"\tLattice size: %e\n", param->lattice);
-    fprintf(stdout,"\tEpsilon: %e\n", param->epsilon);
-    fprintf(stdout,"\tSigma: %e\n", param->sigma);
-    fprintf(stdout,"\tTemperature: %e\n", param->temp);
-    fprintf(stdout,"\tRHO: %e\n", param->rho);
-    fprintf(stdout,"\tMass: %e\n", param->mass);
-    fprintf(stdout,"\tNumber of types: %d\n", param->ntypes);
-    fprintf(stdout,"\tNumber of timesteps: %d\n", param->ntimes);
-    fprintf(stdout,"\tReport stats every (timesteps): %d\n", param->nstat);
-    fprintf(stdout,"\tReneighbor every (timesteps): %d\n", param->reneigh_every);
+    fprintf(stdout, "\tLattice size: %e\n", param->lattice);
+    fprintf(stdout, "\tEpsilon: %e\n", param->epsilon);
+    fprintf(stdout, "\tSigma: %e\n", param->sigma);
+    fprintf(stdout, "\tTemperature: %e\n", param->temp);
+    fprintf(stdout, "\tRHO: %e\n", param->rho);
+    fprintf(stdout, "\tMass: %e\n", param->mass);
+    fprintf(stdout, "\tNumber of types: %d\n", param->ntypes);
+    fprintf(stdout, "\tNumber of timesteps: %d\n", param->ntimes);
+    fprintf(stdout, "\tReport stats every (timesteps): %d\n", param->nstat);
+    fprintf(stdout, "\tReneighbor every (timesteps): %d\n", param->reneigh_every);
 #ifdef SORT_ATOMS
-    fprintf(stdout,"\tResort atoms every (timesteps): %d\n", param->resort_every);
+    fprintf(stdout, "\tResort atoms every (timesteps): %d\n", param->resort_every);
 #else
-    fprintf(stdout,"\tSort atoms: no\n");
+    fprintf(stdout, "\tSort atoms: no\n");
 #endif
 #ifdef ONE_ATOM_TYPE
-    fprintf(stdout,"\tSingle atom type: true\n");
+    fprintf(stdout, "\tSingle atom type: true\n");
 #else
-    fprintf(stdout,"\tSingle atom type: false\n");
+    fprintf(stdout, "\tSingle atom type: false\n");
 #endif
-    fprintf(stdout,"\tPrune every (timesteps): %d\n", param->prune_every);
-    fprintf(stdout,"\tOutput positions every (timesteps): %d\n", param->x_out_every);
-    fprintf(stdout,"\tOutput velocities every (timesteps): %d\n", param->v_out_every);
-    fprintf(stdout,"\tDelta time (dt): %e\n", param->dt);
-    fprintf(stdout,"\tCutoff radius: %e\n", param->cutforce);
-    fprintf(stdout,"\tSkin: %e\n", param->skin);
-    fprintf(stdout,"\tHalf neighbor lists: %d\n", param->half_neigh);
-    fprintf(stdout,"\tProcessor frequency (GHz): %.4f\n", param->proc_freq);
+    fprintf(stdout, "\tPrune every (timesteps): %d\n", param->prune_every);
+    fprintf(stdout, "\tOutput positions every (timesteps): %d\n", param->x_out_every);
+    fprintf(stdout, "\tOutput velocities every (timesteps): %d\n", param->v_out_every);
+    fprintf(stdout, "\tDelta time (dt): %e\n", param->dt);
+    fprintf(stdout, "\tCutoff radius: %e\n", param->cutforce);
+    fprintf(stdout, "\tSkin: %e\n", param->skin);
+    fprintf(stdout, "\tHalf neighbor lists: %d\n", param->half_neigh);
+    fprintf(stdout, "\tProcessor frequency (GHz): %.4f\n", param->proc_freq);
 
-        // ================ New MPI features =============
+    // ================ New MPI features =============
 #ifdef _MPI
     char str[20];
     strcpy(str,
@@ -229,15 +236,15 @@ void printParameter(Parameter* param)
         : (param->method == 2) ? "Eight Shell"
         : (param->method == 3) ? "Half Stencil"
                                : "Full Shell");
-    fprintf(stdout,"\tMethod: %s\n", str);
+    fprintf(stdout, "\tMethod: %s\n", str);
     strcpy(str,
         (param->balance == 1)   ? "mean RCB"
         : (param->balance == 2) ? "mean Time RCB"
         : (param->balance == 3) ? "Staggered"
                                 : "cartesian");
-    fprintf(stdout,"\tPartition: %s\n", str);
+    fprintf(stdout, "\tPartition: %s\n", str);
     if (param->balance)
-        fprintf(stdout,"\tRebalancing every (timesteps): %d\n", param->balance_every);
+        fprintf(stdout, "\tRebalancing every (timesteps): %d\n", param->balance_every);
 #endif
     fflush(stdout);
 }

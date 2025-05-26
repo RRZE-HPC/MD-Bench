@@ -573,7 +573,7 @@ double computeForceLJ2xnnFullNeigh(
             MD_SIMD_FLOAT fix2    = simd_real_zero();
             MD_SIMD_FLOAT fiy2    = simd_real_zero();
             MD_SIMD_FLOAT fiz2    = simd_real_zero();
-            
+
 #ifndef ONE_ATOM_TYPE
             int ci_sca_base       = CI_SCALAR_BASE_INDEX(ci);
             int* ci_t             = &atom->cl_t[ci_sca_base];
