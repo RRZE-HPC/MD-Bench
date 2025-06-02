@@ -89,7 +89,7 @@ void initAtom(Atom* atom)
     d_atom->sigma6     = NULL;
     d_atom->cutforcesq = NULL;
     d_atom->cutneighsq = NULL;
-        // MPI
+
     Box* mybox  = &(atom->mybox);
     mybox->xprd = mybox->yprd = mybox->zprd = 0;
     mybox->lo[_x] = mybox->lo[_y] = mybox->lo[_z] = 0;
@@ -99,8 +99,9 @@ void initAtom(Atom* atom)
 void createAtom(Atom* atom, Parameter* param)
 {
     int me = 0;
+
     #ifdef _MPI
-        MPI_Comm_rank(MPI_COMM_WORLD, &me);
+    MPI_Comm_rank(MPI_COMM_WORLD, &me);
     #endif
 
     MD_FLOAT xlo  = 0.0;
@@ -118,6 +119,7 @@ void createAtom(Atom* atom, Parameter* param)
         atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
     atom->cutneighsq = allocate(ALIGNMENT,
         atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
+
     for (int i = 0; i < atom->ntypes * atom->ntypes; i++) {
         atom->epsilon[i]    = param->epsilon;
         atom->sigma6[i]     = param->sigma6;
@@ -150,87 +152,89 @@ void createAtom(Atom* atom, Parameter* param)
     int oz        = 0;
     int subboxdim = 8;
 
-if(me == 0 && param->setup) {
-    while (oz * subboxdim <= khi) {
+    if(me == 0 && param->setup) {
+        while (oz * subboxdim <= khi) {
+            k = oz * subboxdim + sz;
+            j = oy * subboxdim + sy;
+            i = ox * subboxdim + sx;
 
-        k = oz * subboxdim + sz;
-        j = oy * subboxdim + sy;
-        i = ox * subboxdim + sx;
+            if (((i + j + k) % 2 == 0) && (i >= ilo) && (i <= ihi) && (j >= jlo) &&
+                (j <= jhi) && (k >= klo) && (k <= khi)) {
 
-        if (((i + j + k) % 2 == 0) && (i >= ilo) && (i <= ihi) && (j >= jlo) &&
-            (j <= jhi) && (k >= klo) && (k <= khi)) {
+                xtmp = 0.5 * alat * i;
+                ytmp = 0.5 * alat * j;
+                ztmp = 0.5 * alat * k;
 
-            xtmp = 0.5 * alat * i;
-            ytmp = 0.5 * alat * j;
-            ztmp = 0.5 * alat * k;
+                if (xtmp >= xlo && xtmp < xhi && ytmp >= ylo && ytmp < yhi && ztmp >= zlo &&
+                    ztmp < zhi) {
 
-            if (xtmp >= xlo && xtmp < xhi && ytmp >= ylo && ytmp < yhi && ztmp >= zlo &&
-                ztmp < zhi) {
+                    n = k * (2 * param->ny) * (2 * param->nx) + j * (2 * param->nx) + i + 1;
 
-                n = k * (2 * param->ny) * (2 * param->nx) + j * (2 * param->nx) + i + 1;
+                    for (m = 0; m < 5; m++) {
+                        myrandom(&n);
+                    }
+                    vxtmp = myrandom(&n);
 
-                for (m = 0; m < 5; m++) {
-                    myrandom(&n);
+                    for (m = 0; m < 5; m++) {
+                        myrandom(&n);
+                    }
+                    vytmp = myrandom(&n);
+
+                    for (m = 0; m < 5; m++) {
+                        myrandom(&n);
+                    }
+                    vztmp = myrandom(&n);
+
+                    if (atom->Nlocal == atom->Nmax) {
+                        growAtom(atom);
+                    }
+
+                    atom_x(atom->Nlocal)     = xtmp;
+                    atom_y(atom->Nlocal)     = ytmp;
+                    atom_z(atom->Nlocal)     = ztmp;
+                    atom_vx(atom->Nlocal)    = vxtmp;
+                    atom_vy(atom->Nlocal)    = vytmp;
+                    atom_vz(atom->Nlocal)    = vztmp;
+                    atom->type[atom->Nlocal] = rand() % atom->ntypes;
+                    atom->Nlocal++;
                 }
-                vxtmp = myrandom(&n);
+            }
 
-                for (m = 0; m < 5; m++) {
-                    myrandom(&n);
-                }
-                vytmp = myrandom(&n);
+            sx++;
 
-                for (m = 0; m < 5; m++) {
-                    myrandom(&n);
-                }
-                vztmp = myrandom(&n);
-
-                if (atom->Nlocal == atom->Nmax) {
-                    growAtom(atom);
-                }
-
-                atom_x(atom->Nlocal)     = xtmp;
-                atom_y(atom->Nlocal)     = ytmp;
-                atom_z(atom->Nlocal)     = ztmp;
-                atom_vx(atom->Nlocal)    = vxtmp;
-                atom_vy(atom->Nlocal)    = vytmp;
-                atom_vz(atom->Nlocal)    = vztmp;
-                atom->type[atom->Nlocal] = rand() % atom->ntypes;
-                atom->Nlocal++;
+            if (sx == subboxdim) {
+                sx = 0;
+                sy++;
+            }
+            if (sy == subboxdim) {
+                sy = 0;
+                sz++;
+            }
+            if (sz == subboxdim) {
+                sz = 0;
+                ox++;
+            }
+            if (ox * subboxdim > ihi) {
+                ox = 0;
+                oy++;
+            }
+            if (oy * subboxdim > jhi) {
+                oy = 0;
+                oz++;
             }
         }
 
-        sx++;
-
-        if (sx == subboxdim) {
-            sx = 0;
-            sy++;
-        }
-        if (sy == subboxdim) {
-            sy = 0;
-            sz++;
-        }
-        if (sz == subboxdim) {
-            sz = 0;
-            ox++;
-        }
-        if (ox * subboxdim > ihi) {
-            ox = 0;
-            oy++;
-        }
-        if (oy * subboxdim > jhi) {
-            oy = 0;
-            oz++;
-        }
-    }
         write_atoms_to_file(atom, param->atom_file_name);
     }
 }
 
 int type_str2int(const char* type)
 {
+    // Argon
     if (strncmp(type, "Ar", 2) == 0) {
         return 0;
-    } // Argon
+    }
+
     fprintf(stderr, "Invalid atom type: %s\n", type);
     exit(-1);
     return -1;
@@ -239,28 +243,35 @@ int type_str2int(const char* type)
 int readAtom(Atom* atom, Parameter* param)
 {
     int me = 0;
+
 #ifdef _MPI
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
 #endif
 
     int len = strlen(param->input_file);
+
     if (strncmp(&param->input_file[len - 4], ".pdb", 4) == 0) {
         return readAtom_pdb(atom, param);
     }
+
     if (strncmp(&param->input_file[len - 4], ".gro", 4) == 0) {
         return readAtom_gro(atom, param);
     }
+
     if (strncmp(&param->input_file[len - 4], ".dmp", 4) == 0) {
         return readAtom_dmp(atom, param);
     }
+
     if (strncmp(&param->input_file[len - 3], ".in", 3) == 0) {
         return readAtom_in(atom, param);
     }
+
     if (me == 0) {
-    fprintf(stderr,
-        "Invalid input file extension: %s\nValid choices are: pdb, gro, dmp, in\n",
-        param->input_file);
+        fprintf(stderr,
+            "Invalid input file extension: %s\nValid choices are: pdb, gro, dmp, in\n",
+            param->input_file);
     }
+
     exit(-1);
     return -1;
 }
@@ -359,6 +370,7 @@ int readAtom_pdb(Atom* atom, Parameter* param)
     if (me == 0) {
         fprintf(stdout, "Read %d atoms from %s\n", read_atoms, param->input_file);
     }
+
     fclose(fp);
     return read_atoms;
 }
@@ -458,6 +470,7 @@ int readAtom_gro(Atom* atom, Parameter* param)
     if (me == 0) {
         fprintf(stdout, "Read %d atoms from %s\n", read_atoms, param->input_file);
     }
+
     fclose(fp);
     return read_atoms;
 }
@@ -570,6 +583,7 @@ int readAtom_dmp(Atom* atom, Parameter* param)
     if (me == 0) {
         fprintf(stdout, "Read %d atoms from %s\n", natoms, param->input_file);
     }
+
     return natoms;
 }
 
@@ -720,10 +734,10 @@ void growAtom(Atom* atom)
 void freeAtom(Atom* atom)
 {
 #undef FREE_ATOM
-#define FREE_ATOM(p);                                       \
-    free(atom->p);                                          \
-    GPUfree(atom->d_atom.p);                               \
-    atom->p        = NULL;                                  \
+#define FREE_ATOM(p);        \
+    free(atom->p);           \
+    GPUfree(atom->d_atom.p); \
+    atom->p        = NULL;   \
     atom->d_atom.p = NULL;
   
 #ifdef AOS

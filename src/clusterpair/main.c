@@ -58,12 +58,15 @@ double setup(Parameter* param, Eam* eam, Atom* atom, Neighbor* neighbor, Stats* 
     initPbc(atom);
     initStats(stats);
     initNeighbor(neighbor, param);
+
     if (param->input_file == NULL) {
         createAtom(atom, param);
     } else {
         readAtom(atom, param);
     }
+
     setupNeighbor(param, atom);
+
 #ifdef _MPI
     setupGrid(grid, atom, param);
     setupComm(comm, param, grid);
@@ -71,17 +74,20 @@ double setup(Parameter* param, Eam* eam, Atom* atom, Neighbor* neighbor, Stats* 
         initialBalance(param, atom, neighbor, stats, comm, grid);
     }
 #endif
+
     setupThermo(param, atom->Natoms);
     if (param->input_file == NULL) {
         adjustThermo(param, atom);
     }
     buildClusters(atom);
     defineJClusters(atom); 
+
 #ifdef _MPI
     ghostNeighbor(comm, atom, param);
 #else
     setupPbc(atom, param);
 #endif
+
     binClusters(atom);
     buildNeighbor(atom, neighbor);
     initDevice(atom, neighbor);
@@ -98,11 +104,13 @@ double reneighbour(Comm* comm, Parameter* param, Atom* atom, Neighbor* neighbor)
     //updateAtomsPbc(atom, param, false);
     buildClusters(atom);
     defineJClusters(atom);
+
 #ifdef _MPI
     ghostNeighbor(comm, atom, param);
 #else
     setupPbc(atom, param);
 #endif
+
     binClusters(atom);
     buildNeighbor(atom, neighbor);
     LIKWID_MARKER_STOP("reneighbour");
@@ -115,11 +123,13 @@ double updateAtoms(Comm* comm, Atom* atom, Parameter* param)
     double timeStart, timeStop;
     timeStart = getTimeStamp();
     updateSingleAtoms(atom);
+
 #ifdef _MPI 
     exchangeComm(comm, atom);
 #else 
     updateAtomsPbc(atom, param, false);
 #endif 
+
     timeStop = getTimeStamp();
     return timeStop - timeStart;
 }
@@ -135,14 +145,17 @@ int main(int argc, char** argv)
     Comm comm;
     Grid grid;
     LIKWID_MARKER_INIT;
+
 #pragma omp parallel
     {
         LIKWID_MARKER_REGISTER("force");
         // LIKWID_MARKER_REGISTER("reneighbour");
         // LIKWID_MARKER_REGISTER("pbc");
     }
+
     initComm(&argc, &argv, &comm);
     initParameter(&param);
+
     for (int i = 0; i < argc; i++) {
         if ((strcmp(argv[i], "-p") == 0) || (strcmp(argv[i], "--param") == 0)) {
             readParameter(&param, argv[++i]);
@@ -186,7 +199,7 @@ int main(int argc, char** argv)
         if ((strcmp(argv[i], "-method") == 0)) {
             param.method = atoi(argv[++i]);
             if (param.method > 2 || param.method < 0) {
-                if (comm.myproc == 0) fprintf(stderr, "Method does not exist!\n");
+                fprintf_once(comm.myproc, stderr, "Method does not exist!\n");
                 endComm(&comm);
                 exit(0);
             }
@@ -195,7 +208,7 @@ int main(int argc, char** argv)
         if ((strcmp(argv[i], "-bal") == 0)) {
             param.balance = atoi(argv[++i]);
             if (param.balance > 3 || param.balance < 0) {
-                if (comm.myproc == 0) fprintf(stderr, "Load balance does not exist!\n");
+                fprintf_once(comm.myproc, stderr, "Load balance does not exist!\n");
                 endComm(&comm);
                 exit(0);
             }
@@ -265,18 +278,21 @@ int main(int argc, char** argv)
     }
 
     if (param.balance > 0 && param.method == 1) {
-        if (comm.myproc == 0){
-            fprintf(stderr, "Half Shell is not supported with load balance!\n");
-        }
+        fprintf_once(comm.myproc, stderr, "Half Shell is not supported with load balance!\n");
         endComm(&comm);
         exit(0);
     }
     
     param.cutneigh = param.cutforce + param.skin;
     timer[SETUP] = setup(&param, &eam, &atom, &neighbor, &stats, &comm, &grid);
-    if (comm.myproc == 0) printParameter(&param);
-    if (comm.myproc == 0) printf(HLINE); fflush(stdout);
-    if (comm.myproc == 0) printf("step\ttemp\t\tpressure\n");
+
+    if(comm.myproc == 0) {
+        printParameter(&param);
+    }
+
+    fprintf_once(comm.myproc, stdout, HLINE);
+    fflush(stdout);
+    fprintf_once(comm.myproc, stdout, "step\ttemp\t\tpressure\n");
     computeThermo(0, &param, &atom);
 #if defined(MEM_TRACER) || defined(INDEX_TRACER)
     traceAddresses(&param, &atom, &neighbor, n + 1);
@@ -285,6 +301,7 @@ int main(int argc, char** argv)
 #ifdef CUDA_TARGET
     copyDataToCUDADevice(&atom, &neighbor);
 #endif 
+
     barrierComm();
     timer[TOTAL] = getTimeStamp();
     timer[FORCE]   = computeForce(&param, &atom, &neighbor, &stats);
@@ -293,20 +310,25 @@ int main(int argc, char** argv)
     timer[UPDATE]  = 0.0;
     timer[BALANCE] = 0.0;
     timer[REVERSE] = reverse(&comm, &atom, &param);
+
     if (param.vtk_file != NULL) {
         //write_data_to_vtk_file(param.vtk_file, &atom, 0);
         printvtk(param.vtk_file, &comm, &atom, &param, 0);
     }
+
     // TODO: modify xct
     if (param.xtc_file != NULL) {
         xtc_init(param.xtc_file, &atom, 0);
     }
+
     for (int n = 0; n < param.ntimes; n++) {
         initialIntegrate(&param, &atom);
+
         if ((n + 1) % param.reneigh_every) { 
             if (!((n + 1) % param.prune_every)) {
                 pruneNeighbor(&param, &atom, &neighbor);
             }
+
             timer[FORWARD] += forward(&comm, &atom, &param); 
             //updatePbc(&atom, &param, 0);
         } else {
@@ -315,9 +337,9 @@ int main(int argc, char** argv)
 #endif
             timer[UPDATE] += updateAtoms(&comm, &atom, &param); 
             if (param.balance && !((n + 1) % param.balance_every)){
-                timer[BALANCE] += dynamicBalance(&comm, &grid, &atom, &param, timer[FORCE]);
-            
+                timer[BALANCE] += dynamicBalance(&comm, &grid, &atom, &param, timer[FORCE]);            
             }
+
             timer[NEIGH] += reneighbour(&comm, &param, &atom, &neighbor);
 #ifdef CUDA_TARGET
             copyDataToCUDADevice(&atom, &neighbor);
@@ -459,18 +481,21 @@ int main(int argc, char** argv)
 
         nthreads = omp_get_max_threads();
     }
+
     if (comm.myproc == 0) {
         fprintf(stdout,"Num threads: %d\n", nthreads);
         fprintf(stdout,"Schedule: (%s,%d)\n", schedType, chunkSize);
     }
 #endif
+
     if (comm.myproc == 0) {
         fprintf(stdout,"Performance: %.2f million atom updates per second\n",
             1e-6 * (double)atom.Natoms * param.ntimes / timer[TOTAL]);
 #ifdef COMPUTE_STATS
-    displayStatistics(&atom, &param, &stats, timer);
+        displayStatistics(&atom, &param, &stats, timer);
 #endif
     }
+
     endComm(&comm);
     LIKWID_MARKER_CLOSE;
     return EXIT_SUCCESS;

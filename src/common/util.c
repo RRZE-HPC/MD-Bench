@@ -117,3 +117,17 @@ void debug_printf(const char* format, ...)
     va_end(arg);
 #endif
 }
+
+void fprintf_once(int me, FILE* stream, const char* format, ...)
+{
+    if(me == 0) {
+        va_list arg;
+        int ret;
+
+        va_start(arg, format);
+        if ((vfprintf(stream, format, arg)) < 0) {
+            perror("debug_printf()");
+        }
+        va_end(arg);
+    }
+}

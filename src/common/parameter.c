@@ -72,9 +72,7 @@ void readParameter(Parameter* param, const char* filename)
         exit(-1);
     }
 
-    while (!feof(fp)) {
-        line[0] = '\0';
-        readline(line, fp);
+    while (fgets(line, MAXLINE, fp) != NULL) {
         for (i = 0; line[i] != '\0' && line[i] != '#'; i++)
             ;
         line[i] = '\0';
