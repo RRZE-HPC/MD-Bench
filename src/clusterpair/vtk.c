@@ -9,6 +9,8 @@
 
 #include <atom.h>
 #include <force.h>
+#include <util.h>
+
 #include <string.h>
 #include <vtk.h>
 
@@ -293,7 +295,7 @@ int vtkOpen(const char* filename, Comm* comm, Atom* atom, int timestep)
 int vtkVector(Comm* comm, Atom* atom, Parameter* param)
 {
     if (_fh == MPI_FILE_NULL) {
-        fprintf_once(comm->myproc, "VTK not initialize, call vtkOpen first!\n");
+        fprintf_once(comm->myproc, stderr, "VTK not initialize, call vtkOpen first!\n");
         return -1;
     }
 
