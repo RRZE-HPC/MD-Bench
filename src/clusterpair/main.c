@@ -409,7 +409,8 @@ int main(int argc, char** argv)
         fprintf(stdout,"System: %d atoms %d ghost atoms, Steps: %d\n",
             atom.Natoms,
             Nghost,
-        param.ntimes);
+            param.ntimes);
+
         fprintf(stdout,"TOTAL %.2fs\n\n", timer[TOTAL]);
         fprintf(stdout,"%4s|%7s|%7s|%7s|%7s|%7s|%7s|%7s|%7s|\n",
             "",
@@ -421,6 +422,7 @@ int main(int argc, char** argv)
             "UPDATE",
             "REST ",
             "SETUP");
+
         fprintf(stdout,"----|-------|-------|-------|-------|-------|-------|-------|-------|\n");
         fprintf(stdout,"%4s|%7.2f|%7.2f|%7.2f|%7.2f|%7.2f|%7.2f|%7.2f|%7.2f|\n",
             "AVG",
@@ -432,6 +434,7 @@ int main(int argc, char** argv)
             sumt[UPDATE] / n,
             sumt[REST] / n,
             sumt[SETUP] / n);
+
         fprintf(stdout,"%4s|%7.2f|%7.2f|%7.2f|%7.2f|%7.2f|%7.2f|%7.2f|%7.2f|\n",
             "MIN",
             mint[FORCE],
@@ -442,6 +445,7 @@ int main(int argc, char** argv)
             mint[UPDATE],
             mint[REST],
             mint[SETUP]);
+
         fprintf(stdout,"%4s|%7.2f|%7.2f|%7.2f|%7.2f|%7.2f|%7.2f|%7.2f|%7.2f|\n",
             "MAX",
             maxt[FORCE],
@@ -454,6 +458,7 @@ int main(int argc, char** argv)
             maxt[SETUP]);
         fprintf(stdout,HLINE);
     }
+
 #ifdef _OPENMP
     int nthreads  = 0;
     int chunkSize = 0;

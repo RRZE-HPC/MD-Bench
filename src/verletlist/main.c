@@ -141,10 +141,11 @@ void printAtomState(Atom* atom)
         atom->Nlocal,
         atom->Nghost,
         atom->Nmax);
-    // int nall = atom->Nlocal + atom->Nghost;
-    // for (int i=0; i<nall; i++) {
-    //     printf("%d  %f %f %f\n", i, atom->x[i], atom->y[i], atom->z[i]);
-    // }
+
+    int nall = atom->Nlocal + atom->Nghost;
+    for (int i=0; i<nall; i++) {
+        printf("%d  %f %f %f\n", i, atom_x(i), atom_y(i), atom_z(i));
+    }
 }
 
 double updateAtoms(Comm* comm, Atom* atom, Parameter* param)

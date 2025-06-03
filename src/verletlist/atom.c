@@ -92,8 +92,8 @@ void initAtom(Atom* atom)
 
     Box* mybox  = &(atom->mybox);
     mybox->xprd = mybox->yprd = mybox->zprd = 0;
-    mybox->lo[_x] = mybox->lo[_y] = mybox->lo[_z] = 0;
-    mybox->hi[_x] = mybox->hi[_y] = mybox->hi[_z] = 0;
+    mybox->lo[0] = mybox->lo[1] = mybox->lo[2] = 0;
+    mybox->hi[0] = mybox->hi[1] = mybox->hi[2] = 0;
 }
 
 void createAtom(Atom* atom, Parameter* param)
@@ -782,9 +782,9 @@ void unpackForward(Atom* atom, int n, int first, MD_FLOAT* buf)
 int packGhost(Atom* atom, int i, MD_FLOAT* buf, int* pbc)
 {
     int m    = 0;
-    buf[m++] = atom_x(i) + pbc[_x] * atom->mybox.xprd;
-    buf[m++] = atom_y(i) + pbc[_y] * atom->mybox.yprd;
-    buf[m++] = atom_z(i) + pbc[_z] * atom->mybox.zprd;
+    buf[m++] = atom_x(i) + pbc[0] * atom->mybox.xprd;
+    buf[m++] = atom_y(i) + pbc[1] * atom->mybox.yprd;
+    buf[m++] = atom_z(i) + pbc[2] * atom->mybox.zprd;
     buf[m++] = (MD_FLOAT) atom->type[i];
     return m;
 }

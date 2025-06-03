@@ -48,6 +48,7 @@ int write_atoms_to_file(Atom* atom, char* name)
     for (int i = 0; i < atom->Nlocal; ++i) {
         fprintf(fp, "%lf %lf %lf %lf %lf %lf %d\n", atom_x(i), atom_y(i), atom_z(i), atom_vx(i), atom_vy(i),atom_vz(i),atom->type[i]);
     }
+
     fclose(fp);
     return 0;
 }
@@ -91,19 +92,19 @@ void initAtom(Atom* atom)
     mybox->xprd     = 0;
     mybox->yprd     = 0;
     mybox->zprd     = 0;
-    mybox->lo[_x]   = 0;
-    mybox->lo[_y]   = 0;
-    mybox->lo[_z]   = 0;
-    mybox->hi[_x]   = 0;
-    mybox->hi[_y]   = 0;
-    mybox->hi[_z]   = 0;
+    mybox->lo[0]   = 0;
+    mybox->lo[1]   = 0;
+    mybox->lo[2]   = 0;
+    mybox->hi[0]   = 0;
+    mybox->hi[1]   = 0;
+    mybox->hi[2]   = 0;
 }
 
 void createAtom(Atom* atom, Parameter* param)
 {
     int me = 0;
     #ifdef _MPI
-        MPI_Comm_rank(MPI_COMM_WORLD, &me);
+    MPI_Comm_rank(MPI_COMM_WORLD, &me);
     #endif
     
     MD_FLOAT xlo  = 0.0;
@@ -845,11 +846,11 @@ void packForward(Atom* atom, int nc, int* list, MD_FLOAT* buf, int* pbc)
 
         for (int cjj = 0; cjj < atom->jclusters[cj].natoms; cjj++) {
             buf[3 * (displ + cjj) + 0] = cj_x[CL_X_OFFSET + cjj] +
-                                         pbc[_x] * atom->mybox.xprd;
+                                         pbc[0] * atom->mybox.xprd;
             buf[3 * (displ + cjj) + 1] = cj_x[CL_Y_OFFSET + cjj] +
-                                         pbc[_y] * atom->mybox.yprd;
+                                         pbc[1] * atom->mybox.yprd;
             buf[3 * (displ + cjj) + 2] = cj_x[CL_Z_OFFSET + cjj] +
-                                         pbc[_z] * atom->mybox.zprd;
+                                         pbc[2] * atom->mybox.zprd;
         }
 
         for (int cjj = atom->jclusters[cj].natoms; cjj < CLUSTER_N; cjj++) {
@@ -897,9 +898,9 @@ int packGhost(Atom* atom, int cj, MD_FLOAT* buf, int* pbc)
         
         for (int cjj = 0; cjj < atom->jclusters[cj].natoms; cjj++) {
 
-            MD_FLOAT xtmp = cj_x[CL_X_OFFSET + cjj] + pbc[_x] * atom->mybox.xprd;
-            MD_FLOAT ytmp = cj_x[CL_Y_OFFSET + cjj] + pbc[_y] * atom->mybox.yprd;
-            MD_FLOAT ztmp = cj_x[CL_Z_OFFSET + cjj] + pbc[_z] * atom->mybox.zprd;
+            MD_FLOAT xtmp = cj_x[CL_X_OFFSET + cjj] + pbc[0] * atom->mybox.xprd;
+            MD_FLOAT ytmp = cj_x[CL_Y_OFFSET + cjj] + pbc[1] * atom->mybox.yprd;
+            MD_FLOAT ztmp = cj_x[CL_Z_OFFSET + cjj] + pbc[2] * atom->mybox.zprd;
         
             buf[m++] = xtmp;
             buf[m++] = ytmp;
@@ -942,9 +943,9 @@ int packGhost(Atom* atom, int cj, MD_FLOAT* buf, int* pbc)
         // TODO: check atom->ncj
         int ghostId = cj - atom->ncj;
         // check for ghost particles
-        buf[m++] = (MD_FLOAT) (cj - atom->ncj >= 0) ? pbc[_x] + atom->PBCx[ghostId] : pbc[_x];
-        buf[m++] = (MD_FLOAT) (cj - atom->ncj >= 0) ? pbc[_y] + atom->PBCy[ghostId] : pbc[_y];
-        buf[m++] = (MD_FLOAT) (cj - atom->ncj >= 0) ? pbc[_z] + atom->PBCz[ghostId] : pbc[_z];
+        buf[m++] = (MD_FLOAT) (cj - atom->ncj >= 0) ? pbc[0] + atom->PBCx[ghostId] : pbc[0];
+        buf[m++] = (MD_FLOAT) (cj - atom->ncj >= 0) ? pbc[1] + atom->PBCy[ghostId] : pbc[1];
+        buf[m++] = (MD_FLOAT) (cj - atom->ncj >= 0) ? pbc[2] + atom->PBCz[ghostId] : pbc[2];
     }
     return m;
 }

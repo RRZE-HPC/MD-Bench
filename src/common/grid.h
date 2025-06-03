@@ -12,7 +12,7 @@
 #ifndef __MAP_H_
 #define __MAP_H_
 
-#define atom_pos(i) ((dim == _x) ? atom_x((i)) : (dim == _y) ? atom_y((i)) : atom_z((i)))
+#define atom_pos(i) ((dim == 0) ? atom_x((i)) : (dim == 1) ? atom_y((i)) : atom_z((i)))
 
 #ifdef _MPI
     #include <mpi.h>

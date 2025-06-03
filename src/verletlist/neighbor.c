@@ -532,13 +532,13 @@ static int eightZone(Atom* atom, int i)
     MD_FLOAT* hi      = atom->mybox.hi;
     int zone          = 0;
 
-    if (BigOrEqual(atom_x(i), hi[_x])) {
+    if (BigOrEqual(atom_x(i), hi[0])) {
         zone += 1;
     }
-    if (BigOrEqual(atom_y(i), hi[_y])) {
+    if (BigOrEqual(atom_y(i), hi[1])) {
         zone += 2;
     }
-    if (BigOrEqual(atom_z(i), hi[_z])) {
+    if (BigOrEqual(atom_z(i), hi[2])) {
         zone += 4;
     }
     return zoneMapping[zone];
@@ -549,11 +549,11 @@ static int halfZone(Atom* atom, int i)
     MD_FLOAT* hi = atom->mybox.hi;
     MD_FLOAT* lo = atom->mybox.lo;
 
-    if (atom_x(i) < lo[_x] && atom_y(i) < hi[_y] && atom_z(i) < hi[_z]) {
+    if (atom_x(i) < lo[0] && atom_y(i) < hi[1] && atom_z(i) < hi[2]) {
         return 0;
-    } else if (atom_y(i) < lo[_y] && atom_z(i) < hi[_z]) {
+    } else if (atom_y(i) < lo[1] && atom_z(i) < hi[2]) {
         return 0;
-    } else if (atom_z(i) < lo[_z]) {
+    } else if (atom_z(i) < lo[2]) {
         return 0;
     } else {
         return 1;

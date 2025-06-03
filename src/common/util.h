@@ -32,7 +32,6 @@
 #define PRECISION_STRING "double"
 #endif
 
-enum { _x = 0, _y, _z };
 enum { fullShell = 0, halfShell, eightShell, halfStencil };
 
 #define BigOrEqual(a, b) (fabs((a) - (b)) < 1e-9 || (a) > (b))

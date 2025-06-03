@@ -85,23 +85,23 @@ void neighComm(Comm* comm, Parameter* param, Grid* grid)
 
     // Local box
     mybox.id     = me;
-    mybox.lo[_x] = map[me * PAD + 0];
-    mybox.hi[_x] = map[me * PAD + 3];
-    mybox.lo[_y] = map[me * PAD + 1];
-    mybox.hi[_y] = map[me * PAD + 4];
-    mybox.lo[_z] = map[me * PAD + 2];
-    mybox.hi[_z] = map[me * PAD + 5];
+    mybox.lo[0] = map[me * PAD + 0];
+    mybox.hi[0] = map[me * PAD + 3];
+    mybox.lo[1] = map[me * PAD + 1];
+    mybox.hi[1] = map[me * PAD + 4];
+    mybox.lo[2] = map[me * PAD + 2];
+    mybox.hi[2] = map[me * PAD + 5];
 
     // Check for all possible neighbours only for exchange atoms
     comm->numneighexch = 0;
     for (int proc = 0; proc < numproc; proc++) {
         other.id     = proc;
-        other.lo[_x] = map[proc * PAD + 0];
-        other.hi[_x] = map[proc * PAD + 3];
-        other.lo[_y] = map[proc * PAD + 1];
-        other.hi[_y] = map[proc * PAD + 4];
-        other.lo[_z] = map[proc * PAD + 2];
-        other.hi[_z] = map[proc * PAD + 5];
+        other.lo[0] = map[proc * PAD + 0];
+        other.hi[0] = map[proc * PAD + 3];
+        other.lo[1] = map[proc * PAD + 1];
+        other.hi[1] = map[proc * PAD + 4];
+        other.lo[2] = map[proc * PAD + 2];
+        other.hi[2] = map[proc * PAD + 5];
 
         if (proc != me) {
             int intersection = overlapFullBox(param, grid->cutneigh, &mybox, &other);
@@ -118,12 +118,12 @@ void neighComm(Comm* comm, Parameter* param, Grid* grid)
             // Check for neighbours along dimmensions, for forwardComm, backwardComm
             // and ghostComm
             other.id     = proc;
-            other.lo[_x] = map[proc * PAD + 0];
-            other.hi[_x] = map[proc * PAD + 3];
-            other.lo[_y] = map[proc * PAD + 1];
-            other.hi[_y] = map[proc * PAD + 4];
-            other.lo[_z] = map[proc * PAD + 2];
-            other.hi[_z] = map[proc * PAD + 5];
+            other.lo[0] = map[proc * PAD + 0];
+            other.hi[0] = map[proc * PAD + 3];
+            other.lo[1] = map[proc * PAD + 1];
+            other.hi[1] = map[proc * PAD + 4];
+            other.lo[2] = map[proc * PAD + 2];
+            other.hi[2] = map[proc * PAD + 5];
 
             // return if two boxes intersect: -100 not intersection, 0, 1 and -1
             // intersection for each different pbc.
@@ -165,9 +165,9 @@ void neighComm(Comm* comm, Parameter* param, Grid* grid)
 
             comm->boxes[ineigh] = cut;
             comm->nsend[ineigh] = proc;
-            comm->pbc_x[ineigh] = (dim == _x) ? pbc : 0;
-            comm->pbc_y[ineigh] = (dim == _y) ? pbc : 0;
-            comm->pbc_z[ineigh] = (dim == _z) ? pbc : 0;
+            comm->pbc_x[ineigh] = (dim == 0) ? pbc : 0;
+            comm->pbc_y[ineigh] = (dim == 1) ? pbc : 0;
+            comm->pbc_z[ineigh] = (dim == 2) ? pbc : 0;
             ineigh++;
         }
 
@@ -183,16 +183,16 @@ void neighComm(Comm* comm, Parameter* param, Grid* grid)
 void setupComm(Comm* comm, Parameter* param, Grid* grid)
 {
 
-    comm->swap[_x][0] = 0;
-    comm->swap[_x][1] = 1;
-    comm->swap[_y][0] = 2;
-    comm->swap[_y][1] = 3;
-    comm->swap[_z][0] = 4;
-    comm->swap[_z][1] = 5;
+    comm->swap[0][0] = 0;
+    comm->swap[0][1] = 1;
+    comm->swap[1][0] = 2;
+    comm->swap[1][1] = 3;
+    comm->swap[2][0] = 4;
+    comm->swap[2][1] = 5;
 
-    comm->swapdim[0] = comm->swapdim[1] = _x;
-    comm->swapdim[2] = comm->swapdim[3] = _y;
-    comm->swapdim[4] = comm->swapdim[5] = _z;
+    comm->swapdim[0] = comm->swapdim[1] = 0;
+    comm->swapdim[2] = comm->swapdim[3] = 1;
+    comm->swapdim[4] = comm->swapdim[5] = 2;
 
     comm->swapdir[0] = comm->swapdir[2] = comm->swapdir[4] = 0;
     comm->swapdir[1] = comm->swapdir[3] = comm->swapdir[5] = 1;
@@ -240,9 +240,9 @@ void forwardComm(Comm* comm, Atom* atom, int iswap)
     
     for (int ineigh = comm->sendfrom[iswap]; ineigh < comm->sendtill[iswap]; ineigh++) {
         offset  = comm->off_atom_send[ineigh];
-        pbc[_x] = comm->pbc_x[ineigh];
-        pbc[_y] = comm->pbc_y[ineigh];
-        pbc[_z] = comm->pbc_z[ineigh];
+        pbc[0] = comm->pbc_x[ineigh];
+        pbc[1] = comm->pbc_y[ineigh];
+        pbc[2] = comm->pbc_z[ineigh];
         packForward(atom,
             comm->atom_send[ineigh],
             comm->sendlist[ineigh],
@@ -362,15 +362,15 @@ void ghostComm(Comm* comm, Atom* atom, int iswap)
     if (iswap % 2 == 0) comm->iterAtom = LOCAL + GHOST;
     for (int ineigh = comm->sendfrom[iswap]; ineigh < comm->sendtill[iswap]; ineigh++) {
         Box* tile = &comm->boxes[ineigh];
-        xlo       = tile->lo[_x];
-        ylo       = tile->lo[_y];
-        zlo       = tile->lo[_z];
-        xhi       = tile->hi[_x];
-        yhi       = tile->hi[_y];
-        zhi       = tile->hi[_z];
-        pbc[_x]   = comm->pbc_x[ineigh];
-        pbc[_y]   = comm->pbc_y[ineigh];
-        pbc[_z]   = comm->pbc_z[ineigh];
+        xlo       = tile->lo[0];
+        ylo       = tile->lo[1];
+        zlo       = tile->lo[2];
+        xhi       = tile->hi[0];
+        yhi       = tile->hi[1];
+        zhi       = tile->hi[2];
+        pbc[0]   = comm->pbc_x[ineigh];
+        pbc[1]   = comm->pbc_y[ineigh];
+        pbc[2]   = comm->pbc_z[ineigh];
         nsend     = 0;
 
         for (int i = 0; i < comm->iterAtom; i++) {
@@ -490,8 +490,8 @@ void exchangeComm(Comm* comm, Atom* atom)
 
     nlocal = atom->Nlocal;
     while (i < nlocal) {
-        if (atom_x(i) < lo[_x] || atom_x(i) >= hi[_x] || atom_y(i) < lo[_y] ||
-            atom_y(i) >= hi[_y] || atom_z(i) < lo[_z] || atom_z(i) >= hi[_z]) {
+        if (atom_x(i) < lo[0] || atom_x(i) >= hi[0] || atom_y(i) < lo[1] ||
+            atom_y(i) >= hi[1] || atom_z(i) < lo[2] || atom_z(i) >= hi[2]) {
             if (nsend + size >= comm->maxsend) growSend(comm, nsend);
             nsend += packExchange(atom, i, &comm->buf_send[nsend]);
             copy(atom, i, nlocal - 1);
@@ -546,12 +546,11 @@ void exchangeComm(Comm* comm, Atom* atom)
 
     m      = 0;
     while (m < nrecv) {
-        x = buf[m + _x];
-        y = buf[m + _y];
-        z = buf[m + _z];
+        x = buf[m + 0];
+        y = buf[m + 1];
+        z = buf[m + 2];
 
-        if (x >= lo[_x] && x < hi[_x] && y >= lo[_y] && y < hi[_y] && z >= lo[_z] &&
-            z < hi[_z]) {
+        if (x >= lo[0] && x < hi[0] && y >= lo[1] && y < hi[1] && z >= lo[2] && z < hi[2]) {
             m += unpackExchange(atom, atom->Nlocal++, &buf[m]);
         } else {           
             m += size;

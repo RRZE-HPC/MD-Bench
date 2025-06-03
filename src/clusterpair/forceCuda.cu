@@ -642,9 +642,9 @@ extern "C" void forwardCommCUDA(Comm* comm, Atom* atom, int iswap)
 
     for (int ineigh = comm->sendfrom[iswap]; ineigh < comm->sendtill[iswap]; ineigh++) {
         offset  = comm->off_atom_send[ineigh];
-        pbc[_x] = comm->pbc_x[ineigh];
-        pbc[_y] = comm->pbc_y[ineigh];
-        pbc[_z] = comm->pbc_z[ineigh];
+        pbc[0] = comm->pbc_x[ineigh];
+        pbc[1] = comm->pbc_y[ineigh];
+        pbc[2] = comm->pbc_z[ineigh];
         //copy lists into the buffer
         memcpyToGPU(cuda_sendlist, comm->sendlist[ineigh], comm->atom_send[ineigh] * sizeof(int));
        
@@ -657,9 +657,9 @@ extern "C" void forwardCommCUDA(Comm* comm, Atom* atom, int iswap)
                                             comm->atom_send[ineigh],     //int  
                                             cuda_sendlist,               //int*       -->need to be in tye device
                                             cuda_buf_send[offset*size],  //MD_FLOAT*  -->need to be in tye device
-                                            pbc[_x],                     //int 
-                                            pbc[_y],                     //int
-                                            pbc[_z],                     //int
+                                            pbc[0],                     //int
+                                            pbc[1],                     //int
+                                            pbc[2],                     //int
                                             atom->xprd,                  //MD_FLOAT
                                             atom->yrpd,                  //MD_FLOAT
                                             atom->zprd);                 //MD_FLOAT
