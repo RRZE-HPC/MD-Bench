@@ -7,10 +7,7 @@
 #include <string.h>
 
 #ifdef _MPI
-// Grommacs Balancing
-MD_FLOAT f_normalization(double* x, MD_FLOAT* fx, MD_FLOAT minx, int nprocs)
-{
-
+MD_FLOAT f_normalization(double* x, MD_FLOAT* fx, MD_FLOAT minx, int nprocs) {
     MD_FLOAT sum = 0;
     for (int n = 0; n < nprocs; n++) {
         fx[n] = MAX(minx, x[n]);
@@ -20,15 +17,13 @@ MD_FLOAT f_normalization(double* x, MD_FLOAT* fx, MD_FLOAT minx, int nprocs)
         fx[n] /= sum;
 }
 
-void fixedPointIteration(double* x0, int nprocs, MD_FLOAT minx)
-{
+void fixedPointIteration(double* x0, int nprocs, MD_FLOAT minx) {
     MD_FLOAT tolerance = 1e-3;
     MD_FLOAT alpha     = 0.5;
     MD_FLOAT* fx       = (MD_FLOAT*)malloc(nprocs * sizeof(MD_FLOAT));
     int maxIterations  = 100;
 
     for (int i = 0; i < maxIterations; i++) {
-
         int converged = 1;
         f_normalization(x0, fx, minx, nprocs);
 
@@ -52,15 +47,16 @@ void fixedPointIteration(double* x0, int nprocs, MD_FLOAT minx)
     }
 }
 
-void staggeredBalance(Grid* grid, Atom* atom, Parameter* param, double newTime)
-{
+void staggeredBalance(Grid* grid, Atom* atom, Parameter* param, double newTime) {
     int me;
-    MPI_Comm_rank(MPI_COMM_WORLD, &me);
     int* coord  = grid->coord;
     int* nprocs = grid->nprocs;
     // Elapsed time since the last rebalance
     double time = newTime - grid->Timer;
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &me);
     grid->Timer = newTime;
+
     // store the older dimm to compare later for exchange
     MD_FLOAT lo[3], hi[3];
     for (int dim = 0; dim < 3; dim++) {
@@ -73,8 +69,11 @@ void staggeredBalance(Grid* grid, Atom* atom, Parameter* param, double newTime)
     int color[3]    = { 0, 0, 0 };
     int id[3]       = { 0, 0, 0 }; 
     double** load = (double**)malloc(3 * sizeof(double*));
-    for (int dim = 0; dim < 3; dim++)
+
+    for (int dim = 0; dim < 3; dim++) {
         load[dim] = (double*)malloc(nprocs[dim] * sizeof(double));
+    }
+
     int maxprocs       = MAX(MAX(nprocs[0], nprocs[1]), nprocs[2]);
     MD_FLOAT* cellSize = (MD_FLOAT*)malloc(maxprocs * sizeof(MD_FLOAT));
     MD_FLOAT* limits   = (MD_FLOAT*)malloc(
@@ -122,36 +121,42 @@ void staggeredBalance(Grid* grid, Atom* atom, Parameter* param, double newTime)
             }
             time = t_sum[dim];
         }
+
         MPI_Barrier(world);
     }
 
     // Brodacast the new boundaries along dimensions
     for (int dim = 0; dim < 3; dim++) {
-
         if (subComm[dim] != MPI_COMM_NULL) {
-
             MPI_Bcast(boundaries, 6, type_float, 0, subComm[dim]);
+
             if (id[dim] == 0) {
                 fixedPointIteration(load[dim], nprocs[dim], minLoad[dim]);
-                MD_FLOAT inv_sum = 0;
+                MD_FLOAT inv_sum = 0.0;
+                MD_FLOAT sum = 0.0;
+
                 for (int n = 0; n < nprocs[dim]; n++){
                     inv_sum += (1 / load[dim][n]);
                 }
-                for (int n = 0; n < nprocs[dim]; n++)
-                    cellSize[n] = (prd[dim] / load[dim][n]) * (1. / inv_sum);
 
-                MD_FLOAT sum = 0;
+                for (int n = 0; n < nprocs[dim]; n++) {
+                    cellSize[n] = (prd[dim] / load[dim][n]) * (1. / inv_sum);
+                }
+
                 for (int n = 0; n < nprocs[dim]; n++) {
                     limits[2 * n]     = sum;
                     limits[2 * n + 1] = sum + cellSize[n];
                     sum += cellSize[n];
                 }
+
                 limits[2 * nprocs[dim] - 1] = prd[dim];
             }
+
             MPI_Scatter(limits, 2, type_float, recv_buf, 2, type_float, 0, subComm[dim]);
             boundaries[2 * dim]     = recv_buf[0];
             boundaries[2 * dim + 1] = recv_buf[1];
         }
+
         MPI_Barrier(world);
     }
  
@@ -162,12 +167,14 @@ void staggeredBalance(Grid* grid, Atom* atom, Parameter* param, double newTime)
     atom->mybox.lo[2] = boundaries[4];
     atom->mybox.hi[2] = boundaries[5];
 
-    MD_FLOAT domain[6] = { boundaries[0],
+    MD_FLOAT domain[6] = {
+        boundaries[0],
         boundaries[2],
         boundaries[4],
         boundaries[1],
         boundaries[3],
-        boundaries[5] };
+        boundaries[5]
+    };
 
     MPI_Allgather(domain, 6, type_float, grid->map, 6, type_float, world);
 
@@ -178,8 +185,10 @@ void staggeredBalance(Grid* grid, Atom* atom, Parameter* param, double newTime)
         int n             = grid->nprocs[dim];
         MD_FLOAT maxdelta = 0.2 * prd[dim];
 
-        dr                = MAX(fabs(lo[dim] - atom->mybox.lo[dim]),
+        dr                = MAX(
+            fabs(lo[dim] - atom->mybox.lo[dim]),
             fabs(hi[dim] - atom->mybox.hi[dim]));
+
         MPI_Allreduce(&dr, &dr_max, 1, type_float, MPI_MAX, world);
         grid->cutneigh[dim] = param->cutneigh + dr_max;
     }
@@ -197,23 +206,23 @@ void staggeredBalance(Grid* grid, Atom* atom, Parameter* param, double newTime)
 }
 
 // RCB Balancing
-MD_FLOAT meanTimeBisect(Atom* atom, MPI_Comm subComm, int dim, double time)
-{
+MD_FLOAT meanTimeBisect(Atom* atom, MPI_Comm subComm, int dim, double time) {
     MD_FLOAT mean = 0, sum = 0, total_sum = 0, weightAtoms = 0, total_weight = 0;
 
     for (int i = 0; i < atom->Nlocal; i++) {
         sum += atom_pos(i);
     }
+
     sum *= time;
     weightAtoms = atom->Nlocal * time;
+
     MPI_Allreduce(&sum, &total_sum, 1, type_float, MPI_SUM, subComm);
     MPI_Allreduce(&weightAtoms, &total_weight, 1, type_float, MPI_SUM, subComm);
     mean = total_sum / total_weight;
     return mean;
 }
 
-MD_FLOAT meanBisect(Atom* atom, MPI_Comm subComm, int dim, double time)
-{    
+MD_FLOAT meanBisect(Atom* atom, MPI_Comm subComm, int dim, double time) {    
     int Natoms   = 0;
     MD_FLOAT sum = 0, mean = 0, total_sum = 0;
 
@@ -233,8 +242,8 @@ void nextBisectionLevel(Grid* grid,
     int dim,
     int* color,
     int ilevel,
-    double time)
-{
+    double time) {
+
     int me;
     int rank, size;
     int branch = 0, i = 0, m = 0;
@@ -334,9 +343,7 @@ void nextBisectionLevel(Grid* grid,
     }
 }
 
-void rcbBalance(
-    Grid* grid, Atom* atom, Parameter* param, RCB_Method method, int ndim, double newTime)
-{
+void rcbBalance(Grid* grid, Atom* atom, Parameter* param, RCB_Method method, int ndim, double newTime) {
     int me, nprocs = 0, ilevel = 0, nboxes = 1;
     int color = 0, size = 0;
     int index, prd[3];
@@ -363,6 +370,7 @@ void rcbBalance(
             }
         }
     }
+
     // Initial Partition
     atom->mybox.lo[0] = 0;
     atom->mybox.hi[0] = atom->mybox.xprd;
@@ -376,6 +384,7 @@ void rcbBalance(
         index = ilevel % ndim;
         MPI_Comm_split(world, color, me, &subComm);
         MPI_Comm_size(subComm, &size);
+
         if (size > 1) {
             nextBisectionLevel(grid,
                 atom,
@@ -386,9 +395,11 @@ void rcbBalance(
                 ilevel,
                 time);
         }
+
         MPI_Comm_free(&subComm);
         nboxes = pow(2, ++ilevel);
     }
+
     // Set the new timer grid
     grid->Timer = newTime;
 
@@ -410,8 +421,7 @@ void rcbBalance(
 }
 
 // Regular grid
-void init3DCartesian(Grid* grid, Parameter* param, Box* box)
-{
+void init3DCartesian(Grid* grid, Parameter* param, Box* box) {
     int me, nproc;
     MPI_Comm_size(MPI_COMM_WORLD, &nproc);
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
@@ -566,7 +576,7 @@ void discardAtomsOutsideSubdomainBox(Atom* atom) {
         MD_FLOAT y = atom_y(i);
         MD_FLOAT z = atom_z(i);
 
-        if (x >= xlo && x < xhi && y >= ylo && y < yhi && z >= zlo && z < zhi ) {
+        if (x >= xlo && x < xhi && y >= ylo && y < yhi && z >= zlo && z < zhi) {
             atom_x(n) = x;
             atom_y(n) = y;
             atom_z(n) = z;
@@ -579,10 +589,10 @@ void discardAtomsOutsideSubdomainBox(Atom* atom) {
     }
 
     atom->Nlocal = n;
+    fprintf(stdout, "Number of local atoms: %d\n", n);
 }
 
-void setupGrid(Grid* grid, Atom* atom, Parameter* param)
-{
+void setupGrid(Grid* grid, Atom* atom, Parameter* param) {
     int me = 0;
     int nprocs = 1;
     MD_FLOAT xlo, ylo, zlo, xhi, yhi, zhi;
@@ -629,15 +639,14 @@ void setupGrid(Grid* grid, Atom* atom, Parameter* param)
     }
 }
 
-void printGrid(Grid* grid)
-{
+void printGrid(Grid* grid) {
     int me = 0; 
     int nprocs = 1;
     MPI_Comm_size(world, &nprocs);
     MPI_Comm_rank(world, &me);
     MD_FLOAT* map = grid->map;
-    if (me == 0) {
 
+    if (me == 0) {
         printf("GRID:\n");
         printf("==================================================================="
                "================================\n");
@@ -655,6 +664,7 @@ void printGrid(Grid* grid)
         // zlo:%.4f\tzhi:%.4f\n",
         // i,map[6*i],map[6*i+3],map[6*i+1],map[6*i+4],map[6*i+2],map[6*i+5]);
     }
+
     MPI_Barrier(world);
 }
 #endif
