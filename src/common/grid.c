@@ -236,25 +236,28 @@ void nextBisectionLevel(Grid* grid,
     double time)
 {
     int me;
-    MPI_Comm_rank(world, &me);
-    
     int rank, size;
     int branch = 0, i = 0, m = 0;
     int nsend = 0, nrecv = 0, nrecv2 = 0;
     int values_per_atom = 7;
-    MD_FLOAT bisection, pos;
-    MPI_Request request[2] = { MPI_REQUEST_NULL, MPI_REQUEST_NULL };
-    MPI_Comm_rank(subComm, &rank);
-    MPI_Comm_size(subComm, &size);
-    
-    
     int odd       = size % 2;
     int extraProc = odd ? size - 1 : size;
     int half      = (int)(0.5 * size);
     int partner   = (rank < half) ? rank + half : rank - half;
-    if (odd && rank == extraProc) partner = 0;
+    MD_FLOAT bisection, pos;
+
+    MPI_Comm_rank(world, &me);
+    MPI_Request request[2] = { MPI_REQUEST_NULL, MPI_REQUEST_NULL };
+    MPI_Comm_rank(subComm, &rank);
+    MPI_Comm_size(subComm, &size);
+
+    if (odd && rank == extraProc) {
+        partner = 0;
+    }
+
     // Apply the bisection
     bisection = method(atom, subComm, dim, time);
+
     // Define the new boundaries
     if (rank < half) {
         atom->mybox.hi[dim] = bisection;
@@ -263,8 +266,10 @@ void nextBisectionLevel(Grid* grid,
         atom->mybox.lo[dim] = bisection;
         branch              = 1;
     }
+
     // Define new color for the further communicaton
     *color = (branch << ilevel) | *color;
+
     // Grow the send buffer
     if (atom->Nlocal >= grid->maxsend) {
         if (grid->buf_send) free(grid->buf_send);
@@ -272,6 +277,7 @@ void nextBisectionLevel(Grid* grid,
             atom->Nlocal * values_per_atom * sizeof(MD_FLOAT));
         grid->maxsend = atom->Nlocal;
     }
+
     // buffer particles to send
     while (i < atom->Nlocal) {
         pos = atom_pos(i);
@@ -308,6 +314,7 @@ void nextBisectionLevel(Grid* grid,
     if (rank < extraProc) {
         MPI_Irecv(grid->buf_recv, nrecv, type_float, partner, 0, subComm, &request[0]);
     }
+
     if (odd && rank == 0) {
         MPI_Irecv(&grid->buf_recv[nrecv],
             nrecv2,
@@ -317,6 +324,7 @@ void nextBisectionLevel(Grid* grid,
             subComm,
             &request[1]);
     }
+
     MPI_Send(grid->buf_send, nsend, type_float, partner, 0, subComm);
     MPI_Waitall(2, request, MPI_STATUS_IGNORE);
 
@@ -402,19 +410,19 @@ void rcbBalance(
 }
 
 // Regular grid
-void cartesian3d(Grid* grid, Parameter* param, Box* box)
+void init3DCartesian(Grid* grid, Parameter* param, Box* box)
 {
     int me, nproc;
     MPI_Comm_size(MPI_COMM_WORLD, &nproc);
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
 
+    MPI_Comm cartesian;
     int numdim     = 3;
     int reorder    = 0;
     int periods[3] = { 1, 1, 1 };
     int mycoord[3] = { 0, 0, 0 };
     int griddim[3] = { 0, 0, 0 };
     MD_FLOAT len[3];
-    MPI_Comm cartesian;
     MD_FLOAT eps = 1e-3; 
 
     box->xprd = param->xprd;
@@ -434,7 +442,7 @@ void cartesian3d(Grid* grid, Parameter* param, Box* box)
     grid->coord[1] = mycoord[1];
     grid->coord[2] = mycoord[2];
 
-    // boundaries of my local box, with origin in (0,0,0).
+    // Boundaries of my local box, with origin in (0,0,0).
     len[0] = param->xprd / griddim[0];
     len[1] = param->yprd / griddim[1];
     len[2] = param->zprd / griddim[2];
@@ -472,20 +480,19 @@ void cartesian3d(Grid* grid, Parameter* param, Box* box)
 }
 
 // Other Functions from the grid
-void initGrid(Grid* grid, int nprocs)
-{ // start with regular grid
+void initGrid(Grid* grid, int nprocs) {
     grid->map_size = 6 * nprocs;
     grid->map      = (MD_FLOAT*)allocate(ALIGNMENT, grid->map_size * sizeof(MD_FLOAT));
-    //========rcb=======
+    // RCB
     grid->maxsend  = 0;
     grid->maxrecv  = 0;
     grid->buf_send = NULL;
     grid->buf_recv = NULL;
-    //====staggered=====
+    // Staggered
     grid->Timer = 0.;
 }
 
-int read_atoms_from_file(Atom* atom, char* file){
+int readAtomsTempFile(Atom* atom, char* file) {
     char *file_system = getenv("TMPDIR");
     if (file_system == NULL) {
         fprintf(stderr, "Error: TMPDIR environment variable is not set!\n");
@@ -506,7 +513,6 @@ int read_atoms_from_file(Atom* atom, char* file){
         atom->Nmax = 0;
     } 
 
-
     MD_FLOAT xlo = atom->mybox.lo[0];
     MD_FLOAT xhi = atom->mybox.hi[0];
     MD_FLOAT ylo = atom->mybox.lo[1];
@@ -525,9 +531,7 @@ int read_atoms_from_file(Atom* atom, char* file){
 #endif
 
     while (fscanf(fp, SCANF_FORMAT, &x, &y, &z, &vx, &vy, &vz, &type) == 7) {
-        if (x >= xlo && x < xhi &&
-            y >= ylo && y < yhi &&
-            z >= zlo && z < zhi ) {
+        if (x >= xlo && x < xhi && y >= ylo && y < yhi && z >= zlo && z < zhi ) {
                 if (i == atom->Nmax) {
                     growAtom(atom);
                 }
@@ -548,11 +552,41 @@ int read_atoms_from_file(Atom* atom, char* file){
     return 0;
 }
 
+void discardAtomsOutsideSubdomainBox(Atom* atom) {
+    MD_FLOAT xlo = atom->mybox.lo[0];
+    MD_FLOAT xhi = atom->mybox.hi[0];
+    MD_FLOAT ylo = atom->mybox.lo[1];
+    MD_FLOAT yhi = atom->mybox.hi[1];
+    MD_FLOAT zlo = atom->mybox.lo[2];
+    MD_FLOAT zhi = atom->mybox.hi[2];
+    int n = 0;
+
+    for(int i = 0; i < atom->Nlocal; i++) {
+        MD_FLOAT x = atom_x(i);
+        MD_FLOAT y = atom_y(i);
+        MD_FLOAT z = atom_z(i);
+
+        if (x >= xlo && x < xhi && y >= ylo && y < yhi && z >= zlo && z < zhi ) {
+            atom_x(n) = x;
+            atom_y(n) = y;
+            atom_z(n) = z;
+            atom_vx(n) = atom_vx(i);
+            atom_vy(n) = atom_vy(i);
+            atom_vz(n) = atom_vz(i);
+            atom->type[n] = atom->type[i];
+            n++;
+        }
+    }
+
+    atom->Nlocal = n;
+}
+
 void setupGrid(Grid* grid, Atom* atom, Parameter* param)
 {
     int me = 0;
     int nprocs = 1;
     MD_FLOAT xlo, ylo, zlo, xhi, yhi, zhi;
+
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
     MPI_Comm_size(world, &nprocs);
     initGrid(grid, nprocs);
@@ -567,7 +601,7 @@ void setupGrid(Grid* grid, Atom* atom, Parameter* param)
     }
 
     // MAP is stored as follows: xlo,ylo,zlo,xhi,yhi,zhi
-    cartesian3d(grid, param, &atom->mybox);
+    init3DCartesian(grid, param, &atom->mybox);
     
     // Define the same cutneighbour in all dimensions for the exchange
     // communication
@@ -578,7 +612,9 @@ void setupGrid(Grid* grid, Atom* atom, Parameter* param)
     MPI_Barrier(world);
 
     if(param->input_file == NULL) {
-        read_atoms_from_file(atom, param->atom_file_name);
+        readAtomsTempFile(atom, param->atom_file_name);
+    } else {
+        discardAtomsOutsideSubdomainBox(atom);
     }
 
     //printGrid(grid);
