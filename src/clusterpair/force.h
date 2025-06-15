@@ -13,6 +13,9 @@
 #ifndef __FORCE_H_
 #define __FORCE_H_
 
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+
 typedef double (*ComputeForceFunction)(Parameter*, Atom*, Neighbor*, Stats*);
 extern ComputeForceFunction computeForce;
 
@@ -75,20 +78,51 @@ extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #define CLUSTER_N   VECTOR_WIDTH
 #else
 #define CLUSTER_M 4
-// Simd2xNN (here used for single-precision)
-#if VECTOR_WIDTH > CLUSTER_M * 2
-#define CLUSTERPAIR_KERNEL_2XNN
-#define KERNEL_NAME "Simd2xNN"
-#define CLUSTER_N   (VECTOR_WIDTH / 2)
-#define UNROLL_I    4
-#define UNROLL_J    2
-#else // Simd4xN
-#define CLUSTERPAIR_KERNEL_4XN
-#define KERNEL_NAME "Simd4xN"
-#define CLUSTER_N   VECTOR_WIDTH
-#define UNROLL_I    4
-#define UNROLL_J    1
+// Auto selection based on VECTOR_WIDTH and architecture
+#ifdef CLUSTER_PAIR_KERNEL_AUTO
+    #if VECTOR_WIDTH > CLUSTER_M * 2
+        #define CLUSTERPAIR_KERNEL_2XNN
+    #elif defined(__ISA_NEON__) || defined(__ISA_SVE__) || defined(__ISA_SVE2__)
+        #define CLUSTERPAIR_KERNEL_2XN
+    #else
+        #define CLUSTERPAIR_KERNEL_4XN
+
+    #endif
 #endif
+
+// Define the kernel-specific macros based on which kernel is selected
+#ifdef CLUSTERPAIR_KERNEL_4XN
+    #define KERNEL_NAME "Simd4xN"
+    #define CLUSTER_N   VECTOR_WIDTH
+    #define UNROLL_I    4
+    #define UNROLL_J    1
+#endif
+
+#ifdef CLUSTERPAIR_KERNEL_2XNN
+    #define KERNEL_NAME "Simd2xNN"
+    #define CLUSTER_N   (VECTOR_WIDTH / 2)
+    #define UNROLL_I    4
+    #define UNROLL_J    2
+#endif
+
+#ifdef CLUSTERPAIR_KERNEL_2XN
+    #undef CLUSTER_M
+    #define CLUSTER_M 2
+    #define KERNEL_NAME "Simd2xN"
+    #define CLUSTER_N   VECTOR_WIDTH
+    #define UNROLL_I    2
+    #define UNROLL_J    2
+#endif
+
+// Verify that one of the kernel variants is selected
+#if !defined(CLUSTERPAIR_KERNEL_4XN) && !defined(CLUSTERPAIR_KERNEL_2XNN) && !defined(CLUSTERPAIR_KERNEL_2XN)
+    #error "No cluster pair kernel variant selected"
+#endif
+
+#if defined(CLUSTERPAIR_KERNEL_2XNN) + defined(CLUSTERPAIR_KERNEL_2XN) + defined(CLUSTERPAIR_KERNEL_4XN) > 1
+    #error "Multiple CLUSTERPAIR_KERNEL_ macros defined!"
+#endif
+
 #endif
 #endif
 
