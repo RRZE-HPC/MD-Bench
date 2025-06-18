@@ -1418,10 +1418,11 @@ void buildSuperclusters(Atom* atom)
     binAtoms(atom);
 
     for (int bin = 0; bin < mbins; bin++) {
-        int c = bincount[bin];
-        sortAtomsByCoord(atom, ZZ, bin, 0, c - 1);
+        int c         = bincount[bin];
         int ac        = 0;
         int nclusters = ((c + CLUSTER_M - 1) / CLUSTER_M);
+        // Sort atoms in the Z dimension
+        sortAtomsByCoord(atom, 2, bin, 0, c - 1);
 
         if (CLUSTER_N > CLUSTER_M && nclusters % 2) {
             nclusters++;
@@ -1450,7 +1451,8 @@ void buildSuperclusters(Atom* atom)
                     atom_scl_z_offset + SCLUSTER_SIZE_Y * SCLUSTER_SIZE_X * CLUSTER_M - 1,
                     c - 1);
 
-                sortAtomsByCoord(atom, YY, bin, atom_scl_z_offset, atom_scl_z_end_idx);
+                // Sort atoms in the Y dimension
+                sortAtomsByCoord(atom, 1, bin, atom_scl_z_offset, atom_scl_z_end_idx);
 
                 for (int scl_y = 0; scl_y < SCLUSTER_SIZE_Y; scl_y++) {
                     const int atom_scl_y_offset = scl_offset +
@@ -1463,7 +1465,7 @@ void buildSuperclusters(Atom* atom)
                         c - 1);
 
                     sortAtomsByCoord(atom,
-                        XX,
+                        0, // X dimension
                         bin,
                         atom_scl_y_offset,
                         atom_scl_y_end_idx);
