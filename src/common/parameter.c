@@ -14,8 +14,7 @@
 #include <simd.h>
 #include <util.h>
 
-void initParameter(Parameter* param)
-{
+void initParameter(Parameter* param) {
     param->input_file      = NULL;
     param->vtk_file        = NULL;
     param->xtc_file        = NULL;
@@ -28,9 +27,9 @@ void initParameter(Parameter* param)
     param->sigma6          = 1.0;
     param->rho             = 0.8442;
 #ifdef ONE_ATOM_TYPE
-    param->ntypes = 1;
+    param->ntypes        = 1;
 #else
-    param->ntypes           = 4;
+    param->ntypes        = 4;
 #endif
     param->ntimes        = 200;
     param->dt            = 0.005;
@@ -66,8 +65,7 @@ void initParameter(Parameter* param)
     param->setup         = 1;
 }
 
-void readParameter(Parameter* param, const char* filename)
-{
+void readParameter(Parameter* param, const char* filename) {
     FILE* fp = fopen(filename, "r");
     char line[MAXLINE];
     int i;
@@ -77,9 +75,7 @@ void readParameter(Parameter* param, const char* filename)
         exit(-1);
     }
 
-    while (!feof(fp)) {
-        line[0] = '\0';
-        readline(line, fp);
+    while (fgets(line, MAXLINE, fp) != NULL) {
         for (i = 0; line[i] != '\0' && line[i] != '#'; i++)
             ;
         line[i] = '\0';
@@ -145,8 +141,7 @@ void readParameter(Parameter* param, const char* filename)
     fclose(fp);
 }
 
-void printParameter(Parameter* param)
-{
+void printParameter(Parameter* param) {
     fprintf(stdout, "Parameters:\n");
     if (param->input_file != NULL) {
         fprintf(stdout, "\tInput file: %s\n", param->input_file);

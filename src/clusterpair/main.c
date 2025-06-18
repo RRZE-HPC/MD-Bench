@@ -41,17 +41,11 @@ extern void cudaDeviceFree(Parameter*);
 #define HLINE                                                                            \
     "----------------------------------------------------------------------------\n"
 
-double setup(Parameter* param,
-    Eam* eam,
-    Atom* atom,
-    Neighbor* neighbor,
-    Stats* stats,
-    Comm* comm,
-    Grid* grid)
-{
+double setup(Parameter* param, Eam* eam, Atom* atom, Neighbor* neighbor, Stats* stats, Comm* comm, Grid* grid) {
     if (param->force_field == FF_EAM) {
         initEam(param);
     }
+
     double timeStart, timeStop;
     param->lattice = pow((4.0 / param->rho), (1.0 / 3.0));
     param->xprd    = param->nx * param->lattice;
@@ -147,6 +141,7 @@ int main(int argc, char** argv)
         // LIKWID_MARKER_REGISTER("reneighbour");
         // LIKWID_MARKER_REGISTER("pbc");
     }
+
     initComm(&argc, &argv, &comm);
     initParameter(&param);
     for (int i = 0; i < argc; i++) {
@@ -192,7 +187,7 @@ int main(int argc, char** argv)
         if ((strcmp(argv[i], "-method") == 0)) {
             param.method = atoi(argv[++i]);
             if (param.method > 2 || param.method < 0) {
-                if (comm.myproc == 0) fprintf(stderr, "Method does not exist!\n");
+                fprintf_once(comm.myproc, stderr, "Method does not exist!\n");
                 endComm(&comm);
                 exit(0);
             }
@@ -200,11 +195,13 @@ int main(int argc, char** argv)
         }
         if ((strcmp(argv[i], "-bal") == 0)) {
             param.balance = atoi(argv[++i]);
+
             if (param.balance > 3 || param.balance < 0) {
-                if (comm.myproc == 0) fprintf(stderr, "Load balance does not exist!\n");
+                fprintf_once(comm.myproc, stderr, "Load balance does not exist!\n");
                 endComm(&comm);
                 exit(0);
             }
+
             continue;
         }
         if ((strcmp(argv[i], "-m") == 0) || (strcmp(argv[i], "--mass") == 0)) {
@@ -271,19 +268,21 @@ int main(int argc, char** argv)
     }
 
     if (param.balance > 0 && param.method == 1) {
-        if (comm.myproc == 0) {
-            fprintf(stderr, "Half Shell is not supported with load balance!\n");
-        }
+        fprintf_once(comm.myproc, stderr, "Half Shell is not supported with load balance!\n");
         endComm(&comm);
         exit(0);
     }
-
+    
     param.cutneigh = param.cutforce + param.skin;
-    timer[SETUP]   = setup(&param, &eam, &atom, &neighbor, &stats, &comm, &grid);
-    if (comm.myproc == 0) printParameter(&param);
-    if (comm.myproc == 0) printf(HLINE);
+    timer[SETUP] = setup(&param, &eam, &atom, &neighbor, &stats, &comm, &grid);
+
+    if(comm.myproc == 0) {
+        printParameter(&param);
+    }
+
+    fprintf_once(comm.myproc, stdout, HLINE);
     fflush(stdout);
-    if (comm.myproc == 0) printf("step\ttemp\t\tpressure\n");
+    fprintf_once(comm.myproc, stdout, "step\ttemp\t\tpressure\n");
     computeThermo(0, &param, &atom);
 #if defined(MEM_TRACER) || defined(INDEX_TRACER)
     traceAddresses(&param, &atom, &neighbor, n + 1);
@@ -308,29 +307,29 @@ int main(int argc, char** argv)
     if (param.xtc_file != NULL) {
         xtc_init(param.xtc_file, &atom, 0);
     }
+
     for (int n = 0; n < param.ntimes; n++) {
         initialIntegrate(&param, &atom);
-        if ((n + 1) % param.reneigh_every) {
+
+        if ((n + 1) % param.reneigh_every) { 
             if (!((n + 1) % param.prune_every)) {
                 pruneNeighbor(&param, &atom, &neighbor);
             }
-            timer[FORWARD] += forward(&comm, &atom, &param);
-            // updatePbc(&atom, &param, 0);
+
+            timer[FORWARD] += forward(&comm, &atom, &param); 
+            //updatePbc(&atom, &param, 0);
         } else {
 #ifdef CUDA_TARGET
-            copyDataFromCUDADevice(&param, &atom);
+            copyDataFromCUDADevice(&atom);
 #endif
-            timer[UPDATE] += updateAtoms(&comm, &atom, &param);
-            if (param.balance && !((n + 1) % param.balance_every)) {
-                timer[BALANCE] += dynamicBalance(&comm,
-                    &grid,
-                    &atom,
-                    &param,
-                    timer[FORCE]);
+            timer[UPDATE] += updateAtoms(&comm, &atom, &param); 
+            if (param.balance && !((n + 1) % param.balance_every)){
+                timer[BALANCE] += dynamicBalance(&comm, &grid, &atom, &param, timer[FORCE]);            
             }
+
             timer[NEIGH] += reneighbour(&comm, &param, &atom, &neighbor);
 #ifdef CUDA_TARGET
-            copyDataToCUDADevice(&param, &atom, &neighbor);
+            copyDataToCUDADevice(&atom, &neighbor);
 #endif
         }
 #if defined(MEM_TRACER) || defined(INDEX_TRACER)
@@ -475,14 +474,16 @@ int main(int argc, char** argv)
 
         nthreads = omp_get_max_threads();
     }
+
     if (comm.myproc == 0) {
-        fprintf(stdout, "Num threads: %d\n", nthreads);
-        fprintf(stdout, "Schedule: (%s,%d)\n", schedType, chunkSize);
+        fprintf(stdout,"Num threads: %d\n", nthreads);
+        fprintf(stdout,"Schedule: (%s,%d)\n", schedType, chunkSize);
     }
+
 #endif
+
     if (comm.myproc == 0) {
-        fprintf(stdout,
-            "Performance: %.2f million atom updates per second\n",
+        fprintf(stdout,"Performance: %.2f million atom updates per second\n",
             1e-6 * (double)atom.Natoms * param.ntimes / timer[TOTAL]);
 #ifdef COMPUTE_STATS
         displayStatistics(&atom, &param, &stats, timer);

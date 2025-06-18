@@ -13,7 +13,7 @@
 #ifndef __ATOM_H_
 #define __ATOM_H_
 
-#define DELTA 20000
+#define DELTA 100000
 
 #define CI_SCALAR_BASE_INDEX(a)  (CI_BASE_INDEX(a, 1))
 #define CI_VECTOR_BASE_INDEX(a)  (CI_BASE_INDEX(a, 3))
@@ -106,11 +106,11 @@ void copy(Atom*, int, int);
 
 #ifdef CUDA_TARGET
 #ifdef __cplusplus
-extern "C"
+extern "C" 
 #endif
-    extern void
-    growClustersCUDA(Atom*);
-#endif
+extern void growClustersCUDA(Atom*);
+#endif 
+
 
 #ifdef AOS
 #define POS_DATA_LAYOUT "AoS"

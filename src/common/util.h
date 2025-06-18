@@ -32,7 +32,6 @@
 #define PRECISION_STRING "double"
 #endif
 
-enum { _x = 0, _y, _z };
 enum { fullShell = 0, halfShell, eightShell, halfStencil };
 
 #define BigOrEqual(a, b) (fabs((a) - (b)) < 1e-9 || (a) > (b))
@@ -45,5 +44,5 @@ extern const char* ff2str(int ff);
 extern void readline(char* line, FILE* fp);
 extern void debug_printf(const char* format, ...);
 extern int get_cuda_num_threads(void);
-
+extern void fprintf_once(int me, FILE* stream, const char* format, ...);
 #endif

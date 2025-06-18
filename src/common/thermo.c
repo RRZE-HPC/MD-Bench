@@ -142,7 +142,6 @@ void adjustThermo(Parameter* param, Atom* atom)
                  atom_vz(i) * atom_vz(i)) *
              param->mass;
     }
-
 #ifdef _MPI
     MPI_Allreduce(&t, &t_sum, 1, type_float, MPI_SUM, MPI_COMM_WORLD);
     t = t_sum;

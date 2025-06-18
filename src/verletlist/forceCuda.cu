@@ -35,8 +35,8 @@ __global__ void computeForceLJCudaFullNeigh(DeviceAtom a,
     int neigh_maxneighs,
     int* neigh_neighbors,
     int* neigh_numneigh,
-    int ntypes)
-{
+    int ntypes) {
+
     const int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= Nlocal) {
         return;
@@ -95,8 +95,8 @@ __global__ void computeForceLJCudaHalfNeigh(DeviceAtom a,
     int neigh_maxneighs,
     int* neigh_neighbors,
     int* neigh_numneigh,
-    int ntypes)
-{
+    int ntypes) {
+
     const int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= Nlocal) {
         return;
@@ -156,8 +156,7 @@ __global__ void computeForceLJCudaHalfNeigh(DeviceAtom a,
 }
 
 __global__ void kernel_initial_integrate(
-    MD_FLOAT dtforce, MD_FLOAT dt, int Nlocal, DeviceAtom a)
-{
+    MD_FLOAT dtforce, MD_FLOAT dt, int Nlocal, DeviceAtom a) {
     const int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= Nlocal) {
         return;
@@ -173,8 +172,7 @@ __global__ void kernel_initial_integrate(
     atom_z(i) = atom_z(i) + dt * atom_vz(i);
 }
 
-__global__ void kernel_final_integrate(MD_FLOAT dtforce, int Nlocal, DeviceAtom a)
-{
+__global__ void kernel_final_integrate(MD_FLOAT dtforce, int Nlocal, DeviceAtom a) {
     const int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= Nlocal) {
         return;
@@ -189,8 +187,7 @@ __global__ void kernel_final_integrate(MD_FLOAT dtforce, int Nlocal, DeviceAtom 
 
 extern "C" {
 
-void finalIntegrateCUDA(bool reneigh, Parameter* param, Atom* atom)
-{
+void finalIntegrateCUDA(bool reneigh, Parameter* param, Atom* atom) {
     const int Nlocal                = atom->Nlocal;
     const int num_threads_per_block = get_cuda_num_threads();
     const int num_blocks            = ceil((float)Nlocal / (float)num_threads_per_block);
@@ -206,8 +203,7 @@ void finalIntegrateCUDA(bool reneigh, Parameter* param, Atom* atom)
     }
 }
 
-void initialIntegrateCUDA(bool reneigh, Parameter* param, Atom* atom)
-{
+void initialIntegrateCUDA(bool reneigh, Parameter* param, Atom* atom) {
     const int Nlocal                = atom->Nlocal;
     const int num_threads_per_block = get_cuda_num_threads();
     const int num_blocks            = ceil((float)Nlocal / (float)num_threads_per_block);
@@ -224,8 +220,7 @@ void initialIntegrateCUDA(bool reneigh, Parameter* param, Atom* atom)
     }
 }
 
-double computeForceLJCUDA(Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
-{
+double computeForceLJCUDA(Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats) {
     const int num_threads_per_block = get_cuda_num_threads();
     int Nlocal                      = atom->Nlocal;
     int Nmax                        = atom->Nmax;
@@ -293,37 +288,31 @@ double computeForceLJCUDA(Parameter* param, Atom* atom, Neighbor* neighbor, Stat
 }
 }
 
-extern "C" void copyGhostFromGPU(Atom* atom)
-{
+extern "C" void copyGhostFromGPU(Atom* atom) {
     memcpyFromGPU(atom->x, atom->d_atom.x, atom->Nlocal * sizeof(MD_FLOAT) * 3);
 }
 
-extern "C" void copyGhostToGPU(Atom* atom)
-{
+extern "C" void copyGhostToGPU(Atom* atom) {
     memcpyToGPU(&atom->d_atom.x[atom->Nlocal * 3],
         &atom->x[atom->Nlocal * 3],
         atom->Nghost * sizeof(MD_FLOAT) * 3);
 }
 
-extern "C" void copyForceFromGPU(Atom* atom)
-{
+extern "C" void copyForceFromGPU(Atom* atom) {
     memcpyFromGPU(atom->fx, atom->d_atom.fx, atom->Nmax * sizeof(MD_FLOAT) * 3);
 }
 
-extern "C" void copyForceToGPU(Atom* atom)
-{
+extern "C" void copyForceToGPU(Atom* atom) {
     memcpyToGPU(atom->d_atom.fx, atom->fx, atom->Nmax * sizeof(MD_FLOAT) * 3);
 }
 
-extern "C" void copyDataFromCUDADevice(Parameter* param, Atom* atom)
-{
+extern "C" void copyDataFromCUDADevice(Parameter* param, Atom* atom) {
     memcpyFromGPU(atom->x, atom->d_atom.x, atom->Nmax * sizeof(MD_FLOAT) * 3);
     memcpyFromGPU(atom->vx, atom->d_atom.vx, atom->Nmax * sizeof(MD_FLOAT) * 3);
     memcpyFromGPU(atom->type, atom->d_atom.type, atom->Nmax * sizeof(int));
 }
 
-extern "C" void copyDataToCUDADevice(Parameter* param, Atom* atom)
-{
+extern "C" void copyDataToCUDADevice(Parameter* param, Atom* atom) {
     memcpyToGPU(atom->d_atom.x, atom->x, atom->Nmax * sizeof(MD_FLOAT) * 3);
     memcpyToGPU(atom->d_atom.vx, atom->vx, atom->Nmax * sizeof(MD_FLOAT) * 3);
     memcpyToGPU(atom->d_atom.type, atom->type, atom->Nmax * sizeof(int));

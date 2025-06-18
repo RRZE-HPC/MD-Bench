@@ -13,7 +13,7 @@
 
 #ifdef _MPI
 #include <mpi.h>
-#endif
+#endif  
 
 void initStats(Stats* s)
 {
@@ -25,30 +25,18 @@ void initStats(Stats* s)
 
 void displayStatistics(Atom* atom, Parameter* param, Stats* stats, double* timer)
 {
-    int me         = 0;
-    int neigh_sum  = 0;
+    int me = 0;
+    int neigh_sum = 0; 
     int forces_sum = 0;
-    int iters_sum  = 0;
+    int iters_sum = 0; 
 
 #ifdef _MPI
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
-    MPI_Reduce(&stats->total_force_neighs,
-        &neigh_sum,
-        1,
-        MPI_INT,
-        MPI_SUM,
-        0,
-        MPI_COMM_WORLD);
-    MPI_Reduce(&stats->total_force_iters,
-        &iters_sum,
-        1,
-        MPI_INT,
-        MPI_SUM,
-        0,
-        MPI_COMM_WORLD);
+    MPI_Reduce(&stats->total_force_neighs, &neigh_sum, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&stats->total_force_iters, &iters_sum, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 
     stats->total_force_neighs = neigh_sum;
-    stats->total_force_iters  = iters_sum;
+    stats->total_force_iters = iters_sum;
 #endif
 
 #ifdef COMPUTE_STATS
@@ -86,25 +74,13 @@ void displayStatistics(Atom* atom, Parameter* param, Stats* stats, double* timer
 
 #ifdef USE_REFERENCE_KERNEL
 
-    int within_cutoff_sum  = 0;
+    int within_cutoff_sum = 0;
     int outside_cutoff_sum = 0;
 
 #ifdef _MPI
-    MPI_Reduce(&stats->atoms_within_cutoff,
-        &within_cutoff_sum,
-        1,
-        MPI_INT,
-        MPI_SUM,
-        0,
-        MPI_COMM_WORLD);
-    MPI_Reduce(&stats->atoms_outside_cutoff,
-        &outside_cutoff_sum,
-        1,
-        MPI_INT,
-        MPI_SUM,
-        0,
-        MPI_COMM_WORLD);
-    stats->atoms_within_cutoff  = within_cutoff_sum;
+    MPI_Reduce(&stats->atoms_within_cutoff, &within_cutoff_sum, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&stats->atoms_outside_cutoff, &outside_cutoff_sum, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    stats->atoms_within_cutoff = within_cutoff_sum;
     stats->atoms_outside_cutoff = outside_cutoff_sum;
 #endif
 

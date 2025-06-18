@@ -3,14 +3,11 @@
 #include <math.h>
 #include <parameter.h>
 #include <stdio.h>
-#include <string.h>
 #include <util.h>
+#include <string.h>
 
 #ifdef _MPI
-// Grommacs Balancing
-MD_FLOAT f_normalization(double* x, MD_FLOAT* fx, MD_FLOAT minx, int nprocs)
-{
-
+MD_FLOAT f_normalization(double* x, MD_FLOAT* fx, MD_FLOAT minx, int nprocs) {
     MD_FLOAT sum = 0;
     for (int n = 0; n < nprocs; n++) {
         fx[n] = MAX(minx, x[n]);
@@ -20,15 +17,13 @@ MD_FLOAT f_normalization(double* x, MD_FLOAT* fx, MD_FLOAT minx, int nprocs)
         fx[n] /= sum;
 }
 
-void fixedPointIteration(double* x0, int nprocs, MD_FLOAT minx)
-{
+void fixedPointIteration(double* x0, int nprocs, MD_FLOAT minx) {
     MD_FLOAT tolerance = 1e-3;
     MD_FLOAT alpha     = 0.5;
     MD_FLOAT* fx       = (MD_FLOAT*)malloc(nprocs * sizeof(MD_FLOAT));
     int maxIterations  = 100;
 
     for (int i = 0; i < maxIterations; i++) {
-
         int converged = 1;
         f_normalization(x0, fx, minx, nprocs);
 
@@ -52,15 +47,16 @@ void fixedPointIteration(double* x0, int nprocs, MD_FLOAT minx)
     }
 }
 
-void staggeredBalance(Grid* grid, Atom* atom, Parameter* param, double newTime)
-{
+void staggeredBalance(Grid* grid, Atom* atom, Parameter* param, double newTime) {
     int me;
-    MPI_Comm_rank(MPI_COMM_WORLD, &me);
     int* coord  = grid->coord;
     int* nprocs = grid->nprocs;
     // Elapsed time since the last rebalance
     double time = newTime - grid->Timer;
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &me);
     grid->Timer = newTime;
+
     // store the older dimm to compare later for exchange
     MD_FLOAT lo[3], hi[3];
     for (int dim = 0; dim < 3; dim++) {
@@ -70,19 +66,21 @@ void staggeredBalance(Grid* grid, Atom* atom, Parameter* param, double newTime)
 
     // Define parameters
     MPI_Comm subComm[3];
-    int color[3]  = { 0, 0, 0 };
-    int id[3]     = { 0, 0, 0 };
-    double** load = (double**)malloc(3 * sizeof(double*));
-    for (int dim = 0; dim < 3; dim++)
+    int color[3]    = { 0, 0, 0 };
+    int id[3]       = { 0, 0, 0 }; 
+    double** load = (double**) malloc(3 * sizeof(double*));
+
+    for(int dim = 0; dim < 3; dim++) {
         load[dim] = (double*)malloc(nprocs[dim] * sizeof(double));
-    int maxprocs       = MAX(MAX(nprocs[_x], nprocs[_y]), nprocs[_z]);
+    }
+
+    int maxprocs       = MAX(MAX(nprocs[0], nprocs[1]), nprocs[2]);
     MD_FLOAT* cellSize = (MD_FLOAT*)malloc(maxprocs * sizeof(MD_FLOAT));
     MD_FLOAT* limits   = (MD_FLOAT*)malloc(
         2 * maxprocs * sizeof(MD_FLOAT)); // limits: (x0, x1), (x1, x2)... Repeat values
                                             // in between to perfom MPI_Scatter later
     MD_FLOAT t_sum[3]        = { 0, 0, 0 };
-    MD_FLOAT recv_buf[2]     = { 0,
-            0 }; // Each proc only receives 2 elments per dimension xlo and xhi
+    MD_FLOAT recv_buf[2]     = { 0, 0 }; // Each proc only receives 2 elments per dimension xlo and xhi
     MD_FLOAT balancedLoad[3] = { 0, 0, 0 }; // 1/nprocs
     MD_FLOAT minLoad[3]      = { 0, 0, 0 }; // beta*(1/nprocs)
     MD_FLOAT prd[3]          = { param->xprd, param->yprd, param->zprd };
@@ -90,16 +88,17 @@ void staggeredBalance(Grid* grid, Atom* atom, Parameter* param, double newTime)
 
     // Create sub-communications along each dimension
     for (int dim = 0; dim < 3; dim++) {
-        if (dim == _x) {
-            color[_x] = (coord[_y] == 0 && coord[_z] == 0) ? 1 : MPI_UNDEFINED;
-            id[_x]    = me;
-        } else if (dim == _y) {
-            color[_y] = coord[_z] == 0 ? coord[_x] : MPI_UNDEFINED;
-            id[_y]    = (coord[_y] == 0 && coord[_z] == 0) ? 0 : me;
+        if (dim == 0) {
+            color[0] = (coord[1] == 0 && coord[2] == 0) ? 1 : MPI_UNDEFINED;
+            id[0]    = me;
+        } else if (dim == 1) {
+            color[1] = coord[2] == 0 ? coord[0] : MPI_UNDEFINED;
+            id[1]    = (coord[1] == 0 && coord[2] == 0) ? 0 : me;
         } else {
-            color[_z] = coord[_y] * nprocs[_x] + coord[_x];
-            id[_z]    = coord[_z] == 0 ? 0 : me;
+            color[2] = coord[1] * nprocs[0] + coord[0];
+            id[2]    = coord[2] == 0 ? 0 : me;
         }
+
         MPI_Comm_split(world, color[dim], id[dim], &subComm[dim]);
     }
 
@@ -109,7 +108,7 @@ void staggeredBalance(Grid* grid, Atom* atom, Parameter* param, double newTime)
         minLoad[dim]      = 0.8 * balancedLoad[dim];
     }
     // set and communicate the workload in reverse order
-    for (int dim = _z; dim >= _x; dim--) {
+    for (int dim = 2; dim >= 0; dim--) {
         if (subComm[dim] != MPI_COMM_NULL) {
             MPI_Gather(&time, 1, MPI_DOUBLE, load[dim], 1, MPI_DOUBLE, 0, subComm[dim]);
 
@@ -122,62 +121,75 @@ void staggeredBalance(Grid* grid, Atom* atom, Parameter* param, double newTime)
             }
             time = t_sum[dim];
         }
+
         MPI_Barrier(world);
     }
 
     // Brodacast the new boundaries along dimensions
     for (int dim = 0; dim < 3; dim++) {
-
         if (subComm[dim] != MPI_COMM_NULL) {
-
             MPI_Bcast(boundaries, 6, type_float, 0, subComm[dim]);
+
             if (id[dim] == 0) {
-                fixedPointIteration(load[dim], nprocs[dim], minLoad[dim]);
-                MD_FLOAT inv_sum = 0;
-                for (int n = 0; n < nprocs[dim]; n++) {
+                MD_FLOAT inv_sum = 0.0;
+                MD_FLOAT sum = 0.0;
+
+                fixedPointIteration(load[dim], nprocs[dim], minLoad[dim]);                
+
+                for(int n = 0; n < nprocs[dim]; n++) {
                     inv_sum += (1 / load[dim][n]);
                 }
-                for (int n = 0; n < nprocs[dim]; n++)
-                    cellSize[n] = (prd[dim] / load[dim][n]) * (1. / inv_sum);
 
-                MD_FLOAT sum = 0;
-                for (int n = 0; n < nprocs[dim]; n++) {
+                for(int n = 0; n < nprocs[dim]; n++) {
+                    cellSize[n] = (prd[dim] / load[dim][n]) * (1. / inv_sum);
+                }
+
+                for(int n = 0; n < nprocs[dim]; n++) {
                     limits[2 * n]     = sum;
                     limits[2 * n + 1] = sum + cellSize[n];
                     sum += cellSize[n];
                 }
+
                 limits[2 * nprocs[dim] - 1] = prd[dim];
             }
+
             MPI_Scatter(limits, 2, type_float, recv_buf, 2, type_float, 0, subComm[dim]);
             boundaries[2 * dim]     = recv_buf[0];
             boundaries[2 * dim + 1] = recv_buf[1];
         }
+
         MPI_Barrier(world);
     }
+ 
+    atom->mybox.lo[0] = boundaries[0];
+    atom->mybox.hi[0] = boundaries[1];
+    atom->mybox.lo[1] = boundaries[2];
+    atom->mybox.hi[1] = boundaries[3];
+    atom->mybox.lo[2] = boundaries[4];
+    atom->mybox.hi[2] = boundaries[5];
 
-    atom->mybox.lo[_x] = boundaries[0];
-    atom->mybox.hi[_x] = boundaries[1];
-    atom->mybox.lo[_y] = boundaries[2];
-    atom->mybox.hi[_y] = boundaries[3];
-    atom->mybox.lo[_z] = boundaries[4];
-    atom->mybox.hi[_z] = boundaries[5];
-
-    MD_FLOAT domain[6] = { boundaries[0],
+    MD_FLOAT domain[6] = {
+        boundaries[0],
         boundaries[2],
         boundaries[4],
         boundaries[1],
         boundaries[3],
-        boundaries[5] };
+        boundaries[5]
+    };
+
     MPI_Allgather(domain, 6, type_float, grid->map, 6, type_float, world);
 
     // because cells change dynamically, It is required to increase the
     // neighbouring exchange region
-    for (int dim = _x; dim <= _z; dim++) {
+    for (int dim = 0; dim <= 2; dim++) {
         MD_FLOAT dr, dr_max;
         int n             = grid->nprocs[dim];
         MD_FLOAT maxdelta = 0.2 * prd[dim];
-        dr                = MAX(fabs(lo[dim] - atom->mybox.lo[dim]),
+
+        dr                = MAX(
+            fabs(lo[dim] - atom->mybox.lo[dim]),
             fabs(hi[dim] - atom->mybox.hi[dim]));
+
         MPI_Allreduce(&dr, &dr_max, 1, type_float, MPI_MAX, world);
         grid->cutneigh[dim] = param->cutneigh + dr_max;
     }
@@ -186,36 +198,39 @@ void staggeredBalance(Grid* grid, Atom* atom, Parameter* param, double newTime)
         if (subComm[dim] != MPI_COMM_NULL) {
             MPI_Comm_free(&subComm[dim]);
         }
+
         free(load[dim]);
     }
+
     free(load);
     free(limits);
 }
 
 // RCB Balancing
-MD_FLOAT meanTimeBisect(Atom* atom, MPI_Comm subComm, int dim, double time)
-{
+MD_FLOAT meanTimeBisect(Atom* atom, MPI_Comm subComm, int dim, double time) {
     MD_FLOAT mean = 0, sum = 0, total_sum = 0, weightAtoms = 0, total_weight = 0;
 
     for (int i = 0; i < atom->Nlocal; i++) {
         sum += atom_pos(i);
     }
+
     sum *= time;
     weightAtoms = atom->Nlocal * time;
+
     MPI_Allreduce(&sum, &total_sum, 1, type_float, MPI_SUM, subComm);
     MPI_Allreduce(&weightAtoms, &total_weight, 1, type_float, MPI_SUM, subComm);
     mean = total_sum / total_weight;
     return mean;
 }
 
-MD_FLOAT meanBisect(Atom* atom, MPI_Comm subComm, int dim, double time)
-{
+MD_FLOAT meanBisect(Atom* atom, MPI_Comm subComm, int dim, double time) {    
     int Natoms   = 0;
     MD_FLOAT sum = 0, mean = 0, total_sum = 0;
 
     for (int i = 0; i < atom->Nlocal; i++) {
         sum += atom_pos(i);
     }
+
     MPI_Allreduce(&sum, &total_sum, 1, type_float, MPI_SUM, subComm);
     MPI_Allreduce(&atom->Nlocal, &Natoms, 1, MPI_INT, MPI_SUM, subComm);
     mean = total_sum / Natoms;
@@ -229,27 +244,31 @@ void nextBisectionLevel(Grid* grid,
     int dim,
     int* color,
     int ilevel,
-    double time)
-{
-    int me;
-    MPI_Comm_rank(world, &me);
+    double time) {
 
+    int me;
     int rank, size;
     int branch = 0, i = 0, m = 0;
     int nsend = 0, nrecv = 0, nrecv2 = 0;
     int values_per_atom = 7;
-    MD_FLOAT bisection, pos;
-    MPI_Request request[2] = { MPI_REQUEST_NULL, MPI_REQUEST_NULL };
-    MPI_Comm_rank(subComm, &rank);
-    MPI_Comm_size(subComm, &size);
-
     int odd       = size % 2;
     int extraProc = odd ? size - 1 : size;
     int half      = (int)(0.5 * size);
     int partner   = (rank < half) ? rank + half : rank - half;
-    if (odd && rank == extraProc) partner = 0;
+    MD_FLOAT bisection, pos;
+
+    MPI_Comm_rank(world, &me);
+    MPI_Request request[2] = { MPI_REQUEST_NULL, MPI_REQUEST_NULL };
+    MPI_Comm_rank(subComm, &rank);
+    MPI_Comm_size(subComm, &size);
+
+    if (odd && rank == extraProc) {
+        partner = 0;
+    }
+
     // Apply the bisection
     bisection = method(atom, subComm, dim, time);
+
     // Define the new boundaries
     if (rank < half) {
         atom->mybox.hi[dim] = bisection;
@@ -258,8 +277,10 @@ void nextBisectionLevel(Grid* grid,
         atom->mybox.lo[dim] = bisection;
         branch              = 1;
     }
+
     // Define new color for the further communicaton
     *color = (branch << ilevel) | *color;
+
     // Grow the send buffer
     if (atom->Nlocal >= grid->maxsend) {
         if (grid->buf_send) free(grid->buf_send);
@@ -267,6 +288,7 @@ void nextBisectionLevel(Grid* grid,
             atom->Nlocal * values_per_atom * sizeof(MD_FLOAT));
         grid->maxsend = atom->Nlocal;
     }
+
     // buffer particles to send
     while (i < atom->Nlocal) {
         pos = atom_pos(i);
@@ -274,8 +296,9 @@ void nextBisectionLevel(Grid* grid,
             nsend += packExchange(atom, i, &grid->buf_send[nsend]);
             copy(atom, i, atom->Nlocal - 1);
             atom->Nlocal--;
-        } else
+        } else {
             i++;
+        }
     }
 
     // Communicate the number of elements to be sent
@@ -303,6 +326,7 @@ void nextBisectionLevel(Grid* grid,
     if (rank < extraProc) {
         MPI_Irecv(grid->buf_recv, nrecv, type_float, partner, 0, subComm, &request[0]);
     }
+
     if (odd && rank == 0) {
         MPI_Irecv(&grid->buf_recv[nrecv],
             nrecv2,
@@ -312,6 +336,7 @@ void nextBisectionLevel(Grid* grid,
             subComm,
             &request[1]);
     }
+
     MPI_Send(grid->buf_send, nsend, type_float, partner, 0, subComm);
     MPI_Waitall(2, request, MPI_STATUS_IGNORE);
 
@@ -321,9 +346,7 @@ void nextBisectionLevel(Grid* grid,
     }
 }
 
-void rcbBalance(
-    Grid* grid, Atom* atom, Parameter* param, RCB_Method method, int ndim, double newTime)
-{
+void rcbBalance(Grid* grid, Atom* atom, Parameter* param, RCB_Method method, int ndim, double newTime) {
     int me, nprocs = 0, ilevel = 0, nboxes = 1;
     int color = 0, size = 0;
     int index, prd[3];
@@ -334,12 +357,12 @@ void rcbBalance(
     // set the elapsed time since the last dynamic balance
     double time = newTime - grid->Timer;
 
-    prd[_x] = atom->mybox.xprd = param->xprd;
-    prd[_y] = atom->mybox.yprd = param->yprd;
-    prd[_z] = atom->mybox.zprd = param->zprd;
+    prd[0] = atom->mybox.xprd = param->xprd;
+    prd[1] = atom->mybox.yprd = param->yprd;
+    prd[2] = atom->mybox.zprd = param->zprd;
 
     // Sort by larger dimension
-    int largerDim[3] = { _x, _y, _z };
+    int largerDim[3] = { 0, 1, 2 };
 
     for (int i = 0; i < 2; i++) {
         for (int j = i + 1; j < 3; j++) {
@@ -350,19 +373,21 @@ void rcbBalance(
             }
         }
     }
+
     // Initial Partition
-    atom->mybox.lo[_x] = 0;
-    atom->mybox.hi[_x] = atom->mybox.xprd;
-    atom->mybox.lo[_y] = 0;
-    atom->mybox.hi[_y] = atom->mybox.yprd;
-    atom->mybox.lo[_z] = 0;
-    atom->mybox.hi[_z] = atom->mybox.zprd;
+    atom->mybox.lo[0] = 0;
+    atom->mybox.hi[0] = atom->mybox.xprd;
+    atom->mybox.lo[1] = 0;
+    atom->mybox.hi[1] = atom->mybox.yprd;
+    atom->mybox.lo[2] = 0;
+    atom->mybox.hi[2] = atom->mybox.zprd;
 
     // Recursion tree
     while (nboxes < nprocs) {
         index = ilevel % ndim;
         MPI_Comm_split(world, color, me, &subComm);
         MPI_Comm_size(subComm, &size);
+
         if (size > 1) {
             nextBisectionLevel(grid,
                 atom,
@@ -373,43 +398,46 @@ void rcbBalance(
                 ilevel,
                 time);
         }
+
         MPI_Comm_free(&subComm);
         nboxes = pow(2, ++ilevel);
     }
+
     // Set the new timer grid
     grid->Timer = newTime;
 
     // Creating the global map
-    MD_FLOAT domain[6] = { atom->mybox.lo[_x],
-        atom->mybox.lo[_y],
-        atom->mybox.lo[_z],
-        atom->mybox.hi[_x],
-        atom->mybox.hi[_y],
-        atom->mybox.hi[_z] };
+    MD_FLOAT domain[6] = { atom->mybox.lo[0],
+        atom->mybox.lo[1],
+        atom->mybox.lo[2],
+        atom->mybox.hi[0],
+        atom->mybox.hi[1],
+        atom->mybox.hi[2]
+    };
+
     MPI_Allgather(domain, 6, type_float, grid->map, 6, type_float, world);
 
     // Define the same cutneighbour in all dimensions for the exchange
     // communication
-    for (int dim = _x; dim <= _z; dim++) {
+    for (int dim = 0; dim <= 2; dim++){
         grid->cutneigh[dim] = param->cutneigh;
     }
 }
 
 // Regular grid
-void cartisian3d(Grid* grid, Parameter* param, Box* box)
-{
+void init3DCartesian(Grid* grid, Parameter* param, Box* box) {
     int me, nproc;
     MPI_Comm_size(MPI_COMM_WORLD, &nproc);
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
 
+    MPI_Comm cartesian;
     int numdim     = 3;
     int reorder    = 0;
     int periods[3] = { 1, 1, 1 };
     int mycoord[3] = { 0, 0, 0 };
     int griddim[3] = { 0, 0, 0 };
     MD_FLOAT len[3];
-    MPI_Comm cartesian;
-    MD_FLOAT eps = 1e-3;
+    MD_FLOAT eps = 1e-3; 
 
     box->xprd = param->xprd;
     box->yprd = param->yprd;
@@ -418,115 +446,119 @@ void cartisian3d(Grid* grid, Parameter* param, Box* box)
     // Creates a cartesian 3d grid
     MPI_Dims_create(nproc, numdim, griddim);
     MPI_Cart_create(world, numdim, griddim, periods, reorder, &cartesian);
-    grid->nprocs[_x] = griddim[_x];
-    grid->nprocs[_y] = griddim[_y];
-    grid->nprocs[_z] = griddim[_z];
+    grid->nprocs[0] = griddim[0];
+    grid->nprocs[1] = griddim[1];
+    grid->nprocs[2] = griddim[2];
 
     // Coordinates position in the grid
     MPI_Cart_coords(cartesian, me, 3, mycoord);
-    grid->coord[_x] = mycoord[_x];
-    grid->coord[_y] = mycoord[_y];
-    grid->coord[_z] = mycoord[_z];
+    grid->coord[0] = mycoord[0];
+    grid->coord[1] = mycoord[1];
+    grid->coord[2] = mycoord[2];
 
-    // boundaries of my local box, with origin in (0,0,0).
-    len[_x] = param->xprd / griddim[_x];
-    len[_y] = param->yprd / griddim[_y];
-    len[_z] = param->zprd / griddim[_z];
+    // Boundaries of my local box, with origin in (0,0,0).
+    len[0] = param->xprd / griddim[0];
+    len[1] = param->yprd / griddim[1];
+    len[2] = param->zprd / griddim[2];
 
-    box->lo[_x] = mycoord[_x] * len[_x];
-    box->hi[_x] = (mycoord[_x] + 1) * len[_x];
-    box->lo[_y] = mycoord[_y] * len[_y];
-    box->hi[_y] = (mycoord[_y] + 1) * len[_y];
-    box->lo[_z] = mycoord[_z] * len[_z];
-    box->hi[_z] = (mycoord[_z] + 1) * len[_z];
+    box->lo[0] = mycoord[0] * len[0];
+    box->hi[0] = (mycoord[0] + 1) * len[0];
+    box->lo[1] = mycoord[1] * len[1];
+    box->hi[1] = (mycoord[1] + 1) * len[1];
+    box->lo[2] = mycoord[2] * len[2];
+    box->hi[2] = (mycoord[2] + 1) * len[2];
 
-    if (box->hi[_x] + eps > param->xprd) box->hi[_x] = param->xprd;
-    if (box->hi[_y] + eps > param->yprd) box->hi[_y] = param->yprd;
-    if (box->hi[_z] + eps > param->zprd) box->hi[_z] = param->zprd;
+    if (box->hi[0] + eps > param->xprd) {
+        box->hi[0] = param->xprd;
+    }
 
-    MD_FLOAT domain[6] = { box->lo[_x],
-        box->lo[_y],
-        box->lo[_z],
-        box->hi[_x],
-        box->hi[_y],
-        box->hi[_z] };
+    if (box->hi[1] + eps > param->yprd) {
+        box->hi[1] = param->yprd;
+    }
+
+    if (box->hi[2] + eps > param->zprd) {
+        box->hi[2] = param->zprd;
+    }
+
+    MD_FLOAT domain[6] = {
+        box->lo[0],
+        box->lo[1],
+        box->lo[2],
+        box->hi[0],
+        box->hi[1],
+        box->hi[2]
+    };
+
     MPI_Allgather(domain, 6, type_float, grid->map, 6, type_float, world);
     MPI_Comm_free(&cartesian);
 }
 
 // Other Functions from the grid
-void initGrid(Grid* grid, int nprocs)
-{ // start with regular grid
+void initGrid(Grid* grid, int nprocs) {
     grid->map_size = 6 * nprocs;
     grid->map      = (MD_FLOAT*)allocate(ALIGNMENT, grid->map_size * sizeof(MD_FLOAT));
-    //========rcb=======
+    // RCB
     grid->maxsend  = 0;
     grid->maxrecv  = 0;
     grid->buf_send = NULL;
     grid->buf_recv = NULL;
-    //====staggered=====
+    // Staggered
     grid->Timer = 0.;
 }
 
-int read_atoms_from_file(Atom* atom, char* file)
-{
-
-    // file system variable
-    char* file_system = getenv("TMPDIR");
-
-    // Check if $FASTTMP is set
+int readAtomsTempFile(Atom* atom, char* file) {
+    char *file_system = getenv("TMPDIR");
     if (file_system == NULL) {
         fprintf(stderr, "Error: TMPDIR environment variable is not set!\n");
         return -1;
     }
 
-    char file_path[256];
+    char file_path[256]; 
     snprintf(file_path, sizeof(file_path), "%s/%s", file_system, file);
+    FILE *fp = fopen(file_path, "r");
 
-    FILE* fp = fopen(file_path, "r");
     if (fp == NULL) {
         perror("Error opening file");
         return -1;
     }
 
-    if (atom->Nmax > 0) {
+    if(atom->Nmax > 0){
         freeAtom(atom);
         atom->Nmax = 0;
-    }
-    atom->Nlocal = 0;
-    int i        = 0;
+    } 
 
-    MD_FLOAT xlo = atom->mybox.lo[_x];
-    MD_FLOAT xhi = atom->mybox.hi[_x];
-    MD_FLOAT ylo = atom->mybox.lo[_y];
-    MD_FLOAT yhi = atom->mybox.hi[_y];
-    MD_FLOAT zlo = atom->mybox.lo[_z];
-    MD_FLOAT zhi = atom->mybox.hi[_z];
+    MD_FLOAT xlo = atom->mybox.lo[0];
+    MD_FLOAT xhi = atom->mybox.hi[0];
+    MD_FLOAT ylo = atom->mybox.lo[1];
+    MD_FLOAT yhi = atom->mybox.hi[1];
+    MD_FLOAT zlo = atom->mybox.lo[2];
+    MD_FLOAT zhi = atom->mybox.hi[2];
 
     MD_FLOAT x, y, z, vx, vy, vz;
     int type;
+    int i = 0;
 
 #if PRECISION == 1
-#define SCANF_FORMAT "%f %f %f %f %f %f %d"
+    #define SCANF_FORMAT "%f %f %f %f %f %f %d"
 #else
-#define SCANF_FORMAT "%lf %lf %lf %lf %lf %lf %d"
+    #define SCANF_FORMAT "%lf %lf %lf %lf %lf %lf %d"
 #endif
+
     while (fscanf(fp, SCANF_FORMAT, &x, &y, &z, &vx, &vy, &vz, &type) == 7) {
-        if (x >= xlo && x < xhi && y >= ylo && y < yhi && z >= zlo && z < zhi) {
-
-            if (i == atom->Nmax) {
-                growAtom(atom);
+        if (x >= xlo && x < xhi && y >= ylo && y < yhi && z >= zlo && z < zhi ) {
+                if (i == atom->Nmax) {
+                    growAtom(atom);
+                }
+                
+                atom_x(i) = x;
+                atom_y(i) = y;
+                atom_z(i) = z;
+                atom_vx(i) = vx;
+                atom_vy(i) = vy;
+                atom_vz(i) = vz;
+                atom->type[i] = type;
+                i++;
             }
-
-            atom_x(i)     = x;
-            atom_y(i)     = y;
-            atom_z(i)     = z;
-            atom_vx(i)    = vx;
-            atom_vy(i)    = vy;
-            atom_vz(i)    = vz;
-            atom->type[i] = type;
-            i++;
-        }
     }
 
     fclose(fp);
@@ -534,56 +566,91 @@ int read_atoms_from_file(Atom* atom, char* file)
     return 0;
 }
 
-void setupGrid(Grid* grid, Atom* atom, Parameter* param)
-{
-    int me     = 0;
+void discardAtomsOutsideSubdomainBox(Atom* atom) {
+    MD_FLOAT xlo = atom->mybox.lo[0];
+    MD_FLOAT xhi = atom->mybox.hi[0];
+    MD_FLOAT ylo = atom->mybox.lo[1];
+    MD_FLOAT yhi = atom->mybox.hi[1];
+    MD_FLOAT zlo = atom->mybox.lo[2];
+    MD_FLOAT zhi = atom->mybox.hi[2];
+    int n = 0;
+
+    for(int i = 0; i < atom->Nlocal; i++) {
+        MD_FLOAT x = atom_x(i);
+        MD_FLOAT y = atom_y(i);
+        MD_FLOAT z = atom_z(i);
+
+        if (x >= xlo && x < xhi && y >= ylo && y < yhi && z >= zlo && z < zhi) {
+            atom_x(n) = x;
+            atom_y(n) = y;
+            atom_z(n) = z;
+            atom_vx(n) = atom_vx(i);
+            atom_vy(n) = atom_vy(i);
+            atom_vz(n) = atom_vz(i);
+            atom->type[n] = atom->type[i];
+            n++;
+        }
+    }
+
+    atom->Nlocal = n;
+    fprintf(stdout, "Number of local atoms: %d\n", n);
+}
+
+void setupGrid(Grid* grid, Atom* atom, Parameter* param) {
+    int me = 0;
     int nprocs = 1;
     MD_FLOAT xlo, ylo, zlo, xhi, yhi, zhi;
+
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
     MPI_Comm_size(world, &nprocs);
     initGrid(grid, nprocs);
 
     // Set the origin at (0,0,0)
-    if (param->input_file) {
+    if(param->input_file != NULL) {
         for (int i = 0; i < atom->Nlocal; i++) {
             atom_x(i) = atom_x(i) - param->xlo;
             atom_y(i) = atom_y(i) - param->ylo;
             atom_z(i) = atom_z(i) - param->zlo;
         }
     }
-    // MAP is stored as follows: xlo,ylo,zlo,xhi,yhi,zhi
-    cartisian3d(grid, param, &atom->mybox);
 
+    // MAP is stored as follows: xlo,ylo,zlo,xhi,yhi,zhi
+    init3DCartesian(grid, param, &atom->mybox);
+    
     // Define the same cutneighbour in all dimensions for the exchange
     // communication
-    for (int dim = _x; dim <= _z; dim++) {
+    for (int dim = 0; dim <= 2; dim++){
         grid->cutneigh[dim] = param->cutneigh;
     }
 
     MPI_Barrier(world);
-    read_atoms_from_file(atom, param->atom_file_name);
 
-    // printGrid(grid);
+    if(param->input_file == NULL) {
+        readAtomsTempFile(atom, param->atom_file_name);
+    } else {
+        discardAtomsOutsideSubdomainBox(atom);
+    }
+
+    //printGrid(grid);
     if (!param->balance) {
         MPI_Allreduce(&atom->Nlocal, &atom->Natoms, 1, MPI_INT, MPI_SUM, world);
-        // fprintf(stdout,"Processor:%i, Local atoms:%i, Total atoms:%i\n",
-        //     me,
-        //     atom->Nlocal,
-        //    atom->Natoms);
-        // fflush(stdout);
+        //fprintf(stdout,"Processor:%i, Local atoms:%i, Total atoms:%i\n",
+        //    me,
+        //    atom->Nlocal,
+        //   atom->Natoms);
+        //fflush(stdout);
         MPI_Barrier(world);
     }
 }
 
-void printGrid(Grid* grid)
-{
-    int me     = 0;
+void printGrid(Grid* grid) {
+    int me = 0; 
     int nprocs = 1;
     MPI_Comm_size(world, &nprocs);
     MPI_Comm_rank(world, &me);
     MD_FLOAT* map = grid->map;
-    if (me == 0) {
 
+    if (me == 0) {
         printf("GRID:\n");
         printf("==================================================================="
                "================================\n");
@@ -596,11 +663,13 @@ void printGrid(Grid* grid)
                 map[6 * i + 4],
                 map[6 * i + 2],
                 map[6 * i + 5]);
+
         printf("\n\n");
         // printf("Box processor:%i\n xlo:%.4f\txhi:%.4f\n ylo:%.4f\tyhi:%.4f\n
         // zlo:%.4f\tzhi:%.4f\n",
         // i,map[6*i],map[6*i+3],map[6*i+1],map[6*i+4],map[6*i+2],map[6*i+5]);
     }
+
     MPI_Barrier(world);
 }
 #endif

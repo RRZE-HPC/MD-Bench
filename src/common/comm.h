@@ -17,7 +17,7 @@
 #define GHOST         atom->Nclusters_ghost
 
 #define IsinRegionToSend(cj)                                                             \
-    ((atom->jclusters[(cj)].bbmaxx >= xlo && atom->jclusters[(cj)].bbminx < xhi) &&      \
+       ((atom->jclusters[(cj)].bbmaxx >= xlo && atom->jclusters[(cj)].bbminx < xhi) &&   \
         (atom->jclusters[(cj)].bbmaxy >= ylo && atom->jclusters[(cj)].bbminy < yhi) &&   \
         (atom->jclusters[(cj)].bbmaxz >= zlo && atom->jclusters[(cj)].bbminz < zhi))
 
@@ -30,7 +30,7 @@
 #define GHOST         atom->Nghost
 
 #define IsinRegionToSend(i)                                                              \
-    ((atom_x((i)) >= xlo && atom_x((i)) < xhi) &&                                        \
+       ((atom_x((i)) >= xlo && atom_x((i)) < xhi) &&                                     \
         (atom_y((i)) >= ylo && atom_y((i)) < yhi) &&                                     \
         (atom_z((i)) >= zlo && atom_z((i)) < zhi))
 

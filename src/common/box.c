@@ -22,18 +22,18 @@ int overlapBox(int dim,
     int same = (mybox->id == other->id) ? 1 : 0;
 
     // projections
-    min[_x] = MAX(mybox->lo[_x], other->lo[_x]);
-    max[_x] = MIN(mybox->hi[_x], other->hi[_x]);
-    min[_y] = MAX(mybox->lo[_y], other->lo[_y]);
-    max[_y] = MIN(mybox->hi[_y], other->hi[_y]);
-    min[_z] = MAX(mybox->lo[_z], other->lo[_z]);
-    max[_z] = MIN(mybox->hi[_z], other->hi[_z]);
+    min[0] = MAX(mybox->lo[0], other->lo[0]);
+    max[0] = MIN(mybox->hi[0], other->hi[0]);
+    min[1] = MAX(mybox->lo[1], other->lo[1]);
+    max[1] = MIN(mybox->hi[1], other->hi[1]);
+    min[2] = MAX(mybox->lo[2], other->lo[2]);
+    max[2] = MIN(mybox->hi[2], other->hi[2]);
 
     // Intersection no periodic case
     if (!same) {
         if (dir == 0) max[dim] = MIN(mybox->hi[dim], other->hi[dim] + cutneigh);
         if (dir == 1) min[dim] = MAX(mybox->lo[dim], other->lo[dim] - cutneigh);
-        if ((min[_x] < max[_x]) && (min[_y] < max[_y]) && (min[_z] < max[_z])) pbc = 0;
+        if ((min[0] < max[0]) && (min[1] < max[1]) && (min[2] < max[2])) pbc = 0;
     }
 
     // Intersection periodic case
@@ -46,17 +46,17 @@ int overlapBox(int dim,
             min[dim] = MAX(mybox->lo[dim], other->lo[dim] + xprd - cutneigh);
             max[dim] = MIN(mybox->hi[dim], other->hi[dim] + xprd);
         }
-        if ((min[_x] < max[_x]) && (min[_y] < max[_y]) && (min[_z] < max[_z]))
+        if ((min[0] < max[0]) && (min[1] < max[1]) && (min[2] < max[2]))
             pbc = (dir == 0) ? 1 : -1;
     }
 
     // storing the cuts
-    cut->lo[_x] = min[_x];
-    cut->hi[_x] = max[_x];
-    cut->lo[_y] = min[_y];
-    cut->hi[_y] = max[_y];
-    cut->lo[_z] = min[_z];
-    cut->hi[_z] = max[_z];
+    cut->lo[0] = min[0];
+    cut->hi[0] = max[0];
+    cut->lo[1] = min[1];
+    cut->hi[1] = max[1];
+    cut->lo[2] = min[2];
+    cut->hi[2] = max[2];
 
     return pbc;
 }
@@ -72,13 +72,13 @@ int overlapFullBox(
     for (int k = -1; k < 2; k++) {
         for (int j = -1; j < 2; j++) {
             for (int i = -1; i < 2; i++) {
-                min[_x] = MAX(mybox->lo[_x], other->lo[_x] - cutneigh[_x] + i * xprd);
-                min[_y] = MAX(mybox->lo[_y], other->lo[_y] - cutneigh[_y] + j * yprd);
-                min[_z] = MAX(mybox->lo[_z], other->lo[_z] - cutneigh[_z] + k * zprd);
-                max[_x] = MIN(mybox->hi[_x], other->hi[_x] + cutneigh[_x] + i * xprd);
-                max[_y] = MIN(mybox->hi[_y], other->hi[_y] + cutneigh[_y] + j * yprd);
-                max[_z] = MIN(mybox->hi[_z], other->hi[_z] + cutneigh[_z] + k * zprd);
-                if ((min[_x] < max[_x]) && (min[_y] < max[_y]) && (min[_z] < max[_z]))
+                min[0] = MAX(mybox->lo[0], other->lo[0] - cutneigh[0] + i * xprd);
+                min[1] = MAX(mybox->lo[1], other->lo[1] - cutneigh[1] + j * yprd);
+                min[2] = MAX(mybox->lo[2], other->lo[2] - cutneigh[2] + k * zprd);
+                max[0] = MIN(mybox->hi[0], other->hi[0] + cutneigh[0] + i * xprd);
+                max[1] = MIN(mybox->hi[1], other->hi[1] + cutneigh[1] + j * yprd);
+                max[2] = MIN(mybox->hi[2], other->hi[2] + cutneigh[2] + k * zprd);
+                if ((min[0] < max[0]) && (min[1] < max[1]) && (min[2] < max[2]))
                     return 1;
             }
         }
@@ -90,14 +90,14 @@ int overlapFullBox(
 void expandBox(int iswap, const Box* me, const Box* other, Box* cut, MD_FLOAT cutneigh)
 {
     if (iswap == 2 || iswap == 3) {
-        if (me->lo[_x] <= other->lo[_x]) cut->lo[_x] -= cutneigh;
-        if (me->hi[_x] >= other->hi[_x]) cut->hi[_x] += cutneigh;
+        if (me->lo[0] <= other->lo[0]) cut->lo[0] -= cutneigh;
+        if (me->hi[0] >= other->hi[0]) cut->hi[0] += cutneigh;
     }
 
     if (iswap == 4 || iswap == 5) {
-        if (me->lo[_x] <= other->lo[_x]) cut->lo[_x] -= cutneigh;
-        if (me->hi[_x] >= other->hi[_x]) cut->hi[_x] += cutneigh;
-        if (me->lo[_y] <= other->lo[_y]) cut->lo[_y] -= cutneigh;
-        if (me->hi[_y] >= other->hi[_y]) cut->hi[_y] += cutneigh;
+        if (me->lo[0] <= other->lo[0]) cut->lo[0] -= cutneigh;
+        if (me->hi[0] >= other->hi[0]) cut->hi[0] += cutneigh;
+        if (me->lo[1] <= other->lo[1]) cut->lo[1] -= cutneigh;
+        if (me->hi[1] >= other->hi[1]) cut->hi[1] += cutneigh;
     }
 }

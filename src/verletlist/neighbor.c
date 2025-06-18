@@ -83,7 +83,7 @@ void initNeighbor(Neighbor* neighbor, Parameter* param)
         half_stencil      = 1;
     }
     neighbor->half_neigh = param->half_neigh;
-
+    
     me = 0;
 #ifdef _MPI
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
@@ -143,7 +143,7 @@ void setupNeighbor(Parameter* param)
         bininvy  = 1.0 / binsizey;
         bininvz  = 1.0 / binsizez;
     }
-
+   
     pad_x = (int)(cutneigh * bininvx);
     while (pad_x * binsizex < FACTOR * cutneigh)
         pad_x++;
@@ -180,36 +180,37 @@ void setupNeighbor(Parameter* param)
 
     mbinxlo = mbinxlo - 1;
     mbinxhi = mbinxhi + 1;
-
     mbinylo = mbinylo - 1;
     mbinyhi = mbinyhi + 1;
 
     mbinzlo = mbinzlo - 1;
     mbinzhi = mbinzhi + 1;
 
-    /*
-        mbinxlo = mbinxlo - 1;
-        mbinxhi = mbinxhi + 1;
-        mbinx   = mbinxhi - mbinxlo + 1;
+/*
+    mbinxlo = mbinxlo - 1;
+    mbinxhi = mbinxhi + 1;
+    mbinx   = mbinxhi - mbinxlo + 1;
 
-        mbinylo = mbinylo - 1;
-        mbinyhi = mbinyhi + 1;
-        mbiny   = mbinyhi - mbinylo + 1;
+    mbinylo = mbinylo - 1;
+    mbinyhi = mbinyhi + 1;
+    mbiny   = mbinyhi - mbinylo + 1;
 
-        mbinzlo = mbinzlo - 1;
-        mbinzhi = mbinzhi + 1;
-        mbinz   = mbinzhi - mbinzlo + 1;
-    */
+    mbinzlo = mbinzlo - 1;
+    mbinzhi = mbinzhi + 1;
+    mbinz   = mbinzhi - mbinzlo + 1;
+*/
     nextx = (int)(cutneigh * bininvx);
-    while (nextx * binsizex < FACTOR * cutneigh) {
+    while (nextx * binsizex < FACTOR * cutneigh) { 
         nextx++;
         pad_x++;
     }
+
     nexty = (int)(cutneigh * bininvy);
     while (nexty * binsizey < FACTOR * cutneigh) {
         nexty++;
         pad_y++;
     }
+
     nextz = (int)(cutneigh * bininvz);
     while (nextz * binsizez < FACTOR * cutneigh) {
         nextz++;
@@ -531,15 +532,18 @@ static int eightZone(Atom* atom, int i)
     MD_FLOAT* hi      = atom->mybox.hi;
     int zone          = 0;
 
-    if (BigOrEqual(atom_x(i), hi[_x])) {
+    if (BigOrEqual(atom_x(i), hi[0])) {
         zone += 1;
     }
-    if (BigOrEqual(atom_y(i), hi[_y])) {
+
+    if (BigOrEqual(atom_y(i), hi[1])) {
         zone += 2;
     }
-    if (BigOrEqual(atom_z(i), hi[_z])) {
+
+    if (BigOrEqual(atom_z(i), hi[2])) {
         zone += 4;
     }
+
     return zoneMapping[zone];
 }
 
@@ -548,11 +552,11 @@ static int halfZone(Atom* atom, int i)
     MD_FLOAT* hi = atom->mybox.hi;
     MD_FLOAT* lo = atom->mybox.lo;
 
-    if (atom_x(i) < lo[_x] && atom_y(i) < hi[_y] && atom_z(i) < hi[_z]) {
+    if (atom_x(i) < lo[0] && atom_y(i) < hi[1] && atom_z(i) < hi[2]) {
         return 0;
-    } else if (atom_y(i) < lo[_y] && atom_z(i) < hi[_z]) {
+    } else if (atom_y(i) < lo[1] && atom_z(i) < hi[2]) {
         return 0;
-    } else if (atom_z(i) < lo[_z]) {
+    } else if (atom_z(i) < lo[2]) {
         return 0;
     } else {
         return 1;

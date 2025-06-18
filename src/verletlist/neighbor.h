@@ -81,7 +81,6 @@ extern void buildNeighborCPU(Atom*, Neighbor*);
 #ifdef __cplusplus
 extern "C"
 #endif
-    extern void
-    buildNeighborCUDA(Atom*, Neighbor*);
+extern void buildNeighborCUDA(Atom*, Neighbor*);
 #endif
 #endif //__NEIGHBOR_H_

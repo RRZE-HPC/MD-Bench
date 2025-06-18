@@ -178,7 +178,7 @@ double computeForceLJHalfNeigh(
 
                     // We do not need to update forces for ghost atoms
                     // We need to update forces for ghost atoms if shell_method  or half
-                    // stencil is requiered
+                    // stencil is required
                     if ((param->half_neigh && j < nlocal) || param->method) {
                         atom_fx(j) -= delx * force;
                         atom_fy(j) -= dely * force;

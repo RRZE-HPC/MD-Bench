@@ -69,8 +69,7 @@ extern void updateSingleAtoms(Atom*);
 #ifdef __cplusplus
 extern "C"
 #endif
-    extern void
-    growNeighborCUDA(Atom*, Neighbor*);
+extern void growNeighborCUDA(Atom*, Neighbor*);
 #endif
 
 #endif

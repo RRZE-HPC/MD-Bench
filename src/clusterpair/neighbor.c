@@ -418,7 +418,6 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
 
                             if (d_bb_sq < cutneighsq) {
                                 int is_neighbor = (d_bb_sq < rbb_sq) ? 1 : 0;
-
                                 if (!is_neighbor) {
                                     int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
                                     MD_FLOAT* cj_x  = &atom->cl_x[cj_vec_base];
@@ -1918,15 +1917,18 @@ static int eightZoneCluster(Atom* atom, int cj)
     int zone          = 0;
     MD_FLOAT* hi      = atom->mybox.hi;
 
-    if (atom->jclusters[cj].bbminx >= hi[_x]) {
+    if (atom->jclusters[cj].bbminx >= hi[0]) {
         zone += 1;
     }
-    if (atom->jclusters[cj].bbminy >= hi[_y]) {
+
+    if (atom->jclusters[cj].bbminy >= hi[1]) {
         zone += 2;
     }
-    if (atom->jclusters[cj].bbminz >= hi[_z]) {
+
+    if (atom->jclusters[cj].bbminz >= hi[2]) {
         zone += 4;
     }
+
     return zoneMapping[zone];
 }
 
@@ -1935,13 +1937,13 @@ static int halfZoneCluster(Atom* atom, int cj)
     MD_FLOAT* hi = atom->mybox.hi;
     MD_FLOAT* lo = atom->mybox.lo;
 
-    if (atom->jclusters[cj].bbmaxx < lo[_x] && atom->jclusters[cj].bbmaxy < hi[_y] &&
-        atom->jclusters[cj].bbmaxz < hi[_z]) {
+    if (atom->jclusters[cj].bbmaxx < lo[0] && atom->jclusters[cj].bbmaxy < hi[1] &&
+        atom->jclusters[cj].bbmaxz < hi[2]) {
         return 0;
-    } else if (atom->jclusters[cj].bbmaxy < lo[_y] &&
-               atom->jclusters[cj].bbmaxz < hi[_z]) {
+    } else if (atom->jclusters[cj].bbmaxy < lo[1] &&
+               atom->jclusters[cj].bbmaxz < hi[2]) {
         return 0;
-    } else if (atom->jclusters[cj].bbmaxz < lo[_z]) {
+    } else if (atom->jclusters[cj].bbmaxz < lo[2]) {
         return 0;
     } else {
         return 1;

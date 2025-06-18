@@ -65,13 +65,6 @@ double computeForceLJCudaSup(
  * 16-way SIMD: 4x8 setup, used in single precision with 512 bit wide SIMD
  */
 
-// General macros
-#define XX 0
-#define YY 1
-#define ZZ 2
-#define DIM_COORD(dim, coord)                                                            \
-    ((dim == XX) ? atom_x(coord) : (dim == YY) ? atom_y(coord) : atom_z(coord))
-
 #ifdef CUDA_TARGET
 extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #undef VECTOR_WIDTH
@@ -81,7 +74,6 @@ extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #define CLUSTER_M   8
 #define CLUSTER_N   VECTOR_WIDTH
 #define UNROLL_J    1
-
 #else
 #ifdef USE_REFERENCE_KERNEL
 #define CLUSTERPAIR_KERNEL_REF
