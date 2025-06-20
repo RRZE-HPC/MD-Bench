@@ -1296,11 +1296,16 @@ void sortAtomsByCoord(Atom* atom, int dim, int bin, int start_index, int end_ind
         int i              = bin_ptr[ac_i];
         int min_ac         = ac_i;
         int min_idx        = i;
-        MD_FLOAT min_coord = DIM_COORD(dim, i);
+        MD_FLOAT min_coord = (dim == 0) ? atom_x(i) :
+                             (dim == 1) ? atom_y(i) :
+                                          atom_z(i);
 
         for (int ac_j = ac_i + 1; ac_j <= end_index; ac_j++) {
             int j           = bin_ptr[ac_j];
-            MD_FLOAT coordj = DIM_COORD(dim, j);
+            MD_FLOAT coordj = (dim == 0) ? atom_x(j) :
+                              (dim == 1) ? atom_y(j) :
+                                           atom_z(j);
+
             if (coordj < min_coord) {
                 min_ac    = ac_j;
                 min_idx   = j;
