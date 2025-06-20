@@ -37,7 +37,6 @@
 #include <timing.h>
 #include <util.h>
 #include <vtk.h>
-#include <balance.h>
 
 extern void copyDataToCUDADevice(Atom*);
 extern void copyDataFromCUDADevice(Atom*);
@@ -89,7 +88,7 @@ double setup(Parameter* param, Eam* eam, Atom* atom, Neighbor* neighbor, Stats* 
 #endif
 
     setupPbc(atom, param);
-    initDevice(atom, neighbor);
+    initDevice(param, atom, neighbor);
 
 #ifdef _MPI    
     ghostNeighbor(comm, atom, param);
