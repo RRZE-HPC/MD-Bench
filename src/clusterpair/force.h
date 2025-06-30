@@ -148,30 +148,29 @@ extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #error "Cluster N dimension can be only 2, 4 and 8"
 #endif
 
-// Super-clustering macros
-#define SCLUSTER_SIZE_X 2
-#define SCLUSTER_SIZE_Y 2
-#define SCLUSTER_SIZE_Z 2
-#define SCLUSTER_SIZE   (SCLUSTER_SIZE_X * SCLUSTER_SIZE_Y * SCLUSTER_SIZE_Z)
-#define SCLUSTER_M      CLUSTER_M * SCLUSTER_SIZE
+#define CI_SCALAR_BASE_INDEX(a)  (CI_BASE_INDEX(a, 1))
+#define CI_VECTOR_BASE_INDEX(a)  (CI_BASE_INDEX(a, 3))
+#define CJ_SCALAR_BASE_INDEX(a)  (CJ_BASE_INDEX(a, 1))
+#define CJ_VECTOR_BASE_INDEX(a)  (CJ_BASE_INDEX(a, 3))
 
-#if CLUSTER_M >= CLUSTER_N
-#define SCL_CL_X_OFFSET(ci) (ci * CLUSTER_M + 0 * SCLUSTER_M)
-#define SCL_CL_Y_OFFSET(ci) (ci * CLUSTER_M + 1 * SCLUSTER_M)
-#define SCL_CL_Z_OFFSET(ci) (ci * CLUSTER_M + 2 * SCLUSTER_M)
-#define SCL_X_OFFSET        (0 * SCLUSTER_M)
-#define SCL_Y_OFFSET        (1 * SCLUSTER_M)
-#define SCL_Z_OFFSET        (2 * SCLUSTER_M)
-#else
-#define SCL_X_OFFSET (0 * SCLUSTER_SIZE * CLUSTER_N)
-#define SCL_Y_OFFSET (1 * SCLUSTER_SIZE * CLUSTER_N)
-#define SCL_Z_OFFSET (2 * SCLUSTER_SIZE * CLUSTER_N)
+// Super-clustering macros
+#if defined(USE_SUPER_CLUSTERS) && CLUSTER_M != CLUSTER_N
+#error "For super-clusters, M must be equal to N"
 #endif
 
-#if CLUSTER_M == CLUSTER_N
-#define CJ1_FROM_SCI(a)      (a)
-#define SCI_BASE_INDEX(a, b) ((a) * CLUSTER_N * SCLUSTER_SIZE * (b))
-#define SCJ_BASE_INDEX(a, b) ((a) * CLUSTER_N * SCLUSTER_SIZE * (b))
+#define SCLUSTER_SIZE_X          2
+#define SCLUSTER_SIZE_Y          2
+#define SCLUSTER_SIZE_Z          2
+#define SCLUSTER_SIZE            (SCLUSTER_SIZE_X * SCLUSTER_SIZE_Y * SCLUSTER_SIZE_Z)
+#define SCL_X_OFFSET             (0 * CLUSTER_N * SCLUSTER_SIZE)
+#define SCL_Y_OFFSET             (1 * CLUSTER_N * SCLUSTER_SIZE)
+#define SCL_Z_OFFSET             (2 * CLUSTER_N * SCLUSTER_SIZE)
+#define SCI_BASE_INDEX(a, b)     ((a) * CLUSTER_N * SCLUSTER_SIZE * (b))
+#define SCJ_BASE_INDEX(a, b)     ((a) * CLUSTER_N * SCLUSTER_SIZE * (b))
+#define SCI_SCALAR_BASE_INDEX(a) (SCI_BASE_INDEX(a, 1))
+#define SCI_VECTOR_BASE_INDEX(a) (SCI_BASE_INDEX(a, 3))
+
+/*
 #elif CLUSTER_M == CLUSTER_N * 2 // M > N
 #define SCI_BASE_INDEX(a, b) ((a) * CLUSTER_M * SCLUSTER_SIZE * (b))
 #define SCJ_BASE_INDEX(a, b)                                                             \
@@ -183,5 +182,6 @@ extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
         ((a) & 0x1) * (CLUSTER_N * SCLUSTER_SIZE >> 1))
 #define SCJ_BASE_INDEX(a, b) ((a) * CLUSTER_N * SCLUSTER_SIZE * (b))
 #endif
+*/
 
 #endif // __FORCE_H_

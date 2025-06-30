@@ -711,8 +711,7 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
 }
 
 // TODO For future parallelization on GPU
-void buildNeighborSuperclusters(Atom* atom, Neighbor* neighbor)
-{
+void buildNeighborSuperclusters(Atom* atom, Neighbor* neighbor) {
     DEBUG_MESSAGE("buildNeighborSuperclusters start\n");
 
     /* extend atom arrays if necessary */
@@ -1413,8 +1412,7 @@ void buildClustersCPU(Atom* atom)
     DEBUG_MESSAGE("buildClusters end\n");
 }
 
-void buildSuperclusters(Atom* atom)
-{
+void buildSuperclusters(Atom* atom) {
     DEBUG_MESSAGE("buildSuperclustersGPU start\n");
     atom->Nclusters_local  = 0;
     atom->Nsclusters_local = 0;
@@ -1442,14 +1440,14 @@ void buildSuperclusters(Atom* atom)
                 growSuperClusters(atom);
             }
 
-            int scl_offset     = scl * SCLUSTER_SIZE * CLUSTER_M;
+            int scl_bin_offset = scl * SCLUSTER_SIZE * CLUSTER_M;
             MD_FLOAT sc_bbminx = INFINITY, sc_bbmaxx = -INFINITY;
             MD_FLOAT sc_bbminy = INFINITY, sc_bbmaxy = -INFINITY;
             MD_FLOAT sc_bbminz = INFINITY, sc_bbmaxz = -INFINITY;
             atom->siclusters[sci].nclusters = 0;
 
             for (int scl_z = 0; scl_z < SCLUSTER_SIZE_Z; scl_z++) {
-                const int atom_scl_z_offset = scl_offset + scl_z * SCLUSTER_SIZE_Y *
+                const int atom_scl_z_offset = scl_bin_offset + scl_z * SCLUSTER_SIZE_Y *
                                                                SCLUSTER_SIZE_X *
                                                                CLUSTER_M;
                 const int atom_scl_z_end_idx = MIN(
@@ -1460,7 +1458,7 @@ void buildSuperclusters(Atom* atom)
                 sortAtomsByCoord(atom, 1, bin, atom_scl_z_offset, atom_scl_z_end_idx);
 
                 for (int scl_y = 0; scl_y < SCLUSTER_SIZE_Y; scl_y++) {
-                    const int atom_scl_y_offset = scl_offset +
+                    const int atom_scl_y_offset = scl_bin_offset +
                                                   scl_z * SCLUSTER_SIZE_Y *
                                                       SCLUSTER_SIZE_X * CLUSTER_M +
                                                   scl_y * SCLUSTER_SIZE_Y * CLUSTER_M;
@@ -1490,13 +1488,14 @@ void buildSuperclusters(Atom* atom)
                         int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
                         MD_FLOAT* ci_x  = &atom->cl_x[ci_vec_base];
                         MD_FLOAT* ci_v  = &atom->cl_v[ci_vec_base];
+                        int* ci_t       = &atom->cl_t[ci_sca_base];
 
                         int sci_sca_base = SCI_SCALAR_BASE_INDEX(sci);
                         int sci_vec_base = SCI_VECTOR_BASE_INDEX(sci);
                         MD_FLOAT* sci_x  = &atom->scl_x[sci_vec_base];
                         MD_FLOAT* sci_v  = &atom->scl_v[sci_vec_base];
+                        int* sci_t       = &atom->scl_t[sci_sca_base];
 
-                        int* ci_type    = &atom->cl_t[ci_sca_base];
                         MD_FLOAT bbminx = INFINITY, bbmaxx = -INFINITY;
                         MD_FLOAT bbminy = INFINITY, bbmaxy = -INFINITY;
                         MD_FLOAT bbminz = INFINITY, bbmaxz = -INFINITY;
@@ -1516,19 +1515,15 @@ void buildSuperclusters(Atom* atom)
                                 ci_v[CL_X_OFFSET + cii] = atom->vx[i];
                                 ci_v[CL_Y_OFFSET + cii] = atom->vy[i];
                                 ci_v[CL_Z_OFFSET + cii] = atom->vz[i];
+                                ci_t[cii] = atom->type[i];
 
-                                sci_x[SCL_CL_X_OFFSET(atom->siclusters[sci].nclusters) +
-                                      cii] = xtmp;
-                                sci_x[SCL_CL_Y_OFFSET(atom->siclusters[sci].nclusters) +
-                                      cii] = ytmp;
-                                sci_x[SCL_CL_Z_OFFSET(atom->siclusters[sci].nclusters) +
-                                      cii] = ztmp;
-                                sci_v[SCL_CL_X_OFFSET(atom->siclusters[sci].nclusters) +
-                                      cii] = atom->vx[i];
-                                sci_v[SCL_CL_Y_OFFSET(atom->siclusters[sci].nclusters) +
-                                      cii] = atom->vy[i];
-                                sci_v[SCL_CL_Z_OFFSET(atom->siclusters[sci].nclusters) +
-                                      cii] = atom->vz[i];
+                                sci_x[SCL_X_OFFSET + cii] = xtmp;
+                                sci_x[SCL_Y_OFFSET + cii] = ytmp;
+                                sci_x[SCL_Z_OFFSET + cii] = ztmp;
+                                sci_v[SCL_X_OFFSET + cii] = atom->vx[i];
+                                sci_v[SCL_Y_OFFSET + cii] = atom->vy[i];
+                                sci_v[SCL_Z_OFFSET + cii] = atom->vz[i];
+                                sci_t[cii] = atom->type[i];
 
                                 // TODO: To create the bounding boxes faster, we can use
                                 // SIMD operations
@@ -1551,19 +1546,18 @@ void buildSuperclusters(Atom* atom)
                                     bbmaxz = ztmp;
                                 }
 
-                                ci_type[cii] = atom->type[i];
                                 atom->iclusters[ci].natoms++;
+                                atom->siclusters[ci].natoms++;
                             } else {
                                 ci_x[CL_X_OFFSET + cii] = INFINITY;
                                 ci_x[CL_Y_OFFSET + cii] = INFINITY;
                                 ci_x[CL_Z_OFFSET + cii] = INFINITY;
+                                ci_t[cii]               = 0;
 
-                                sci_x[SCL_CL_X_OFFSET(atom->siclusters[sci].nclusters) +
-                                      cii] = INFINITY;
-                                sci_x[SCL_CL_Y_OFFSET(atom->siclusters[sci].nclusters) +
-                                      cii] = INFINITY;
-                                sci_x[SCL_CL_Z_OFFSET(atom->siclusters[sci].nclusters) +
-                                      cii] = INFINITY;
+                                sci_x[SCL_X_OFFSET + cii] = INFINITY;
+                                sci_x[SCL_Y_OFFSET + cii] = INFINITY;
+                                sci_x[SCL_Z_OFFSET + cii] = INFINITY;
+                                sci_t[cii]               = 0;
                             }
 
                             ac++;

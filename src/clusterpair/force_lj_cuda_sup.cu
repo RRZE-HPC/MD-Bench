@@ -222,6 +222,10 @@ __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
     MD_FLOAT epsilon)
 {
 
+    /*
+    ci = sci * c_superClusterSize + tidxj;
+    ai = ci * c_clusterSize + tidxi;
+    */
     unsigned int sci_pos  = blockDim.x * blockIdx.x + threadIdx.x;
     unsigned int scii_pos = blockDim.y * blockIdx.y + threadIdx.y;
     unsigned int cjj_pos  = blockDim.z * blockIdx.z + threadIdx.z;
