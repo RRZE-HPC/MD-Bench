@@ -78,9 +78,7 @@ ci_x[CL_Y_OFFSET + cii], ci_x[CL_Z_OFFSET + cii]);
 }
  */
 
-void verifyLayout(Atom* atom)
-{
-
+void verifyLayout(Atom* atom) {
     printf("verifyLayout start\r\n");
 
     /*
@@ -231,8 +229,7 @@ void verifyLayout(Atom* atom)
      */
 }
 
-void checkAlignment(Atom* atom)
-{
+void checkAlignment(Atom* atom) {
     alignDataToSuperclusters(atom);
 
     for (int sci = 4; sci < 6; sci++) {
@@ -266,8 +263,7 @@ void checkAlignment(Atom* atom)
     }
 }
 
-void showSuperclusters(Atom* atom)
-{
+void showSuperclusters(Atom* atom) {
     for (int sci = 4; sci < 6; sci++) {
         MD_FLOAT* sci_x = &atom->scl_x[SCI_VECTOR_BASE_INDEX(sci)];
 
@@ -285,31 +281,29 @@ void showSuperclusters(Atom* atom)
     }
 }
 
-void printNeighs(Atom* atom, Neighbor* neighbor)
-{
+void printNeighs(Atom* atom, Neighbor* neighbor) {
     for (int i = 0; i < atom->Nclusters_local; ++i) {
         int neigh_num = neighbor->numneigh[i];
         for (int j = 0; j < neigh_num; j++) {
             printf("%d ", neighbor->neighbors[i * neighbor->maxneighs + j]);
         }
+
         printf("\r\n");
     }
 }
 
-void printClusterIndices(Atom* atom)
-{
+void printClusterIndices(Atom* atom) {
     for (int i = 0; i < atom->Nsclusters_local; ++i) {
         int clusters_num = atom->siclusters[i].nclusters;
         for (int j = 0; j < clusters_num; j++) {
             printf("%d ", atom->icluster_idx[j + SCLUSTER_SIZE * i]);
         }
+
         printf("\r\n");
     }
 }
 
-void verifyNeigh(Atom* atom, Neighbor* neighbor)
-{
-
+void verifyNeigh(Atom* atom, Neighbor* neighbor) {
     buildNeighbor(atom, neighbor);
     int* numneigh  = (int*)malloc(atom->Nclusters_local * sizeof(int));
     int* neighbors = (int*)malloc(
