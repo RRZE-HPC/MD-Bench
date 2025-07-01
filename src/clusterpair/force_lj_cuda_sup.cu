@@ -42,108 +42,6 @@ extern MD_FLOAT* cuda_scl_v;
 extern MD_FLOAT* cuda_scl_f;
 }
 
-extern "C" void alignDataToSuperclusters(Atom* atom)
-{
-    for (int sci = 0; sci < atom->Nsclusters_local; sci++) {
-        const unsigned int scl_offset = sci * SCLUSTER_SIZE * 3 * CLUSTER_M;
-
-        for (int ci = 0, scci = scl_offset; ci < atom->siclusters[sci].nclusters;
-             ci++, scci += CLUSTER_M) {
-
-            MD_FLOAT* ci_x = &atom->cl_x[CI_VECTOR_BASE_INDEX(
-                atom->icluster_idx[SCLUSTER_SIZE * sci + ci])];
-            MD_FLOAT* ci_v = &atom->cl_v[CI_VECTOR_BASE_INDEX(
-                atom->icluster_idx[SCLUSTER_SIZE * sci + ci])];
-            MD_FLOAT* ci_f = &atom->cl_f[CI_VECTOR_BASE_INDEX(
-                atom->icluster_idx[SCLUSTER_SIZE * sci + ci])];
-
-            /*
-            MD_FLOAT *ci_x =
-            &atom->cl_x[CI_VECTOR_BASE_INDEX(atom->siclusters[sci].iclusters[ci])];
-            MD_FLOAT *ci_v =
-            &atom->cl_v[CI_VECTOR_BASE_INDEX(atom->siclusters[sci].iclusters[ci])];
-            MD_FLOAT *ci_f =
-            &atom->cl_f[CI_VECTOR_BASE_INDEX(atom->siclusters[sci].iclusters[ci])];
-             */
-
-            memcpy(&atom->scl_x[scci], &ci_x[0], CLUSTER_M * sizeof(MD_FLOAT));
-            memcpy(&atom->scl_x[scci + SCLUSTER_SIZE * CLUSTER_M],
-                &ci_x[0 + CLUSTER_M],
-                CLUSTER_M * sizeof(MD_FLOAT));
-            memcpy(&atom->scl_x[scci + 2 * SCLUSTER_SIZE * CLUSTER_M],
-                &ci_x[0 + 2 * CLUSTER_M],
-                CLUSTER_M * sizeof(MD_FLOAT));
-
-            memcpy(&atom->scl_v[scci], &ci_v[0], CLUSTER_M * sizeof(MD_FLOAT));
-            memcpy(&atom->scl_v[scci + SCLUSTER_SIZE * CLUSTER_M],
-                &ci_v[0 + CLUSTER_M],
-                CLUSTER_M * sizeof(MD_FLOAT));
-            memcpy(&atom->scl_v[scci + 2 * SCLUSTER_SIZE * CLUSTER_M],
-                &ci_v[0 + 2 * CLUSTER_M],
-                CLUSTER_M * sizeof(MD_FLOAT));
-
-            memcpy(&atom->scl_f[scci], &ci_f[0], CLUSTER_M * sizeof(MD_FLOAT));
-            memcpy(&atom->scl_f[scci + SCLUSTER_SIZE * CLUSTER_M],
-                &ci_f[0 + CLUSTER_M],
-                CLUSTER_M * sizeof(MD_FLOAT));
-            memcpy(&atom->scl_f[scci + 2 * SCLUSTER_SIZE * CLUSTER_M],
-                &ci_f[0 + 2 * CLUSTER_M],
-                CLUSTER_M * sizeof(MD_FLOAT));
-        }
-    }
-}
-
-extern "C" void alignDataFromSuperclusters(Atom* atom)
-{
-    for (int sci = 0; sci < atom->Nsclusters_local; sci++) {
-        const unsigned int scl_offset = sci * SCLUSTER_SIZE * 3 * CLUSTER_M;
-
-        for (int ci = 0, scci = scl_offset; ci < atom->siclusters[sci].nclusters;
-             ci++, scci += CLUSTER_M) {
-
-            MD_FLOAT* ci_x = &atom->cl_x[CI_VECTOR_BASE_INDEX(
-                atom->icluster_idx[SCLUSTER_SIZE * sci + ci])];
-            MD_FLOAT* ci_v = &atom->cl_v[CI_VECTOR_BASE_INDEX(
-                atom->icluster_idx[SCLUSTER_SIZE * sci + ci])];
-            MD_FLOAT* ci_f = &atom->cl_f[CI_VECTOR_BASE_INDEX(
-                atom->icluster_idx[SCLUSTER_SIZE * sci + ci])];
-
-            /*
-            MD_FLOAT *ci_x =
-            &atom->cl_x[CI_VECTOR_BASE_INDEX(atom->siclusters[sci].iclusters[ci])];
-            MD_FLOAT *ci_v =
-            &atom->cl_v[CI_VECTOR_BASE_INDEX(atom->siclusters[sci].iclusters[ci])];
-            MD_FLOAT *ci_f =
-            &atom->cl_f[CI_VECTOR_BASE_INDEX(atom->siclusters[sci].iclusters[ci])];
-             */
-
-            memcpy(&ci_x[0], &atom->scl_x[scci], CLUSTER_M * sizeof(MD_FLOAT));
-            memcpy(&ci_x[0 + CLUSTER_M],
-                &atom->scl_x[scci + SCLUSTER_SIZE * CLUSTER_M],
-                CLUSTER_M * sizeof(MD_FLOAT));
-            memcpy(&ci_x[0 + 2 * CLUSTER_M],
-                &atom->scl_x[scci + 2 * SCLUSTER_SIZE * CLUSTER_M],
-                CLUSTER_M * sizeof(MD_FLOAT));
-
-            memcpy(&ci_v[0], &atom->scl_v[scci], CLUSTER_M * sizeof(MD_FLOAT));
-            memcpy(&ci_v[0 + CLUSTER_M],
-                &atom->scl_v[scci + SCLUSTER_SIZE * CLUSTER_M],
-                CLUSTER_M * sizeof(MD_FLOAT));
-            memcpy(&ci_v[0 + 2 * CLUSTER_M],
-                &atom->scl_v[scci + 2 * SCLUSTER_SIZE * CLUSTER_M],
-                CLUSTER_M * sizeof(MD_FLOAT));
-
-            memcpy(&ci_f[0], &atom->scl_f[scci], CLUSTER_M * sizeof(MD_FLOAT));
-            memcpy(&ci_f[0 + CLUSTER_M],
-                &atom->scl_f[scci + SCLUSTER_SIZE * CLUSTER_M],
-                CLUSTER_M * sizeof(MD_FLOAT));
-            memcpy(&ci_f[0 + 2 * CLUSTER_M],
-                &atom->scl_f[scci + 2 * SCLUSTER_SIZE * CLUSTER_M],
-                CLUSTER_M * sizeof(MD_FLOAT));
-        }
-    }
-}
-
 __global__ void cudaInitialIntegrateSup_warp(MD_FLOAT* cuda_cl_x,
     MD_FLOAT* cuda_cl_v,
     MD_FLOAT* cuda_cl_f,
@@ -219,78 +117,59 @@ __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
     int maxneighs,
     MD_FLOAT cutforcesq,
     MD_FLOAT sigma6,
-    MD_FLOAT epsilon)
-{
+    MD_FLOAT epsilon) {
 
-    /*
-    ci = sci * c_superClusterSize + tidxj;
-    ai = ci * c_clusterSize + tidxi;
-    */
-    unsigned int sci_pos  = blockDim.x * blockIdx.x + threadIdx.x;
-    unsigned int scii_pos = blockDim.y * blockIdx.y + threadIdx.y;
-    unsigned int cjj_pos  = blockDim.z * blockIdx.z + threadIdx.z;
-    if ((sci_pos >= Nsclusters_local) || (scii_pos >= SCLUSTER_M) ||
-        (cjj_pos >= CLUSTER_N))
+    unsigned int sci = blockIdx.x;
+    //unsigned int ci = sci * SCLUSTER_SIZE + threadIdx.y;
+    unsigned int cii = threadIdx.x;
+    unsigned int cjj = threadIdx.y;
+
+    if ((sci >= Nsclusters_local) || (cii >= SCLUSTER_M) || (cjj >= CLUSTER_N)) {
         return;
+    }
 
-    unsigned int ci_pos  = scii_pos / CLUSTER_M;
-    unsigned int cii_pos = scii_pos % CLUSTER_M;
-
-    if (ci_pos >= cuda_nclusters[sci_pos]) return;
-
-    // int ci_cj0 = CJ0_FROM_CI(ci_pos);
-    int ci_vec_base = SCI_VECTOR_BASE_INDEX(sci_pos);
+    int ci_vec_base = SCI_VECTOR_BASE_INDEX(sci);
     MD_FLOAT* ci_x  = &cuda_cl_x[ci_vec_base];
     MD_FLOAT* ci_f  = &cuda_cl_f[ci_vec_base];
+    MD_FLOAT fix  = 0;
+    MD_FLOAT fiy  = 0;
+    MD_FLOAT fiz  = 0;
 
-    // int numneighs = cuda_numneigh[ci_pos];
-    int numneighs = cuda_numneigh[cuda_iclusters[SCLUSTER_SIZE * sci_pos + ci_pos]];
-
-    for (int k = 0; k < numneighs; k++) {
-        int glob_j = (&cuda_neighs[cuda_iclusters[SCLUSTER_SIZE * sci_pos + ci_pos] *
-                                   maxneighs])[k];
-        int scj    = glob_j / SCLUSTER_SIZE;
-        // TODO Make cj accessible from super cluster data alignment (not reachable right
-        // now)
-        int cj = SCJ_VECTOR_BASE_INDEX(scj) + CLUSTER_M * (glob_j % SCLUSTER_SIZE);
-        int cj_vec_base = cj;
+    for (int k = 0; k < cuda_numneigh[sci]; k++) {
+        int cj = cuda_neighs[sci * maxneighs + k];
+        int cj_vec_base = CJ_VECTOR_BASE_INDEX(scj);
         MD_FLOAT* cj_x  = &cuda_cl_x[cj_vec_base];
         MD_FLOAT* cj_f  = &cuda_cl_f[cj_vec_base];
+        MD_FLOAT xjtmp = cj_x[SCL_X_OFFSET + cjj];
+        MD_FLOAT yjtmp = cj_x[SCL_Y_OFFSET + cjj];
+        MD_FLOAT zjtmp = cj_x[SCL_Z_OFFSET + cjj];
 
-        MD_FLOAT xtmp = ci_x[SCL_CL_X_OFFSET(ci_pos) + cii_pos];
-        MD_FLOAT ytmp = ci_x[SCL_CL_Y_OFFSET(ci_pos) + cii_pos];
-        MD_FLOAT ztmp = ci_x[SCL_CL_Z_OFFSET(ci_pos) + cii_pos];
-        MD_FLOAT fix  = 0;
-        MD_FLOAT fiy  = 0;
-        MD_FLOAT fiz  = 0;
+        for(int ci = 0; ci < SCLUSTER_SIZE; ci++) {
+            int cond = cj / SCLUSTER_SIZE != sci ||
+                    threadIdx.y != cj % SCLUSTER_SIZE ||
+                    threadIdx.x != cjj;
 
-        // int cond = ci_cj0 != cj || cii_pos != cjj_pos || scj != sci_pos;
-        int cond = (glob_j != cuda_iclusters[SCLUSTER_SIZE * sci_pos + ci_pos] &&
-                    cii_pos != cjj_pos);
+            if (cond) {
+                MD_FLOAT delx = ci_x[SCL_X_OFFSET + cii] - xjtmp;
+                MD_FLOAT dely = ci_x[SCL_Y_OFFSET + cii] - yjtmp;
+                MD_FLOAT delz = ci_x[SCL_Z_OFFSET + cii] - zjtmp
+                MD_FLOAT rsq  = delx * delx + dely * dely + delz * delz;
 
-        if (cond) {
-            MD_FLOAT delx = xtmp - cj_x[SCL_CL_X_OFFSET(ci_pos) + cjj_pos];
-            MD_FLOAT dely = ytmp - cj_x[SCL_CL_Y_OFFSET(ci_pos) + cjj_pos];
-            MD_FLOAT delz = ztmp - cj_x[SCL_CL_Z_OFFSET(ci_pos) + cjj_pos];
-            MD_FLOAT rsq  = delx * delx + dely * dely + delz * delz;
-            if (rsq < cutforcesq) {
-                MD_FLOAT sr2   = 1.0 / rsq;
-                MD_FLOAT sr6   = sr2 * sr2 * sr2 * sigma6;
-                MD_FLOAT force = 48.0 * sr6 * (sr6 - 0.5) * sr2 * epsilon;
+                if (rsq < cutforcesq) {
+                    MD_FLOAT sr2   = 1.0 / rsq;
+                    MD_FLOAT sr6   = sr2 * sr2 * sr2 * sigma6;
+                    MD_FLOAT force = 48.0 * sr6 * (sr6 - 0.5) * sr2 * epsilon;
 
-                if (half_neigh) {
-                    atomicAdd(&cj_f[SCL_CL_X_OFFSET(ci_pos) + cjj_pos], -delx * force);
-                    atomicAdd(&cj_f[SCL_CL_Y_OFFSET(ci_pos) + cjj_pos], -dely * force);
-                    atomicAdd(&cj_f[SCL_CL_Z_OFFSET(ci_pos) + cjj_pos], -delz * force);
+                    if (half_neigh) {
+                        atomicAdd(&cj_f[SCL_X_OFFSET + cjj], -delx * force);
+                        atomicAdd(&cj_f[SCL_Y_OFFSET + cjj], -dely * force);
+                        atomicAdd(&cj_f[SCL_Z_OFFSET + cjj], -delz * force);
+                    }
+
+                    atomicAdd(&ci_f[SCL_X_OFFSET + cii], delx * force);
+                    atomicAdd(&ci_f[SCL_Y_OFFSET + cii], dely * force);
+                    atomicAdd(&ci_f[SCL_Z_OFFSET + cii], delz * force);
                 }
-
-                fix += delx * force;
-                fiy += dely * force;
-                fiz += delz * force;
-
-                atomicAdd(&ci_f[SCL_CL_X_OFFSET(ci_pos) + cii_pos], fix);
-                atomicAdd(&ci_f[SCL_CL_Y_OFFSET(ci_pos) + cii_pos], fiy);
-                atomicAdd(&ci_f[SCL_CL_Z_OFFSET(ci_pos) + cii_pos], fiz);
             }
         }
     }

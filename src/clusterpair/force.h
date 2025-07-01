@@ -69,8 +69,8 @@ double computeForceLJCudaSup(
 extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #undef VECTOR_WIDTH
 #define VECTOR_WIDTH 8
-#define CLUSTERPAIR_KERNEL_CUDA
-#define KERNEL_NAME "CUDA"
+#define CLUSTERPAIR_KERNEL_GPU
+#define KERNEL_NAME "GPU"
 #define CLUSTER_M   8
 #define CLUSTER_N   VECTOR_WIDTH
 #define UNROLL_J    1
@@ -148,10 +148,7 @@ extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #error "Cluster N dimension can be only 2, 4 and 8"
 #endif
 
-#define CI_SCALAR_BASE_INDEX(a)  (CI_BASE_INDEX(a, 1))
-#define CI_VECTOR_BASE_INDEX(a)  (CI_BASE_INDEX(a, 3))
-#define CJ_SCALAR_BASE_INDEX(a)  (CJ_BASE_INDEX(a, 1))
-#define CJ_VECTOR_BASE_INDEX(a)  (CJ_BASE_INDEX(a, 3))
+#ifdef CLUSTERPAIR_KERNEL_CUDA
 
 // Super-clustering macros
 #if defined(USE_SUPER_CLUSTERS) && CLUSTER_M != CLUSTER_N
@@ -166,9 +163,21 @@ extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #define SCL_Y_OFFSET             (1 * CLUSTER_N * SCLUSTER_SIZE)
 #define SCL_Z_OFFSET             (2 * CLUSTER_N * SCLUSTER_SIZE)
 #define SCI_BASE_INDEX(a, b)     ((a) * CLUSTER_N * SCLUSTER_SIZE * (b))
-#define SCJ_BASE_INDEX(a, b)     ((a) * CLUSTER_N * SCLUSTER_SIZE * (b))
 #define SCI_SCALAR_BASE_INDEX(a) (SCI_BASE_INDEX(a, 1))
 #define SCI_VECTOR_BASE_INDEX(a) (SCI_BASE_INDEX(a, 3))
+#define SCI_FROM_CJ(a)           ((a) / SCLUSTER_SIZE)
+
+#ifdef USE_SUPER_CLUSTERS
+#undef CJ_BASE_INDEX
+#define CJ_BASE_INDEX(a, b)      ((((a) / SCLUSTER_SIZE) * SCLUSTER_SIZE * CLUSTER_N * (b)) + \
+                                  (((a) % SCLUSTER_SIZE) * CLUSTER_N))
+#endif
+#endif
+
+#define CI_SCALAR_BASE_INDEX(a)  (CI_BASE_INDEX(a, 1))
+#define CI_VECTOR_BASE_INDEX(a)  (CI_BASE_INDEX(a, 3))
+#define CJ_SCALAR_BASE_INDEX(a)  (CJ_BASE_INDEX(a, 1))
+#define CJ_VECTOR_BASE_INDEX(a)  (CJ_BASE_INDEX(a, 3))
 
 /*
 #elif CLUSTER_M == CLUSTER_N * 2 // M > N

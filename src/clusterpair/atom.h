@@ -15,15 +15,6 @@
 
 #define DELTA 100000
 
-#define CI_SCALAR_BASE_INDEX(a)  (CI_BASE_INDEX(a, 1))
-#define CI_VECTOR_BASE_INDEX(a)  (CI_BASE_INDEX(a, 3))
-#define CJ_SCALAR_BASE_INDEX(a)  (CJ_BASE_INDEX(a, 1))
-#define CJ_VECTOR_BASE_INDEX(a)  (CJ_BASE_INDEX(a, 3))
-#define SCI_SCALAR_BASE_INDEX(a) (SCI_BASE_INDEX(a, 1))
-#define SCI_VECTOR_BASE_INDEX(a) (SCI_BASE_INDEX(a, 3))
-#define SCJ_SCALAR_BASE_INDEX(a) (SCJ_BASE_INDEX(a, 1))
-#define SCJ_VECTOR_BASE_INDEX(a) (SCJ_BASE_INDEX(a, 3))
-
 typedef struct {
     int natoms;
     MD_FLOAT bbminx, bbmaxx;
@@ -66,18 +57,12 @@ typedef struct {
     unsigned int masks_2xnn_fn[8];
     unsigned int masks_4xn_hn[16];
     unsigned int masks_4xn_fn[16];
-    // Info Subdomain
-    Box mybox;
     // Data in super-cluster format
     int Nsclusters, Nsclusters_local, Nsclusters_ghost, Nsclusters_max;
-    MD_FLOAT* scl_x;
-    MD_FLOAT* scl_v;
-    MD_FLOAT* scl_f;
-    int* scl_t;
-    int* scl_type;
-    int* icluster_idx;
     SuperCluster* siclusters;
     int* sicluster_bin;
+    // Info Subdomain
+    Box mybox;
 } Atom;
 
 extern int get_ncj_from_nci(int nci);

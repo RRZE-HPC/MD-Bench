@@ -88,16 +88,11 @@ void initAtom(Atom* atom) {
     atom->icluster_bin    = NULL;
 
     // Data for "super-cluster" strategy
-    atom->scl_x            = NULL;
-    atom->scl_v            = NULL;
-    atom->scl_f            = NULL;
     atom->Nsclusters       = 0;
     atom->Nsclusters_local = 0;
     atom->Nsclusters_ghost = 0;
     atom->Nsclusters_max   = 0;
-    atom->scl_type         = NULL;
     atom->siclusters       = NULL;
-    atom->icluster_idx     = NULL;
     atom->sicluster_bin    = NULL;
 
     initMasks(atom);
@@ -819,30 +814,11 @@ void growSuperClusters(Atom* atom) {
         ALIGNMENT,
         atom->Nsclusters_max * sizeof(SuperCluster),
         nold * sizeof(SuperCluster));
-    atom->icluster_idx  = (int*)reallocate(atom->icluster_idx,
-        ALIGNMENT,
-        atom->Nsclusters_max * SCLUSTER_SIZE * sizeof(int),
-        nold * SCLUSTER_SIZE * sizeof(int));
     atom->sicluster_bin = (int*)reallocate(atom->sicluster_bin,
         ALIGNMENT,
         atom->Nsclusters_max * sizeof(int),
         nold * sizeof(int));
-    // atom->scl_type = (int*) reallocate(atom->scl_type, ALIGNMENT, atom->Nclusters_max *
-    // CLUSTER_M * SCLUSTER_SIZE * sizeof(int), nold * CLUSTER_M * SCLUSTER_SIZE *
-    // sizeof(int));
-
-    atom->scl_x = (MD_FLOAT*)reallocate(atom->scl_x,
-        ALIGNMENT,
-        atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT),
-        nold * SCLUSTER_M * 3 * sizeof(MD_FLOAT));
-    atom->scl_f = (MD_FLOAT*)reallocate(atom->scl_f,
-        ALIGNMENT,
-        atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT),
-        nold * SCLUSTER_M * 3 * sizeof(MD_FLOAT));
-    atom->scl_v = (MD_FLOAT*)reallocate(atom->scl_v,
-        ALIGNMENT,
-        atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT),
-        nold * SCLUSTER_M * 3 * sizeof(MD_FLOAT));
+    // TODO: Evaluate reallocation of cluster arrays based on supercluster size
 }
 
 /* MPI added*/
@@ -935,7 +911,7 @@ void unpackForward(Atom* atom, int nc, int c0, MD_FLOAT* buf) {
 }
 
 int packGhost(Atom* atom, int cj, MD_FLOAT* buf, int* pbc) {
-    // #of elements per cluster natoms,x0,y0,z0,type_0, . .
+    // # of elements per cluster natoms,x0,y0,z0,type_0, . .
     // ,xn,yn,zn,type_n,bbminx,bbmaxxy,bbminy,bbmaxy,bbminz,bbmaxz count = 4*N_CLUSTER+7,
     // if N_CLUSTER =4 => count = 23 value/cluster + trackpbc[x] + trackpbc[y] +
     // trackpbc[z]
