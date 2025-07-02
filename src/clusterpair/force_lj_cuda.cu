@@ -127,15 +127,6 @@ extern "C" void initDevice(Parameter* param, Atom* atom, Neighbor* neighbor)
         cuda_iclusters = (int*)allocateGPU(
             atom->Nsclusters_max * SCLUSTER_SIZE * sizeof(int));
         cuda_nclusters = (int*)allocateGPU(atom->Nsclusters_max * sizeof(int));
-        cuda_scl_x     = (MD_FLOAT*)allocateGPU(
-            atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT));
-        cuda_scl_v = (MD_FLOAT*)allocateGPU(
-            atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT));
-        cuda_scl_f = (MD_FLOAT*)allocateGPU(
-            atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT));
-#ifndef ONE_ATOM_TYPE
-        cuda_scl_t = (int*)allocateGPU(atom->Nsclusters_max * SCLUSTER_M * sizeof(int));
-#endif
     }
 }
 
@@ -183,24 +174,7 @@ extern "C" void copyDataToCUDADevice(Parameter* param, Atom* atom, Neighbor* nei
             cuda_iclusters = (int*)allocateGPU(
                 atom->Nsclusters_max * SCLUSTER_SIZE * sizeof(int));
             cuda_nclusters = (int*)allocateGPU(atom->Nsclusters_max * sizeof(int));
-
-            cuda_scl_x = (MD_FLOAT*)allocateGPU(
-                atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT));
-            cuda_scl_v = (MD_FLOAT*)allocateGPU(
-                atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT));
-            cuda_scl_f = (MD_FLOAT*)allocateGPU(
-                atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT));
         }
-
-        memcpyToGPU(cuda_scl_x,
-            atom->scl_x,
-            atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT));
-        memcpyToGPU(cuda_scl_v,
-            atom->scl_v,
-            atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT));
-        memcpyToGPU(cuda_scl_f,
-            atom->scl_f,
-            atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT));
     }
 
     memcpyToGPU(cuda_numneigh, neighbor->numneigh, atom->Nclusters_local * sizeof(int));
@@ -217,20 +191,6 @@ extern "C" void copyDataFromCUDADevice(Parameter* param, Atom* atom)
     memcpyFromGPU(atom->cl_v,
         cuda_cl_v,
         atom->Nclusters_max * CLUSTER_M * 3 * sizeof(MD_FLOAT));
-
-    if (param->super_clustering) {
-        memcpyFromGPU(atom->scl_x,
-            cuda_scl_x,
-            atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT));
-        memcpyFromGPU(atom->scl_v,
-            cuda_scl_v,
-            atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT));
-        memcpyFromGPU(atom->scl_f,
-            cuda_scl_f,
-            atom->Nsclusters_max * SCLUSTER_M * 3 * sizeof(MD_FLOAT));
-
-        // alignDataFromSuperclusters(atom);
-    }
 }
 
 extern "C" void cudaDeviceFree(Parameter* param)

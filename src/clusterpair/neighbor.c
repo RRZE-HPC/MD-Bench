@@ -800,15 +800,17 @@ void buildNeighborSuperclusters(Atom* atom, Neighbor* neighbor) {
                             if (d_bb_sq < cutneighsq) {
                                 int is_neighbor = (d_bb_sq < rbb_sq) ? 1 : 0;
                                 if (!is_neighbor) {
-                                    for (int ci = 0; ci < atom->siclusters[sci].nclusters;
-                                         ci++) {
-                                        
+                                    for (int sci_ci = 0;
+                                         sci_ci < atom->siclusters[sci].nclusters;
+                                         sci_ci++) {
+
+                                        const int ci = sci * SCLUSTER_SIZE + sci_ci;
                                         int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
-                                        MD_FLOAT* ci_x  = &atom->cl_x[sci_vec_base + ci * CLUSTER_M];
+                                        MD_FLOAT* ci_x  = &atom->cl_x[sci_vec_base + sci_ci * CLUSTER_M];
                                         MD_FLOAT* cj_x  = &atom->cl_x[cj_vec_base];
 
                                         for (int cii = 0;
-                                             cii < atom->iclusters[icluster_idx].natoms;
+                                             cii < atom->iclusters[ci].natoms;
                                              cii++) {
                                             for (int cjj = 0;
                                                  cjj < atom->jclusters[cj].natoms;
@@ -1103,14 +1105,14 @@ void pruneNeighborSuperclusters(Parameter* param, Atom* atom, Neighbor* neighbor
                 int is_neighbor = 0;
                 int cj          = neighs[k];
 
-                for (int ci = 0; ci < atom->siclusters[sci].nclusters; ci++) {
-                    const int icluster_idx = atom->icluster_idx[SCLUSTER_SIZE * sci + ci];
-                    int ci_vec_base        = CI_VECTOR_BASE_INDEX(icluster_idx);
-                    int cj_vec_base        = CJ_VECTOR_BASE_INDEX(cj);
-                    MD_FLOAT* ci_x         = &atom->cl_x[ci_vec_base];
-                    MD_FLOAT* cj_x         = &atom->cl_x[cj_vec_base];
+                for (int sci_ci = 0; sci_ci < atom->siclusters[sci].nclusters; sci_ci++) {
+                    const int ci    = sci * SCLUSTER_SIZE + sci_ci;
+                    int ci_vec_base = SCI_VECTOR_BASE_INDEX(sci) + sci_ci * CLUSTER_M;
+                    int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
+                    MD_FLOAT* ci_x  = &atom->cl_x[ci_vec_base];
+                    MD_FLOAT* cj_x  = &atom->cl_x[cj_vec_base];
 
-                    for (int cii = 0; cii < atom->iclusters[icluster_idx].natoms; cii++) {
+                    for (int cii = 0; cii < atom->iclusters[ci].natoms; cii++) {
                         for (int cjj = 0; cjj < atom->jclusters[cj].natoms; cjj++) {
                             MD_FLOAT delx = ci_x[CL_X_OFFSET + cii] -
                                             cj_x[CL_X_OFFSET + cjj];
@@ -1516,7 +1518,6 @@ void buildSuperclusters(Atom* atom) {
                                 }
 
                                 atom->iclusters[ci].natoms++;
-                                atom->siclusters[ci].natoms++;
                             } else {
                                 sci_x[SCL_X_OFFSET + cii] = INFINITY;
                                 sci_x[SCL_Y_OFFSET + cii] = INFINITY;

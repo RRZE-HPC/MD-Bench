@@ -45,20 +45,23 @@ int write_super_clusters_to_vtk_file(const char* filename, Atom* atom, int times
     fprintf(fp, "Particle data\n");
     fprintf(fp, "ASCII\n");
     fprintf(fp, "DATASET UNSTRUCTURED_GRID\n");
-    fprintf(fp, "POINTS %d double\n", atom->Nsclusters_local * SCLUSTER_M);
-    for (int ci = 0; ci < atom->Nsclusters_local; ++ci) {
+    fprintf(fp, "POINTS %d double\n", atom->Nsclusters_local * SCLUSTER_SIZE * CLUSTER_M);
 
+    for (int sci = 0; sci < atom->Nsclusters_local; sci++) {
         int factor = (rand() % 1000) + 1;
-        // double factor = ci * 10;
+        // double factor = sci * 10;
 
-        int ci_vec_base = SCI_VECTOR_BASE_INDEX(ci);
-        MD_FLOAT* ci_x  = &atom->scl_x[ci_vec_base];
-        for (int cii = 0; cii < SCLUSTER_M; ++cii) {
-            fprintf(fp,
-                "%.4f %.4f %.4f\n",
-                ci_x[SCL_X_OFFSET + cii] * factor,
-                ci_x[SCL_Y_OFFSET + cii] * factor,
-                ci_x[SCL_Z_OFFSET + cii] * factor);
+        int sci_vec_base = SCI_VECTOR_BASE_INDEX(sci);
+        for (int sci_ci = 0; sci_ci < SCLUSTER_SIZE; ++sci_ci) {
+            MD_FLOAT* ci_x  = &atom->cl_x[sci_vec_base + sci_ci * CLUSTER_M];
+
+            for (int cii = 0; cii < CLUSTER_M; ++cii) {
+                fprintf(fp,
+                    "%.4f %.4f %.4f\n",
+                    ci_x[SCL_X_OFFSET + cii] * factor,
+                    ci_x[SCL_Y_OFFSET + cii] * factor,
+                    ci_x[SCL_Z_OFFSET + cii] * factor);
+            }
         }
     }
     fprintf(fp, "\n\n");

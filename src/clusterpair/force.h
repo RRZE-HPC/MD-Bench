@@ -148,8 +148,6 @@ extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #error "Cluster N dimension can be only 2, 4 and 8"
 #endif
 
-#ifdef CLUSTERPAIR_KERNEL_CUDA
-
 // Super-clustering macros
 #if defined(USE_SUPER_CLUSTERS) && CLUSTER_M != CLUSTER_N
 #error "For super-clusters, M must be equal to N"
@@ -167,11 +165,11 @@ extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #define SCI_VECTOR_BASE_INDEX(a) (SCI_BASE_INDEX(a, 3))
 #define SCI_FROM_CJ(a)           ((a) / SCLUSTER_SIZE)
 
-#ifdef USE_SUPER_CLUSTERS
+#if defined(USE_SUPER_CLUSTERS) && defined(CLUSTERPAIR_KERNEL_CUDA)
+// For super-clusters, we need to redefine the CJ_BASE_INDEX macro
 #undef CJ_BASE_INDEX
 #define CJ_BASE_INDEX(a, b)      ((((a) / SCLUSTER_SIZE) * SCLUSTER_SIZE * CLUSTER_N * (b)) + \
                                   (((a) % SCLUSTER_SIZE) * CLUSTER_N))
-#endif
 #endif
 
 #define CI_SCALAR_BASE_INDEX(a)  (CI_BASE_INDEX(a, 1))

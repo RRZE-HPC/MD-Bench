@@ -137,7 +137,7 @@ __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
 
     for (int k = 0; k < cuda_numneigh[sci]; k++) {
         int cj = cuda_neighs[sci * maxneighs + k];
-        int cj_vec_base = CJ_VECTOR_BASE_INDEX(scj);
+        int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
         MD_FLOAT* cj_x  = &cuda_cl_x[cj_vec_base];
         MD_FLOAT* cj_f  = &cuda_cl_f[cj_vec_base];
         MD_FLOAT xjtmp = cj_x[SCL_X_OFFSET + cjj];
@@ -152,7 +152,7 @@ __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
             if (cond) {
                 MD_FLOAT delx = ci_x[SCL_X_OFFSET + cii] - xjtmp;
                 MD_FLOAT dely = ci_x[SCL_Y_OFFSET + cii] - yjtmp;
-                MD_FLOAT delz = ci_x[SCL_Z_OFFSET + cii] - zjtmp
+                MD_FLOAT delz = ci_x[SCL_Z_OFFSET + cii] - zjtmp;
                 MD_FLOAT rsq  = delx * delx + dely * dely + delz * delz;
 
                 if (rsq < cutforcesq) {
@@ -237,10 +237,6 @@ extern "C" double computeForceLJCudaSup(
             // &atom->siclusters[sci].iclusters, sizeof(int) *
             // atom->siclusters[sci].nclusters);
         }
-
-        memcpyToGPU(cuda_iclusters,
-            atom->icluster_idx,
-            atom->Nsclusters_max * SCLUSTER_SIZE * sizeof(int));
 
         isReneighboured = 0;
     }
