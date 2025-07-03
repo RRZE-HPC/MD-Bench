@@ -31,7 +31,7 @@ void initForce(Parameter* param)
         } else {
             computeForce = computeForceLJ2xnnFullNeigh;
         }
-#elif defined(CLUSTERPAIR_KERNEL_CUDA)
+#elif defined(CLUSTERPAIR_KERNEL_GPU)
         if (param->super_clustering) {
             computeForce = computeForceLJCudaSup;
         } else {
