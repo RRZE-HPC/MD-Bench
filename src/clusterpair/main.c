@@ -320,7 +320,7 @@ int main(int argc, char** argv)
             //updatePbc(&atom, &param, 0);
         } else {
 #ifdef CUDA_TARGET
-            copyDataFromCUDADevice(&atom);
+            copyDataFromCUDADevice(&param, &atom);
 #endif
             timer[UPDATE] += updateAtoms(&comm, &atom, &param); 
             if (param.balance && !((n + 1) % param.balance_every)){
@@ -329,7 +329,7 @@ int main(int argc, char** argv)
 
             timer[NEIGH] += reneighbour(&comm, &param, &atom, &neighbor);
 #ifdef CUDA_TARGET
-            copyDataToCUDADevice(&atom, &neighbor);
+            copyDataToCUDADevice(&param, &atom, &neighbor);
 #endif
         }
 #if defined(MEM_TRACER) || defined(INDEX_TRACER)
