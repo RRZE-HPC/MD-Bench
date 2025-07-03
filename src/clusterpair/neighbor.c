@@ -69,7 +69,11 @@ void initNeighbor(Neighbor* neighbor, Parameter* param) {
     bin_clusters        = NULL;
     bin_nclusters       = NULL;
     // neighbor->half_neigh      = param->half_neigh;
-    neighbor->maxneighs       = 150;
+    if(param->super_clustering) {
+        neighbor->maxneighs       = 800;
+    } else {
+        neighbor->maxneighs       = 200;
+    }
     neighbor->numneigh        = NULL;
     neighbor->numneigh_masked = NULL;
     neighbor->neighbors       = NULL;
@@ -872,8 +876,8 @@ void buildNeighborSuperclusters(Atom* atom, Neighbor* neighbor) {
         }
 
         if (resize) {
-            fprintf(stdout, "RESIZE %d\n", neighbor->maxneighs);
             neighbor->maxneighs = new_maxneighs * 1.2;
+            fprintf(stdout, "RESIZE %d\n", neighbor->maxneighs);
             free(neighbor->neighbors);
             neighbor->neighbors = (int*)malloc(
                 atom->Nmax * neighbor->maxneighs * sizeof(int));
