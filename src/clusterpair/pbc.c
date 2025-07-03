@@ -15,8 +15,6 @@
 #include <pbc.h>
 #include <util.h>
 
-#define DELTA 20000
-
 static int NmaxGhost;
 
 #ifdef CUDA_TARGET
