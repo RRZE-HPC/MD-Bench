@@ -76,13 +76,13 @@ double setup(Parameter* param, Eam* eam, Atom* atom, Neighbor* neighbor, Stats* 
         adjustThermo(param, atom);
     }
     buildClusters(atom);
-    defineJClusters(atom);
+    defineJClusters(param, atom);
 #ifdef _MPI
     ghostNeighbor(comm, atom, param);
 #else
     setupPbc(atom, param);
 #endif
-    binClusters(atom);
+    binJClusters(param, atom);
     buildNeighbor(atom, neighbor);
     initDevice(param, atom, neighbor);
     timeStop = getTimeStamp();
@@ -97,13 +97,13 @@ double reneighbour(Comm* comm, Parameter* param, Atom* atom, Neighbor* neighbor)
     // updateSingleAtoms(atom);
     // updateAtomsPbc(atom, param, false);
     buildClusters(atom);
-    defineJClusters(atom);
+    defineJClusters(param, atom);
 #ifdef _MPI
     ghostNeighbor(comm, atom, param);
 #else
     setupPbc(atom, param);
 #endif
-    binClusters(atom);
+    binJClusters(param, atom);
     buildNeighbor(atom, neighbor);
     LIKWID_MARKER_STOP("reneighbour");
     timeStop = getTimeStamp();

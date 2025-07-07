@@ -85,15 +85,8 @@ void initAtom(Atom* atom) {
     atom->cutneighsq      = NULL;
     atom->iclusters       = NULL;
     atom->jclusters       = NULL;
-    atom->icluster_bin    = NULL;
-
-    // Data for "super-cluster" strategy
-    atom->Nsclusters       = 0;
-    atom->Nsclusters_local = 0;
-    atom->Nsclusters_ghost = 0;
-    atom->Nsclusters_max   = 0;
-    atom->siclusters       = NULL;
-    atom->sicluster_bin    = NULL;
+    atom->cluster_bin     = NULL;
+    atom->siclusters      = NULL;
 
     initMasks(atom);
     // MPI New features
@@ -768,57 +761,52 @@ void growAtom(Atom* atom) {
         reallocate(atom->type, ALIGNMENT, atom->Nmax * sizeof(int), nold * sizeof(int));
 }
 
-void growClusters(Atom* atom) {
+void growClusters(Atom* atom, int super_clustering) {
     int nold  = atom->Nclusters_max;
-    int jterm = MAX(1,
-        CLUSTER_N / CLUSTER_M); // If M<N, we need to allocate more j-clusters
+    // If M<N, we need to allocate more j-clusters
+    int jterm = MAX(1, CLUSTER_N / CLUSTER_M);
+    int scluster_factor = (super_clustering) ? SCLUSTER_SIZE : 1;
+
     atom->Nclusters_max += DELTA;
     atom->iclusters    = (Cluster*)reallocate(atom->iclusters,
         ALIGNMENT,
-        atom->Nclusters_max * sizeof(Cluster),
-        nold * sizeof(Cluster));
+        atom->Nclusters_max * scluster_factor * sizeof(Cluster),
+        nold * scluster_factor * sizeof(Cluster));
     atom->jclusters    = (Cluster*)reallocate(atom->jclusters,
         ALIGNMENT,
         atom->Nclusters_max * jterm * sizeof(Cluster),
         nold * jterm * sizeof(Cluster));
-    atom->icluster_bin = (int*)reallocate(atom->icluster_bin,
+    atom->cluster_bin = (int*)reallocate(atom->cluster_bin,
         ALIGNMENT,
         atom->Nclusters_max * sizeof(int),
         nold * sizeof(int));
     atom->cl_x         = (MD_FLOAT*)reallocate(atom->cl_x,
         ALIGNMENT,
-        atom->Nclusters_max * CLUSTER_M * 3 * sizeof(MD_FLOAT),
-        nold * CLUSTER_M * 3 * sizeof(MD_FLOAT));
+        atom->Nclusters_max * CLUSTER_M * scluster_factor * 3 * sizeof(MD_FLOAT),
+        nold * CLUSTER_M * scluster_factor * 3 * sizeof(MD_FLOAT));
     atom->cl_f         = (MD_FLOAT*)reallocate(atom->cl_f,
         ALIGNMENT,
-        atom->Nclusters_max * CLUSTER_M * 3 * sizeof(MD_FLOAT),
-        nold * CLUSTER_M * 3 * sizeof(MD_FLOAT));
+        atom->Nclusters_max * CLUSTER_M * scluster_factor  * 3 * sizeof(MD_FLOAT),
+        nold * CLUSTER_M * scluster_factor * 3 * sizeof(MD_FLOAT));
     atom->cl_v         = (MD_FLOAT*)reallocate(atom->cl_v,
         ALIGNMENT,
-        atom->Nclusters_max * CLUSTER_M * 3 * sizeof(MD_FLOAT),
-        nold * CLUSTER_M * 3 * sizeof(MD_FLOAT));
+        atom->Nclusters_max * CLUSTER_M * scluster_factor  * 3 * sizeof(MD_FLOAT),
+        nold * CLUSTER_M * scluster_factor * 3 * sizeof(MD_FLOAT));
     atom->cl_t         = (int*)reallocate(atom->cl_t,
         ALIGNMENT,
-        atom->Nclusters_max * CLUSTER_M * sizeof(int),
-        nold * CLUSTER_M * sizeof(int));
+        atom->Nclusters_max * CLUSTER_M * scluster_factor  * sizeof(int),
+        nold * CLUSTER_M * scluster_factor * sizeof(int));
+
+    if(super_clustering) {
+        atom->siclusters    = (SuperCluster*)reallocate(atom->siclusters,
+            ALIGNMENT,
+            atom->Nclusters_max * sizeof(SuperCluster),
+            nold * sizeof(SuperCluster));
+    }
 
 #ifdef CUDA_TARGET
     growClustersCUDA(atom);
 #endif
-}
-
-void growSuperClusters(Atom* atom) {
-    int nold = atom->Nsclusters_max;
-    atom->Nsclusters_max += DELTA;
-    atom->siclusters    = (SuperCluster*)reallocate(atom->siclusters,
-        ALIGNMENT,
-        atom->Nsclusters_max * sizeof(SuperCluster),
-        nold * sizeof(SuperCluster));
-    atom->sicluster_bin = (int*)reallocate(atom->sicluster_bin,
-        ALIGNMENT,
-        atom->Nsclusters_max * sizeof(int),
-        nold * sizeof(int));
-    // TODO: Evaluate reallocation of cluster arrays based on supercluster size
 }
 
 /* MPI added*/
@@ -980,11 +968,11 @@ int packGhost(Atom* atom, int cj, MD_FLOAT* buf, int* pbc) {
     return m;
 }
 
-int unpackGhost(Atom* atom, int cj, MD_FLOAT* buf) {
+int unpackGhost(Parameter *param, Atom* atom, int cj, MD_FLOAT* buf) {
     int m    = 0;
     int jfac = MAX(1, CLUSTER_N / CLUSTER_M);
     if (cj * jfac >= atom->Nclusters_max) {
-        growClusters(atom);
+        growClusters(atom, param->super_clustering);
     }
 
     if (atom->Nclusters_ghost >= atom->NmaxGhost) {

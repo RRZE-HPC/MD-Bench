@@ -61,8 +61,8 @@ extern void pruneNeighborCPU(Parameter*, Atom*, Neighbor*);
 extern void pruneNeighborSuperclusters(Parameter*, Atom*, Neighbor*);
 extern void buildClustersCPU(Atom*);
 extern void buildSuperclusters(Atom*);
-extern void defineJClusters(Atom*);
-extern void binClusters(Atom*);
+extern void defineJClusters(Parameter*, Atom*);
+extern void binJClusters(Parameter*, Atom*);
 extern void updateSingleAtoms(Atom*);
 
 #ifdef CUDA_TARGET

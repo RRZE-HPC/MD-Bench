@@ -17,7 +17,7 @@
 #include <unistd.h>
 #include <util.h>
 
-static void addDummyCluster(Atom*);
+static void addDummyCluster(Parameter*, Atom*);
 #ifdef CUDA_TARGET
 extern void copyGhostFromGPU(Atom*);
 extern void copyGhostToGPU(Atom*);
@@ -105,20 +105,23 @@ void ghostNeighbor(Comm* comm, Atom* atom, Parameter* param)
             ghostComm(comm, atom, iswap);
     }
 #ifdef CLUSTER_PAIR    
-    addDummyCluster(atom);    
+    addDummyCluster(param, atom);    
 #endif
 }
 #endif
 
 #ifdef CLUSTER_PAIR
 
-void addDummyCluster(Atom* atom)
+void addDummyCluster(Parameter* param, Atom* atom)
 {
     // atom->Nclusters_ghost++; // GHOST J CLUSTERS
     // atom->Nclusters = atom->Nclusters_local + Nghost + 1;
     atom->dummy_cj = LOCAL + GHOST;
 
-    if ((LOCAL + GHOST) * JFAC >= atom->Nclusters_max) growClusters(atom);
+    if ((LOCAL + GHOST) * JFAC >= atom->Nclusters_max) {
+        growClusters(atom, param->super_clustering);
+    }
+
     // Add dummy cluster at the end
     int cjVecBase = CJ_VECTOR_BASE_INDEX(atom->dummy_cj);
     MD_FLOAT* cjX = &atom->cl_x[cjVecBase];

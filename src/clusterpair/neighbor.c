@@ -304,7 +304,7 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor) {
             unsigned int* neighptr_imask = &(
                 neighbor->neighbors_imask[ci * neighbor->maxneighs]);
             int n = 0, nmasked = 0;
-            int ibin        = atom->icluster_bin[ci];
+            int ibin        = atom->cluster_bin[ci];
             int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
             MD_FLOAT* ci_x  = &atom->cl_x[ci_vec_base];
 
@@ -716,8 +716,8 @@ void buildNeighborSuperclusters(Atom* atom, Neighbor* neighbor) {
     DEBUG_MESSAGE("buildNeighborSuperclusters start\n");
 
     /* extend atom arrays if necessary */
-    if (atom->Nsclusters_local > nmax) {
-        nmax = atom->Nsclusters_local;
+    if (atom->Nclusters_local > nmax) {
+        nmax = atom->Nclusters_local;
         if (neighbor->numneigh) free(neighbor->numneigh);
         if (neighbor->neighbors) free(neighbor->neighbors);
         neighbor->numneigh  = (int*)malloc(nmax * sizeof(int));
@@ -735,11 +735,11 @@ void buildNeighborSuperclusters(Atom* atom, Neighbor* neighbor) {
         int new_maxneighs = neighbor->maxneighs;
         resize            = 0;
 
-        for (int sci = 0; sci < atom->Nsclusters_local; sci++) {
+        for (int sci = 0; sci < atom->Nclusters_local; sci++) {
             const int sci_vec_base = SCI_VECTOR_BASE_INDEX(sci);
             int* neighptr     = &(neighbor->neighbors[sci * neighbor->maxneighs]);
             int n             = 0;
-            int ibin          = atom->sicluster_bin[sci];
+            int ibin          = atom->cluster_bin[sci];
             MD_FLOAT ibb_xmin = atom->siclusters[sci].bbminx;
             MD_FLOAT ibb_xmax = atom->siclusters[sci].bbmaxx;
             MD_FLOAT ibb_ymin = atom->siclusters[sci].bbminy;
@@ -1092,7 +1092,7 @@ void pruneNeighborSuperclusters(Parameter* param, Atom* atom, Neighbor* neighbor
     // MD_FLOAT cutsq = param->cutforce * param->cutforce;
     MD_FLOAT cutsq = cutneighsq;
 
-    for (int sci = 0; sci < atom->Nsclusters_local; sci++) {
+    for (int sci = 0; sci < atom->Nclusters_local; sci++) {
         for (int scii = 0; scii < atom->siclusters[sci].nclusters; scii++) {
             int* neighs   = &neighbor->neighbors[sci * neighbor->maxneighs];
             int numneighs = neighbor->numneigh[sci];
@@ -1331,7 +1331,7 @@ void buildClustersCPU(Atom* atom) {
         for (int cl = 0; cl < nclusters; cl++) {
             const int ci = atom->Nclusters_local;
             if (ci >= atom->Nclusters_max) {
-                growClusters(atom);
+                growClusters(atom, 0);
             }
 
             int ci_sca_base = CI_SCALAR_BASE_INDEX(ci);
@@ -1391,7 +1391,7 @@ void buildClustersCPU(Atom* atom) {
                 ac++;
             }
 
-            atom->icluster_bin[ci]     = bin;
+            atom->cluster_bin[ci]      = bin;
             atom->iclusters[ci].bbminx = bbminx;
             atom->iclusters[ci].bbmaxx = bbmaxx;
             atom->iclusters[ci].bbminy = bbminy;
@@ -1408,7 +1408,6 @@ void buildClustersCPU(Atom* atom) {
 void buildSuperclusters(Atom* atom) {
     DEBUG_MESSAGE("buildSuperclustersGPU start\n");
     atom->Nclusters_local  = 0;
-    atom->Nsclusters_local = 0;
 
     /* bin local atoms */
     binAtoms(atom);
@@ -1428,9 +1427,9 @@ void buildSuperclusters(Atom* atom) {
         int nsclusters = ((nclusters + supercluster_size - 1) / supercluster_size);
 
         for (int scl = 0; scl < nsclusters; scl++) {
-            const int sci = atom->Nsclusters_local;
-            if (sci >= atom->Nsclusters_max) {
-                growSuperClusters(atom);
+            const int sci = atom->Nclusters_local;
+            if (sci >= atom->Nclusters_max) {
+                growClusters(atom, 1);
             }
 
             int scl_bin_offset = scl * SCLUSTER_SIZE * CLUSTER_M;
@@ -1467,12 +1466,7 @@ void buildSuperclusters(Atom* atom) {
                         atom_scl_y_end_idx);
 
                     for (int scl_x = 0; scl_x < SCLUSTER_SIZE_X; scl_x++) {
-                        const int ci = atom->Nclusters_local;
-
-                        if (ci >= atom->Nclusters_max) {
-                            growClusters(atom);
-                        }
-
+                        const int ci = sci * SCLUSTER_SIZE + atom->siclusters[sci].nclusters;
                         int sci_sca_base = SCI_SCALAR_BASE_INDEX(sci);
                         int sci_vec_base = SCI_VECTOR_BASE_INDEX(sci);
                         MD_FLOAT* sci_x  = &atom->cl_x[sci_vec_base];
@@ -1532,14 +1526,12 @@ void buildSuperclusters(Atom* atom) {
                             ac++;
                         }
 
-                        atom->icluster_bin[ci]     = bin;
                         atom->iclusters[ci].bbminx = bbminx;
                         atom->iclusters[ci].bbmaxx = bbmaxx;
                         atom->iclusters[ci].bbminy = bbminy;
                         atom->iclusters[ci].bbmaxy = bbmaxy;
                         atom->iclusters[ci].bbminz = bbminz;
                         atom->iclusters[ci].bbmaxz = bbmaxz;
-                        atom->Nclusters_local++;
 
                         // TODO: To create the bounding boxes faster, we can use SIMD
                         // operations
@@ -1567,27 +1559,28 @@ void buildSuperclusters(Atom* atom) {
                 }
             }
 
-            atom->sicluster_bin[sci]     = bin;
+            atom->cluster_bin[sci]       = bin;
             atom->siclusters[sci].bbminx = sc_bbminx;
             atom->siclusters[sci].bbmaxx = sc_bbmaxx;
             atom->siclusters[sci].bbminy = sc_bbminy;
             atom->siclusters[sci].bbmaxy = sc_bbmaxy;
             atom->siclusters[sci].bbminz = sc_bbminz;
             atom->siclusters[sci].bbmaxz = sc_bbmaxz;
-            atom->Nsclusters_local++;
+            atom->Nclusters_local++;
         }
     }
 
     DEBUG_MESSAGE("buildSuperclustersGPU end\n");
 }
 
-void defineJClusters(Atom* atom) {
+void defineJClusters(Parameter* param, Atom* atom) {
     DEBUG_MESSAGE("defineJClusters start\n");
 
-    const int jfac = MAX(1, CLUSTER_N / CLUSTER_M);
-    atom->ncj      = atom->Nclusters_local / jfac;
+    const int jfac            = MAX(1, CLUSTER_N / CLUSTER_M);
+    const int scluster_factor = (param->super_clustering) ? SCLUSTER_SIZE : 1;
+    atom->ncj                 = atom->Nclusters_local * scluster_factor / jfac;
 
-    for (int ci = 0; ci < atom->Nclusters_local; ci++) {
+    for (int ci = 0; ci < atom->Nclusters_local * scluster_factor; ci++) {
         int cj0 = CJ0_FROM_CI(ci);
 
         if (CLUSTER_M == CLUSTER_N) {
@@ -1702,8 +1695,8 @@ void defineJClusters(Atom* atom) {
     DEBUG_MESSAGE("defineJClusters end\n");
 }
 
-void binClusters(Atom* atom) {
-    DEBUG_MESSAGE("binClusters start\n");
+void binJClusters(Parameter* param, Atom* atom) {
+    DEBUG_MESSAGE("binJClusters start\n");
 
     /*
     DEBUG_MESSAGE("Nghost = %d\n", atom->Nclusters_ghost);
@@ -1711,7 +1704,7 @@ void binClusters(Atom* atom) {
         MD_FLOAT *cptr = cluster_pos_ptr(ci);
         DEBUG_MESSAGE("Cluster %d:\n", ci);
         DEBUG_MESSAGE("bin=%d, Natoms=%d, bbox={%f,%f},{%f,%f},{%f,%f}\n",
-            atom->icluster_bin[ci],
+            atom->cluster_bin[ci],
             atom->clusters[ci].natoms,
             atom->clusters[ci].bbminx,
             atom->clusters[ci].bbmaxx,
@@ -1738,23 +1731,36 @@ void binClusters(Atom* atom) {
         }
 
         for (int ci = 0; ci < nlocal && !resize; ci++) {
-            // Assure we add this j-cluster only once in the bin
-            if (CLUSTER_M >= CLUSTER_N || ci % 2 == 0) {
-                int bin = atom->icluster_bin[ci];
-                int c   = bin_nclusters[bin];
-                if (c + 1 < clusters_per_bin) {
-                    bin_clusters[bin * clusters_per_bin + c] = CJ0_FROM_CI(ci);
-                    bin_nclusters[bin]++;
-
-                    if (CLUSTER_M > CLUSTER_N) {
-                        int cj1 = CJ1_FROM_CI(ci);
-                        if (atom->jclusters[cj1].natoms > 0) {
-                            bin_clusters[bin * clusters_per_bin + c + 1] = cj1;
-                            bin_nclusters[bin]++;
-                        }
+            if(param->super_clustering) {
+                for(int sci_cj = 0; sci_cj < SCLUSTER_SIZE; sci_cj++) {
+                    int bin = atom->cluster_bin[ci];
+                    int c   = bin_nclusters[bin];
+                    if (c + 1 < clusters_per_bin) {
+                        bin_clusters[bin * clusters_per_bin + c] = ci * SCLUSTER_SIZE + sci_cj;
+                        bin_nclusters[bin]++;
+                    } else {
+                        resize = 1;
                     }
-                } else {
-                    resize = 1;
+                }
+            } else {
+                // Assure we add this j-cluster only once in the bin
+                if (CLUSTER_M >= CLUSTER_N || ci % 2 == 0) {
+                    int bin = atom->cluster_bin[ci];
+                    int c   = bin_nclusters[bin];
+                    if (c + 1 < clusters_per_bin) {
+                        bin_clusters[bin * clusters_per_bin + c] = CJ0_FROM_CI(ci);
+                        bin_nclusters[bin]++;
+
+                        if (CLUSTER_M > CLUSTER_N) {
+                            int cj1 = CJ1_FROM_CI(ci);
+                            if (atom->jclusters[cj1].natoms > 0) {
+                                bin_clusters[bin * clusters_per_bin + c + 1] = cj1;
+                                bin_nclusters[bin]++;
+                            }
+                        }
+                    } else {
+                        resize = 1;
+                    }
                 }
             }
         }
@@ -1851,7 +1857,7 @@ void binClusters(Atom* atom) {
     DEBUG_MESSAGE("\n");
     */
 
-    DEBUG_MESSAGE("binClusters stop\n");
+    DEBUG_MESSAGE("binJClusters stop\n");
 }
 
 void updateSingleAtoms(Atom* atom) {

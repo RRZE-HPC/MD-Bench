@@ -45,9 +45,9 @@ int write_super_clusters_to_vtk_file(const char* filename, Atom* atom, int times
     fprintf(fp, "Particle data\n");
     fprintf(fp, "ASCII\n");
     fprintf(fp, "DATASET UNSTRUCTURED_GRID\n");
-    fprintf(fp, "POINTS %d double\n", atom->Nsclusters_local * SCLUSTER_SIZE * CLUSTER_M);
+    fprintf(fp, "POINTS %d double\n", atom->Nclusters_local * SCLUSTER_SIZE * CLUSTER_M);
 
-    for (int sci = 0; sci < atom->Nsclusters_local; sci++) {
+    for (int sci = 0; sci < atom->Nclusters_local; sci++) {
         int factor = (rand() % 1000) + 1;
         // double factor = sci * 10;
 

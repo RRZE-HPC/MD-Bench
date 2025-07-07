@@ -197,7 +197,7 @@ void setupPbc(Atom* atom, Parameter* param)
     for (int cj = 0; cj < ncj; cj++) {
         if (atom->jclusters[cj].natoms > 0) {
             if (atom->Nclusters_local + (Nghost + 7) * jfac >= atom->Nclusters_max) {
-                growClusters(atom);
+                growClusters(atom, param->super_clustering);
             }
 
             if ((Nghost + 7) * jfac >= NmaxGhost) {
@@ -301,7 +301,7 @@ void setupPbc(Atom* atom, Parameter* param)
     }
 
     if (ncj + (Nghost + 1) * jfac >= atom->Nclusters_max) {
-        growClusters(atom);
+        growClusters(atom, param->super_clustering);
     }
 
     // Add dummy cluster at the end

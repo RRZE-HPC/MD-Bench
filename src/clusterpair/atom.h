@@ -48,7 +48,8 @@ typedef struct {
     MD_FLOAT* cl_f;
     int* cl_t;
     Cluster *iclusters, *jclusters;
-    int* icluster_bin;
+    SuperCluster* siclusters;
+    int* cluster_bin;
     int dummy_cj;
     MD_UINT* exclusion_filter;
     MD_FLOAT* diagonal_4xn_j_minus_i;
@@ -57,10 +58,6 @@ typedef struct {
     unsigned int masks_2xnn_fn[8];
     unsigned int masks_4xn_hn[16];
     unsigned int masks_4xn_fn[16];
-    // Data in super-cluster format
-    int Nsclusters, Nsclusters_local, Nsclusters_ghost, Nsclusters_max;
-    SuperCluster* siclusters;
-    int* sicluster_bin;
     // Info Subdomain
     Box mybox;
 } Atom;
@@ -75,11 +72,10 @@ extern int readAtomGro(Atom*, Parameter*);
 extern int readAtomDmp(Atom*, Parameter*);
 extern void growAtom(Atom*);
 extern void freeAtom(Atom*);
-extern void growClusters(Atom*);
-extern void growSuperClusters(Atom*);
+extern void growClusters(Atom*, int);
 
 int packGhost(Atom*, int, MD_FLOAT*, int*);
-int unpackGhost(Atom*, int, MD_FLOAT*);
+int unpackGhost(Parameter*, Atom*, int, MD_FLOAT*);
 int packExchange(Atom*, int, MD_FLOAT*);
 int unpackExchange(Atom*, int, MD_FLOAT*);
 void packForward(Atom*, int, int*, MD_FLOAT*, int*);
