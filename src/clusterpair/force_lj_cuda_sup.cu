@@ -198,7 +198,7 @@ extern "C" double computeForceLJCudaSup(Parameter* param, Atom* atom, Neighbor* 
     MD_FLOAT sigma6     = param->sigma6;
     MD_FLOAT epsilon    = param->epsilon;
 
-    memsetGPU(cuda_cl_f, 0, atom->Nclusters_max * CLUSTER_M * 3 * sizeof(MD_FLOAT));
+    memsetGPU(cuda_cl_f, 0, atom->Nclusters_max * CLUSTER_M * SCLUSTER_SIZE * 3 * sizeof(MD_FLOAT));
     dim3 block_size       = dim3(CLUSTER_M, CLUSTER_N, 1);
     dim3 grid_size        = dim3(atom->Nclusters_local, 1, 1);
     double S              = getTimeStamp();

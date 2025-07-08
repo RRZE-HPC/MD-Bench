@@ -96,13 +96,13 @@ void ghostNeighbor(Comm* comm, Atom* atom, Parameter* param)
     atom->Nghost = 0;
     if (param->method == halfShell) {
         for (int iswap = 0; iswap < 5; iswap++)
-            ghostComm(comm, atom, iswap);
+            ghostComm(comm, param, atom, iswap);
     } else if (param->method == eightShell) {
         for (int iswap = 0; iswap < 6; iswap += 2)
-            ghostComm(comm, atom, iswap);
+            ghostComm(comm, param, atom, iswap);
     } else {
         for (int iswap = 0; iswap < 6; iswap++)
-            ghostComm(comm, atom, iswap);
+            ghostComm(comm, param, atom, iswap);
     }
 #ifdef CLUSTER_PAIR    
     addDummyCluster(param, atom);    

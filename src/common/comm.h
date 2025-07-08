@@ -99,9 +99,7 @@ void forwardComm(Comm*, Atom*, int); // Send info in one direction
 void reverseComm(Comm*, Atom*, int); // Return info after forward
                                      // communication
 void exchangeComm(Comm*, Atom*);     // Exchange info between procs
-void ghostComm(Comm*,
-    Atom*,
-    int);                       // Build the ghost neighbours to send during next forwards
+void ghostComm(Comm*, Parameter*, Atom*, int);   // Build the ghost neighbours to send during next forwards
 void growSend(Comm*, int);      // Grows the size of the buffer sender
 void growRecv(Comm*, int);      // Grows the size of the buffer receiver
 void growList(Comm*, int, int); // Grows the size of the list to send

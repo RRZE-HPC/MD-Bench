@@ -779,7 +779,7 @@ int packGhost(Atom* atom, int i, MD_FLOAT* buf, int* pbc) {
     return m;
 }
 
-int unpackGhost(Atom* atom, int i, MD_FLOAT* buf) {
+int unpackGhost(Parameter* param, Atom* atom, int i, MD_FLOAT* buf) {
     while (i >= atom->Nmax) {
         growAtom(atom);
     }

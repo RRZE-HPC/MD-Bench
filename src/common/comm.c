@@ -350,8 +350,7 @@ void reverseComm(Comm* comm, Atom* atom, int iswap)
     }
 }
 
-void ghostComm(Comm* comm, Atom* atom, int iswap)
-{
+void ghostComm(Comm* comm, Parameter* param, Atom* atom, int iswap) {
     MD_FLOAT xlo = 0, xhi = 0, ylo = 0, yhi = 0, zlo = 0, zhi = 0;
     MD_FLOAT* buf;
     int nrqst = 0, nsend = 0, nrecv = 0, offset = 0, ineigh = 0, pbc[3];
@@ -464,7 +463,7 @@ void ghostComm(Comm* comm, Atom* atom, int iswap)
     // unpack elements
     comm->firstrecv[iswap] = LOCAL + GHOST;
     for (int i = 0; i < all_recv; i++) {
-        unpackGhost(atom, LOCAL + GHOST, &buf[i * size]);
+        unpackGhost(param, atom, LOCAL + GHOST, &buf[i * size]);
     }
     // Increases the buffer if needed
     int max_size = MAX(comm->forwardSize, comm->reverseSize);
