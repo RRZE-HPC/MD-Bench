@@ -288,6 +288,7 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor) {
         neighbor->neighbors_imask = (unsigned int*)malloc(
             nmax * neighbor->maxneighs * sizeof(unsigned int));
     }
+
     MD_FLOAT bbx    = 0.5 * (binsizex + binsizex);
     MD_FLOAT bby    = 0.5 * (binsizey + binsizey);
     MD_FLOAT rbb_sq = MAX(0.0, cutneigh - 0.5 * sqrt(bbx * bbx + bby * bby));

@@ -177,18 +177,4 @@ extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #define CJ_SCALAR_BASE_INDEX(a)  (CJ_BASE_INDEX(a, 1))
 #define CJ_VECTOR_BASE_INDEX(a)  (CJ_BASE_INDEX(a, 3))
 
-/*
-#elif CLUSTER_M == CLUSTER_N * 2 // M > N
-#define SCI_BASE_INDEX(a, b) ((a) * CLUSTER_M * SCLUSTER_SIZE * (b))
-#define SCJ_BASE_INDEX(a, b)                                                             \
-    (((a) >> 1) * CLUSTER_M * SCLUSTER_SIZE * (b) +                                      \
-        ((a) & 0x1) * (SCLUSTER_SIZE * CLUSTER_M >> 1))
-#elif CLUSTER_M == CLUSTER_N / 2 // M < N
-#define SCI_BASE_INDEX(a, b)                                                             \
-    (((a) >> 1) * CLUSTER_N * SCLUSTER_SIZE * (b) +                                      \
-        ((a) & 0x1) * (CLUSTER_N * SCLUSTER_SIZE >> 1))
-#define SCJ_BASE_INDEX(a, b) ((a) * CLUSTER_N * SCLUSTER_SIZE * (b))
-#endif
-*/
-
 #endif // __FORCE_H_
