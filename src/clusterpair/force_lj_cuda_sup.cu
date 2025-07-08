@@ -32,14 +32,11 @@ extern MD_FLOAT *cuda_bbminx, *cuda_bbmaxx;
 extern MD_FLOAT *cuda_bbminy, *cuda_bbmaxy;
 extern MD_FLOAT *cuda_bbminz, *cuda_bbmaxz;
 extern int *cuda_PBCx, *cuda_PBCy, *cuda_PBCz;
-extern int* cuda_nclusters;
 }
 
 __global__ void cudaInitialIntegrateSup_warp(MD_FLOAT* cuda_cl_x,
     MD_FLOAT* cuda_cl_v,
     MD_FLOAT* cuda_cl_f,
-    int* cuda_nclusters,
-    int* cuda_natoms,
     int Nclusters_local,
     MD_FLOAT dtforce,
     MD_FLOAT dt) {
@@ -68,8 +65,6 @@ __global__ void cudaInitialIntegrateSup_warp(MD_FLOAT* cuda_cl_x,
 
 __global__ void cudaFinalIntegrateSup_warp(MD_FLOAT* cuda_cl_v,
     MD_FLOAT* cuda_cl_f,
-    int* cuda_nclusters,
-    int* cuda_natoms,
     int Nclusters_local,
     MD_FLOAT dtforce) {
 
@@ -93,7 +88,6 @@ __global__ void cudaFinalIntegrateSup_warp(MD_FLOAT* cuda_cl_v,
 
 __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
     MD_FLOAT* cuda_cl_f,
-    int* cuda_nclusters,
     int Nclusters_local,
     int* cuda_numneigh,
     int* cuda_neighs,
@@ -122,7 +116,7 @@ __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
         MD_FLOAT yjtmp = cj_x[SCL_Y_OFFSET + cjj];
         MD_FLOAT zjtmp = cj_x[SCL_Z_OFFSET + cjj];
 
-        for(int ci = 0; ci < cuda_nclusters[sci]; ci++) {
+        for(int ci = 0; ci < SCLUSTER_SIZE; ci++) {
             int cond = cj / SCLUSTER_SIZE != sci ||
                     threadIdx.y != cj % SCLUSTER_SIZE ||
                     threadIdx.x != cjj;
@@ -205,7 +199,6 @@ extern "C" double computeForceLJCudaSup(Parameter* param, Atom* atom, Neighbor* 
 
     computeForceLJCudaSup_warp<<<grid_size, block_size>>>(cuda_cl_x,
         cuda_cl_f,
-        cuda_nclusters,
         atom->Nclusters_local,
         cuda_numneigh,
         cuda_neighbors,

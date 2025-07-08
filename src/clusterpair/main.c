@@ -346,7 +346,6 @@ int main(int argc, char** argv) {
         if (writePos || writeVel) {
             if (param.vtk_file != NULL) {
                 copyDataFromCUDADevice(&param, &atom);
-                updateSingleAtoms(&param, &atom);
                 printvtk(param.vtk_file, &comm, &atom, &param, n + 1);
             }
 
