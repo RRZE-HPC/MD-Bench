@@ -1463,8 +1463,8 @@ void buildSuperclusters(Atom* atom) {
                     for (int scl_x = 0; scl_x < SCLUSTER_SIZE_X; scl_x++) {
                         const int sci_ci = atom->siclusters[sci].nclusters;
                         const int ci = sci * SCLUSTER_SIZE + sci_ci;
-                        int sci_sca_base = SCI_SCALAR_BASE_INDEX(sci);
                         int sci_vec_base = SCI_VECTOR_BASE_INDEX(sci);
+                        int sci_sca_base = SCI_SCALAR_BASE_INDEX(sci);
                         MD_FLOAT* sci_x  = &atom->cl_x[sci_vec_base];
                         MD_FLOAT* sci_v  = &atom->cl_v[sci_vec_base];
                         int* sci_t       = &atom->cl_t[sci_sca_base];
@@ -1512,10 +1512,10 @@ void buildSuperclusters(Atom* atom) {
 
                                 atom->iclusters[ci].natoms++;
                             } else {
-                                sci_x[SCL_X_OFFSET + cii] = INFINITY;
-                                sci_x[SCL_Y_OFFSET + cii] = INFINITY;
-                                sci_x[SCL_Z_OFFSET + cii] = INFINITY;
-                                sci_t[cii]                = 0;
+                                sci_x[SCL_X_OFFSET + sci_ci * CLUSTER_M + cii] = INFINITY;
+                                sci_x[SCL_Y_OFFSET + sci_ci * CLUSTER_M + cii] = INFINITY;
+                                sci_x[SCL_Z_OFFSET + sci_ci * CLUSTER_M + cii] = INFINITY;
+                                sci_t[sci_ci * CLUSTER_M + cii]                = 0;
                             }
 
                             ac++;
