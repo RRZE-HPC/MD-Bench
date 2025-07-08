@@ -1413,18 +1413,13 @@ void buildSuperclusters(Atom* atom) {
     binAtoms(atom);
 
     for (int bin = 0; bin < mbins; bin++) {
-        int c         = bincount[bin];
-        int ac        = 0;
-        int nclusters = ((c + CLUSTER_M - 1) / CLUSTER_M);
+        int c          = bincount[bin];
+        int ac         = 0;
+        int natoms_sc  = SCLUSTER_SIZE * CLUSTER_M;
+        int nsclusters = ((c + natoms_sc - 1) / natoms_sc);
+
         // Sort atoms in the Z dimension
         sortAtomsByCoord(atom, 2, bin, 0, c - 1);
-
-        if (CLUSTER_N > CLUSTER_M && nclusters % 2) {
-            nclusters++;
-        }
-
-        const int supercluster_size = SCLUSTER_SIZE_X * SCLUSTER_SIZE_Y * SCLUSTER_SIZE_Z;
-        int nsclusters = ((nclusters + supercluster_size - 1) / supercluster_size);
 
         for (int scl = 0; scl < nsclusters; scl++) {
             const int sci = atom->Nclusters_local;
@@ -1432,7 +1427,7 @@ void buildSuperclusters(Atom* atom) {
                 growClusters(atom, 1);
             }
 
-            int scl_bin_offset = scl * SCLUSTER_SIZE * CLUSTER_M;
+            int scl_bin_offset = scl * natoms_sc;
             MD_FLOAT sc_bbminx = INFINITY, sc_bbmaxx = -INFINITY;
             MD_FLOAT sc_bbminy = INFINITY, sc_bbmaxy = -INFINITY;
             MD_FLOAT sc_bbminz = INFINITY, sc_bbmaxz = -INFINITY;
