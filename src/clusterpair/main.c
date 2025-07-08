@@ -89,12 +89,11 @@ double setup(Parameter* param, Eam* eam, Atom* atom, Neighbor* neighbor, Stats* 
     return timeStop - timeStart;
 }
 
-double reneighbour(Comm* comm, Parameter* param, Atom* atom, Neighbor* neighbor)
-{
+double reneighbour(Comm* comm, Parameter* param, Atom* atom, Neighbor* neighbor) {
     double timeStart, timeStop;
     timeStart = getTimeStamp();
     LIKWID_MARKER_START("reneighbour");
-    // updateSingleAtoms(atom);
+    // updateSingleAtoms(param, atom);
     // updateAtomsPbc(atom, param, false);
     buildClusters(atom);
     defineJClusters(param, atom);
@@ -110,11 +109,10 @@ double reneighbour(Comm* comm, Parameter* param, Atom* atom, Neighbor* neighbor)
     return timeStop - timeStart;
 }
 
-double updateAtoms(Comm* comm, Atom* atom, Parameter* param)
-{
+double updateAtoms(Comm* comm, Atom* atom, Parameter* param) {
     double timeStart, timeStop;
     timeStart = getTimeStamp();
-    updateSingleAtoms(atom);
+    updateSingleAtoms(param, atom);
 #ifdef _MPI
     exchangeComm(comm, atom);
 #else
@@ -124,8 +122,7 @@ double updateAtoms(Comm* comm, Atom* atom, Parameter* param)
     return timeStop - timeStart;
 }
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
     double timer[NUMTIMER];
     Eam eam;
     Atom atom;

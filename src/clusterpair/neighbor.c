@@ -1466,7 +1466,8 @@ void buildSuperclusters(Atom* atom) {
                         atom_scl_y_end_idx);
 
                     for (int scl_x = 0; scl_x < SCLUSTER_SIZE_X; scl_x++) {
-                        const int ci = sci * SCLUSTER_SIZE + atom->siclusters[sci].nclusters;
+                        const int sci_ci = atom->siclusters[sci].nclusters;
+                        const int ci = sci * SCLUSTER_SIZE + sci_ci;
                         int sci_sca_base = SCI_SCALAR_BASE_INDEX(sci);
                         int sci_vec_base = SCI_VECTOR_BASE_INDEX(sci);
                         MD_FLOAT* sci_x  = &atom->cl_x[sci_vec_base];
@@ -1476,7 +1477,6 @@ void buildSuperclusters(Atom* atom) {
                         MD_FLOAT bbminx = INFINITY, bbmaxx = -INFINITY;
                         MD_FLOAT bbminy = INFINITY, bbmaxy = -INFINITY;
                         MD_FLOAT bbminz = INFINITY, bbmaxz = -INFINITY;
-
                         atom->iclusters[ci].natoms = 0;
 
                         for (int cii = 0; cii < CLUSTER_M; cii++) {
@@ -1486,13 +1486,13 @@ void buildSuperclusters(Atom* atom) {
                                 MD_FLOAT ytmp = atom_y(i);
                                 MD_FLOAT ztmp = atom_z(i);
 
-                                sci_x[SCL_X_OFFSET + cii] = xtmp;
-                                sci_x[SCL_Y_OFFSET + cii] = ytmp;
-                                sci_x[SCL_Z_OFFSET + cii] = ztmp;
-                                sci_v[SCL_X_OFFSET + cii] = atom->vx[i];
-                                sci_v[SCL_Y_OFFSET + cii] = atom->vy[i];
-                                sci_v[SCL_Z_OFFSET + cii] = atom->vz[i];
-                                sci_t[cii] = atom->type[i];
+                                sci_x[SCL_X_OFFSET + sci_ci * CLUSTER_M + cii] = xtmp;
+                                sci_x[SCL_Y_OFFSET + sci_ci * CLUSTER_M + cii] = ytmp;
+                                sci_x[SCL_Z_OFFSET + sci_ci * CLUSTER_M + cii] = ztmp;
+                                sci_v[SCL_X_OFFSET + sci_ci * CLUSTER_M + cii] = atom->vx[i];
+                                sci_v[SCL_Y_OFFSET + sci_ci * CLUSTER_M + cii] = atom->vy[i];
+                                sci_v[SCL_Z_OFFSET + sci_ci * CLUSTER_M + cii] = atom->vz[i];
+                                sci_t[sci_ci * CLUSTER_M + cii] = atom->type[i];
 
                                 // TODO: To create the bounding boxes faster, we can use
                                 // SIMD operations
@@ -1520,7 +1520,7 @@ void buildSuperclusters(Atom* atom) {
                                 sci_x[SCL_X_OFFSET + cii] = INFINITY;
                                 sci_x[SCL_Y_OFFSET + cii] = INFINITY;
                                 sci_x[SCL_Z_OFFSET + cii] = INFINITY;
-                                sci_t[cii]               = 0;
+                                sci_t[cii]                = 0;
                             }
 
                             ac++;
@@ -1860,23 +1860,50 @@ void binJClusters(Parameter* param, Atom* atom) {
     DEBUG_MESSAGE("binJClusters stop\n");
 }
 
-void updateSingleAtoms(Atom* atom) {
+void updateSingleAtoms(Parameter* param, Atom* atom) {
     DEBUG_MESSAGE("updateSingleAtoms start\n");
     int Natom = 0;
 
-    for (int ci = 0; ci < atom->Nclusters_local; ci++) {
-        int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
-        MD_FLOAT* ci_x  = &atom->cl_x[ci_vec_base];
-        MD_FLOAT* ci_v  = &atom->cl_v[ci_vec_base];
+    if(param->super_clustering) {
+        for (int sci = 0; sci < atom->Nclusters_local; sci++) {
+            int sci_vec_base = SCI_VECTOR_BASE_INDEX(sci);
+            int sci_sca_base = SCI_SCALAR_BASE_INDEX(sci);
+            MD_FLOAT* sci_x  = &atom->cl_x[sci_vec_base];
+            MD_FLOAT* sci_v  = &atom->cl_v[sci_vec_base];
+            int* sci_t       = &atom->cl_t[sci_sca_base];
 
-        for (int cii = 0; cii < atom->iclusters[ci].natoms; cii++) {
-            atom_x(Natom)   = ci_x[CL_X_OFFSET + cii];
-            atom_y(Natom)   = ci_x[CL_Y_OFFSET + cii];
-            atom_z(Natom)   = ci_x[CL_Z_OFFSET + cii];
-            atom->vx[Natom] = ci_v[CL_X_OFFSET + cii];
-            atom->vy[Natom] = ci_v[CL_Y_OFFSET + cii];
-            atom->vz[Natom] = ci_v[CL_Z_OFFSET + cii];
-            Natom++;
+            for(int sci_ci = 0; sci_ci < atom->siclusters[sci].nclusters; sci_ci++) {
+                const int ci = sci * SCLUSTER_SIZE + sci_ci;
+                for(int cii = 0; cii < atom->iclusters[ci].natoms; cii++) {
+                    atom_x(Natom)     = sci_x[SCL_X_OFFSET + sci_ci * CLUSTER_M + cii];
+                    atom_y(Natom)     = sci_x[SCL_Y_OFFSET + sci_ci * CLUSTER_M + cii];
+                    atom_z(Natom)     = sci_x[SCL_Z_OFFSET + sci_ci * CLUSTER_M + cii];
+                    atom_vx(Natom)    = sci_v[SCL_X_OFFSET + sci_ci * CLUSTER_M + cii];
+                    atom_vy(Natom)    = sci_v[SCL_Y_OFFSET + sci_ci * CLUSTER_M + cii];
+                    atom_vz(Natom)    = sci_v[SCL_Z_OFFSET + sci_ci * CLUSTER_M + cii];
+                    atom->type[Natom] = sci_t[sci_ci * CLUSTER_M + cii];
+                    Natom++;
+                }
+            }
+        }
+    } else {
+        for (int ci = 0; ci < atom->Nclusters_local; ci++) {
+            int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
+            int ci_sca_base = CI_SCALAR_BASE_INDEX(ci);
+            MD_FLOAT* ci_x  = &atom->cl_x[ci_vec_base];
+            MD_FLOAT* ci_v  = &atom->cl_v[ci_vec_base];
+            int* ci_t       = &atom->cl_t[ci_sca_base];
+
+            for (int cii = 0; cii < atom->iclusters[ci].natoms; cii++) {
+                atom_x(Natom)     = ci_x[CL_X_OFFSET + cii];
+                atom_y(Natom)     = ci_x[CL_Y_OFFSET + cii];
+                atom_z(Natom)     = ci_x[CL_Z_OFFSET + cii];
+                atom->vx[Natom]   = ci_v[CL_X_OFFSET + cii];
+                atom->vy[Natom]   = ci_v[CL_Y_OFFSET + cii];
+                atom->vz[Natom]   = ci_v[CL_Z_OFFSET + cii];
+                atom->type[Natom] = ci_t[cii];
+                Natom++;
+            }
         }
     }
 

@@ -63,7 +63,7 @@ extern void buildClustersCPU(Atom*);
 extern void buildSuperclusters(Atom*);
 extern void defineJClusters(Parameter*, Atom*);
 extern void binJClusters(Parameter*, Atom*);
-extern void updateSingleAtoms(Atom*);
+extern void updateSingleAtoms(Parameter*, Atom*);
 
 #ifdef CUDA_TARGET
 #ifdef __cplusplus

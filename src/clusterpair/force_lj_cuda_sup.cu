@@ -221,6 +221,6 @@ extern "C" double computeForceLJCudaSup(Parameter* param, Atom* atom, Neighbor* 
 
     LIKWID_MARKER_STOP("force");
     double E = getTimeStamp();
-    DEBUG_MESSAGE("computeForceCudaSup stop\r\n");
+    DEBUG_MESSAGE("computeForceLJCudaSup stop\r\n");
     return E - S;
 }
