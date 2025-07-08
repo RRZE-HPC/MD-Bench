@@ -1232,6 +1232,14 @@ void binAtoms(Atom* atom) {
 
         for (int i = 0; i < atom->Nlocal; i++) {
             int ibin = coord2bin(atom_x(i), atom_y(i));
+            if (ibin < 0 || ibin >= mbins) {
+                fprintf(
+                    stderr,
+                    "Error: Atom %d assigned to invalid bin %d, position: %.4f, %.4f\n",
+                    i, ibin, atom_x(i), atom_y(i));
+
+                exit(EXIT_FAILURE);
+            }
             if (bincount[ibin] < atoms_per_bin) {
                 int ac                          = bincount[ibin]++;
                 bins[ibin * atoms_per_bin + ac] = i;

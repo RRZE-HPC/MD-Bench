@@ -104,7 +104,6 @@ __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
     MD_FLOAT epsilon) {
 
     int sci = blockIdx.x;
-    //int ci = sci * SCLUSTER_SIZE + threadIdx.y;
     int cii = threadIdx.x;
     int cjj = threadIdx.y;
 
