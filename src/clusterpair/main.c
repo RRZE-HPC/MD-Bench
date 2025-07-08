@@ -296,10 +296,11 @@ int main(int argc, char** argv) {
     timer[UPDATE]  = 0.0;
     timer[BALANCE] = 0.0;
     timer[REVERSE] = reverse(&comm, &atom, &param);
+
     if (param.vtk_file != NULL) {
-        // write_data_to_vtk_file(param.vtk_file, &atom, 0);
         printvtk(param.vtk_file, &comm, &atom, &param, 0);
     }
+
     // TODO: modify xct
     if (param.xtc_file != NULL) {
         xtc_init(param.xtc_file, &atom, 0);
@@ -344,9 +345,11 @@ int main(int argc, char** argv) {
         int writeVel = !((n + 1) % param.v_out_every);
         if (writePos || writeVel) {
             if (param.vtk_file != NULL) {
-                // write_data_to_vtk_file(param.vtk_file, &atom, n + 1);
+                copyDataFromCUDADevice(&param, &atom);
+                updateSingleAtoms(&param, &atom);
                 printvtk(param.vtk_file, &comm, &atom, &param, n + 1);
             }
+
             // TODO: xtc file
             if (param.xtc_file != NULL) {
                 xtc_write(&atom, n + 1, write_pos, write_vel);

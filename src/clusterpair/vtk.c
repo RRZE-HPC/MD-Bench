@@ -19,12 +19,12 @@ static MPI_File _fh;
 static inline void flushBuffer(char*);
 #endif
 
-void write_data_to_vtk_file(const char* filename, Atom* atom, int timestep) {
-    write_local_atoms_to_vtk_file(filename, atom, timestep);
+void write_data_to_vtk_file(const char* filename, Atom* atom, Parameter* param, int timestep) {
+    write_local_atoms_to_vtk_file(filename, atom, param, timestep);
     write_ghost_atoms_to_vtk_file(filename, atom, timestep);
     write_local_cluster_edges_to_vtk_file(filename, atom, timestep);
     write_ghost_cluster_edges_to_vtk_file(filename, atom, timestep);
-    // write_super_clusters_to_vtk_file(filename, atom, timestep);
+    write_super_clusters_to_vtk_file(filename, atom, timestep);
 }
 
 int write_super_clusters_to_vtk_file(const char* filename, Atom* atom, int timestep) {
@@ -48,19 +48,18 @@ int write_super_clusters_to_vtk_file(const char* filename, Atom* atom, int times
     fprintf(fp, "POINTS %d double\n", atom->Nclusters_local * SCLUSTER_SIZE * CLUSTER_M);
 
     for (int sci = 0; sci < atom->Nclusters_local; sci++) {
-        int factor = (rand() % 1000) + 1;
-        // double factor = sci * 10;
-
         int sci_vec_base = SCI_VECTOR_BASE_INDEX(sci);
-        for (int sci_ci = 0; sci_ci < SCLUSTER_SIZE; ++sci_ci) {
-            MD_FLOAT* ci_x  = &atom->cl_x[sci_vec_base + sci_ci * CLUSTER_M];
+        MD_FLOAT* sci_x  = &atom->cl_x[sci_vec_base];
+
+        for (int sci_ci = 0; sci_ci < SCLUSTER_SIZE; sci_ci++) {
+            MD_FLOAT* ci_x = &sci_x[sci_ci * CLUSTER_M];
 
             for (int cii = 0; cii < CLUSTER_M; ++cii) {
                 fprintf(fp,
                     "%.4f %.4f %.4f\n",
-                    ci_x[SCL_X_OFFSET + cii] * factor,
-                    ci_x[SCL_Y_OFFSET + cii] * factor,
-                    ci_x[SCL_Z_OFFSET + cii] * factor);
+                    ci_x[SCL_X_OFFSET + cii],
+                    ci_x[SCL_Y_OFFSET + cii],
+                    ci_x[SCL_Z_OFFSET + cii]);
             }
         }
     }
@@ -86,7 +85,7 @@ int write_super_clusters_to_vtk_file(const char* filename, Atom* atom, int times
     return 0;
 }
 
-int write_local_atoms_to_vtk_file(const char* filename, Atom* atom, int timestep) {
+int write_local_atoms_to_vtk_file(const char* filename, Atom* atom, Parameter* param, int timestep) {
     char timestepFilename[128];
     snprintf(timestepFilename,
         sizeof timestepFilename,
@@ -106,15 +105,34 @@ int write_local_atoms_to_vtk_file(const char* filename, Atom* atom, int timestep
     fprintf(fp, "DATASET UNSTRUCTURED_GRID\n");
     fprintf(fp, "POINTS %d double\n", atom->Nlocal);
 
-    for (int ci = 0; ci < atom->Nclusters_local; ++ci) {
-        int ciVecBase = CI_VECTOR_BASE_INDEX(ci);
-        MD_FLOAT* ciX = &atom->cl_x[ciVecBase];
-        for (int cii = 0; cii < atom->iclusters[ci].natoms; ++cii) {
-            fprintf(fp,
-                "%.4f %.4f %.4f\n",
-                ciX[CL_X_OFFSET + cii],
-                ciX[CL_Y_OFFSET + cii],
-                ciX[CL_Z_OFFSET + cii]);
+    if(param->super_clustering) {
+        for (int sci = 0; sci < atom->Nclusters_local; ++sci) {
+            int sciVecBase = SCI_VECTOR_BASE_INDEX(sci);
+            MD_FLOAT* sciX = &atom->cl_x[sciVecBase];
+
+            for (int sci_ci = 0; sci_ci < atom->siclusters[sci].nclusters; ++sci_ci) {
+                const int ci = sci * SCLUSTER_SIZE + sci_ci;
+
+                for (int cii = 0; cii < atom->iclusters[ci].natoms; ++cii) {
+                    fprintf(fp,
+                        "%.4f %.4f %.4f\n",
+                        sciX[SCL_X_OFFSET + ci * CLUSTER_M + cii],
+                        sciX[SCL_Y_OFFSET + ci * CLUSTER_M + cii],
+                        sciX[SCL_Z_OFFSET + ci * CLUSTER_M + cii]);
+                }
+            }
+        }
+    } else {
+        for (int ci = 0; ci < atom->Nclusters_local; ++ci) {
+            int ciVecBase = CI_VECTOR_BASE_INDEX(ci);
+            MD_FLOAT* ciX = &atom->cl_x[ciVecBase];
+            for (int cii = 0; cii < atom->iclusters[ci].natoms; ++cii) {
+                fprintf(fp,
+                    "%.4f %.4f %.4f\n",
+                    ciX[CL_X_OFFSET + cii],
+                    ciX[CL_Y_OFFSET + cii],
+                    ciX[CL_Z_OFFSET + cii]);
+            }
         }
     }
 
@@ -457,6 +475,6 @@ void printvtk(const char* filename, Comm* comm, Atom* atom, Parameter* param, in
     vtkVector(comm, atom, param);
     vtkClose();
 #else  
-    write_data_to_vtk_file(filename, atom, timestep);
+    write_data_to_vtk_file(filename, atom, param, timestep);
 #endif
 }
