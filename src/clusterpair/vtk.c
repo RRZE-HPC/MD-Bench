@@ -52,7 +52,7 @@ int write_super_clusters_to_vtk_file(const char* filename, Atom* atom, int times
         MD_FLOAT* sci_x  = &atom->cl_x[sci_vec_base];
 
         for (int sci_ci = 0; sci_ci < SCLUSTER_SIZE; sci_ci++) {
-            for (int cii = 0; cii < CLUSTER_M; ++cii) {
+            for (int cii = 0; cii < CLUSTER_M; cii++) {
                 fprintf(fp,
                     "%.4f %.4f %.4f\n",
                     sci_x[SCL_X_OFFSET + sci_ci * CLUSTER_M + cii],

@@ -1406,7 +1406,7 @@ void buildClustersCPU(Atom* atom) {
 }
 
 void buildSuperclusters(Atom* atom) {
-    DEBUG_MESSAGE("buildSuperclustersGPU start\n");
+    DEBUG_MESSAGE("buildSuperclusters start\n");
     atom->Nclusters_local  = 0;
 
     /* bin local atoms */
@@ -1556,7 +1556,7 @@ void buildSuperclusters(Atom* atom) {
         }
     }
 
-    DEBUG_MESSAGE("buildSuperclustersGPU end\n");
+    DEBUG_MESSAGE("buildSuperclusters end\n");
 }
 
 void defineJClusters(Parameter* param, Atom* atom) {
