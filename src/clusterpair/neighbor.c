@@ -1434,31 +1434,22 @@ void buildSuperclusters(Atom* atom) {
             atom->siclusters[sci].nclusters = 0;
 
             for (int scl_z = 0; scl_z < SCLUSTER_SIZE_Z; scl_z++) {
-                const int atom_scl_z_offset = scl_bin_offset + scl_z * SCLUSTER_SIZE_Y *
-                                                               SCLUSTER_SIZE_X *
-                                                               CLUSTER_M;
-                const int atom_scl_z_end_idx = MIN(
-                    atom_scl_z_offset + SCLUSTER_SIZE_Y * SCLUSTER_SIZE_X * CLUSTER_M - 1,
-                    c - 1);
+                const int scl_z_size = SCLUSTER_SIZE_X * SCLUSTER_SIZE_Y * CLUSTER_M;
+                const int atom_scl_z_offset = scl_bin_offset + scl_z * scl_z_size;
+                const int atom_scl_z_end_idx = MIN(atom_scl_z_offset + scl_z_size - 1, c - 1);
 
                 // Sort atoms in the Y dimension
                 sortAtomsByCoord(atom, 1, bin, atom_scl_z_offset, atom_scl_z_end_idx);
 
                 for (int scl_y = 0; scl_y < SCLUSTER_SIZE_Y; scl_y++) {
+                    const int scl_y_size = SCLUSTER_SIZE_X * CLUSTER_M;
                     const int atom_scl_y_offset = scl_bin_offset +
-                                                  scl_z * SCLUSTER_SIZE_Y *
-                                                      SCLUSTER_SIZE_X * CLUSTER_M +
-                                                  scl_y * SCLUSTER_SIZE_Y * CLUSTER_M;
+                                                  scl_z * scl_z_size +
+                                                  scl_y * scl_y_size;
+                    const int atom_scl_y_end_idx = MIN(atom_scl_y_offset + scl_y_size - 1, c - 1);
 
-                    const int atom_scl_y_end_idx = MIN(
-                        atom_scl_y_offset + SCLUSTER_SIZE_X * CLUSTER_M - 1,
-                        c - 1);
-
-                    sortAtomsByCoord(atom,
-                        0, // X dimension
-                        bin,
-                        atom_scl_y_offset,
-                        atom_scl_y_end_idx);
+                    // Sort atoms in the X dimension
+                    sortAtomsByCoord(atom, 0, bin, atom_scl_y_offset, atom_scl_y_end_idx);
 
                     for (int scl_x = 0; scl_x < SCLUSTER_SIZE_X; scl_x++) {
                         const int sci_ci = atom->siclusters[sci].nclusters;
