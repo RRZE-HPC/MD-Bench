@@ -26,12 +26,12 @@ int write_atoms_to_file(Atom* atom, char* name) {
 
     // Check if $FASTTMP is set
     if (file_system == NULL) {
-        fprintf(stderr, "Error: TMPDIR environment variable is not set!\n");
         return -1;
     }
 
     char file_path[256];
     snprintf(file_path, sizeof(file_path), "%s/%s", file_system, name);
+    fprintf(stdout, "Using temporary file: %s\n", file_path);
 
     FILE* fp = fopen(file_path, "wb");
     if (fp == NULL) {

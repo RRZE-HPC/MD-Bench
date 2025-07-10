@@ -25,8 +25,7 @@ extern void copyForceFromGPU(Atom*);
 extern void copyForceToGPU(Atom*);
 #endif 
 
-double forward(Comm* comm, Atom* atom, Parameter* param)
-{
+double forward(Comm* comm, Atom* atom, Parameter* param) {
     double S, E;
     S = getTimeStamp();
 #ifdef _MPI
@@ -56,8 +55,7 @@ double forward(Comm* comm, Atom* atom, Parameter* param)
     return E - S;
 }
 
-double reverse(Comm* comm, Atom* atom, Parameter* param)
-{
+double reverse(Comm* comm, Atom* atom, Parameter* param) {
     double S, E;
     S = getTimeStamp();
 #ifdef _MPI
@@ -88,8 +86,7 @@ double reverse(Comm* comm, Atom* atom, Parameter* param)
 }
 
 #ifdef _MPI
-void ghostNeighbor(Comm* comm, Atom* atom, Parameter* param)
-{
+void ghostNeighbor(Comm* comm, Atom* atom, Parameter* param) {
 #ifdef CLUSTER_PAIR
     atom->Nclusters_ghost = 0;
 #endif
@@ -112,8 +109,7 @@ void ghostNeighbor(Comm* comm, Atom* atom, Parameter* param)
 
 #ifdef CLUSTER_PAIR
 
-void addDummyCluster(Parameter* param, Atom* atom)
-{
+void addDummyCluster(Parameter* param, Atom* atom) {
     // atom->Nclusters_ghost++; // GHOST J CLUSTERS
     // atom->Nclusters = atom->Nclusters_local + Nghost + 1;
     atom->dummy_cj = LOCAL + GHOST;

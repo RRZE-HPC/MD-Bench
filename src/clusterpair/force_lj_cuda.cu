@@ -101,15 +101,15 @@ extern "C" void initDevice(Parameter* param, Atom* atom, Neighbor* neighbor) {
 #endif
     cuda_natoms           = (int*)allocateGPU(atom->Nclusters_max * scluster_factor * sizeof(int));
     cuda_jclusters_natoms = (int*)allocateGPU(atom->Nclusters_max * scluster_factor * sizeof(int));
-    cuda_border_map       = (int*)allocateGPU(atom->Nclusters_max * sizeof(int));
-    cuda_PBCx             = (int*)allocateGPU(atom->Nclusters_max * sizeof(int));
-    cuda_PBCy             = (int*)allocateGPU(atom->Nclusters_max * sizeof(int));
-    cuda_PBCz             = (int*)allocateGPU(atom->Nclusters_max * sizeof(int));
+    cuda_border_map       = (int*)allocateGPU(atom->Nclusters_max * scluster_factor * sizeof(int));
+    cuda_PBCx             = (int*)allocateGPU(atom->Nclusters_max * scluster_factor * sizeof(int));
+    cuda_PBCy             = (int*)allocateGPU(atom->Nclusters_max * scluster_factor * sizeof(int));
+    cuda_PBCz             = (int*)allocateGPU(atom->Nclusters_max * scluster_factor * sizeof(int));
     cuda_numneigh         = (int*)allocateGPU(atom->Nclusters_max * sizeof(int));
     cuda_neighbors        = (int*)allocateGPU(
         atom->Nclusters_max * neighbor->maxneighs * sizeof(int));
-    natoms  = (int*)malloc(atom->Nclusters_max * sizeof(int));
-    ngatoms = (int*)malloc(atom->Nclusters_max * sizeof(int));
+    natoms  = (int*)malloc(atom->Nclusters_max * scluster_factor * sizeof(int));
+    ngatoms = (int*)malloc(atom->Nclusters_max * scluster_factor * sizeof(int));
 }
 
 extern "C" void copyDataToCUDADevice(Parameter* param, Atom* atom, Neighbor* neighbor) {

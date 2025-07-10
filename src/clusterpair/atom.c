@@ -15,12 +15,16 @@
 #include <util.h>
 
 inline int get_ncj_from_nci(int nci) {
+#ifdef USE_SUPER_CLUSTERS
+    return nci << 3;
+#else
 #if CLUSTER_M == CLUSTER_N
     return nci;
 #elif CLUSTER_M < CLUSTER_N
     return nci >> 1;
 #else
     return nci << 1;
+#endif
 #endif
 }
 
@@ -29,13 +33,13 @@ int write_atoms_to_file(Atom* atom, char* name) {
     char* file_system = getenv("TMPDIR");
 
     // Check if $FASTTMP is set
-    if (file_system == NULL) {
-        fprintf(stderr, "Error: TMPDIR environment variable is not set!\n");
+    if(file_system == NULL) {
         return -1;
     }
 
     char file_path[256];
     snprintf(file_path, sizeof(file_path), "%s/%s", file_system, name);
+    fprintf(stdout, "Using temporary file: %s\n", file_path);
 
     FILE* fp = fopen(file_path, "wb");
     if (fp == NULL) {

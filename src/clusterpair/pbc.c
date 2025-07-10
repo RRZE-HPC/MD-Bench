@@ -29,8 +29,7 @@ UpdatePbcFunction updateAtomsPbc = updateAtomsPbcCPU;
 static void growPbc(Atom*);
 
 /* exported subroutines */
-void initPbc(Atom* atom)
-{
+void initPbc(Atom* atom) {
     NmaxGhost        = 0;
     atom->border_map = NULL;
     atom->PBCx       = NULL;
@@ -40,8 +39,7 @@ void initPbc(Atom* atom)
 
 /* update coordinates of ghost atoms */
 /* uses mapping created in setupPbc */
-void updatePbcCPU(Atom* atom, Parameter* param, bool firstUpdate)
-{
+void updatePbcCPU(Atom* atom, Parameter* param, bool firstUpdate) {
     DEBUG_MESSAGE("updatePbc start\n");
     int ncj       = get_ncj_from_nci(atom->Nclusters_local);
     MD_FLOAT xprd = param->xprd;
@@ -165,8 +163,7 @@ void updateAtomsPbcCPU(Atom* atom, Parameter* param, bool dummy)
     }
 
 /* internal subroutines */
-void growPbc(Atom* atom)
-{
+void growPbc(Atom* atom) {
     int nold = NmaxGhost;
     NmaxGhost += DELTA;
 
@@ -182,8 +179,7 @@ void growPbc(Atom* atom)
         reallocate(atom->PBCz, ALIGNMENT, NmaxGhost * sizeof(int), nold * sizeof(int));
 }
 
-void setupPbc(Atom* atom, Parameter* param)
-{
+void setupPbc(Atom* atom, Parameter* param) {
     DEBUG_MESSAGE("setupPbc start\n");
     MD_FLOAT xprd     = param->xprd;
     MD_FLOAT yprd     = param->yprd;

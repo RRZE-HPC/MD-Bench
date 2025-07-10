@@ -509,14 +509,14 @@ void initGrid(Grid* grid, int nprocs) {
 int readAtomsTempFile(Atom* atom, char* file) {
     char *file_system = getenv("TMPDIR");
     if (file_system == NULL) {
-        fprintf(stderr, "Error: TMPDIR environment variable is not set!\n");
         return -1;
     }
 
     char file_path[256]; 
     snprintf(file_path, sizeof(file_path), "%s/%s", file_system, file);
-    FILE *fp = fopen(file_path, "r");
+    fprintf(stdout, "Using temporary file: %s\n", file_path);
 
+    FILE *fp = fopen(file_path, "r");
     if (fp == NULL) {
         perror("Error opening file");
         return -1;
