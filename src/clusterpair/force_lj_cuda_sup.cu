@@ -55,12 +55,12 @@ __global__ void cudaInitialIntegrateSup_warp(MD_FLOAT* cuda_cl_x,
     MD_FLOAT* ci_v   = &cuda_cl_v[sci_vec_base];
     MD_FLOAT* ci_f   = &cuda_cl_f[sci_vec_base];
 
-    ci_v[SCL_X_OFFSET + i] += dtforce * ci_f[SCL_X_OFFSET + i];
-    ci_v[SCL_Y_OFFSET + i] += dtforce * ci_f[SCL_Y_OFFSET + i];
-    ci_v[SCL_Z_OFFSET + i] += dtforce * ci_f[SCL_Z_OFFSET + i];
-    ci_x[SCL_X_OFFSET + i] += dt * ci_v[SCL_X_OFFSET + i];
-    ci_x[SCL_Y_OFFSET + i] += dt * ci_v[SCL_Y_OFFSET + i];
-    ci_x[SCL_Z_OFFSET + i] += dt * ci_v[SCL_Z_OFFSET + i];
+    ci_v[CL_X_OFFSET + i] += dtforce * ci_f[CL_X_OFFSET + i];
+    ci_v[CL_Y_OFFSET + i] += dtforce * ci_f[CL_Y_OFFSET + i];
+    ci_v[CL_Z_OFFSET + i] += dtforce * ci_f[CL_Z_OFFSET + i];
+    ci_x[CL_X_OFFSET + i] += dt * ci_v[CL_X_OFFSET + i];
+    ci_x[CL_Y_OFFSET + i] += dt * ci_v[CL_Y_OFFSET + i];
+    ci_x[CL_Z_OFFSET + i] += dt * ci_v[CL_Z_OFFSET + i];
 }
 
 __global__ void cudaFinalIntegrateSup_warp(MD_FLOAT* cuda_cl_v,
@@ -81,9 +81,9 @@ __global__ void cudaFinalIntegrateSup_warp(MD_FLOAT* cuda_cl_v,
     MD_FLOAT* ci_v   = &cuda_cl_v[sci_vec_base];
     MD_FLOAT* ci_f   = &cuda_cl_f[sci_vec_base];
 
-    ci_v[SCL_X_OFFSET + i] += dtforce * ci_f[SCL_X_OFFSET + i];
-    ci_v[SCL_Y_OFFSET + i] += dtforce * ci_f[SCL_Y_OFFSET + i];
-    ci_v[SCL_Z_OFFSET + i] += dtforce * ci_f[SCL_Z_OFFSET + i];
+    ci_v[CL_X_OFFSET + i] += dtforce * ci_f[CL_X_OFFSET + i];
+    ci_v[CL_Y_OFFSET + i] += dtforce * ci_f[CL_Y_OFFSET + i];
+    ci_v[CL_Z_OFFSET + i] += dtforce * ci_f[CL_Z_OFFSET + i];
 }
 
 __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
@@ -100,50 +100,56 @@ __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
     int sci = blockIdx.x;
     int cii = threadIdx.x;
     int cjj = threadIdx.y;
-
-    if ((sci >= Nclusters_local) || (cii >= CLUSTER_M) || (cjj >= CLUSTER_N)) {
-        return;
-    }
-
     int sci_vec_base = SCI_VECTOR_BASE_INDEX(sci);
 
-    for (int k = 0; k < cuda_numneigh[sci]; k++) {
+    for(int k = 0; k < cuda_numneigh[sci]; k++) {
         int cj = cuda_neighs[sci * maxneighs + k];
         int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
         MD_FLOAT* cj_x  = &cuda_cl_x[cj_vec_base];
         MD_FLOAT* cj_f  = &cuda_cl_f[cj_vec_base];
-        MD_FLOAT xjtmp = cj_x[SCL_X_OFFSET + cjj];
-        MD_FLOAT yjtmp = cj_x[SCL_Y_OFFSET + cjj];
-        MD_FLOAT zjtmp = cj_x[SCL_Z_OFFSET + cjj];
+        MD_FLOAT xjtmp = cj_x[CL_X_OFFSET + cjj];
+        MD_FLOAT yjtmp = cj_x[CL_Y_OFFSET + cjj];
+        MD_FLOAT zjtmp = cj_x[CL_Z_OFFSET + cjj];
 
         for(int ci = 0; ci < SCLUSTER_SIZE; ci++) {
-            int cond = cj / SCLUSTER_SIZE != sci ||
-                    threadIdx.y != cj % SCLUSTER_SIZE ||
-                    threadIdx.x != cjj;
-
-            if (cond) {
+            if(cj / SCLUSTER_SIZE != sci || ci != cj % SCLUSTER_SIZE || cii != cjj) {
                 MD_FLOAT* ci_x  = &cuda_cl_x[sci_vec_base + ci * CLUSTER_M];
                 MD_FLOAT* ci_f  = &cuda_cl_f[sci_vec_base + ci * CLUSTER_M];
-                MD_FLOAT delx   = ci_x[SCL_X_OFFSET + cii] - xjtmp;
-                MD_FLOAT dely   = ci_x[SCL_Y_OFFSET + cii] - yjtmp;
-                MD_FLOAT delz   = ci_x[SCL_Z_OFFSET + cii] - zjtmp;
+                MD_FLOAT delx   = ci_x[CL_X_OFFSET + cii] - xjtmp;
+                MD_FLOAT dely   = ci_x[CL_Y_OFFSET + cii] - yjtmp;
+                MD_FLOAT delz   = ci_x[CL_Z_OFFSET + cii] - zjtmp;
                 MD_FLOAT rsq    = delx * delx + dely * dely + delz * delz;
 
-                if (rsq < cutforcesq) {
+                if(rsq < cutforcesq) {
                     MD_FLOAT sr2   = (MD_FLOAT)1.0 / rsq;
                     MD_FLOAT sr6   = sr2 * sr2 * sr2 * sigma6;
                     MD_FLOAT force = (MD_FLOAT)48.0 * sr6 * (sr6 - (MD_FLOAT)0.5) * sr2 * epsilon;
 
                     if (half_neigh) {
-                        atomicAdd(&cj_f[SCL_X_OFFSET + cjj], -delx * force);
-                        atomicAdd(&cj_f[SCL_Y_OFFSET + cjj], -dely * force);
-                        atomicAdd(&cj_f[SCL_Z_OFFSET + cjj], -delz * force);
+                        atomicAdd(&cj_f[CL_X_OFFSET + cjj], -delx * force);
+                        atomicAdd(&cj_f[CL_Y_OFFSET + cjj], -dely * force);
+                        atomicAdd(&cj_f[CL_Z_OFFSET + cjj], -delz * force);
                     }
 
-                    atomicAdd(&ci_f[SCL_X_OFFSET + cii], delx * force);
-                    atomicAdd(&ci_f[SCL_Y_OFFSET + cii], dely * force);
-                    atomicAdd(&ci_f[SCL_Z_OFFSET + cii], delz * force);
+                    atomicAdd(&ci_f[CL_X_OFFSET + cii], delx * force);
+                    atomicAdd(&ci_f[CL_Y_OFFSET + cii], dely * force);
+                    atomicAdd(&ci_f[CL_Z_OFFSET + cii], delz * force);
                 }
+
+                /*
+                if(fabs(rsq) < 1e-6) {
+                    printf(
+                        "Distance rsq close to zero: sci=%d/%d, cj=%d/%d, cii=%d cjj=%d rsq=%e\n",
+                        sci, Nclusters_local, cj, Nclusters_local * SCLUSTER_SIZE, cii, cjj, rsq);
+                    printf(
+                        "i: %d, j: %d\n",
+                        CL_X_OFFSET + sci_vec_base + ci * CLUSTER_M + cii, cj_vec_base + CL_X_OFFSET + cjj);
+                    printf(
+                        "Positions: <%.4f, %.4f, %.4f>, <%.4f, %.4f, %.4f>\n",
+                        ci_x[CL_X_OFFSET + cii], ci_x[CL_Y_OFFSET + cii], ci_x[CL_Z_OFFSET + cii],
+                        xjtmp, yjtmp, zjtmp);
+                }
+                */
             }
         }
     }
@@ -162,25 +168,22 @@ __global__ void cudaUpdatePbcSup_warp(MD_FLOAT* cuda_cl_x,
     MD_FLOAT param_zprd)
 {
     int cg = blockDim.x * blockIdx.x + threadIdx.x;
-    if (cg >= Nclusters_ghost) return;
+    if (cg >= Nclusters_ghost) {
+        return;
+    }
 
-    // int jfac = MAX(1, CLUSTER_N / CLUSTER_M);
-    int jfac      = SCLUSTER_SIZE / CLUSTER_M;
-    int ncj       = Nclusters_local / jfac;
-    MD_FLOAT xprd = param_xprd;
-    MD_FLOAT yprd = param_yprd;
-    MD_FLOAT zprd = param_zprd;
+    int scluster_factor = SCLUSTER_SIZE / CLUSTER_M;
+    int ncj             = Nclusters_local / scluster_factor;
+    int cj              = ncj + cg;
+    int cj_vec_base     = CJ_VECTOR_BASE_INDEX(cj);
+    int bmap_vec_base   = CJ_VECTOR_BASE_INDEX(cuda_border_map[cg]);
+    MD_FLOAT* cj_x      = &cuda_cl_x[cj_vec_base];
+    MD_FLOAT* bmap_x    = &cuda_cl_x[bmap_vec_base];
 
-    const int cj      = ncj + cg;
-    int cj_vec_base   = CJ_VECTOR_BASE_INDEX(cj);
-    int bmap_vec_base = CJ_VECTOR_BASE_INDEX(cuda_border_map[cg]);
-    MD_FLOAT* cj_x    = &cuda_cl_x[cj_vec_base];
-    MD_FLOAT* bmap_x  = &cuda_cl_x[bmap_vec_base];
-
-    for (int cjj = 0; cjj < cuda_jclusters_natoms[cg]; cjj++) {
-        cj_x[CL_X_OFFSET + cjj] = bmap_x[CL_X_OFFSET + cjj] + cuda_PBCx[cg] * xprd;
-        cj_x[CL_Y_OFFSET + cjj] = bmap_x[CL_Y_OFFSET + cjj] + cuda_PBCy[cg] * yprd;
-        cj_x[CL_Z_OFFSET + cjj] = bmap_x[CL_Z_OFFSET + cjj] + cuda_PBCz[cg] * zprd;
+    for (int cjj = 0; cjj < CLUSTER_N; cjj++) {
+        cj_x[CL_X_OFFSET + cjj] = bmap_x[CL_X_OFFSET + cjj] + cuda_PBCx[cg] * param_xprd;
+        cj_x[CL_Y_OFFSET + cjj] = bmap_x[CL_Y_OFFSET + cjj] + cuda_PBCy[cg] * param_yprd;
+        cj_x[CL_Z_OFFSET + cjj] = bmap_x[CL_Z_OFFSET + cjj] + cuda_PBCz[cg] * param_zprd;
     }
 }
 

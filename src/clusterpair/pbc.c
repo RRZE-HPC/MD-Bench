@@ -115,8 +115,7 @@ void updatePbcCPU(Atom* atom, Parameter* param, bool firstUpdate) {
 
 /* relocate atoms that have left domain according
  * to periodic boundary conditions */
-void updateAtomsPbcCPU(Atom* atom, Parameter* param, bool dummy)
-{
+void updateAtomsPbcCPU(Atom* atom, Parameter* param, bool dummy) {
     MD_FLOAT xprd = param->xprd;
     MD_FLOAT yprd = param->yprd;
     MD_FLOAT zprd = param->zprd;
