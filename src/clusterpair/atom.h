@@ -31,7 +31,7 @@ typedef struct {
 
 typedef struct {
     int Natoms, Nlocal, Nghost, Nmax;
-    int Nclusters, Nclusters_local, Nclusters_ghost, Nclusters_max, NmaxGhost, ncj;
+    int Nclusters_local, Nclusters_ghost, Nclusters_max, NmaxGhost, ncj;
     MD_FLOAT *x, *y, *z;
     MD_FLOAT *vx, *vy, *vz;
     int* border_map;

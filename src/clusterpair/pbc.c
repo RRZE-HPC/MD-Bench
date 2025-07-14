@@ -304,6 +304,7 @@ void setupPbc(Atom* atom, Parameter* param) {
     int cjVecBase = CJ_VECTOR_BASE_INDEX(ncj + Nghost + 1);
     int* cjT      = &atom->cl_t[cjScaBase];
     MD_FLOAT* cjX = &atom->cl_x[cjVecBase];
+
     for (int cjj = 0; cjj < CLUSTER_N; cjj++) {
         cjX[CL_X_OFFSET + cjj] = INFINITY;
         cjX[CL_Y_OFFSET + cjj] = INFINITY;
@@ -311,11 +312,10 @@ void setupPbc(Atom* atom, Parameter* param) {
         cjT[cjj]               = 0;
     }
 
-    // increase by one to make it the ghost atom count
+    // Increase by one to make it the ghost atom count
     atom->dummy_cj        = ncj + Nghost + 1;
     atom->Nghost          = Nghost_atoms;
     atom->Nclusters_ghost = Nghost + 1;
-    atom->Nclusters       = atom->Nclusters_local + Nghost + 1;
 
     // Update created ghost clusters positions
     updatePbcCPU(atom, param, 1);

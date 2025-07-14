@@ -115,25 +115,6 @@ extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #endif
 #endif
 
-#if CLUSTER_M == CLUSTER_N
-#define CJ0_FROM_CI(a)      (a)
-#define CJ1_FROM_CI(a)      (a)
-#define CI_BASE_INDEX(a, b) ((a)*CLUSTER_N * (b))
-#define CJ_BASE_INDEX(a, b) ((a)*CLUSTER_N * (b))
-#elif CLUSTER_M == CLUSTER_N * 2 // M > N
-#define CJ0_FROM_CI(a)      ((a) << 1)
-#define CJ1_FROM_CI(a)      (((a) << 1) | 0x1)
-#define CI_BASE_INDEX(a, b) ((a)*CLUSTER_M * (b))
-#define CJ_BASE_INDEX(a, b) (((a) >> 1) * CLUSTER_M * (b) + ((a)&0x1) * (CLUSTER_M >> 1))
-#elif CLUSTER_M == CLUSTER_N / 2 // M < N
-#define CJ0_FROM_CI(a)      ((a) >> 1)
-#define CJ1_FROM_CI(a)      ((a) >> 1)
-#define CI_BASE_INDEX(a, b) (((a) >> 1) * CLUSTER_N * (b) + ((a)&0x1) * (CLUSTER_N >> 1))
-#define CJ_BASE_INDEX(a, b) ((a)*CLUSTER_N * (b))
-#else
-#error "Invalid cluster configuration!"
-#endif
-
 #if CLUSTER_N != 2 && CLUSTER_N != 4 && CLUSTER_N != 8
 #error "Cluster N dimension can be only 2, 4 and 8"
 #endif
@@ -153,10 +134,30 @@ extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #define SCI_FROM_CJ(a)           ((a) / SCLUSTER_SIZE)
 
 #if defined(USE_SUPER_CLUSTERS) && defined(CLUSTERPAIR_KERNEL_GPU)
-// For super-clusters, we need to redefine the CJ_BASE_INDEX macro
-#undef CJ_BASE_INDEX
-#define CJ_BASE_INDEX(a, b)      ((((a) / SCLUSTER_SIZE) * SCLUSTER_SIZE * CLUSTER_N * (b)) + \
-                                  (((a) % SCLUSTER_SIZE) * CLUSTER_N))
+#define CJ0_FROM_CI(a)      (a)
+#define CJ1_FROM_CI(a)      (a)
+#define CI_BASE_INDEX(a, b) ((a)*CLUSTER_N * (b))
+#define CJ_BASE_INDEX(a, b) ((((a) / SCLUSTER_SIZE) * SCLUSTER_SIZE * CLUSTER_N * (b)) + \
+                             (((a) % SCLUSTER_SIZE) * CLUSTER_N))
+#else
+#if CLUSTER_M == CLUSTER_N
+#define CJ0_FROM_CI(a)      (a)
+#define CJ1_FROM_CI(a)      (a)
+#define CI_BASE_INDEX(a, b) ((a)*CLUSTER_N * (b))
+#define CJ_BASE_INDEX(a, b) ((a)*CLUSTER_N * (b))
+#elif CLUSTER_M == CLUSTER_N * 2 // M > N
+#define CJ0_FROM_CI(a)      ((a) << 1)
+#define CJ1_FROM_CI(a)      (((a) << 1) | 0x1)
+#define CI_BASE_INDEX(a, b) ((a)*CLUSTER_M * (b))
+#define CJ_BASE_INDEX(a, b) (((a) >> 1) * CLUSTER_M * (b) + ((a)&0x1) * (CLUSTER_M >> 1))
+#elif CLUSTER_M == CLUSTER_N / 2 // M < N
+#define CJ0_FROM_CI(a)      ((a) >> 1)
+#define CJ1_FROM_CI(a)      ((a) >> 1)
+#define CI_BASE_INDEX(a, b) (((a) >> 1) * CLUSTER_N * (b) + ((a)&0x1) * (CLUSTER_N >> 1))
+#define CJ_BASE_INDEX(a, b) ((a)*CLUSTER_N * (b))
+#else
+#error "Invalid cluster configuration!"
+#endif
 #endif
 
 #define CI_SCALAR_BASE_INDEX(a)  (CI_BASE_INDEX(a, 1))

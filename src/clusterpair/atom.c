@@ -77,7 +77,6 @@ void initAtom(Atom* atom) {
     atom->Nlocal          = 0;
     atom->Nghost          = 0;
     atom->Nmax            = 0;
-    atom->Nclusters       = 0;
     atom->Nclusters_local = 0;
     atom->Nclusters_ghost = 0;
     atom->Nclusters_max   = 0;
@@ -891,6 +890,7 @@ void unpackForward(Atom* atom, int nc, int c0, MD_FLOAT* buf) {
         int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
         MD_FLOAT* cj_x  = &atom->cl_x[cj_vec_base];
         int displ       = i * CLUSTER_N;
+
         for (int cjj = 0; cjj < atom->jclusters[cj].natoms; cjj++) {
             if (cj_x[CL_X_OFFSET + cjj] < INFINITY)
                 cj_x[CL_X_OFFSET + cjj] = buf[3 * (displ + cjj) + 0];
@@ -917,9 +917,8 @@ int packGhost(Atom* atom, int cj, MD_FLOAT* buf, int* pbc) {
         MD_FLOAT bbminz = INFINITY, bbmaxz = -INFINITY;
 
         buf[m++] = (MD_FLOAT) atom->jclusters[cj].natoms;
-        
-        for (int cjj = 0; cjj < atom->jclusters[cj].natoms; cjj++) {
 
+        for (int cjj = 0; cjj < atom->jclusters[cj].natoms; cjj++) {
             MD_FLOAT xtmp = cj_x[CL_X_OFFSET + cjj] + pbc[0] * atom->mybox.xprd;
             MD_FLOAT ytmp = cj_x[CL_Y_OFFSET + cjj] + pbc[1] * atom->mybox.yprd;
             MD_FLOAT ztmp = cj_x[CL_Z_OFFSET + cjj] + pbc[2] * atom->mybox.zprd;
@@ -950,10 +949,10 @@ int packGhost(Atom* atom, int cj, MD_FLOAT* buf, int* pbc) {
         }
 
         for (int cjj = atom->jclusters[cj].natoms; cjj < CLUSTER_N; cjj++) {
-            buf[m++] = -1.; // x
-            buf[m++] = -1.; // y
-            buf[m++] = -1.; // z
-            buf[m++] = -1.; // type
+            buf[m++] = -1.0; // x
+            buf[m++] = -1.0; // y
+            buf[m++] = -1.0; // z
+            buf[m++] = -1.0; // type
         }
 
         buf[m++] = bbminx;
