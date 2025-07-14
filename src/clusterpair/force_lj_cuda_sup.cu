@@ -136,7 +136,6 @@ __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
                     atomicAdd(&sci_f[CL_Z_OFFSET + ci * CLUSTER_M + cii], delz * force);
                 }
 
-                /*
                 if(fabs(rsq) < 1e-6) {
                     printf(
                         "Distance rsq close to zero: sci=%d/%d, cj=%d/%d, cii=%d cjj=%d rsq=%e\n",
@@ -151,7 +150,6 @@ __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
                         sci_x[CL_Z_OFFSET + ci * CLUSTER_M + cii],
                         xjtmp, yjtmp, zjtmp);
                 }
-                */
             }
         }
     }
@@ -174,8 +172,7 @@ __global__ void cudaUpdatePbcSup_warp(MD_FLOAT* cuda_cl_x,
         return;
     }
 
-    int scluster_factor = SCLUSTER_SIZE / CLUSTER_M;
-    int ncj             = Nclusters_local / scluster_factor;
+    int ncj             = Nclusters_local * SCLUSTER_SIZE;
     int cj              = ncj + cg;
     int cj_vec_base     = CJ_VECTOR_BASE_INDEX(cj);
     int bmap_vec_base   = CJ_VECTOR_BASE_INDEX(cuda_border_map[cg]);
