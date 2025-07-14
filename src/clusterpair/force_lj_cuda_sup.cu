@@ -165,8 +165,8 @@ __global__ void cudaUpdatePbcSup_warp(MD_FLOAT* cuda_cl_x,
     int Nclusters_ghost,
     MD_FLOAT param_xprd,
     MD_FLOAT param_yprd,
-    MD_FLOAT param_zprd)
-{
+    MD_FLOAT param_zprd) {
+
     int cg = blockDim.x * blockIdx.x + threadIdx.x;
     if (cg >= Nclusters_ghost) {
         return;

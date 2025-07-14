@@ -534,7 +534,7 @@ extern "C" void initialIntegrateCUDA(Parameter* param, Atom* atom)
 /* uses mapping created in setupPbc */
 extern "C" void updatePbcCUDA(Atom* atom, Parameter* param)
 {
-    const int N           = atom->Nclusters_local;
+    const int N           = atom->Nclusters_ghost;
     const int threads_num = 64;
     dim3 block_size       = dim3(threads_num, 1, 1);
     dim3 grid_size        = dim3((N + threads_num - 1) / threads_num, 1, 1);
