@@ -14,15 +14,19 @@
 #include <util.h>
 
 #ifdef CUDA_TARGET
-IntegrationFunction initialIntegrate = initialIntegrateCUDA;
-IntegrationFunction finalIntegrate   = finalIntegrateCUDA;
+#ifdef USE_SUPER_CLUSTERS
+IntegrationFunction initialIntegrate = cudaInitialIntegrateSup;
+IntegrationFunction finalIntegrate   = cudaFinalIntegrateSup;
+#else
+IntegrationFunction initialIntegrate = cudaInitialIntegrate;
+IntegrationFunction finalIntegrate   = cudaFinalIntegrate;
+#endif
 #else
 IntegrationFunction initialIntegrate = initialIntegrateCPU;
 IntegrationFunction finalIntegrate   = finalIntegrateCPU;
 #endif
 
-void initialIntegrateCPU(Parameter* param, Atom* atom)
-{
+void initialIntegrateCPU(Parameter* param, Atom* atom) {
     DEBUG_MESSAGE("cpuInitialIntegrate start\n");
 
     for (int ci = 0; ci < atom->Nclusters_local; ci++) {
@@ -60,8 +64,7 @@ void initialIntegrateCPU(Parameter* param, Atom* atom)
     DEBUG_MESSAGE("cpuInitialIntegrate end\n");
 }
 
-void finalIntegrateCPU(Parameter* param, Atom* atom)
-{
+void finalIntegrateCPU(Parameter* param, Atom* atom) {
     DEBUG_MESSAGE("cpuFinalIntegrate start\n");
 
     for (int ci = 0; ci < atom->Nclusters_local; ci++) {

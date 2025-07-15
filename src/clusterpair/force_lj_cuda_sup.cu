@@ -41,9 +41,9 @@ __global__ void cudaInitialIntegrateSup_warp(MD_FLOAT* cuda_cl_x,
     MD_FLOAT dtforce,
     MD_FLOAT dt) {
 
-    int sci = blockDim.x * blockIdx.x + threadIdx.x;
-    int ci = threadIdx.y;
-    int cii = threadIdx.z;
+    int sci = blockIdx.x;
+    int ci = threadIdx.x;
+    int cii = threadIdx.y;
 
     if (sci >= Nclusters_local) {
         return;
@@ -63,14 +63,29 @@ __global__ void cudaInitialIntegrateSup_warp(MD_FLOAT* cuda_cl_x,
     ci_x[CL_Z_OFFSET + i] += dt * ci_v[CL_Z_OFFSET + i];
 }
 
+extern "C" void cudaInitialIntegrateSup(Parameter* param, Atom* atom) {
+    dim3 block_size       = dim3(SCLUSTER_SIZE, CLUSTER_M, 1);
+    dim3 grid_size        = dim3(atom->Nclusters_local, 1, 1);
+
+    cudaInitialIntegrateSup_warp<<<grid_size, block_size>>>(cuda_cl_x,
+        cuda_cl_v,
+        cuda_cl_f,
+        atom->Nclusters_local,
+        param->dtforce,
+        param->dt);
+
+    cuda_assert("cudaInitialIntegrateSup", cudaPeekAtLastError());
+    cuda_assert("cudaInitialIntegrateSup", cudaDeviceSynchronize());
+}
+
 __global__ void cudaFinalIntegrateSup_warp(MD_FLOAT* cuda_cl_v,
     MD_FLOAT* cuda_cl_f,
     int Nclusters_local,
     MD_FLOAT dtforce) {
 
-    int sci = blockDim.x * blockIdx.x + threadIdx.x;
-    int ci = threadIdx.y;
-    int cii = threadIdx.z;
+    int sci = blockIdx.x;
+    int ci = threadIdx.x;
+    int cii = threadIdx.y;
 
     if (sci >= Nclusters_local) {
         return;
@@ -84,6 +99,19 @@ __global__ void cudaFinalIntegrateSup_warp(MD_FLOAT* cuda_cl_v,
     ci_v[CL_X_OFFSET + i] += dtforce * ci_f[CL_X_OFFSET + i];
     ci_v[CL_Y_OFFSET + i] += dtforce * ci_f[CL_Y_OFFSET + i];
     ci_v[CL_Z_OFFSET + i] += dtforce * ci_f[CL_Z_OFFSET + i];
+}
+
+extern "C" void cudaFinalIntegrateSup(Parameter* param, Atom* atom) {
+    dim3 block_size       = dim3(SCLUSTER_SIZE, CLUSTER_M, 1);
+    dim3 grid_size        = dim3(atom->Nclusters_local, 1, 1);
+
+    cudaFinalIntegrateSup_warp<<<grid_size, block_size>>>(cuda_cl_v,
+        cuda_cl_f,
+        atom->Nclusters_local,
+        param->dt);
+
+    cuda_assert("cudaFinalIntegrateSup", cudaPeekAtLastError());
+    cuda_assert("cudaFinalIntegrateSup", cudaDeviceSynchronize());
 }
 
 __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
@@ -122,9 +150,9 @@ __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
                 MD_FLOAT rsq  = delx * delx + dely * dely + delz * delz;
 
                 if(rsq < cutforcesq) {
-                    MD_FLOAT sr2   = (MD_FLOAT)1.0 / rsq;
+                    MD_FLOAT sr2   = (MD_FLOAT)(1.0) / rsq;
                     MD_FLOAT sr6   = sr2 * sr2 * sr2 * sigma6;
-                    MD_FLOAT force = (MD_FLOAT)48.0 * sr6 * (sr6 - (MD_FLOAT)0.5) * sr2 * epsilon;
+                    MD_FLOAT force = (MD_FLOAT)(48.0) * sr6 * (sr6 - (MD_FLOAT)(0.5)) * sr2 * epsilon;
 
                     if (half_neigh) {
                         atomicAdd(&cj_f[CL_X_OFFSET + cjj], -delx * force);
@@ -136,23 +164,6 @@ __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
                     atomicAdd(&sci_f[CL_Y_OFFSET + ai], dely * force);
                     atomicAdd(&sci_f[CL_Z_OFFSET + ai], delz * force);
                 }
-
-                /*
-                if(fabs(rsq) < 1e-6) {
-                    printf(
-                        "Distance rsq close to zero: sci=%d/%d, cj=%d/%d, cii=%d cjj=%d rsq=%e\n",
-                        sci, Nclusters_local, cj, Nclusters_local * SCLUSTER_SIZE, cii, cjj, rsq);
-                    printf(
-                        "i: %d, j: %d\n",
-                        sci_vec_base + ci * CLUSTER_M + cii, cj_vec_base + cjj);
-                    printf(
-                        "Positions: <%.4f, %.4f, %.4f>, <%.4f, %.4f, %.4f>\n",
-                        sci_x[CL_X_OFFSET + ci * CLUSTER_M + cii],
-                        sci_x[CL_Y_OFFSET + ci * CLUSTER_M + cii],
-                        sci_x[CL_Z_OFFSET + ci * CLUSTER_M + cii],
-                        xjtmp, yjtmp, zjtmp);
-                }
-                */
             }
         }
     }
