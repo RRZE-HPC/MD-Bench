@@ -131,38 +131,61 @@ __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
     int sci_vec_base = SCI_VECTOR_BASE_INDEX(sci);
     MD_FLOAT* sci_x  = &cuda_cl_x[sci_vec_base];
     MD_FLOAT* sci_f  = &cuda_cl_f[sci_vec_base];
+    int tid = cii * CLUSTER_N + cjj;
+    int total_elements = SCLUSTER_SIZE * CLUSTER_M * 3;
+    __shared__ MD_FLOAT sh_sci_x[SCLUSTER_SIZE * CLUSTER_M * 3];
+
+    for(int idx = tid; idx < total_elements; idx += blockDim.x * blockDim.y) {
+        sh_sci_x[idx] = sci_x[idx];
+    }
+
+    __syncthreads();
 
     for(int k = 0; k < cuda_numneigh[sci]; k++) {
         int cj = cuda_neighs[sci * maxneighs + k];
         int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
         MD_FLOAT* cj_x  = &cuda_cl_x[cj_vec_base];
         MD_FLOAT* cj_f  = &cuda_cl_f[cj_vec_base];
+        
+        // Direct access to neighbor positions (used only once)
         MD_FLOAT xjtmp = cj_x[CL_X_OFFSET + cjj];
         MD_FLOAT yjtmp = cj_x[CL_Y_OFFSET + cjj];
         MD_FLOAT zjtmp = cj_x[CL_Z_OFFSET + cjj];
+        
+        // Pre-calculate cluster comparison values
+        int cj_supercluster = cj / SCLUSTER_SIZE;
+        int cj_cluster_id = cj % SCLUSTER_SIZE;
 
         for(int sci_ci = 0; sci_ci < SCLUSTER_SIZE; sci_ci++) {
-            if(sci != cj / SCLUSTER_SIZE || sci_ci != cj % SCLUSTER_SIZE || cii != cjj) {
-                int ai        = sci_ci * CLUSTER_M + cii;
-                MD_FLOAT delx = sci_x[CL_X_OFFSET + ai] - xjtmp;
-                MD_FLOAT dely = sci_x[CL_Y_OFFSET + ai] - yjtmp;
-                MD_FLOAT delz = sci_x[CL_Z_OFFSET + ai] - zjtmp;
+            // Skip self-interaction optimization
+            if(sci != cj_supercluster || sci_ci != cj_cluster_id || cii != cjj) {
+                int ai = sci_ci * CLUSTER_M + cii;
+                
+                // Use cached shared memory values
+                MD_FLOAT delx = sh_sci_x[CL_X_OFFSET + ai] - xjtmp;
+                MD_FLOAT dely = sh_sci_x[CL_Y_OFFSET + ai] - yjtmp;
+                MD_FLOAT delz = sh_sci_x[CL_Z_OFFSET + ai] - zjtmp;
                 MD_FLOAT rsq  = delx * delx + dely * dely + delz * delz;
 
                 if(rsq < cutforcesq) {
                     MD_FLOAT sr2   = (MD_FLOAT)(1.0) / rsq;
                     MD_FLOAT sr6   = sr2 * sr2 * sr2 * sigma6;
                     MD_FLOAT force = (MD_FLOAT)(48.0) * sr6 * (sr6 - (MD_FLOAT)(0.5)) * sr2 * epsilon;
+                    
+                    // Pre-calculate force components
+                    MD_FLOAT fx = delx * force;
+                    MD_FLOAT fy = dely * force;
+                    MD_FLOAT fz = delz * force;
 
                     if (half_neigh) {
-                        atomicAdd(&cj_f[CL_X_OFFSET + cjj], -delx * force);
-                        atomicAdd(&cj_f[CL_Y_OFFSET + cjj], -dely * force);
-                        atomicAdd(&cj_f[CL_Z_OFFSET + cjj], -delz * force);
+                        atomicAdd(&cj_f[CL_X_OFFSET + cjj], -fx);
+                        atomicAdd(&cj_f[CL_Y_OFFSET + cjj], -fy);
+                        atomicAdd(&cj_f[CL_Z_OFFSET + cjj], -fz);
                     }
 
-                    atomicAdd(&sci_f[CL_X_OFFSET + ai], delx * force);
-                    atomicAdd(&sci_f[CL_Y_OFFSET + ai], dely * force);
-                    atomicAdd(&sci_f[CL_Z_OFFSET + ai], delz * force);
+                    atomicAdd(&sci_f[CL_X_OFFSET + ai], fx);
+                    atomicAdd(&sci_f[CL_Y_OFFSET + ai], fy);
+                    atomicAdd(&sci_f[CL_Z_OFFSET + ai], fz);
                 }
             }
         }
