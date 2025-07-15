@@ -333,11 +333,11 @@ __global__ void computeForceLJCudaFullNeigh(
     #if CLUSTER_M <= 32
     unsigned mask = 0xffffffff;
     for (int offset = CLUSTER_M / 2; offset > 0; offset /= 2) {
-        #if CUDA_TARGET == 0
+        #ifdef CUDA_TARGET
         fix += __shfl_down_sync(mask, fix, offset);
         fiy += __shfl_down_sync(mask, fiy, offset);
         fiz += __shfl_down_sync(mask, fiz, offset);
-        #elif CUDA_TARGET == 1
+        #else
         fix += __shfl_down(fix, offset);
         fiy += __shfl_down(fiy, offset);
         fiz += __shfl_down(fiz, offset);
