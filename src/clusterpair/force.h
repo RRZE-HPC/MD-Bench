@@ -124,14 +124,24 @@ extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #error "For super-clusters, M must be equal to N"
 #endif
 
+#if defined(USE_SUPER_CLUSTERS) && defined(CLUSTERPAIR_KERNEL_GPU)
 #define SCLUSTER_SIZE_X          2
 #define SCLUSTER_SIZE_Y          2
 #define SCLUSTER_SIZE_Z          2
 #define SCLUSTER_SIZE            (SCLUSTER_SIZE_X * SCLUSTER_SIZE_Y * SCLUSTER_SIZE_Z)
 #define SCI_BASE_INDEX(a, b)     ((a) * CLUSTER_N * SCLUSTER_SIZE * (b))
+#define SCI_FROM_CJ(a)           ((a) / SCLUSTER_SIZE)
+#else
+#define SCLUSTER_SIZE_X          1
+#define SCLUSTER_SIZE_Y          1
+#define SCLUSTER_SIZE_Z          1
+#define SCLUSTER_SIZE            1
+#define SCI_BASE_INDEX(a, b)     ((a) * CLUSTER_M * (b))
+#define SCI_FROM_CJ(a)           (a)
+#endif
+
 #define SCI_SCALAR_BASE_INDEX(a) (SCI_BASE_INDEX(a, 1))
 #define SCI_VECTOR_BASE_INDEX(a) (SCI_BASE_INDEX(a, 3))
-#define SCI_FROM_CJ(a)           ((a) / SCLUSTER_SIZE)
 
 #if defined(USE_SUPER_CLUSTERS) && defined(CLUSTERPAIR_KERNEL_GPU)
 #define CJ0_FROM_CI(a)      (a)

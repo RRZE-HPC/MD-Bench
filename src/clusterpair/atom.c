@@ -768,13 +768,12 @@ void growClusters(Atom* atom, int super_clustering) {
     int nold  = atom->Nclusters_max;
     // If M<N, we need to allocate more j-clusters
     int jterm = MAX(1, CLUSTER_N / CLUSTER_M);
-    int scluster_factor = (super_clustering) ? SCLUSTER_SIZE : 1;
 
     atom->Nclusters_max += DELTA;
     atom->iclusters    = (Cluster*)reallocate(atom->iclusters,
         ALIGNMENT,
-        atom->Nclusters_max * scluster_factor * sizeof(Cluster),
-        nold * scluster_factor * sizeof(Cluster));
+        atom->Nclusters_max * SCLUSTER_SIZE * sizeof(Cluster),
+        nold * SCLUSTER_SIZE * sizeof(Cluster));
     atom->jclusters    = (Cluster*)reallocate(atom->jclusters,
         ALIGNMENT,
         atom->Nclusters_max * jterm * sizeof(Cluster),
@@ -785,20 +784,20 @@ void growClusters(Atom* atom, int super_clustering) {
         nold * sizeof(int));
     atom->cl_x         = (MD_FLOAT*)reallocate(atom->cl_x,
         ALIGNMENT,
-        atom->Nclusters_max * CLUSTER_M * scluster_factor * 3 * sizeof(MD_FLOAT),
-        nold * CLUSTER_M * scluster_factor * 3 * sizeof(MD_FLOAT));
+        atom->Nclusters_max * CLUSTER_M * SCLUSTER_SIZE * 3 * sizeof(MD_FLOAT),
+        nold * CLUSTER_M * SCLUSTER_SIZE * 3 * sizeof(MD_FLOAT));
     atom->cl_f         = (MD_FLOAT*)reallocate(atom->cl_f,
         ALIGNMENT,
-        atom->Nclusters_max * CLUSTER_M * scluster_factor  * 3 * sizeof(MD_FLOAT),
-        nold * CLUSTER_M * scluster_factor * 3 * sizeof(MD_FLOAT));
+        atom->Nclusters_max * CLUSTER_M * SCLUSTER_SIZE  * 3 * sizeof(MD_FLOAT),
+        nold * CLUSTER_M * SCLUSTER_SIZE * 3 * sizeof(MD_FLOAT));
     atom->cl_v         = (MD_FLOAT*)reallocate(atom->cl_v,
         ALIGNMENT,
-        atom->Nclusters_max * CLUSTER_M * scluster_factor  * 3 * sizeof(MD_FLOAT),
-        nold * CLUSTER_M * scluster_factor * 3 * sizeof(MD_FLOAT));
+        atom->Nclusters_max * CLUSTER_M * SCLUSTER_SIZE  * 3 * sizeof(MD_FLOAT),
+        nold * CLUSTER_M * SCLUSTER_SIZE * 3 * sizeof(MD_FLOAT));
     atom->cl_t         = (int*)reallocate(atom->cl_t,
         ALIGNMENT,
-        atom->Nclusters_max * CLUSTER_M * scluster_factor  * sizeof(int),
-        nold * CLUSTER_M * scluster_factor * sizeof(int));
+        atom->Nclusters_max * CLUSTER_M * SCLUSTER_SIZE  * sizeof(int),
+        nold * CLUSTER_M * SCLUSTER_SIZE * sizeof(int));
 
     if(super_clustering) {
         atom->siclusters    = (SuperCluster*)reallocate(atom->siclusters,

@@ -113,11 +113,12 @@ __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
         MD_FLOAT yjtmp = cj_x[CL_Y_OFFSET + cjj];
         MD_FLOAT zjtmp = cj_x[CL_Z_OFFSET + cjj];
 
-        for(int ci = 0; ci < SCLUSTER_SIZE; ci++) {
-            if(sci != cj / SCLUSTER_SIZE || ci != cj % SCLUSTER_SIZE || cii != cjj) {
-                MD_FLOAT delx = sci_x[CL_X_OFFSET + ci * CLUSTER_M + cii] - xjtmp;
-                MD_FLOAT dely = sci_x[CL_Y_OFFSET + ci * CLUSTER_M + cii] - yjtmp;
-                MD_FLOAT delz = sci_x[CL_Z_OFFSET + ci * CLUSTER_M + cii] - zjtmp;
+        for(int sci_ci = 0; sci_ci < SCLUSTER_SIZE; sci_ci++) {
+            if(sci != cj / SCLUSTER_SIZE || sci_ci != cj % SCLUSTER_SIZE || cii != cjj) {
+                int ai        = sci_ci * CLUSTER_M + cii;
+                MD_FLOAT delx = sci_x[CL_X_OFFSET + ai] - xjtmp;
+                MD_FLOAT dely = sci_x[CL_Y_OFFSET + ai] - yjtmp;
+                MD_FLOAT delz = sci_x[CL_Z_OFFSET + ai] - zjtmp;
                 MD_FLOAT rsq  = delx * delx + dely * dely + delz * delz;
 
                 if(rsq < cutforcesq) {
@@ -131,11 +132,12 @@ __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
                         atomicAdd(&cj_f[CL_Z_OFFSET + cjj], -delz * force);
                     }
 
-                    atomicAdd(&sci_f[CL_X_OFFSET + ci * CLUSTER_M + cii], delx * force);
-                    atomicAdd(&sci_f[CL_Y_OFFSET + ci * CLUSTER_M + cii], dely * force);
-                    atomicAdd(&sci_f[CL_Z_OFFSET + ci * CLUSTER_M + cii], delz * force);
+                    atomicAdd(&sci_f[CL_X_OFFSET + ai], delx * force);
+                    atomicAdd(&sci_f[CL_Y_OFFSET + ai], dely * force);
+                    atomicAdd(&sci_f[CL_Z_OFFSET + ai], delz * force);
                 }
 
+                /*
                 if(fabs(rsq) < 1e-6) {
                     printf(
                         "Distance rsq close to zero: sci=%d/%d, cj=%d/%d, cii=%d cjj=%d rsq=%e\n",
@@ -150,6 +152,7 @@ __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
                         sci_x[CL_Z_OFFSET + ci * CLUSTER_M + cii],
                         xjtmp, yjtmp, zjtmp);
                 }
+                */
             }
         }
     }

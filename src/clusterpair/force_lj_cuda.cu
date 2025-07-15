@@ -74,16 +74,14 @@ extern "C" void initDevice(Parameter* param, Atom* atom, Neighbor* neighbor) {
     cuda_assert("cudaDeviceSetup", cudaDeviceReset());
     cuda_assert("cudaDeviceSetup", cudaSetDevice(0));
 
-    int scluster_factor = param->super_clustering ? SCLUSTER_SIZE : 1;
-
     cuda_cl_x = (MD_FLOAT*)allocateGPU(
-        atom->Nclusters_max * CLUSTER_M * scluster_factor * 3 * sizeof(MD_FLOAT));
+        atom->Nclusters_max * CLUSTER_M * SCLUSTER_SIZE * 3 * sizeof(MD_FLOAT));
     cuda_cl_v = (MD_FLOAT*)allocateGPU(
-        atom->Nclusters_max * CLUSTER_M * scluster_factor * 3 * sizeof(MD_FLOAT));
+        atom->Nclusters_max * CLUSTER_M * SCLUSTER_SIZE * 3 * sizeof(MD_FLOAT));
     cuda_cl_f = (MD_FLOAT*)allocateGPU(
-        atom->Nclusters_max * CLUSTER_M * scluster_factor * 3 * sizeof(MD_FLOAT));
+        atom->Nclusters_max * CLUSTER_M * SCLUSTER_SIZE * 3 * sizeof(MD_FLOAT));
 #ifndef ONE_ATOM_TYPE
-    cuda_cl_t       = (int*)allocateGPU(atom->Nclusters_max * CLUSTER_M * scluster_factor * sizeof(int));
+    cuda_cl_t       = (int*)allocateGPU(atom->Nclusters_max * CLUSTER_M * SCLUSTER_SIZE * sizeof(int));
     cuda_cutforcesq = (MD_FLOAT*)allocateGPU(
         atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
     cuda_sigma6  = (MD_FLOAT*)allocateGPU(atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
@@ -99,34 +97,32 @@ extern "C" void initDevice(Parameter* param, Atom* atom, Neighbor* neighbor) {
         atom->epsilon,
         atom->ntypes * atom->ntypes * sizeof(MD_FLOAT));
 #endif
-    cuda_natoms           = (int*)allocateGPU(atom->Nclusters_max * scluster_factor * sizeof(int));
-    cuda_jclusters_natoms = (int*)allocateGPU(atom->Nclusters_max * scluster_factor * sizeof(int));
-    cuda_border_map       = (int*)allocateGPU(atom->Nclusters_max * scluster_factor * sizeof(int));
-    cuda_PBCx             = (int*)allocateGPU(atom->Nclusters_max * scluster_factor * sizeof(int));
-    cuda_PBCy             = (int*)allocateGPU(atom->Nclusters_max * scluster_factor * sizeof(int));
-    cuda_PBCz             = (int*)allocateGPU(atom->Nclusters_max * scluster_factor * sizeof(int));
+    cuda_natoms           = (int*)allocateGPU(atom->Nclusters_max * SCLUSTER_SIZE * sizeof(int));
+    cuda_jclusters_natoms = (int*)allocateGPU(atom->Nclusters_max * SCLUSTER_SIZE * sizeof(int));
+    cuda_border_map       = (int*)allocateGPU(atom->Nclusters_max * SCLUSTER_SIZE * sizeof(int));
+    cuda_PBCx             = (int*)allocateGPU(atom->Nclusters_max * SCLUSTER_SIZE * sizeof(int));
+    cuda_PBCy             = (int*)allocateGPU(atom->Nclusters_max * SCLUSTER_SIZE * sizeof(int));
+    cuda_PBCz             = (int*)allocateGPU(atom->Nclusters_max * SCLUSTER_SIZE * sizeof(int));
     cuda_numneigh         = (int*)allocateGPU(atom->Nclusters_max * sizeof(int));
     cuda_neighbors        = (int*)allocateGPU(
         atom->Nclusters_max * neighbor->maxneighs * sizeof(int));
-    natoms  = (int*)malloc(atom->Nclusters_max * scluster_factor * sizeof(int));
-    ngatoms = (int*)malloc(atom->Nclusters_max * scluster_factor * sizeof(int));
+    natoms  = (int*)malloc(atom->Nclusters_max * SCLUSTER_SIZE * sizeof(int));
+    ngatoms = (int*)malloc(atom->Nclusters_max * SCLUSTER_SIZE * sizeof(int));
 }
 
 extern "C" void copyDataToCUDADevice(Parameter* param, Atom* atom, Neighbor* neighbor) {
-    int scluster_factor = param->super_clustering ? SCLUSTER_SIZE : 1;
-
     memcpyToGPU(cuda_cl_x,
         atom->cl_x,
-        atom->Nclusters_max * CLUSTER_M * scluster_factor * 3 * sizeof(MD_FLOAT));
+        atom->Nclusters_max * CLUSTER_M * SCLUSTER_SIZE * 3 * sizeof(MD_FLOAT));
     memcpyToGPU(cuda_cl_v,
         atom->cl_v,
-        atom->Nclusters_max * CLUSTER_M * scluster_factor * 3 * sizeof(MD_FLOAT));
+        atom->Nclusters_max * CLUSTER_M * SCLUSTER_SIZE * 3 * sizeof(MD_FLOAT));
 
 #ifndef ONE_ATOM_TYPE
-    memcpyToGPU(cuda_cl_t, atom->cl_t, atom->Nclusters_max * CLUSTER_M * scluster_factor * sizeof(int));
+    memcpyToGPU(cuda_cl_t, atom->cl_t, atom->Nclusters_max * CLUSTER_M * SCLUSTER_SIZE * sizeof(int));
 #endif
 
-    for (int ci = 0; ci < atom->Nclusters_local * scluster_factor; ci++) {
+    for (int ci = 0; ci < atom->Nclusters_local * SCLUSTER_SIZE; ci++) {
         natoms[ci] = atom->iclusters[ci].natoms;
     }
 
@@ -137,7 +133,7 @@ extern "C" void copyDataToCUDADevice(Parameter* param, Atom* atom, Neighbor* nei
         ngatoms[cg]  = atom->jclusters[cj].natoms;
     }
 
-    memcpyToGPU(cuda_natoms, natoms, atom->Nclusters_local * scluster_factor * sizeof(int));
+    memcpyToGPU(cuda_natoms, natoms, atom->Nclusters_local * SCLUSTER_SIZE * sizeof(int));
     memcpyToGPU(cuda_jclusters_natoms, ngatoms, atom->Nclusters_ghost * sizeof(int));
 #ifndef _MPI
     memcpyToGPU(cuda_border_map, atom->border_map, atom->Nclusters_ghost * sizeof(int));
@@ -153,14 +149,12 @@ extern "C" void copyDataToCUDADevice(Parameter* param, Atom* atom, Neighbor* nei
 }
 
 extern "C" void copyDataFromCUDADevice(Parameter* param, Atom* atom) {
-    int scluster_factor = param->super_clustering ? SCLUSTER_SIZE : 1;
-
     memcpyFromGPU(atom->cl_x,
         cuda_cl_x,
-        atom->Nclusters_max * CLUSTER_M * scluster_factor * 3 * sizeof(MD_FLOAT));
+        atom->Nclusters_max * CLUSTER_M * SCLUSTER_SIZE * 3 * sizeof(MD_FLOAT));
     memcpyFromGPU(atom->cl_v,
         cuda_cl_v,
-        atom->Nclusters_max * CLUSTER_M * scluster_factor * 3 * sizeof(MD_FLOAT));
+        atom->Nclusters_max * CLUSTER_M * SCLUSTER_SIZE * 3 * sizeof(MD_FLOAT));
 }
 
 extern "C" void cudaDeviceFree(Parameter* param)
@@ -190,11 +184,12 @@ __global__ void cudaInitialIntegrate_warp(MD_FLOAT* cuda_cl_x,
     int* cuda_natoms,
     int Nclusters_local,
     MD_FLOAT dtforce,
-    MD_FLOAT dt)
-{
+    MD_FLOAT dt) {
 
     unsigned int ci = blockDim.x * blockIdx.x + threadIdx.x;
-    if (ci >= Nclusters_local) return;
+    if (ci >= Nclusters_local) {
+        return;
+    }
 
     int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
     MD_FLOAT* ci_x  = &cuda_cl_x[ci_vec_base];
@@ -221,10 +216,12 @@ __global__ void cudaUpdatePbc_warp(MD_FLOAT* cuda_cl_x,
     int Nclusters_ghost,
     MD_FLOAT param_xprd,
     MD_FLOAT param_yprd,
-    MD_FLOAT param_zprd)
-{
+    MD_FLOAT param_zprd) {
+
     unsigned int cg = blockDim.x * blockIdx.x + threadIdx.x;
-    if (cg >= Nclusters_ghost) return;
+    if (cg >= Nclusters_ghost) {
+        return;
+    }
 
     // int ncj       = get_ncj_from_nci(Nclusters_local);
     int ncj       = CJ0_FROM_CI(Nclusters_local);
@@ -263,11 +260,12 @@ __global__ void computeForceLJCudaFullNeigh(
     int Nclusters_max,
     int* cuda_numneigh,
     int* cuda_neighs,
-    int maxneighs)
-{
+    int maxneighs) {
 
     int ci = blockDim.x * blockIdx.x + threadIdx.x;
-    if (ci >= Nclusters_local) return;
+    if (ci >= Nclusters_local) {
+        return;
+    }
 
     int cii         = threadIdx.z;
     int cjj         = threadIdx.y;
@@ -379,7 +377,9 @@ __global__ void computeForceLJCudaHalfNeigh(
     int maxneighs)
 {
     int ci = blockDim.x * blockIdx.x + threadIdx.x;
-    if (ci >= Nclusters_local) return;
+    if (ci >= Nclusters_local) {
+        return;
+    }
 
     int cii         = threadIdx.z;
     int cjj         = threadIdx.y;
@@ -457,11 +457,12 @@ __global__ void cudaFinalIntegrate_warp(MD_FLOAT* cuda_cl_v,
     MD_FLOAT* cuda_cl_f,
     int* cuda_natoms,
     int Nclusters_local,
-    MD_FLOAT dtforce)
-{
+    MD_FLOAT dtforce) {
 
     unsigned int ci = blockDim.x * blockIdx.x + threadIdx.x;
-    if (ci >= Nclusters_local) return;
+    if (ci >= Nclusters_local) {
+        return;
+    }
 
     int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
     MD_FLOAT* ci_v  = &cuda_cl_v[ci_vec_base];
@@ -474,8 +475,7 @@ __global__ void cudaFinalIntegrate_warp(MD_FLOAT* cuda_cl_v,
     }
 }
 
-extern "C" void cudaInitialIntegrate(Parameter* param, Atom* atom)
-{
+extern "C" void cudaInitialIntegrate(Parameter* param, Atom* atom) {
     const int N           = atom->Nclusters_local;
     const int threads_num = 16;
     dim3 grid_size        = dim3(N / (threads_num) + 1, 1, 1);
@@ -502,8 +502,7 @@ extern "C" void cudaInitialIntegrate(Parameter* param, Atom* atom)
     cuda_assert("cudaInitialIntegrate", cudaDeviceSynchronize());
 }
 
-extern "C" void initialIntegrateCUDA(Parameter* param, Atom* atom)
-{
+extern "C" void initialIntegrateCUDA(Parameter* param, Atom* atom) {
     const int N           = atom->Nclusters_local;
     const int threads_num = 64;
     dim3 block_size       = dim3(threads_num, 1, 1);
@@ -532,8 +531,7 @@ extern "C" void initialIntegrateCUDA(Parameter* param, Atom* atom)
 
 /* update coordinates of ghost atoms */
 /* uses mapping created in setupPbc */
-extern "C" void updatePbcCUDA(Atom* atom, Parameter* param)
-{
+extern "C" void updatePbcCUDA(Atom* atom, Parameter* param) {
     const int N           = atom->Nclusters_ghost;
     const int threads_num = 64;
     dim3 block_size       = dim3(threads_num, 1, 1);
@@ -569,9 +567,7 @@ extern "C" void updatePbcCUDA(Atom* atom, Parameter* param)
     cuda_assert("cudaUpdatePbc", cudaDeviceSynchronize());
 }
 
-extern "C" double computeForceLJCuda(
-    Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
-{
+extern "C" double computeForceLJCuda(Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats) {
 #ifdef ONE_ATOM_TYPE
     MD_FLOAT cutforcesq = param->cutforce * param->cutforce;
     MD_FLOAT sigma6     = param->sigma6;
@@ -635,8 +631,7 @@ extern "C" double computeForceLJCuda(
     return E - S;
 }
 
-extern "C" void finalIntegrateCUDA(Parameter* param, Atom* atom)
-{
+extern "C" void finalIntegrateCUDA(Parameter* param, Atom* atom) {
     const int threads_num = 64;
     const int N           = atom->Nclusters_local;
     dim3 block_size       = dim3(threads_num, 1, 1);
@@ -659,15 +654,13 @@ extern "C" void finalIntegrateCUDA(Parameter* param, Atom* atom)
     cuda_assert("cudaFinalIntegrate", cudaDeviceSynchronize());
 }
 
-extern "C" void copyGhostFromGPU(Atom* atom)
-{
+extern "C" void copyGhostFromGPU(Atom* atom) {
     memcpyFromGPU(atom->cl_x,
         cuda_cl_x,
-        atom->Nclusters_local * CLUSTER_M * 3 * sizeof(MD_FLOAT));
+        atom->Nclusters_local * CLUSTER_M * SCLUSTER_SIZE * 3 * sizeof(MD_FLOAT));
 }
 
-extern "C" void copyGhostToGPU(Atom* atom)
-{
+extern "C" void copyGhostToGPU(Atom* atom) {
     int ncj               = CJ0_FROM_CI(atom->Nclusters_local);
     int cj_vec_base       = CJ_VECTOR_BASE_INDEX(ncj);
     MD_FLOAT* host_cl_x   = &atom->cl_x[cj_vec_base];
@@ -677,22 +670,19 @@ extern "C" void copyGhostToGPU(Atom* atom)
         atom->Nclusters_ghost * CLUSTER_N * 3 * sizeof(MD_FLOAT));
 }
 
-extern "C" void copyForceFromGPU(Atom* atom)
-{
+extern "C" void copyForceFromGPU(Atom* atom) {
     memcpyFromGPU(atom->cl_f,
         cuda_cl_f,
-        atom->Nclusters_max * CLUSTER_M * 3 * sizeof(MD_FLOAT));
+        atom->Nclusters_max * CLUSTER_M * SCLUSTER_SIZE * 3 * sizeof(MD_FLOAT));
 }
 
-extern "C" void copyForceToGPU(Atom* atom)
-{
+extern "C" void copyForceToGPU(Atom* atom) {
     memcpyToGPU(cuda_cl_f,
         atom->cl_f,
         atom->Nclusters_max * CLUSTER_N * 3 * sizeof(MD_FLOAT));
 }
 
-extern "C" void growClustersCUDA(Atom* atom)
-{
+extern "C" void growClustersCUDA(Atom* atom) {
     if (cuda_cl_x) {
         cuda_cl_x   = (MD_FLOAT*)reallocateGPU(cuda_cl_x,
             atom->Nclusters_max * CLUSTER_M * 3 * sizeof(MD_FLOAT));
@@ -715,8 +705,8 @@ extern "C" void growClustersCUDA(Atom* atom)
 #endif
     }
 }
-extern void growNeighborCUDA(Atom* atom, Neighbor* neighbor)
-{
+
+extern void growNeighborCUDA(Atom* atom, Neighbor* neighbor) {
     cuda_neighbors = (int*)reallocateGPU(cuda_neighbors,
         atom->Nclusters_max * neighbor->maxneighs * sizeof(int));
 }

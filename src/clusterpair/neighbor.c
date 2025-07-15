@@ -802,31 +802,19 @@ void buildNeighborSuperclusters(Atom* atom, Neighbor* neighbor) {
                             if (d_bb_sq < cutneighsq) {
                                 int is_neighbor = (d_bb_sq < rbb_sq) ? 1 : 0;
                                 if (!is_neighbor) {
-                                    for (int sci_ci = 0;
-                                         sci_ci < atom->siclusters[sci].nclusters;
-                                         sci_ci++) {
-
+                                    for (int sci_ci = 0; sci_ci < atom->siclusters[sci].nclusters; sci_ci++) {
                                         const int ci = sci * SCLUSTER_SIZE + sci_ci;
                                         int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
                                         MD_FLOAT* ci_x  = &atom->cl_x[sci_vec_base + sci_ci * CLUSTER_M];
                                         MD_FLOAT* cj_x  = &atom->cl_x[cj_vec_base];
 
-                                        for (int cii = 0;
-                                             cii < atom->iclusters[ci].natoms;
-                                             cii++) {
-                                            for (int cjj = 0;
-                                                 cjj < atom->jclusters[cj].natoms;
-                                                 cjj++) {
-                                                MD_FLOAT delx = ci_x[CL_X_OFFSET + cii] -
-                                                                cj_x[CL_X_OFFSET + cjj];
-                                                MD_FLOAT dely = ci_x[CL_Y_OFFSET + cii] -
-                                                                cj_x[CL_Y_OFFSET + cjj];
-                                                MD_FLOAT delz = ci_x[CL_Z_OFFSET + cii] -
-                                                                cj_x[CL_Z_OFFSET + cjj];
+                                        for (int cii = 0; cii < atom->iclusters[ci].natoms; cii++) {
+                                            for (int cjj = 0; cjj < atom->jclusters[cj].natoms; cjj++) {
+                                                MD_FLOAT delx = ci_x[CL_X_OFFSET + cii] - cj_x[CL_X_OFFSET + cjj];
+                                                MD_FLOAT dely = ci_x[CL_Y_OFFSET + cii] - cj_x[CL_Y_OFFSET + cjj];
+                                                MD_FLOAT delz = ci_x[CL_Z_OFFSET + cii] - cj_x[CL_Z_OFFSET + cjj];
 
-                                                if (delx * delx + dely * dely +
-                                                        delz * delz <
-                                                    cutneighsq) {
+                                                if (delx * delx + dely * dely + delz * delz < cutneighsq) {
                                                     is_neighbor = 1;
                                                     break;
                                                 }
@@ -1596,10 +1584,9 @@ void defineJClusters(Parameter* param, Atom* atom) {
     DEBUG_MESSAGE("defineJClusters start\n");
 
     const int jfac            = MAX(1, CLUSTER_N / CLUSTER_M);
-    const int scluster_factor = (param->super_clustering) ? SCLUSTER_SIZE : 1;
-    atom->ncj                 = atom->Nclusters_local * scluster_factor / jfac;
+    atom->ncj                 = atom->Nclusters_local * SCLUSTER_SIZE / jfac;
 
-    for (int ci = 0; ci < atom->Nclusters_local * scluster_factor; ci++) {
+    for (int ci = 0; ci < atom->Nclusters_local * SCLUSTER_SIZE; ci++) {
         int cj0 = CJ0_FROM_CI(ci);
 
         if (CLUSTER_M == CLUSTER_N) {
