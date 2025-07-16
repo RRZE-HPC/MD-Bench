@@ -134,6 +134,16 @@ __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
     MD_FLOAT* sci_f  = &cuda_cl_f[sci_vec_base];
     int tid = cii * CLUSTER_N + cjj;
     int ncoords = SCLUSTER_SIZE * CLUSTER_M * 3;
+    MD_FLOAT fx_acc[SCLUSTER_SIZE];
+    MD_FLOAT fy_acc[SCLUSTER_SIZE];
+    MD_FLOAT fz_acc[SCLUSTER_SIZE];
+
+    #pragma unroll
+    for(int i = 0; i < SCLUSTER_SIZE; i++) {
+        fx_acc[i] = (MD_FLOAT)0.0;
+        fy_acc[i] = (MD_FLOAT)0.0;
+        fz_acc[i] = (MD_FLOAT)0.0;
+    }
 
     for(int idx = tid; idx < ncoords; idx += blockDim.x * blockDim.y) {
         sh_sci_x[idx] = sci_x[idx];
@@ -152,34 +162,75 @@ __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
         int cj_sc = cj / SCLUSTER_SIZE;
         int sci_cj = cj % SCLUSTER_SIZE;
 
+        #pragma unroll
         for(int sci_ci = 0; sci_ci < SCLUSTER_SIZE; sci_ci++) {
             if(sci != cj_sc || sci_ci != sci_cj || cii != cjj) {
                 int ai = sci_ci * CLUSTER_M + cii;
                 MD_FLOAT delx = sh_sci_x[CL_X_OFFSET + ai] - xjtmp;
                 MD_FLOAT dely = sh_sci_x[CL_Y_OFFSET + ai] - yjtmp;
                 MD_FLOAT delz = sh_sci_x[CL_Z_OFFSET + ai] - zjtmp;
-                MD_FLOAT rsq  = delx * delx + dely * dely + delz * delz;
+                MD_FLOAT rsq  = fmaf(delz, delz, fmaf(dely, dely, delx * delx));
 
                 if(rsq < cutforcesq) {
-                    MD_FLOAT sr2   = (MD_FLOAT)(1.0) / rsq;
+                    MD_FLOAT sr2   = __fdividef(1.0f, rsq);
                     MD_FLOAT sr6   = sr2 * sr2 * sr2 * sigma6;
-                    MD_FLOAT force = (MD_FLOAT)(48.0) * sr6 * (sr6 - (MD_FLOAT)(0.5)) * sr2 * epsilon;
+                    MD_FLOAT force = (MD_FLOAT)(48.0) * sr6 * fmaf(sr6, 1.0f, -0.5f) * sr2 * epsilon;
                     MD_FLOAT fx = delx * force;
                     MD_FLOAT fy = dely * force;
                     MD_FLOAT fz = delz * force;
+
+                    fx_acc[sci_ci] += fx;
+                    fy_acc[sci_ci] += fy;
+                    fz_acc[sci_ci] += fz;
 
                     if (half_neigh) {
                         atomicAdd(&cj_f[CL_X_OFFSET + cjj], -fx);
                         atomicAdd(&cj_f[CL_Y_OFFSET + cjj], -fy);
                         atomicAdd(&cj_f[CL_Z_OFFSET + cjj], -fz);
                     }
-
-                    atomicAdd(&sci_f[CL_X_OFFSET + ai], fx);
-                    atomicAdd(&sci_f[CL_Y_OFFSET + ai], fy);
-                    atomicAdd(&sci_f[CL_Z_OFFSET + ai], fz);
                 }
             }
         }
+    }
+
+    #pragma unroll
+    for(int sci_ci = 0; sci_ci < SCLUSTER_SIZE; sci_ci++) {
+        int ai = sci_ci * CLUSTER_M + cii;
+        
+        // If M is less than the warp size, we perform forces reduction via
+        // warp shuffles instead of using atomics since it should be cheaper
+        // It is very unlikely that M > 32, but we keep this check here to
+        // avoid any issues in such situations
+        #if CLUSTER_M <= 32
+        MD_FLOAT fix  = fx_acc[sci_ci];
+        MD_FLOAT fiy  = fy_acc[sci_ci];
+        MD_FLOAT fiz  = fz_acc[sci_ci];
+        unsigned mask = 0xffffffff;
+        
+        // Warp reduction across threads in the same cluster
+        for (int offset = CLUSTER_M / 2; offset > 0; offset /= 2) {
+            #ifdef CUDA_TARGET
+            fix += __shfl_down_sync(mask, fix, offset);
+            fiy += __shfl_down_sync(mask, fiy, offset);
+            fiz += __shfl_down_sync(mask, fiz, offset);
+            #else
+            fix += __shfl_down(fix, offset);
+            fiy += __shfl_down(fiy, offset);
+            fiz += __shfl_down(fiz, offset);
+            #endif
+        }
+
+        // Only the first thread in each cluster writes the result
+        if (cii == 0) {
+            sci_f[CL_X_OFFSET + ai] += fix;
+            sci_f[CL_Y_OFFSET + ai] += fiy;
+            sci_f[CL_Z_OFFSET + ai] += fiz;
+        }
+        #else
+        atomicAdd(&sci_f[CL_X_OFFSET + ai], fx_acc[sci_ci]);
+        atomicAdd(&sci_f[CL_Y_OFFSET + ai], fy_acc[sci_ci]);
+        atomicAdd(&sci_f[CL_Z_OFFSET + ai], fz_acc[sci_ci]);
+        #endif
     }
 }
 
