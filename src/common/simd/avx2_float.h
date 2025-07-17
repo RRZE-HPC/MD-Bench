@@ -6,6 +6,8 @@
  */
 #include <immintrin.h>
 
+#define SIMD_INTRINSICS "avx2_float"
+
 #define MD_SIMD_FLOAT __m256
 #define MD_SIMD_MASK  __m256
 #define MD_SIMD_INT   __m256i
@@ -163,17 +165,11 @@ static inline MD_SIMD_INT simd_i32_load_h_dual_scaled(const int* m, int scale)
     return _mm256_inserti128_si256(_mm256_castsi128_si256(t0), t1, 0x1);
 }
 
-/*
-// ICX complains that argument to the gather intrinsic must be a constant integer
-// when using the following function, so we use a macro instead
 static inline MD_SIMD_FLOAT simd_real_gather(
-    MD_SIMD_INT vidx, MD_FLOAT const* base, const int scale)
+    MD_SIMD_INT vidx, MD_FLOAT* base, const int scale)
 {
     return _mm256_i32gather_ps(base, vidx, scale);
 }
-*/
-
-#define simd_real_gather(vidx, base, scale) _mm256_i32gather_ps(base, vidx, scale)
 
 static inline MD_SIMD_INT simd_i32_add(MD_SIMD_INT a, MD_SIMD_INT b)
 {

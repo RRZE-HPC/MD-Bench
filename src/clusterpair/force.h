@@ -34,9 +34,12 @@ extern double computeForceEam(Parameter*, Atom*, Neighbor*, Stats*);
 /* Comments from GROMACS:
  *
  * We need to choose if we want 2x(N+N) or 4xN kernels.
- * This is based on the SIMD acceleration choice and CPU information
- * detected at runtime.
+ * This can be controlled through CLUSTER_PAIR_KERNEL option:
+ * - auto: Automatically choose based on SIMD acceleration and CPU info
+ * - 4xN: Force 4xN kernel layout
+ * - 2xNN: Force 2xNN kernel layout
  *
+ * Auto selection behavior:
  * 4xN calculates more (zero) interactions, but has less pair-search
  * work and much better kernel instruction scheduling.
  *
@@ -66,27 +69,43 @@ extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #define CLUSTER_N   VECTOR_WIDTH
 #define UNROLL_J    1
 #else
-#ifdef USE_REFERENCE_VERSION
+#ifdef USE_REFERENCE_KERNEL
 #define CLUSTERPAIR_KERNEL_REF
 #define KERNEL_NAME "Reference"
 #define CLUSTER_M   1
 #define CLUSTER_N   VECTOR_WIDTH
 #else
 #define CLUSTER_M 4
-// Simd2xNN (here used for single-precision)
-#if VECTOR_WIDTH > CLUSTER_M * 2
-#define CLUSTERPAIR_KERNEL_2XNN
-#define KERNEL_NAME "Simd2xNN"
-#define CLUSTER_N   (VECTOR_WIDTH / 2)
-#define UNROLL_I    4
-#define UNROLL_J    2
-#else // Simd4xN
-#define CLUSTERPAIR_KERNEL_4XN
-#define KERNEL_NAME "Simd4xN"
-#define CLUSTER_N   VECTOR_WIDTH
-#define UNROLL_I    4
-#define UNROLL_J    1
+
+// Auto selection based on VECTOR_WIDTH and architecture
+#ifdef CLUSTER_PAIR_KERNEL_AUTO
+    #if (VECTOR_WIDTH > (CLUSTER_M * 2))
+        #define CLUSTERPAIR_KERNEL_2XNN
+    #else
+        #define CLUSTERPAIR_KERNEL_4XN
+    #endif
 #endif
+
+// Define the kernel-specific macros based on which kernel is selected
+#ifdef CLUSTERPAIR_KERNEL_4XN
+    #define KERNEL_NAME "Simd4xN"
+    #define CLUSTER_N   VECTOR_WIDTH
+    #define UNROLL_I    4
+    #define UNROLL_J    1
+#endif
+
+#ifdef CLUSTERPAIR_KERNEL_2XNN
+    #define KERNEL_NAME "Simd2xNN"
+    #define CLUSTER_N   (VECTOR_WIDTH / 2)
+    #define UNROLL_I    4
+    #define UNROLL_J    2
+#endif
+
+// Verify that one of the kernel variants is selected
+#if !defined(CLUSTERPAIR_KERNEL_4XN) && !defined(CLUSTERPAIR_KERNEL_2XNN)
+    #error "No cluster pair kernel variant selected"
+#endif
+
 #endif
 #endif
 

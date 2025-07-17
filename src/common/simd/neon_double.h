@@ -2,6 +2,8 @@
 #include <arm_neon.h>
 #include <stdlib.h>
 
+#define SIMD_INTRINSICS "neon_double"
+
 #define MD_SIMD_FLOAT float64x2_t
 #define MD_SIMD_MASK  uint64x2_t
 #define MD_SIMD_INT   int64x2_t

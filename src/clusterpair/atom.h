@@ -4,12 +4,16 @@
  * Use of this source code is governed by a LGPL-3.0
  * license that can be found in the LICENSE file.
  */
+#include <box.h>
 #include <parameter.h>
+#ifdef _MPI
+    #include <mpi.h>
+#endif
 
 #ifndef __ATOM_H_
 #define __ATOM_H_
 
-#define DELTA 20000
+#define DELTA 100000
 
 #define CI_SCALAR_BASE_INDEX(a) (CI_BASE_INDEX(a, 1))
 #define CI_VECTOR_BASE_INDEX(a) (CI_BASE_INDEX(a, 3))
@@ -25,7 +29,7 @@ typedef struct {
 
 typedef struct {
     int Natoms, Nlocal, Nghost, Nmax;
-    int Nclusters, Nclusters_local, Nclusters_ghost, Nclusters_max;
+    int Nclusters, Nclusters_local, Nclusters_ghost, Nclusters_max, NmaxGhost, ncj;
     MD_FLOAT *x, *y, *z;
     MD_FLOAT *vx, *vy, *vz;
     int* border_map;
@@ -51,6 +55,8 @@ typedef struct {
     unsigned int masks_2xnn_fn[8];
     unsigned int masks_4xn_hn[16];
     unsigned int masks_4xn_fn[16];
+    // Info Subdomain
+    Box mybox;
 } Atom;
 
 extern int get_ncj_from_nci(int nci);
@@ -62,7 +68,27 @@ extern int readAtomPdb(Atom*, Parameter*);
 extern int readAtomGro(Atom*, Parameter*);
 extern int readAtomDmp(Atom*, Parameter*);
 extern void growAtom(Atom*);
+extern void freeAtom(Atom*);
 extern void growClusters(Atom*);
+
+int packGhost(Atom*, int, MD_FLOAT*, int*);
+int unpackGhost(Atom*, int, MD_FLOAT*);
+int packExchange(Atom*, int, MD_FLOAT*);
+int unpackExchange(Atom*, int, MD_FLOAT*);
+void packForward(Atom*, int, int*, MD_FLOAT*, int*);
+void unpackForward(Atom*, int, int, MD_FLOAT*);
+void packReverse(Atom*, int, int, MD_FLOAT*);
+void unpackReverse(Atom*, int, int*, MD_FLOAT*);
+void pbc(Atom*);
+void copy(Atom*, int, int);
+
+#ifdef CUDA_TARGET
+#ifdef __cplusplus
+extern "C" 
+#endif
+extern void growClustersCUDA(Atom*);
+#endif 
+
 
 #ifdef AOS
 #define POS_DATA_LAYOUT "AoS"

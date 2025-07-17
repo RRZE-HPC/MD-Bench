@@ -91,7 +91,7 @@ const char* ff2str(int ff)
 int get_cuda_num_threads(void)
 {
     const char* num_threads_env = getenv("NUM_THREADS");
-    return (num_threads_env == NULL) ? 32 : atoi(num_threads_env);
+    return (num_threads_env == NULL) ? 128 : atoi(num_threads_env);
 }
 
 void readline(char* line, FILE* fp)
@@ -116,4 +116,18 @@ void debug_printf(const char* format, ...)
     }
     va_end(arg);
 #endif
+}
+
+void fprintf_once(int me, FILE* stream, const char* format, ...)
+{
+    if(me == 0) {
+        va_list arg;
+        int ret;
+
+        va_start(arg, format);
+        if ((vfprintf(stream, format, arg)) < 0) {
+            perror("debug_printf()");
+        }
+        va_end(arg);
+    }
 }

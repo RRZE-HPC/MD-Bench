@@ -9,6 +9,7 @@
 #include <atom.h>
 #include <force.h>
 #include <likwid-marker.h>
+#include <math.h>
 #include <neighbor.h>
 #include <parameter.h>
 #include <simd.h>
@@ -16,34 +17,9 @@
 #include <timing.h>
 #include <util.h>
 
-/*
-static inline void gmx_load_simd_2xnn_interactions(
-    int excl,
-    MD_SIMD_BITMASK filter0, MD_SIMD_BITMASK filter2,
-    MD_SIMD_MASK *interact0, MD_SIMD_MASK *interact2) {
+void computeForceGhostShell(Parameter*, Atom*, Neighbor*);
 
-    //SimdInt32 mask_pr_S(excl);
-    MD_SIMD_INT32 mask_pr_S = simd_i32_broadcast(excl);
-    *interact0 = cvtIB2B(simd_test_bits(mask_pr_S & filter0));
-    *interact2 = cvtIB2B(simd_test_bits(mask_pr_S & filter2));
-}
-
-static inline void gmx_load_simd_4xn_interactions(
-    int excl,
-    MD_SIMD_BITMASK filter0, MD_SIMD_BITMASK filter1, MD_SIMD_BITMASK filter2,
-MD_SIMD_BITMASK filter3, MD_SIMD_MASK *interact0, MD_SIMD_MASK *interact1, MD_SIMD_MASK
-*interact2, MD_SIMD_MASK *interact3) {
-
-    //SimdInt32 mask_pr_S(excl);
-    MD_SIMD_INT32 mask_pr_S = simd_i32_broadcast(excl);
-    *interact0 = cvtIB2B(simd_test_bits(mask_pr_S & filter0));
-    *interact1 = cvtIB2B(simd_test_bits(mask_pr_S & filter1));
-    *interact2 = cvtIB2B(simd_test_bits(mask_pr_S & filter2));
-    *interact3 = cvtIB2B(simd_test_bits(mask_pr_S & filter3));
-}
-*/
-
-#ifdef USE_REFERENCE_VERSION
+#ifdef USE_REFERENCE_KERNEL
 double computeForceLJRef(Parameter* param, Atom* atom, Neighbor* neighbor, Stats* stats)
 {
     DEBUG_MESSAGE("computeForceLJ begin\n");
@@ -62,6 +38,16 @@ double computeForceLJRef(Parameter* param, Atom* atom, Neighbor* neighbor, Stats
             ci_f[CL_X_OFFSET + cii] = 0.0;
             ci_f[CL_Y_OFFSET + cii] = 0.0;
             ci_f[CL_Z_OFFSET + cii] = 0.0;
+        }
+    }
+
+    for (int cg = atom->ncj; cg < atom->ncj + atom->Nclusters_ghost; cg++) {
+        int cj_vec_base = CJ_VECTOR_BASE_INDEX(cg);
+        MD_FLOAT* cj_f  = &atom->cl_f[cj_vec_base];
+        for (int cjj = 0; cjj < atom->jclusters[cg].natoms; cjj++) {
+            cj_f[CL_X_OFFSET + cjj] = 0.0;
+            cj_f[CL_Y_OFFSET + cjj] = 0.0;
+            cj_f[CL_Z_OFFSET + cjj] = 0.0;
         }
     }
 
@@ -145,7 +131,7 @@ double computeForceLJRef(Parameter* param, Atom* atom, Neighbor* neighbor, Stats
                                 MD_FLOAT sr6   = sr2 * sr2 * sr2 * sigma6;
                                 MD_FLOAT force = 48.0 * sr6 * (sr6 - 0.5) * sr2 * epsilon;
 
-                                if (neighbor->half_neigh) {
+                                if (neighbor->half_neigh || param->method) {
                                     cj_f[CL_X_OFFSET + cjj] -= delx * force;
                                     cj_f[CL_Y_OFFSET + cjj] -= dely * force;
                                     cj_f[CL_Z_OFFSET + cjj] -= delz * force;
@@ -179,7 +165,9 @@ double computeForceLJRef(Parameter* param, Atom* atom, Neighbor* neighbor, Stats
             addStat(stats->force_iters,
                 (long long int)((double)numneighs * CLUSTER_M / CLUSTER_N));
         }
-
+        if (param->method == eightShell) {
+            computeForceGhostShell(param, atom, neighbor);
+        }
         LIKWID_MARKER_STOP("force");
     }
 
@@ -205,7 +193,6 @@ double computeForceLJ2xnnHalfNeigh(
     MD_SIMD_FLOAT sigma6_vec     = simd_real_broadcast(sigma6);
     MD_SIMD_FLOAT eps_vec        = simd_real_broadcast(epsilon);
 #endif
-
     for (int ci = 0; ci < atom->Nclusters_local; ci++) {
         int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
         MD_FLOAT* ci_f  = &atom->cl_f[ci_vec_base];
@@ -216,42 +203,21 @@ double computeForceLJ2xnnHalfNeigh(
         }
     }
 
+    for (int cg = atom->ncj; cg < atom->ncj + atom->Nclusters_ghost; cg++) {
+        int cj_vec_base = CJ_VECTOR_BASE_INDEX(cg);
+        MD_FLOAT* cj_f  = &atom->cl_f[cj_vec_base];
+        for (int cjj = 0; cjj < atom->jclusters[cg].natoms; cjj++) {
+            cj_f[CL_X_OFFSET + cjj] = 0.0;
+            cj_f[CL_Y_OFFSET + cjj] = 0.0;
+            cj_f[CL_Z_OFFSET + cjj] = 0.0;
+        }
+    }
+
     double S = getTimeStamp();
 
 #pragma omp parallel
     {
         LIKWID_MARKER_START("force");
-
-        /*
-        MD_SIMD_BITMASK filter0 = simd_real_load_bitmask((const int *)
-        &atom->exclusion_filter[0 * (VECTOR_WIDTH / UNROLL_J)]); MD_SIMD_BITMASK filter2 =
-        simd_real_load_bitmask((const int *) &atom->exclusion_filter[2 * (VECTOR_WIDTH /
-        UNROLL_J)]);
-
-        MD_SIMD_FLOAT diagonal_jmi_S = simd_real_load(atom->diagonal_2xnn_j_minus_i);
-        MD_SIMD_FLOAT zero_S = simd_real_broadcast(0.0);
-        MD_SIMD_FLOAT one_S = simd_real_broadcast(1.0);
-
-        #if CLUSTER_M <= CLUSTER_N
-        MD_SIMD_MASK diagonal_mask0, diagonal_mask2;
-        diagonal_mask0 = simd_mask_cond_lt(zero_S, diagonal_jmi_S);
-        diagonal_jmi_S = diagonal_jmi_S - one_S;
-        diagonal_jmi_S = diagonal_jmi_S - one_S;
-        diagonal_mask2 = simd_mask_cond_lt(zero_S, diagonal_jmi_S);
-        #else
-        MD_SIMD_MASK diagonal_mask00, diagonal_mask02, diagonal_mask10, diagonal_mask12;
-        diagonal_mask00 = simd_mask_cond_lt(zero_S, diagonal_jmi_S);
-        diagonal_jmi_S = diagonal_jmi_S - one_S;
-        diagonal_jmi_S = diagonal_jmi_S - one_S;
-        diagonal_mask02 = simd_mask_cond_lt(zero_S, diagonal_jmi_S);
-        diagonal_jmi_S = diagonal_jmi_S - one_S;
-        diagonal_jmi_S = diagonal_jmi_S - one_S;
-        diagonal_mask10 = simd_mask_cond_lt(zero_S, diagonal_jmi_S);
-        diagonal_jmi_S = diagonal_jmi_S - one_S;
-        diagonal_jmi_S = diagonal_jmi_S - one_S;
-        diagonal_mask12 = simd_mask_cond_lt(zero_S, diagonal_jmi_S);
-        #endif
-        */
 
 #pragma omp for schedule(runtime)
         for (int ci = 0; ci < atom->Nclusters_local; ci++) {
@@ -376,23 +342,6 @@ double computeForceLJ2xnnHalfNeigh(
                 cutoff_mask0              = simd_mask_and(cutoff_mask0, excl_mask0);
                 cutoff_mask2              = simd_mask_and(cutoff_mask2, excl_mask2);
 
-                /*
-                #if CLUSTER_M <= CLUSTER_N
-                if(ci == ci_cj0) {
-                    cutoff_mask0 = simd_mask_and(cutoff_mask0, diagonal_mask0);
-                    cutoff_mask2 = simd_mask_and(cutoff_mask2, diagonal_mask2);
-                }
-                #else
-                if(ci == ci_cj0) {
-                    cutoff_mask0 = cutoff_mask0 && diagonal_mask00;
-                    cutoff_mask2 = cutoff_mask2 && diagonal_mask02;
-                } else if(ci == ci_cj1) {
-                    cutoff_mask0 = cutoff_mask0 && diagonal_mask10;
-                    cutoff_mask2 = cutoff_mask2 && diagonal_mask12;
-                }
-                #endif
-                */
-
                 MD_SIMD_FLOAT sr2_0 = simd_real_reciprocal(rsq0);
                 MD_SIMD_FLOAT sr2_2 = simd_real_reciprocal(rsq2);
 
@@ -430,7 +379,7 @@ double computeForceLJ2xnnHalfNeigh(
                 fiy2 = simd_real_add(fiy2, ty2);
                 fiz2 = simd_real_add(fiz2, tz2);
 
-                if (cj < CJ0_FROM_CI(atom->Nclusters_local)) {
+                if (cj < CJ0_FROM_CI(atom->Nclusters_local) || param->method) {
                     simd_real_h_decr3(cj_f,
                         simd_real_add(tx0, tx2),
                         simd_real_add(ty0, ty2),
@@ -537,7 +486,7 @@ double computeForceLJ2xnnHalfNeigh(
                 fiy2 = simd_real_add(fiy2, ty2);
                 fiz2 = simd_real_add(fiz2, tz2);
 
-                if (cj < CJ0_FROM_CI(atom->Nclusters_local)) {
+                if (cj < CJ0_FROM_CI(atom->Nclusters_local) || param->method) {
                     simd_real_h_decr3(cj_f,
                         simd_real_add(tx0, tx2),
                         simd_real_add(ty0, ty2),
@@ -554,7 +503,9 @@ double computeForceLJ2xnnHalfNeigh(
             addStat(stats->force_iters,
                 (long long int)((double)numneighs * CLUSTER_M / CLUSTER_N));
         }
-
+        if (param->method == eightShell) {
+            computeForceGhostShell(param, atom, neighbor);
+        }
         LIKWID_MARKER_STOP("force");
     }
 
@@ -622,7 +573,7 @@ double computeForceLJ2xnnFullNeigh(
             MD_SIMD_FLOAT fix2    = simd_real_zero();
             MD_SIMD_FLOAT fiy2    = simd_real_zero();
             MD_SIMD_FLOAT fiz2    = simd_real_zero();
-
+            
 #ifndef ONE_ATOM_TYPE
             int ci_sca_base       = CI_SCALAR_BASE_INDEX(ci);
             int* ci_t             = &atom->cl_t[ci_sca_base];
@@ -896,6 +847,16 @@ double computeForceLJ4xnHalfNeigh(
         }
     }
 
+    for (int cg = atom->ncj; cg < atom->ncj + atom->Nclusters_ghost; cg++) {
+        int cj_vec_base = CJ_VECTOR_BASE_INDEX(cg);
+        MD_FLOAT* cj_f  = &atom->cl_f[cj_vec_base];
+        for (int cjj = 0; cjj < atom->jclusters[cg].natoms; cjj++) {
+            cj_f[CL_X_OFFSET + cjj] = 0.0;
+            cj_f[CL_Y_OFFSET + cjj] = 0.0;
+            cj_f[CL_Z_OFFSET + cjj] = 0.0;
+        }
+    }
+
     double S = getTimeStamp();
 
 #pragma omp parallel
@@ -1157,7 +1118,7 @@ double computeForceLJ4xnHalfNeigh(
                 fiy3 = simd_real_add(fiy3, ty3);
                 fiz3 = simd_real_add(fiz3, tz3);
 
-                if (cj < CJ1_FROM_CI(atom->Nclusters_local)) {
+                if (cj < CJ1_FROM_CI(atom->Nclusters_local) || param->method) {
                     MD_SIMD_FLOAT tx_sum = simd_real_add(tx0,
                         simd_real_add(tx1, simd_real_add(tx2, tx3)));
                     MD_SIMD_FLOAT ty_sum = simd_real_add(ty0,
@@ -1350,7 +1311,7 @@ double computeForceLJ4xnHalfNeigh(
                 fiy3 = simd_real_add(fiy3, ty3);
                 fiz3 = simd_real_add(fiz3, tz3);
 
-                if (cj < CJ1_FROM_CI(atom->Nclusters_local)) {
+                if (cj < CJ1_FROM_CI(atom->Nclusters_local) || param->method) {
                     MD_SIMD_FLOAT tx_sum = simd_real_add(tx0,
                         simd_real_add(tx1, simd_real_add(tx2, tx3)));
                     MD_SIMD_FLOAT ty_sum = simd_real_add(ty0,
@@ -1376,7 +1337,7 @@ double computeForceLJ4xnHalfNeigh(
             addStat(stats->force_iters,
                 (long long int)((double)numneighs * CLUSTER_M / CLUSTER_N));
         }
-
+        if (param->method == eightShell) computeForceGhostShell(param, atom, neighbor);
         LIKWID_MARKER_STOP("force");
     }
 
@@ -1539,6 +1500,14 @@ double computeForceLJ4xnFullNeigh(
                 MD_SIMD_INT tvec1  = simd_i32_add(tbase1, tj_tmp);
                 MD_SIMD_INT tvec2  = simd_i32_add(tbase2, tj_tmp);
                 MD_SIMD_INT tvec3  = simd_i32_add(tbase3, tj_tmp);
+
+                /*
+                simd_print_real("tj_tmp", tj_tmp);
+                simd_print_real("tvec0", tvec0);
+                simd_print_real("tvec1", tvec1);
+                simd_print_real("tvec2", tvec2);
+                simd_print_real("tvec3", tvec3);
+                */
 
                 MD_SIMD_FLOAT cutforcesq0 = simd_real_gather(tvec0,
                     atom->cutforcesq,
@@ -1867,3 +1836,70 @@ double computeForceLJ4xnFullNeigh(
     return E - S;
 }
 #endif
+
+// Routine for eight shell method + MPI
+void computeForceGhostShell(Parameter* param, Atom* atom, Neighbor* neighbor)
+{
+    DEBUG_MESSAGE("computeForceLJ begin\n");
+
+    int Nshell = neighbor->Nshell;
+    int* neighs;
+    MD_FLOAT cutforcesq = param->cutforce * param->cutforce;
+    MD_FLOAT sigma6     = param->sigma6;
+    MD_FLOAT epsilon    = param->epsilon;
+
+    for (int ci = 0; ci < Nshell; ci++) {
+        neighs          = &neighbor->neighshell[ci * neighbor->maxneighs];
+        int numneighs   = neighbor->numNeighShell[ci];
+        int cs          = neighbor->listshell[ci];
+        int cs_vec_base = CJ_VECTOR_BASE_INDEX(cs);
+        MD_FLOAT* cs_x  = &atom->cl_x[cs_vec_base];
+        MD_FLOAT* cs_f  = &atom->cl_f[cs_vec_base];
+
+        for (int k = 0; k < numneighs; k++) {
+            int cj          = neighs[k];
+            int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
+            MD_FLOAT* cj_x  = &atom->cl_x[cj_vec_base];
+            MD_FLOAT* cj_f  = &atom->cl_f[cj_vec_base];
+
+            for (int css = 0; css < CLUSTER_N; css++) {
+                MD_FLOAT x = cs_x[CL_X_OFFSET + css];
+                MD_FLOAT y = cs_x[CL_Y_OFFSET + css];
+                MD_FLOAT z = cs_x[CL_Z_OFFSET + css];
+
+                MD_FLOAT fix = 0;
+                MD_FLOAT fiy = 0;
+                MD_FLOAT fiz = 0;
+
+                for (int cjj = 0; cjj < CLUSTER_N; cjj++) {
+
+                    MD_FLOAT delx = x - cj_x[CL_X_OFFSET + cjj];
+                    MD_FLOAT dely = y - cj_x[CL_Y_OFFSET + cjj];
+                    MD_FLOAT delz = z - cj_x[CL_Z_OFFSET + cjj];
+
+                    MD_FLOAT rsq = delx * delx + dely * dely + delz * delz;
+                    if (rsq < cutforcesq) {
+                        MD_FLOAT sr2   = 1.0 / rsq;
+                        MD_FLOAT sr6   = sr2 * sr2 * sr2 * sigma6;
+                        MD_FLOAT force = 48.0 * sr6 * (sr6 - 0.5) * sr2 * epsilon;
+
+                        cj_f[CL_X_OFFSET + cjj] -= delx * force;
+                        cj_f[CL_Y_OFFSET + cjj] -= dely * force;
+                        cj_f[CL_Z_OFFSET + cjj] -= delz * force;
+
+                        fix += delx * force;
+                        fiy += dely * force;
+                        fiz += delz * force;
+                    }
+                }
+
+                cs_f[CL_X_OFFSET + css] += fix;
+                cs_f[CL_Y_OFFSET + css] += fiy;
+                cs_f[CL_Z_OFFSET + css] += fiz;
+            }
+        }
+        // addStat(stats->calculated_forces, 1);
+        // addStat(stats->num_neighs, numneighs);
+        // addStat(stats->force_iters, (long long int)((double)numneighs));
+    }
+}

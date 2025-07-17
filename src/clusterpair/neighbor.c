@@ -17,7 +17,7 @@
 
 #define SMALL  1.0e-6
 #define FACTOR 0.999
-
+#define eps    1.0e-9
 #ifdef CUDA_TARGET
 BuildNeighborFunction buildNeighbor = buildNeighborCPU;
 // BuildNeighborFunction buildNeighbor = buildNeighborCUDA;
@@ -46,6 +46,14 @@ static MD_FLOAT binsizex, binsizey;
 
 static int coord2bin(MD_FLOAT, MD_FLOAT);
 static MD_FLOAT bindist(int, int);
+// MPI Implementation
+int me;          // rank
+int method;      // method
+int shellMethod; // If shell method exist
+// static int ghostZone(Atom*, int);
+static int halfZoneCluster(Atom*, int);
+static int ghostClusterinRange(Atom*, int, int, MD_FLOAT);
+static void neighborGhost(Atom*, Neighbor*);
 
 /* exported subroutines */
 void initNeighbor(Neighbor* neighbor, Parameter* param)
@@ -63,12 +71,26 @@ void initNeighbor(Neighbor* neighbor, Parameter* param)
     bincount                  = NULL;
     bin_clusters              = NULL;
     bin_nclusters             = NULL;
-    neighbor->half_neigh      = param->half_neigh;
+    //neighbor->half_neigh      = param->half_neigh;
     neighbor->maxneighs       = 150;
     neighbor->numneigh        = NULL;
     neighbor->numneigh_masked = NULL;
     neighbor->neighbors       = NULL;
     neighbor->neighbors_imask = NULL;
+    // MPI Implementation
+    method      = param->method;
+    shellMethod = method ? 1 : 0;
+    if (method) param->half_neigh = 1;
+    neighbor->half_neigh = param->half_neigh;
+    me                   = 0;
+#ifdef _MPI
+    MPI_Comm_rank(MPI_COMM_WORLD, &me);
+#endif
+    // Eight Shell
+    neighbor->Nshell        = 0;
+    neighbor->numNeighShell = NULL;
+    neighbor->neighshell    = NULL;
+    neighbor->listshell     = NULL;
 }
 
 void setupNeighbor(Parameter* param, Atom* atom)
@@ -91,7 +113,7 @@ void setupNeighbor(Parameter* param, Atom* atom)
     MD_FLOAT zlo = 0.0;
     MD_FLOAT zhi = zprd;
 
-    MD_FLOAT atom_density = ((MD_FLOAT)(atom->Nlocal)) /
+    MD_FLOAT atom_density = ((MD_FLOAT)(atom->Natoms)) /
                             ((xhi - xlo) * (yhi - ylo) * (zhi - zlo));
     MD_FLOAT atoms_in_cell = MAX(CLUSTER_M, CLUSTER_N);
     MD_FLOAT targetsizex   = cbrt(atoms_in_cell / atom_density);
@@ -195,7 +217,6 @@ MD_FLOAT getBoundingBoxDistanceSq(Atom* atom, int ci, int cj)
     d2 += dm0 * dm0;
     return d2;
 }
-
 /* Returns a diagonal or off-diagonal interaction mask for plain C lists */
 static unsigned int get_imask(int rdiag, int ci, int cj)
 {
@@ -256,7 +277,6 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
         neighbor->neighbors_imask = (unsigned int*)malloc(
             nmax * neighbor->maxneighs * sizeof(unsigned int));
     }
-
     MD_FLOAT bbx    = 0.5 * (binsizex + binsizex);
     MD_FLOAT bby    = 0.5 * (binsizey + binsizey);
     MD_FLOAT rbb_sq = MAX(0.0, cutneigh - 0.5 * sqrt(bbx * bbx + bby * bby));
@@ -267,7 +287,6 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
     while (resize) {
         int new_maxneighs = neighbor->maxneighs;
         resize            = 0;
-
         for (int ci = 0; ci < atom->Nclusters_local; ci++) {
             int ci_cj0    = CJ0_FROM_CI(ci);
             int* neighptr = &(neighbor->neighbors[ci * neighbor->maxneighs]);
@@ -329,7 +348,6 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
 #endif
 
 #endif
-
             for (int k = 0; k < nstencil; k++) {
                 int jbin     = ibin + stencil[k];
                 int* loc_bin = &bin_clusters[jbin * clusters_per_bin];
@@ -386,7 +404,7 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
 
                             if (d_bb_sq < cutneighsq) {
                                 int is_neighbor = (d_bb_sq < rbb_sq) ? 1 : 0;
-
+                            
                                 if (!is_neighbor) {
                                     int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
                                     MD_FLOAT* cj_x  = &atom->cl_x[cj_vec_base];
@@ -597,7 +615,6 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
                     }
                 }
             }
-
             // Fill neighbor list with dummy values to fit vector width
             if (CLUSTER_N < VECTOR_WIDTH) {
                 while (n % (VECTOR_WIDTH / CLUSTER_N)) {
@@ -621,14 +638,18 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor)
 
         if (resize) {
             neighbor->maxneighs = new_maxneighs * 1.2;
-            fprintf(stdout, "RESIZE %d\n", neighbor->maxneighs);
+            fprintf(stdout, "RESIZE %d, PROC %d\n", neighbor->maxneighs, me); fflush(stdout);
             free(neighbor->neighbors);
             free(neighbor->neighbors_imask);
             neighbor->neighbors = (int*)malloc(nmax * neighbor->maxneighs * sizeof(int));
             neighbor->neighbors_imask = (unsigned int*)malloc(
                 nmax * neighbor->maxneighs * sizeof(unsigned int));
+#ifdef CUDA_TARGET
+            growNeighborCUDA(atom, neighbor);
+#endif    
         }
     }
+    if (method == eightShell) neighborGhost(atom, neighbor);
 
     /*
     DEBUG_MESSAGE("\ncutneighsq = %f, rbb_sq = %f\n", cutneighsq, rbb_sq);
@@ -1061,6 +1082,9 @@ void defineJClusters(Atom* atom)
 {
     DEBUG_MESSAGE("defineJClusters start\n");
 
+    const int jfac = MAX(1, CLUSTER_N / CLUSTER_M);
+    atom->ncj      = atom->Nclusters_local / jfac;
+
     for (int ci = 0; ci < atom->Nclusters_local; ci++) {
         int cj0 = CJ0_FROM_CI(ci);
 
@@ -1238,7 +1262,7 @@ void binClusters(Atom* atom)
             const int cj = ncj + cg;
             int ix = -1, iy = -1;
             MD_FLOAT xtmp, ytmp;
-
+            if (shellMethod == halfShell && !halfZoneCluster(atom, cj)) continue;
             if (atom->jclusters[cj].natoms > 0) {
                 int cj_vec_base  = CJ_VECTOR_BASE_INDEX(cj);
                 MD_FLOAT* cj_x   = &atom->cl_x[cj_vec_base];
@@ -1348,4 +1372,171 @@ void updateSingleAtoms(Atom* atom)
     }
 
     DEBUG_MESSAGE("updateSingleAtoms stop\n");
+}
+
+// MPI Shell Methods
+static int eightZoneCluster(Atom* atom, int cj)
+{
+    // Mapping: 0->0, 1->1, 2->2, 3->6, 4->3, 5->5, 6->4, 7->7
+    int zoneMapping[] = { 0, 1, 2, 6, 3, 5, 4, 7 };
+    int zone          = 0;
+    MD_FLOAT* hi      = atom->mybox.hi;
+
+    if (atom->jclusters[cj].bbminx >= hi[0]) {
+        zone += 1;
+    }
+    if (atom->jclusters[cj].bbminy >= hi[1]) {
+        zone += 2;
+    }
+    if (atom->jclusters[cj].bbminz >= hi[2]) {
+        zone += 4;
+    }
+    return zoneMapping[zone];
+}
+
+static int halfZoneCluster(Atom* atom, int cj)
+{
+    MD_FLOAT* hi = atom->mybox.hi;
+    MD_FLOAT* lo = atom->mybox.lo;
+
+    if (atom->jclusters[cj].bbmaxx < lo[0] && atom->jclusters[cj].bbmaxy < hi[1] &&
+        atom->jclusters[cj].bbmaxz < hi[2]) {
+        return 0;
+    } else if (atom->jclusters[cj].bbmaxy < lo[1] &&
+               atom->jclusters[cj].bbmaxz < hi[2]) {
+        return 0;
+    } else if (atom->jclusters[cj].bbmaxz < lo[2]) {
+        return 0;
+    } else {
+        return 1;
+    }
+}
+
+int BoxGhostDistance(Atom* atom, int ci, int cj)
+{
+
+    MD_FLOAT dl  = atom->jclusters[ci].bbminx - atom->jclusters[cj].bbmaxx;
+    MD_FLOAT dh  = atom->jclusters[cj].bbminx - atom->jclusters[ci].bbmaxx;
+    MD_FLOAT dm  = MAX(dl, dh);
+    MD_FLOAT dm0 = MAX(dm, 0.0);
+    MD_FLOAT dx2 = dm0 * dm0;
+
+    dl           = atom->jclusters[ci].bbminy - atom->jclusters[cj].bbmaxy;
+    dh           = atom->jclusters[cj].bbminy - atom->jclusters[ci].bbmaxy;
+    dm           = MAX(dl, dh);
+    dm0          = MAX(dm, 0.0);
+    MD_FLOAT dy2 = dm0 * dm0;
+
+    dl           = atom->jclusters[ci].bbminz - atom->jclusters[cj].bbmaxz;
+    dh           = atom->jclusters[cj].bbminz - atom->jclusters[ci].bbmaxz;
+    dm           = MAX(dl, dh);
+    dm0          = MAX(dm, 0.0);
+    MD_FLOAT dz2 = dm0 * dm0;
+
+    return dx2 > cutneighsq ? 0 : dy2 > cutneighsq ? 0 : dz2 > cutneighsq ? 0 : 1;
+}
+
+static int ghostClusterinRange(Atom* atom, int cs, int cg, MD_FLOAT rsq)
+{
+    int cs_vec_base = CJ_VECTOR_BASE_INDEX(cs);
+    int cj_vec_base = CJ_VECTOR_BASE_INDEX(cg);
+    MD_FLOAT* cs_x  = &atom->cl_x[cs_vec_base];
+    MD_FLOAT* cg_x  = &atom->cl_x[cj_vec_base];
+
+    for (int cii = 0; cii < atom->jclusters[cs].natoms; cii++) {
+        for (int cjj = 0; cjj < atom->jclusters[cg].natoms; cjj++) {
+            MD_FLOAT delx = cs_x[CL_X_OFFSET + cii] - cg_x[CL_X_OFFSET + cjj];
+            MD_FLOAT dely = cs_x[CL_Y_OFFSET + cii] - cg_x[CL_Y_OFFSET + cjj];
+            MD_FLOAT delz = cs_x[CL_Z_OFFSET + cii] - cg_x[CL_Z_OFFSET + cjj];
+            if (delx * delx + dely * dely + delz * delz < rsq) {
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+static void neighborGhost(Atom* atom, Neighbor* neighbor)
+{
+    int Nshell         = 0;
+    int Ncluster_local = atom->Nclusters_local;
+    int Nclusterghost  = atom->Nclusters_ghost;
+    if (neighbor->listshell) free(neighbor->listshell);
+    neighbor->listshell = (int*)malloc(Nclusterghost * sizeof(int));
+    int* listzone       = (int*)malloc(8 * Nclusterghost * sizeof(int));
+    int countCluster[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+
+    // Selecting ghost atoms for interaction and putting them into regions
+    for (int cg = atom->ncj; cg < atom->ncj + Nclusterghost; cg++) {
+        int czone = eightZoneCluster(atom, cg);
+        int* list = &listzone[Nclusterghost * czone];
+        int n     = countCluster[czone];
+        list[n]   = cg;
+        countCluster[czone]++;
+        // It is only necessary to find neighbour particles for 3 regions
+        // if(czone == 1 || czone == 2 || czone == 3)
+        // neighbor->listshell[Nshell++] = cg;
+    }
+
+    for (int zone = 1; zone <= 3; zone++) {
+        int* list = &listzone[Nclusterghost * zone];
+        for (int n = 0; n < countCluster[zone]; n++)
+            neighbor->listshell[Nshell++] = list[n];
+    }
+
+    neighbor->Nshell = Nshell;
+    if (neighbor->numNeighShell) free(neighbor->numNeighShell);
+    if (neighbor->neighshell) free(neighbor->neighshell);
+    neighbor->neighshell    = (int*)malloc(Nshell * neighbor->maxneighs * sizeof(int));
+    neighbor->numNeighShell = (int*)malloc(Nshell * sizeof(int));
+
+    int resize = 1;
+
+    while (resize) {
+        resize = 0;
+        for (int ic = 0; ic < Nshell; ic++) {
+            int* neighshell = &(neighbor->neighshell[ic * neighbor->maxneighs]);
+            int n           = 0;
+            int icluster    = neighbor->listshell[ic];
+            int iczone      = eightZoneCluster(atom, icluster);
+
+            for (int jczone = 0; jczone < 8; jczone++) {
+
+                if (jczone <= iczone) continue;
+                if (iczone == 1 && (jczone == 5 || jczone == 6 || jczone == 7)) continue;
+                if (iczone == 2 && (jczone == 4 || jczone == 6 || jczone == 7)) continue;
+                if (iczone == 3 && (jczone == 4 || jczone == 5 || jczone == 7)) continue;
+
+                int Ncluster  = countCluster[jczone];
+                int* loc_zone = &listzone[jczone * Nclusterghost];
+
+                for (int k = 0; k < Ncluster; k++) {
+                    int jcluster = loc_zone[k];
+
+                    if (BoxGhostDistance(atom, icluster, jcluster)) {
+                        if (ghostClusterinRange(atom, icluster, jcluster, cutneighsq))
+                            neighshell[n++] = jcluster;
+                    }
+                }
+            }
+            neighbor->numNeighShell[ic] = n;
+
+            if (n >= neighbor->maxneighs) {
+                resize              = 1;
+                neighbor->maxneighs = n * 1.2;
+                fprintf(stdout,
+                    "RESIZE EIGHT SHELL %d, PROC %d\n",
+                    neighbor->maxneighs,
+                    me);
+                break;
+            }
+        }
+
+        if (resize) {
+            free(neighbor->neighshell);
+            neighbor->neighshell = (int*)malloc(
+                Nshell * neighbor->maxneighs * sizeof(int));
+        }
+    }
+    free(listzone);
 }
