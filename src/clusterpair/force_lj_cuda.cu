@@ -214,9 +214,9 @@ __global__ void computeForceLJCudaFullNeigh(
     MD_FLOAT xtmp   = ci_x[CL_X_OFFSET + cii];
     MD_FLOAT ytmp   = ci_x[CL_Y_OFFSET + cii];
     MD_FLOAT ztmp   = ci_x[CL_Z_OFFSET + cii];
-    MD_FLOAT fix    = 0;
-    MD_FLOAT fiy    = 0;
-    MD_FLOAT fiz    = 0;
+    MD_FLOAT fix    = (MD_FLOAT)0.0;
+    MD_FLOAT fiy    = (MD_FLOAT)0.0;
+    MD_FLOAT fiz    = (MD_FLOAT)0.0;
 
 #ifndef ONE_ATOM_TYPE
     int ci_sca_base = CI_SCALAR_BASE_INDEX(ci);
