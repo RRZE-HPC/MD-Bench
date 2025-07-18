@@ -169,12 +169,13 @@ __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
                 MD_FLOAT delx = sh_sci_x[CL_X_OFFSET + ai] - xjtmp;
                 MD_FLOAT dely = sh_sci_x[CL_Y_OFFSET + ai] - yjtmp;
                 MD_FLOAT delz = sh_sci_x[CL_Z_OFFSET + ai] - zjtmp;
-                MD_FLOAT rsq  = fmaf(delz, delz, fmaf(dely, dely, delx * delx));
+                MD_FLOAT rsq  = delx * delx + dely * dely + delz * delz;
 
                 if(rsq < cutforcesq) {
-                    MD_FLOAT sr2   = __fdividef(1.0f, rsq);
+                    MD_FLOAT sr2   = (MD_FLOAT)(1.0) / rsq;
                     MD_FLOAT sr6   = sr2 * sr2 * sr2 * sigma6;
-                    MD_FLOAT force = (MD_FLOAT)(48.0) * sr6 * fmaf(sr6, 1.0f, -0.5f) * sr2 * epsilon;
+                    MD_FLOAT force = (MD_FLOAT)(48.0) * sr6 * (sr6 - (MD_FLOAT)(0.5)) * sr2 *
+                                 epsilon;
                     MD_FLOAT fx = delx * force;
                     MD_FLOAT fy = dely * force;
                     MD_FLOAT fz = delz * force;
@@ -201,14 +202,14 @@ __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
         // warp shuffles instead of using atomics since it should be cheaper
         // It is very unlikely that M > 32, but we keep this check here to
         // avoid any issues in such situations
-        #if CLUSTER_M <= 32
+        #if false
         MD_FLOAT fix  = fx_acc[sci_ci];
         MD_FLOAT fiy  = fy_acc[sci_ci];
         MD_FLOAT fiz  = fz_acc[sci_ci];
         unsigned mask = 0xffffffff;
         
         // Warp reduction across threads in the same cluster
-        for (int offset = CLUSTER_M / 2; offset > 0; offset /= 2) {
+        for (int offset = CLUSTER_N / 2; offset > 0; offset /= 2) {
             #ifdef CUDA_TARGET
             fix += __shfl_down_sync(mask, fix, offset);
             fiy += __shfl_down_sync(mask, fiy, offset);
