@@ -202,13 +202,12 @@ __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
         // warp shuffles instead of using atomics since it should be cheaper
         // It is very unlikely that M > 32, but we keep this check here to
         // avoid any issues in such situations
-        #if false
+        #if false && CLUSTER_M <= 32
         MD_FLOAT fix  = fx_acc[sci_ci];
         MD_FLOAT fiy  = fy_acc[sci_ci];
         MD_FLOAT fiz  = fz_acc[sci_ci];
         unsigned mask = 0xffffffff;
         
-        // Warp reduction across threads in the same cluster
         for (int offset = CLUSTER_N / 2; offset > 0; offset /= 2) {
             #ifdef CUDA_TARGET
             fix += __shfl_down_sync(mask, fix, offset);
@@ -221,7 +220,6 @@ __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
             #endif
         }
 
-        // Only the first thread in each cluster writes the result
         if (cii == 0) {
             sci_f[CL_X_OFFSET + ai] += fix;
             sci_f[CL_Y_OFFSET + ai] += fiy;
