@@ -127,12 +127,12 @@ __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
 
     __shared__ MD_FLOAT sh_sci_x[SCLUSTER_SIZE * CLUSTER_M * 3];
     int sci = blockIdx.x;
-    int cii = threadIdx.x;
-    int cjj = threadIdx.y;
+    int cii = threadIdx.y;
+    int cjj = threadIdx.x;
     int sci_vec_base = SCI_VECTOR_BASE_INDEX(sci);
     MD_FLOAT* sci_x  = &cuda_cl_x[sci_vec_base];
     MD_FLOAT* sci_f  = &cuda_cl_f[sci_vec_base];
-    int tid = cii * CLUSTER_N + cjj;
+    int tid = cjj * CLUSTER_M + cii;
     int ncoords = SCLUSTER_SIZE * CLUSTER_M * 3;
     MD_FLOAT fx_acc[SCLUSTER_SIZE];
     MD_FLOAT fy_acc[SCLUSTER_SIZE];
@@ -202,28 +202,22 @@ __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
         // warp shuffles instead of using atomics since it should be cheaper
         // It is very unlikely that M > 32, but we keep this check here to
         // avoid any issues in such situations
-        #if false && CLUSTER_M <= 32
+        #if CLUSTER_M <= 32
         MD_FLOAT fix  = fx_acc[sci_ci];
         MD_FLOAT fiy  = fy_acc[sci_ci];
         MD_FLOAT fiz  = fz_acc[sci_ci];
         unsigned mask = 0xffffffff;
-        
-        for (int offset = CLUSTER_N / 2; offset > 0; offset /= 2) {
-            #ifdef CUDA_TARGET
+
+        for (int offset = CLUSTER_M / 2; offset > 0; offset /= 2) {
             fix += __shfl_down_sync(mask, fix, offset);
             fiy += __shfl_down_sync(mask, fiy, offset);
             fiz += __shfl_down_sync(mask, fiz, offset);
-            #else
-            fix += __shfl_down(fix, offset);
-            fiy += __shfl_down(fiy, offset);
-            fiz += __shfl_down(fiz, offset);
-            #endif
         }
 
-        if (cii == 0) {
-            sci_f[CL_X_OFFSET + ai] += fix;
-            sci_f[CL_Y_OFFSET + ai] += fiy;
-            sci_f[CL_Z_OFFSET + ai] += fiz;
+        if (cjj == 0) {
+            sci_f[CL_X_OFFSET + ai] = fix;
+            sci_f[CL_Y_OFFSET + ai] = fiy;
+            sci_f[CL_Z_OFFSET + ai] = fiz;
         }
         #else
         atomicAdd(&sci_f[CL_X_OFFSET + ai], fx_acc[sci_ci]);
@@ -272,7 +266,7 @@ extern "C" double computeForceLJCudaSup(Parameter* param, Atom* atom, Neighbor* 
     MD_FLOAT epsilon    = param->epsilon;
 
     memsetGPU(cuda_cl_f, 0, atom->Nclusters_max * CLUSTER_M * SCLUSTER_SIZE * 3 * sizeof(MD_FLOAT));
-    dim3 block_size       = dim3(CLUSTER_M, CLUSTER_N, 1);
+    dim3 block_size       = dim3(CLUSTER_N, CLUSTER_M, 1);
     dim3 grid_size        = dim3(atom->Nclusters_local, 1, 1);
     double S              = getTimeStamp();
     LIKWID_MARKER_START("force");
