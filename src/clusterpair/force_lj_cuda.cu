@@ -198,11 +198,7 @@ __global__ void computeForceLJCudaFullNeigh(
     int* cuda_neighs,
     int maxneighs) {
 
-    int ci = blockDim.x * blockIdx.x + threadIdx.x;
-    if (ci >= Nclusters_local) {
-        return;
-    }
-
+    int ci          = blockIdx.x;
     int cii         = threadIdx.z;
     int cjj         = threadIdx.y;
     int ci_cj0      = CJ0_FROM_CI(ci);
@@ -280,7 +276,7 @@ __global__ void computeForceLJCudaFullNeigh(
         #endif
     }
 
-    if (threadIdx.x == 0) {
+    if (cjj == 0) {
         ci_f[CL_X_OFFSET + cii] = fix;
         ci_f[CL_Y_OFFSET + cii] = fiy;
         ci_f[CL_Z_OFFSET + cii] = fiz;
@@ -558,10 +554,9 @@ extern "C" double computeForceLJCuda(Parameter* param, Atom* atom, Neighbor* nei
 
     // memsetGPU(cuda_cl_f, 0, atom->Nclusters_local * CLUSTER_M * 3 * sizeof(MD_FLOAT));
     memsetGPU(cuda_cl_f, 0, atom->Nclusters_max * CLUSTER_M * 3 * sizeof(MD_FLOAT));
-    const int threads_num = 1;
-    dim3 block_size       = dim3(threads_num, CLUSTER_N, CLUSTER_M);
-    dim3 grid_size = dim3((atom->Nclusters_local + threads_num - 1) / threads_num, 1, 1);
-    double S       = getTimeStamp();
+    dim3 block_size = dim3(1, CLUSTER_N, CLUSTER_M);
+    dim3 grid_size  = dim3(atom->Nclusters_local, 1, 1);
+    double S        = getTimeStamp();
     LIKWID_MARKER_START("force");
 
     if (neighbor->half_neigh) {
