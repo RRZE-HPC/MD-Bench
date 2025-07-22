@@ -125,7 +125,7 @@ __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
     MD_FLOAT sigma6,
     MD_FLOAT epsilon) {
 
-    __shared__ MD_FLOAT sh_sci_x[SCLUSTER_SIZE * CLUSTER_M * 3];
+    __shared__ MD_FLOAT3 sh_sci_x[SCLUSTER_SIZE * CLUSTER_M];
     int sci = blockIdx.x;
     int cii = threadIdx.y;
     int cjj = threadIdx.x;
@@ -133,42 +133,41 @@ __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
     MD_FLOAT* sci_x  = &cuda_cl_x[sci_vec_base];
     MD_FLOAT* sci_f  = &cuda_cl_f[sci_vec_base];
     int tid = cjj * CLUSTER_M + cii;
-    int ncoords = SCLUSTER_SIZE * CLUSTER_M * 3;
-    MD_FLOAT fx_acc[SCLUSTER_SIZE];
-    MD_FLOAT fy_acc[SCLUSTER_SIZE];
-    MD_FLOAT fz_acc[SCLUSTER_SIZE];
+    MD_FLOAT3 fbuf[SCLUSTER_SIZE];
 
     #pragma unroll
     for(int i = 0; i < SCLUSTER_SIZE; i++) {
-        fx_acc[i] = (MD_FLOAT)0.0;
-        fy_acc[i] = (MD_FLOAT)0.0;
-        fz_acc[i] = (MD_FLOAT)0.0;
+        fbuf[i].x = (MD_FLOAT)0.0;
+        fbuf[i].y = (MD_FLOAT)0.0;
+        fbuf[i].z = (MD_FLOAT)0.0;
     }
 
-    for(int idx = tid; idx < ncoords; idx += blockDim.x * blockDim.y) {
-        sh_sci_x[idx] = sci_x[idx];
+    for(int idx = tid; idx < SCLUSTER_SIZE * CLUSTER_M; idx += blockDim.x * blockDim.y) {
+        sh_sci_x[idx].x = sci_x[CL_X_OFFSET + idx];
+        sh_sci_x[idx].y = sci_x[CL_Y_OFFSET + idx];
+        sh_sci_x[idx].z = sci_x[CL_Z_OFFSET + idx];
     }
 
     __syncthreads();
 
     for(int k = 0; k < cuda_numneigh[sci]; k++) {
-        int cj = cuda_neighs[sci * maxneighs + k];
+        int cj          = cuda_neighs[sci * maxneighs + k];
         int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
         MD_FLOAT* cj_x  = &cuda_cl_x[cj_vec_base];
         MD_FLOAT* cj_f  = &cuda_cl_f[cj_vec_base];
-        MD_FLOAT xjtmp = cj_x[CL_X_OFFSET + cjj];
-        MD_FLOAT yjtmp = cj_x[CL_Y_OFFSET + cjj];
-        MD_FLOAT zjtmp = cj_x[CL_Z_OFFSET + cjj];
-        int cj_sc = cj / SCLUSTER_SIZE;
-        int sci_cj = cj % SCLUSTER_SIZE;
+        MD_FLOAT xjtmp  = cj_x[CL_X_OFFSET + cjj];
+        MD_FLOAT yjtmp  = cj_x[CL_Y_OFFSET + cjj];
+        MD_FLOAT zjtmp  = cj_x[CL_Z_OFFSET + cjj];
+        int cj_sc       = cj / SCLUSTER_SIZE;
+        int sci_cj      = cj % SCLUSTER_SIZE;
 
         #pragma unroll
         for(int sci_ci = 0; sci_ci < SCLUSTER_SIZE; sci_ci++) {
             if(sci != cj_sc || sci_ci != sci_cj || cii != cjj) {
                 int ai = sci_ci * CLUSTER_M + cii;
-                MD_FLOAT delx = sh_sci_x[CL_X_OFFSET + ai] - xjtmp;
-                MD_FLOAT dely = sh_sci_x[CL_Y_OFFSET + ai] - yjtmp;
-                MD_FLOAT delz = sh_sci_x[CL_Z_OFFSET + ai] - zjtmp;
+                MD_FLOAT delx = sh_sci_x[ai].x - xjtmp;
+                MD_FLOAT dely = sh_sci_x[ai].y - yjtmp;
+                MD_FLOAT delz = sh_sci_x[ai].z - zjtmp;
                 MD_FLOAT rsq  = delx * delx + dely * dely + delz * delz;
 
                 if(rsq < cutforcesq) {
@@ -180,9 +179,9 @@ __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
                     MD_FLOAT fy = dely * force;
                     MD_FLOAT fz = delz * force;
 
-                    fx_acc[sci_ci] += fx;
-                    fy_acc[sci_ci] += fy;
-                    fz_acc[sci_ci] += fz;
+                    fbuf[sci_ci].x += fx;
+                    fbuf[sci_ci].y += fy;
+                    fbuf[sci_ci].z += fz;
 
                     if (half_neigh) {
                         atomicAdd(&cj_f[CL_X_OFFSET + cjj], -fx);
@@ -203,9 +202,9 @@ __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
         // It is very unlikely that M > 32, but we keep this check here to
         // avoid any issues in such situations
         #if CLUSTER_M <= 32
-        MD_FLOAT fix  = fx_acc[sci_ci];
-        MD_FLOAT fiy  = fy_acc[sci_ci];
-        MD_FLOAT fiz  = fz_acc[sci_ci];
+        MD_FLOAT fix  = fbuf[sci_ci].x;
+        MD_FLOAT fiy  = fbuf[sci_ci].y;
+        MD_FLOAT fiz  = fbuf[sci_ci].z;
         unsigned mask = 0xffffffff;
 
         for (int offset = CLUSTER_M / 2; offset > 0; offset /= 2) {
@@ -220,9 +219,9 @@ __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
             sci_f[CL_Z_OFFSET + ai] = fiz;
         }
         #else
-        atomicAdd(&sci_f[CL_X_OFFSET + ai], fx_acc[sci_ci]);
-        atomicAdd(&sci_f[CL_Y_OFFSET + ai], fy_acc[sci_ci]);
-        atomicAdd(&sci_f[CL_Z_OFFSET + ai], fz_acc[sci_ci]);
+        atomicAdd(&sci_f[CL_X_OFFSET + ai], fbuf[sci_ci].x);
+        atomicAdd(&sci_f[CL_Y_OFFSET + ai], fbuf[sci_ci].y);
+        atomicAdd(&sci_f[CL_Z_OFFSET + ai], fbuf[sci_ci].z);
         #endif
     }
 }

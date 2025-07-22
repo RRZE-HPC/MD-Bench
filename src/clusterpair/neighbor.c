@@ -557,7 +557,6 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor) {
                                         simd_test_any(cutoff_mask3)) {
                                         is_neighbor = 1;
                                     }
-
 #else
                                     is_neighbor = 0;
                                     for (int cii = 0; cii < CLUSTER_M; cii++) {
@@ -575,7 +574,6 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor) {
                                             }
                                         }
                                     }
-
 #endif
                                 }
 
@@ -816,13 +814,14 @@ void buildNeighborSuperclusters(Atom* atom, Neighbor* neighbor) {
 
                                                 if (delx * delx + dely * dely + delz * delz < cutneighsq) {
                                                     is_neighbor = 1;
-                                                    break;
+                                                    goto distance_check_out;
                                                 }
                                             }
                                         }
                                     }
                                 }
 
+distance_check_out:
                                 if (is_neighbor) {
                                     neighptr[n++] = cj;
                                 }
