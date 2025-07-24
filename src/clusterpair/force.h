@@ -70,6 +70,9 @@ extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #undef VECTOR_WIDTH
 #define VECTOR_WIDTH 8
 #define CLUSTERPAIR_KERNEL_GPU
+#ifndef CLUSTERPAIR_KERNEL_GPU_SIMPLE
+#define CLUSTERPAIR_KERNEL_GPU_SUPERCLUSTERS
+#endif
 #define KERNEL_NAME "GPU"
 #define CLUSTER_M   8
 #define CLUSTER_N   VECTOR_WIDTH
@@ -84,7 +87,7 @@ extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #define CLUSTER_M 4
 
 // Auto selection based on VECTOR_WIDTH and architecture
-#ifdef CLUSTER_PAIR_KERNEL_AUTO
+#ifdef CLUSTERPAIR_KERNEL_AUTO
 #if (VECTOR_WIDTH > (CLUSTER_M * 2))
 #define CLUSTERPAIR_KERNEL_2XNN
 #else
@@ -120,11 +123,11 @@ extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #endif
 
 // Super-clustering macros
-#if defined(USE_SUPER_CLUSTERS) && CLUSTER_M != CLUSTER_N
+#if defined(CLUSTERPAIR_KERNEL_GPU_SUPERCLUSTERS) && CLUSTER_M != CLUSTER_N
 #error "For super-clusters, M must be equal to N"
 #endif
 
-#if defined(USE_SUPER_CLUSTERS) && defined(CLUSTERPAIR_KERNEL_GPU)
+#ifdef CLUSTERPAIR_KERNEL_GPU_SUPERCLUSTERS
 #define SCLUSTER_SIZE_X          2
 #define SCLUSTER_SIZE_Y          2
 #define SCLUSTER_SIZE_Z          2
@@ -143,7 +146,7 @@ extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #define SCI_SCALAR_BASE_INDEX(a) (SCI_BASE_INDEX(a, 1))
 #define SCI_VECTOR_BASE_INDEX(a) (SCI_BASE_INDEX(a, 3))
 
-#if defined(USE_SUPER_CLUSTERS) && defined(CLUSTERPAIR_KERNEL_GPU)
+#if defined(CLUSTERPAIR_KERNEL_GPU_SUPERCLUSTERS)
 #define CJ0_FROM_CI(a)      (a)
 #define CJ1_FROM_CI(a)      (a)
 #define CI_BASE_INDEX(a, b) ((a)*CLUSTER_N * (b))
@@ -175,7 +178,7 @@ extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #define CJ_SCALAR_BASE_INDEX(a)  (CJ_BASE_INDEX(a, 1))
 #define CJ_VECTOR_BASE_INDEX(a)  (CJ_BASE_INDEX(a, 3))
 
-#ifndef USE_SUPER_CLUSTERS
+#ifndef CLUSTERPAIR_KERNEL_GPU_SUPERCLUSTERS
 #if CLUSTER_M >= CLUSTER_N
 #define CL_X_OFFSET (0 * CLUSTER_M)
 #define CL_Y_OFFSET (1 * CLUSTER_M)

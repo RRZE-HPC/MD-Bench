@@ -15,7 +15,7 @@
 #include <util.h>
 
 inline int get_ncj_from_nci(int nci) {
-#ifdef USE_SUPER_CLUSTERS
+#ifdef CLUSTERPAIR_KERNEL_GPU_SUPERCLUSTERS
     return nci << 3;
 #else
 #if CLUSTER_M == CLUSTER_N

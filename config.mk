@@ -1,5 +1,5 @@
 # Compiler tool chain (GCC/CLANG/ICC/ICX/ONEAPI/NVCC/HIPCC)
-TOOLCHAIN ?= ICC
+TOOLCHAIN ?= NVCC
 # ISA of instruction code (X86/ARM)
 ISA ?= X86
 # Instruction set for instrinsic kernels (NONE/<X86-SIMD>/<ARM-SIMD>)
@@ -13,13 +13,13 @@ ENABLE_LIKWID ?= false
 # Enable OpenMP parallelization (true or false)
 ENABLE_OPENMP ?= false
 # Enable MPI parallelization
-ENABLE_MPI ?= true
+ENABLE_MPI ?= false
 # SP or DP
 DATA_TYPE ?= SP
 # AOS or SOA
 DATA_LAYOUT ?= AOS
 # Debug
-DEBUG ?= true
+DEBUG ?= false
 
 # Sort atoms when reneighboring (true or false)
 SORT_ATOMS ?= false
@@ -37,7 +37,7 @@ COMPUTE_STATS ?= false
 ENABLE_OMP_SIMD ?= true
 
 # Configurations for clusterpair optimization scheme
-# Cluster pair kernel variant (auto/4xN/2xNN)
+# Cluster pair kernel variant (auto/4xN/2xNN/gpusimple)
 CLUSTER_PAIR_KERNEL ?= auto
 # Use scalar version (and pray for the compiler to vectorize the code properly)
 USE_SCALAR_KERNEL ?= false
@@ -49,8 +49,6 @@ XTC_OUTPUT ?= false
 # Configurations for CUDA
 # Use CUDA host memory to optimize transfers
 USE_CUDA_HOST_MEMORY ?= false
-# Use super-cluster algorithm for Cluster Pair
-USE_SUPER_CLUSTERS ?= true
 
 #Feature options
 OPTIONS =  -DALIGNMENT=64
@@ -218,7 +216,7 @@ endif
 ifeq ($(strip $(OPT_SCHEME)),verletlist)
 		OPT_TAG = VL
 else ifeq ($(strip $(OPT_SCHEME)),clusterpair)
-		OPT_TAG = CP
+		OPT_TAG = CP-$(CLUSTER_PAIR_KERNEL)
 endif
 
 ifeq ($(strip $(SIMD)),NONE)
@@ -228,17 +226,15 @@ else
 endif
 
 ifeq ($(strip $(OPT_SCHEME)),clusterpair)
-    ifeq ($(strip $(USE_SUPER_CLUSTERS)),true)
-        DEFINES += -DUSE_SUPER_CLUSTERS
-    endif
-
     ifeq ($(strip $(CLUSTER_PAIR_KERNEL)),auto)
-        DEFINES += -DCLUSTER_PAIR_KERNEL_AUTO
+        DEFINES += -DCLUSTERPAIR_KERNEL_AUTO
+    else ifeq ($(strip $(CLUSTER_PAIR_KERNEL)),gpusimple)
+        DEFINES += -DCLUSTERPAIR_KERNEL_GPU_SIMPLE
     else ifeq ($(strip $(CLUSTER_PAIR_KERNEL)),4xN)
         DEFINES += -DCLUSTERPAIR_KERNEL_4XN
     else ifeq ($(strip $(CLUSTER_PAIR_KERNEL)),2xNN)
         DEFINES += -DCLUSTERPAIR_KERNEL_2XNN
     else
-        $(error Invalid CLUSTER_PAIR_KERNEL, must be one of: auto, 4xN, 2xNN)
+        $(error Invalid CLUSTER_PAIR_KERNEL, must be one of: auto, 4xN, 2xNN, gpusimple)
     endif
 endif

@@ -13,7 +13,7 @@
 #define GHOST_SIZE    (4 * CLUSTER_N + 10)
 #define EXCHANGE_SIZE 7
 #define JFAC          MAX(1, CLUSTER_N / CLUSTER_M)
-#ifdef USE_SUPER_CLUSTERS
+#ifdef CLUSTERPAIR_KERNEL_GPU_SUPERCLUSTERS
 #define LOCAL         (atom->Nclusters_local * SCLUSTER_SIZE)
 #else
 #define LOCAL         (atom->Nclusters_local / JFAC)

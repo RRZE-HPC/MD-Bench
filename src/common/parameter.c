@@ -53,10 +53,10 @@ void initParameter(Parameter* param) {
     param->v_out_every   = 5;
     param->half_neigh    = 0;
     param->proc_freq     = 2.4;
-#if defined(CUDA_TARGET) && defined(USE_SUPER_CLUSTERS)
-    param->super_clustering = 1;
-#else
+#if CLUSTERPAIR_KERNEL_GPU_SIMPLE
     param->super_clustering = 0;
+#else
+    param->super_clustering = 1;
 #endif
     // MPI
     param->balance       = 0;

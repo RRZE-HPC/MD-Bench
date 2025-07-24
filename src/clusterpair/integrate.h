@@ -19,7 +19,7 @@ extern void initialIntegrateCPU(Parameter*, Atom*);
 extern void finalIntegrateCPU(Parameter*, Atom*);
 
 #ifdef CUDA_TARGET
-#ifdef USE_SUPER_CLUSTERS
+#ifdef CLUSTERPAIR_KERNEL_GPU_SUPERCLUSTERS
 extern void cudaInitialIntegrateSup(Parameter*, Atom*);
 extern void cudaFinalIntegrateSup(Parameter*, Atom*);
 #else

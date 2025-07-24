@@ -14,7 +14,7 @@
 #include <util.h>
 
 #ifdef CUDA_TARGET
-#ifdef USE_SUPER_CLUSTERS
+#ifdef CLUSTERPAIR_KERNEL_GPU_SUPERCLUSTERS
 IntegrationFunction initialIntegrate = cudaInitialIntegrateSup;
 IntegrationFunction finalIntegrate   = cudaFinalIntegrateSup;
 #else
