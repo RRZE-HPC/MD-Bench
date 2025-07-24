@@ -242,23 +242,26 @@ void nextBisectionLevel(Grid* grid,
     int dim,
     int* color,
     int ilevel,
-    double time) {
-
+    double time) 
+{
     int me;
+    MPI_Comm_rank(world, &me);
+    
     int rank, size;
     int branch = 0, i = 0, m = 0;
     int nsend = 0, nrecv = 0, nrecv2 = 0;
     int values_per_atom = 7;
+    MD_FLOAT bisection, pos;
+    MPI_Request request[2] = { MPI_REQUEST_NULL, MPI_REQUEST_NULL };
+    MPI_Comm_rank(subComm, &rank);
+    MPI_Comm_size(subComm, &size);
+
+
     int odd       = size % 2;
     int extraProc = odd ? size - 1 : size;
     int half      = (int)(0.5 * size);
     int partner   = (rank < half) ? rank + half : rank - half;
-    MD_FLOAT bisection, pos;
-
-    MPI_Comm_rank(world, &me);
-    MPI_Request request[2] = { MPI_REQUEST_NULL, MPI_REQUEST_NULL };
-    MPI_Comm_rank(subComm, &rank);
-    MPI_Comm_size(subComm, &size);
+    
 
     if (odd && rank == extraProc) {
         partner = 0;
