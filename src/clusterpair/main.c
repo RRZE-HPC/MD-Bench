@@ -345,7 +345,9 @@ int main(int argc, char** argv) {
         int writeVel = !((n + 1) % param.v_out_every);
         if (writePos || writeVel) {
             if (param.vtk_file != NULL) {
+#ifdef CUDA_TARGET
                 copyDataFromCUDADevice(&param, &atom);
+#endif
                 printvtk(param.vtk_file, &comm, &atom, &param, n + 1);
             }
 
