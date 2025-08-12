@@ -2,7 +2,7 @@ CC = icx
 LINKER = $(CC)
 
 ifeq ($(strip $(ENABLE_MPI)),true)
-    CC = mpiicc
+    CC = mpiicx
     DEFINES += -D_MPI
 endif
 
