@@ -53,10 +53,10 @@ void initParameter(Parameter* param) {
     param->v_out_every   = 5;
     param->half_neigh    = 0;
     param->proc_freq     = 2.4;
-#if CLUSTERPAIR_KERNEL_GPU_SIMPLE
-    param->super_clustering = 0;
-#else
+#ifdef CLUSTERPAIR_KERNEL_GPU_SUPERCLUSTERS
     param->super_clustering = 1;
+#else
+    param->super_clustering = 0;
 #endif
     // MPI
     param->balance       = 0;
