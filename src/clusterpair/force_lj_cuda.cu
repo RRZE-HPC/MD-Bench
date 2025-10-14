@@ -553,7 +553,7 @@ extern "C" double computeForceLJCuda(Parameter* param, Atom* atom, Neighbor* nei
 #endif
 
     // memsetGPU(cuda_cl_f, 0, atom->Nclusters_local * CLUSTER_M * 3 * sizeof(MD_FLOAT));
-    memsetGPU(cuda_cl_f, 0, atom->Nclusters_max * CLUSTER_M * 3 * sizeof(MD_FLOAT));
+    memsetGPU(cuda_cl_f, 0, (atom->Nclusters_local*SCLUSTER_SIZE+atom->Nclusters_ghost) * CLUSTER_M  * 3 * sizeof(MD_FLOAT));
     dim3 block_size = dim3(1, CLUSTER_N, CLUSTER_M);
     dim3 grid_size  = dim3(atom->Nclusters_local, 1, 1);
     double S        = getTimeStamp();
