@@ -776,8 +776,8 @@ void growClusters(Atom* atom, int super_clustering) {
         nold * SCLUSTER_SIZE * sizeof(Cluster));
     atom->jclusters    = (Cluster*)reallocate(atom->jclusters,
         ALIGNMENT,
-        atom->Nclusters_max * jterm * sizeof(Cluster),
-        nold * jterm * sizeof(Cluster));
+        atom->Nclusters_max * SCLUSTER_SIZE * jterm * sizeof(Cluster),
+        nold * SCLUSTER_SIZE * jterm * sizeof(Cluster));
     atom->cluster_bin = (int*)reallocate(atom->cluster_bin,
         ALIGNMENT,
         atom->Nclusters_max * sizeof(int),
