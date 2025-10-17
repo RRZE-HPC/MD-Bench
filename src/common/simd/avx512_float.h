@@ -11,6 +11,8 @@
 #include <zmmintrin.h>
 #endif
 
+#define SIMD_INTRINSICS "avx512_float"
+
 #define MD_SIMD_FLOAT   __m512
 #define MD_SIMD_MASK    __mmask16
 #define MD_SIMD_IBOOL   __mmask16
@@ -178,14 +180,8 @@ static inline MD_SIMD_INT simd_i32_load(const int* m)
     return _mm512_load_si512((const MD_SIMD_INT*)m);
 }
 
-/*
-// ICX complains that argument to the gather intrinsic must be a constant integer
-// when using the following function, so we use a macro instead
 static inline MD_SIMD_FLOAT simd_real_gather(
     MD_SIMD_INT vidx, MD_FLOAT* base, const int scale)
 {
     return _mm512_i32gather_ps(vidx, base, scale);
 }
-*/
-
-#define simd_real_gather(vidx, base, scale) _mm512_i32gather_ps(vidx, base, scale)

@@ -77,16 +77,20 @@ extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #define CLUSTER_M   1
 #define CLUSTER_N   VECTOR_WIDTH
 #else
-#define CLUSTER_M 4
+
+
 // Auto selection based on VECTOR_WIDTH and architecture
 #ifdef CLUSTER_PAIR_KERNEL_AUTO
-    #if VECTOR_WIDTH > CLUSTER_M * 2
-        #define CLUSTERPAIR_KERNEL_2XNN
-    #elif defined(__ISA_NEON__) || defined(__ISA_SVE__) || defined(__ISA_SVE2__)
+    #if defined(__ISA_NEON__) || defined(__ISA_SVE__) || defined(__ISA_SVE2__)
+        #define CLUSTER_M 2
         #define CLUSTERPAIR_KERNEL_2XN
     #else
-        #define CLUSTERPAIR_KERNEL_4XN
-
+        #define CLUSTER_M 4
+        #if VECTOR_WIDTH > (CLUSTER_M * 2)
+            #define CLUSTERPAIR_KERNEL_2XNN
+        #else
+            #define CLUSTERPAIR_KERNEL_4XN
+        #endif
     #endif
 #endif
 
@@ -106,8 +110,6 @@ extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #endif
 
 #ifdef CLUSTERPAIR_KERNEL_2XN
-    #undef CLUSTER_M
-    #define CLUSTER_M 2
     #define KERNEL_NAME "Simd2xN"
     #define CLUSTER_N   VECTOR_WIDTH
     #define UNROLL_I    2

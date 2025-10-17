@@ -1,4 +1,4 @@
-# Compiler tool chain (GCC/CLANG/ICC/ICX/ONEAPI/NVCC)
+# Compiler tool chain (GCC/CLANG/ICC/ICX/ONEAPI/NVCC/HIPCC)
 TOOLCHAIN ?= ICC
 # ISA of instruction code (X86/ARM)
 ISA ?= X86
@@ -12,6 +12,8 @@ OPT_SCHEME ?= clusterpair
 ENABLE_LIKWID ?= false
 # Enable OpenMP parallelization (true or false)
 ENABLE_OPENMP ?= false
+# Enable MPI parallelization
+ENABLE_MPI ?= true
 # SP or DP
 DATA_TYPE ?= SP
 # AOS or SOA
@@ -28,23 +30,25 @@ MEM_TRACER ?= false
 # Trace indexes and distances for gather-md (true or false)
 INDEX_TRACER ?= false
 # Compute statistics
-COMPUTE_STATS ?= true
+COMPUTE_STATS ?= false
 
 # Configurations for verletlist optimization scheme
 # Use omp simd pragma when running with half neighbor-lists
-ENABLE_OMP_SIMD ?= false
+ENABLE_OMP_SIMD ?= true
 
 # Configurations for clusterpair optimization scheme
-# Cluster pair kernel variant (auto/4xN/2xN/2xNN)
+# Cluster pair kernel variant (auto/4xN/2xNN/2xN)
 CLUSTER_PAIR_KERNEL ?= auto
-# Use reference version
-USE_REFERENCE_VERSION ?= false
+# Use scalar version (and pray for the compiler to vectorize the code properly)
+USE_SCALAR_KERNEL ?= false
+# Use reference version (for correction and metrics purposes)
+USE_REFERENCE_KERNEL ?= false
 # Enable XTC output (a GROMACS file format for trajectories)
 XTC_OUTPUT ?= false
 
 # Configurations for CUDA
 # Use CUDA pinned memory to optimize transfers
-USE_CUDA_HOST_MEMORY ?= false
+USE_CUDA_HOST_MEMORY ?= true
 
 #Feature options
 OPTIONS =  -DALIGNMENT=64
@@ -55,14 +59,19 @@ OPTIONS =  -DALIGNMENT=64
 ################################################################
 DEFINES =
 
+ifeq ($(strip $(TOOLCHAIN)), HIPCC)
+	VECTOR_WIDTH=1
+	SIMD = NONE
+	USE_REFERENCE_KERNEL = true
+endif
 ifeq ($(strip $(TOOLCHAIN)), NVCC)
 	VECTOR_WIDTH=1
 	SIMD = NONE
-	USE_REFERENCE_VERSION = true
+	USE_REFERENCE_KERNEL = true
 endif
 ifeq ($(strip $(SIMD)), NONE)
 	VECTOR_WIDTH=1
-	USE_REFERENCE_VERSION = true
+	USE_REFERENCE_KERNEL = true
 else
 ifeq ($(strip $(ISA)),ARM)
     ifeq ($(strip $(SIMD)), NEON)
@@ -144,8 +153,12 @@ ifeq ($(strip $(XTC_OUTPUT)),true)
     DEFINES += -DXTC_OUTPUT
 endif
 
-ifeq ($(strip $(USE_REFERENCE_VERSION)),true)
-    DEFINES += -DUSE_REFERENCE_VERSION
+ifeq ($(strip $(USE_SCALAR_KERNEL)),true)
+    DEFINES += -DUSE_SCALAR_KERNEL
+endif
+
+ifeq ($(strip $(USE_REFERENCE_KERNEL)),true)
+    DEFINES += -DUSE_REFERENCE_KERNEL
 endif
 
 ifeq ($(strip $(DEBUG)),true)
@@ -196,6 +209,10 @@ ifeq ($(strip $(ENABLE_OMP_SIMD)),true)
     DEFINES += -DENABLE_OMP_SIMD
 endif
 
+ifeq ($(strip $(OPT_SCHEME)),clusterpair)
+    DEFINES += -DCLUSTER_PAIR
+endif
+
 ifeq ($(strip $(OPT_SCHEME)),verletlist)
 		OPT_TAG = VL
 else ifeq ($(strip $(OPT_SCHEME)),clusterpair)
@@ -218,6 +235,6 @@ ifeq ($(strip $(OPT_SCHEME)),clusterpair)
     else ifeq ($(strip $(CLUSTER_PAIR_KERNEL)),2xNN)
         DEFINES += -DCLUSTERPAIR_KERNEL_2XNN
     else
-        $(error Invalid CLUSTER_PAIR_KERNEL, must be one of: auto, 4xN, 2xNN)
+        $(error Invalid CLUSTER_PAIR_KERNEL, must be one of: auto, 4xN, 2xNN, 2xN)
     endif
 endif

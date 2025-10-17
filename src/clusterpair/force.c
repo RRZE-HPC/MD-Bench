@@ -20,13 +20,13 @@ void initForce(Parameter* param)
 #if defined(CLUSTERPAIR_KERNEL_REF)
         computeForce = computeForceLJRef;
 #elif defined(CLUSTERPAIR_KERNEL_4XN)
-        if (param->half_neigh) {
+        if (param->half_neigh || param->method) {
             computeForce = computeForceLJ4xnHalfNeigh;
         } else {
             computeForce = computeForceLJ4xnFullNeigh;
         }
 #elif defined(CLUSTERPAIR_KERNEL_2XNN)
-        if (param->half_neigh) {
+        if (param->half_neigh || param->method) {
             computeForce = computeForceLJ2xnnHalfNeigh;
         } else {
             computeForce = computeForceLJ2xnnFullNeigh;

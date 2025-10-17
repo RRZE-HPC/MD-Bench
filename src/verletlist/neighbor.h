@@ -6,6 +6,9 @@
  */
 #include <atom.h>
 #include <parameter.h>
+#ifdef _MPI
+    #include <mpi.h>
+#endif
 
 #ifndef __NEIGHBOR_H_
 #define __NEIGHBOR_H_
@@ -25,6 +28,13 @@ typedef struct {
 
     // Device data
     DeviceNeighbor d_neighbor;
+    // MPI
+    int half_stencil;
+    int Nshell;         // # of atoms in listShell
+    int* numNeighShell; // # of neighs for each atom in listShell
+    int* neighshell;    // list of neighs for each atom in listShell
+    int* listshell;     // Atoms to compute the force
+
 } Neighbor;
 
 typedef struct {
@@ -43,6 +53,13 @@ typedef struct {
     int mbinx;
     int mbiny;
     int mbinz;
+    //Multigpu
+    int pad_x;
+    int pad_y;
+    int pad_z;
+    MD_FLOAT binsizex;
+    MD_FLOAT binsizey;
+    MD_FLOAT binsizez;
 } Neighbor_params;
 
 typedef struct {
@@ -61,6 +78,9 @@ extern void binatoms(Atom*);
 extern void sortAtom(Atom*);
 extern void buildNeighborCPU(Atom*, Neighbor*);
 #ifdef CUDA_TARGET
+#ifdef __cplusplus
+extern "C"
+#endif
 extern void buildNeighborCUDA(Atom*, Neighbor*);
 #endif
 #endif //__NEIGHBOR_H_

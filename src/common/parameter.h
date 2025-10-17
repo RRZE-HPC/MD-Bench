@@ -12,7 +12,7 @@
 #define MD_FLOAT float
 #define MD_UINT  unsigned int
 /*
-#ifdef USE_REFERENCE_VERSION
+#ifdef USE_REFERENCE_KERNEL
 #define MD_SIMD_FLOAT float
 #define MD_SIMD_MASK  uint16_t
 #endif
@@ -21,7 +21,7 @@
 #define MD_FLOAT double
 #define MD_UINT  unsigned long long int
 /*
-#ifdef USE_REFERENCE_VERSION
+#ifdef USE_REFERENCE_KERNEL
 #define MD_SIMD_FLOAT double
 #define MD_SIMD_MASK  uint8_t
 #endif
@@ -35,6 +35,7 @@ typedef struct {
     char* vtk_file;
     char* xtc_file;
     char* write_atom_file;
+    char* atom_file_name;
     MD_FLOAT epsilon;
     MD_FLOAT sigma;
     MD_FLOAT sigma6;
@@ -62,6 +63,11 @@ typedef struct {
     MD_FLOAT xprd, yprd, zprd;
     double proc_freq;
     char* eam_file;
+    // MPI implementation
+    int balance;
+    int method;
+    int balance_every;
+    int setup;
 } Parameter;
 
 void initParameter(Parameter*);

@@ -11,6 +11,7 @@
 #include <atom.h>
 #include <force.h>
 #include <parameter.h>
+#include <simd.h>
 #include <util.h>
 
 void initParameter(Parameter* param)
@@ -20,12 +21,17 @@ void initParameter(Parameter* param)
     param->xtc_file        = NULL;
     param->eam_file        = NULL;
     param->write_atom_file = NULL;
+    param->atom_file_name  = strdup("atoms_tmp.txt");
     param->force_field     = FF_LJ;
     param->epsilon         = 1.0;
     param->sigma           = 1.0;
     param->sigma6          = 1.0;
     param->rho             = 0.8442;
+#ifdef ONE_ATOM_TYPE
     param->ntypes          = 1;
+#else 
+    param->ntypes          = 4;
+#endif
     param->ntimes          = 200;
     param->dt              = 0.005;
     param->nx              = 32;
@@ -48,6 +54,11 @@ void initParameter(Parameter* param)
     param->v_out_every     = 5;
     param->half_neigh      = 0;
     param->proc_freq       = 2.4;
+    // MPI
+    param->balance       = 0;
+    param->method        = 0;
+    param->balance_every = param->reneigh_every;
+    param->setup         = 1;
 }
 
 void readParameter(Parameter* param, const char* filename)
@@ -61,9 +72,7 @@ void readParameter(Parameter* param, const char* filename)
         exit(-1);
     }
 
-    while (!feof(fp)) {
-        line[0] = '\0';
-        readline(line, fp);
+    while (fgets(line, MAXLINE, fp) != NULL) {
         for (i = 0; line[i] != '\0' && line[i] != '#'; i++)
             ;
         line[i] = '\0';
@@ -82,6 +91,7 @@ void readParameter(Parameter* param, const char* filename)
         if (tok != NULL && val != NULL) {
             PARSE_PARAM(force_field, str2ff);
             PARSE_STRING(input_file);
+            PARSE_STRING(atom_file_name);
             PARSE_STRING(eam_file);
             PARSE_STRING(vtk_file);
             PARSE_STRING(xtc_file);
@@ -109,6 +119,9 @@ void readParameter(Parameter* param, const char* filename)
             PARSE_INT(x_out_every);
             PARSE_INT(v_out_every);
             PARSE_INT(half_neigh);
+            PARSE_INT(method);
+            PARSE_INT(balance);
+            PARSE_INT(balance_every);
         }
     }
 
@@ -118,70 +131,99 @@ void readParameter(Parameter* param, const char* filename)
     // Update sigma6 parameter
     MD_FLOAT s2   = param->sigma * param->sigma;
     param->sigma6 = s2 * s2 * s2;
+
+    // Update balance parameter, 10 could be change
+    param->balance_every *= param->reneigh_every;
     fclose(fp);
 }
 
 void printParameter(Parameter* param)
 {
-    printf("Parameters:\n");
+    fprintf(stdout,"Parameters:\n");
     if (param->input_file != NULL) {
-        printf("\tInput file: %s\n", param->input_file);
+        fprintf(stdout,"\tInput file: %s\n", param->input_file);
     }
 
     if (param->vtk_file != NULL) {
-        printf("\tVTK file: %s\n", param->vtk_file);
+        fprintf(stdout,"\tVTK file: %s\n", param->vtk_file);
     }
 
     if (param->xtc_file != NULL) {
-        printf("\tXTC file: %s\n", param->xtc_file);
+        fprintf(stdout,"\tXTC file: %s\n", param->xtc_file);
     }
 
     if (param->eam_file != NULL) {
-        printf("\tEAM file: %s\n", param->eam_file);
+        fprintf(stdout,"\tEAM file: %s\n", param->eam_file);
     }
 
-    printf("\tForce field: %s\n", ff2str(param->force_field));
+    fprintf(stdout,"\tForce field: %s\n", ff2str(param->force_field));
 #ifdef CLUSTER_M
-    printf("\tKernel: %s, MxN: %dx%d, Vector width: %d\n",
+    fprintf(stdout,"\tKernel: %s, MxN: %dx%d, Vector width: %d\n",
         KERNEL_NAME,
         CLUSTER_M,
         CLUSTER_N,
         VECTOR_WIDTH);
 #else
-    printf("\tKernel: %s\n", KERNEL_NAME);
+    fprintf(stdout,"\tKernel: %s\n", KERNEL_NAME);
 #endif
-    printf("\tData layout: %s\n", POS_DATA_LAYOUT);
-    printf("\tFloating-point precision: %s\n", PRECISION_STRING);
-    printf("\tUnit cells (nx, ny, nz): %d, %d, %d\n", param->nx, param->ny, param->nz);
-    printf("\tDomain box sizes (x, y, z): %e, %e, %e\n",
+    fprintf(stdout,"\tSIMD Intrinsics: %s\n", SIMD_INTRINSICS);
+    fprintf(stdout,"\tData layout: %s\n", POS_DATA_LAYOUT);
+    fprintf(stdout,"\tFloating-point precision: %s\n", PRECISION_STRING);
+    fprintf(stdout,"\tUnit cells (nx, ny, nz): %d, %d, %d\n", param->nx, param->ny, param->nz);
+    fprintf(stdout,"\tDomain box sizes (x, y, z): %e, %e, %e\n",
         param->xprd,
         param->yprd,
         param->zprd);
-    printf("\tPeriodic (x, y, z): %d, %d, %d\n",
+    fprintf(stdout,"\tPeriodic (x, y, z): %d, %d, %d\n",
         param->pbc_x,
         param->pbc_y,
         param->pbc_z);
-    printf("\tLattice size: %e\n", param->lattice);
-    printf("\tEpsilon: %e\n", param->epsilon);
-    printf("\tSigma: %e\n", param->sigma);
-    printf("\tTemperature: %e\n", param->temp);
-    printf("\tRHO: %e\n", param->rho);
-    printf("\tMass: %e\n", param->mass);
-    printf("\tNumber of types: %d\n", param->ntypes);
-    printf("\tNumber of timesteps: %d\n", param->ntimes);
-    printf("\tReport stats every (timesteps): %d\n", param->nstat);
-    printf("\tReneighbor every (timesteps): %d\n", param->reneigh_every);
+    fprintf(stdout,"\tLattice size: %e\n", param->lattice);
+    fprintf(stdout,"\tEpsilon: %e\n", param->epsilon);
+    fprintf(stdout,"\tSigma: %e\n", param->sigma);
+    fprintf(stdout,"\tTemperature: %e\n", param->temp);
+    fprintf(stdout,"\tRHO: %e\n", param->rho);
+    fprintf(stdout,"\tMass: %e\n", param->mass);
+    fprintf(stdout,"\tNumber of types: %d\n", param->ntypes);
+    fprintf(stdout,"\tNumber of timesteps: %d\n", param->ntimes);
+    fprintf(stdout,"\tReport stats every (timesteps): %d\n", param->nstat);
+    fprintf(stdout,"\tReneighbor every (timesteps): %d\n", param->reneigh_every);
 #ifdef SORT_ATOMS
-    printf("\tResort atoms every (timesteps): %d\n", param->resort_every);
+    fprintf(stdout,"\tResort atoms every (timesteps): %d\n", param->resort_every);
 #else
-    printf("\tSort atoms: no\n");
+    fprintf(stdout,"\tSort atoms: no\n");
 #endif
-    printf("\tPrune every (timesteps): %d\n", param->prune_every);
-    printf("\tOutput positions every (timesteps): %d\n", param->x_out_every);
-    printf("\tOutput velocities every (timesteps): %d\n", param->v_out_every);
-    printf("\tDelta time (dt): %e\n", param->dt);
-    printf("\tCutoff radius: %e\n", param->cutforce);
-    printf("\tSkin: %e\n", param->skin);
-    printf("\tHalf neighbor lists: %d\n", param->half_neigh);
-    printf("\tProcessor frequency (GHz): %.4f\n", param->proc_freq);
+#ifdef ONE_ATOM_TYPE
+    fprintf(stdout,"\tSingle atom type: true\n");
+#else
+    fprintf(stdout,"\tSingle atom type: false\n");
+#endif
+    fprintf(stdout,"\tPrune every (timesteps): %d\n", param->prune_every);
+    fprintf(stdout,"\tOutput positions every (timesteps): %d\n", param->x_out_every);
+    fprintf(stdout,"\tOutput velocities every (timesteps): %d\n", param->v_out_every);
+    fprintf(stdout,"\tDelta time (dt): %e\n", param->dt);
+    fprintf(stdout,"\tCutoff radius: %e\n", param->cutforce);
+    fprintf(stdout,"\tSkin: %e\n", param->skin);
+    fprintf(stdout,"\tHalf neighbor lists: %d\n", param->half_neigh);
+    fprintf(stdout,"\tProcessor frequency (GHz): %.4f\n", param->proc_freq);
+
+        // ================ New MPI features =============
+#ifdef _MPI
+    char str[20];
+    strcpy(str,
+        (param->method == 1)   ? "Half Shell"
+        : (param->method == 2) ? "Eight Shell"
+        : (param->method == 3) ? "Half Stencil"
+                               : "Full Shell");
+    fprintf(stdout,"\tMethod: %s\n", str);
+    strcpy(str,
+        (param->balance == 1)   ? "mean RCB"
+        : (param->balance == 2) ? "mean Time RCB"
+        : (param->balance == 3) ? "Staggered"
+                                : "cartesian");
+    fprintf(stdout,"\tPartition: %s\n", str);
+    if (param->balance)
+        fprintf(stdout,"\tRebalancing every (timesteps): %d\n", param->balance_every);
+#endif
+    fflush(stdout);
 }

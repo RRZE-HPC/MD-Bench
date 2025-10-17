@@ -42,12 +42,14 @@ void initialIntegrateCPU(Parameter* param, Atom* atom)
 
         /*
         // Check if there is an invalid cluster
+        MD_FLOAT threshold = 10000.0;
         for (int cii = 0; cii < atom->iclusters[ci].natoms; cii++) {
             if(
-                ciX[CL_X_OFFSET + cii] < -100.00 || ciX[CL_X_OFFSET + cii] > 100.0 ||
-                ciX[CL_Y_OFFSET + cii] < -100.00 || ciX[CL_Y_OFFSET + cii] > 100.0 ||
-                ciX[CL_Z_OFFSET + cii] < -100.00 || ciX[CL_Z_OFFSET + cii] > 100.0) {
+                ciX[CL_X_OFFSET + cii] < -threshold || ciX[CL_X_OFFSET + cii] > threshold ||
+                ciX[CL_Y_OFFSET + cii] < -threshold || ciX[CL_Y_OFFSET + cii] > threshold ||
+                ciX[CL_Z_OFFSET + cii] < -threshold || ciX[CL_Z_OFFSET + cii] > threshold) {
                 fprintf(stdout, "INVALID CLUSTER: %d\n", ci);
+                fprintf(stdout, "%f, %f, %f\n", ciX[CL_X_OFFSET + cii], ciX[CL_Y_OFFSET + cii], ciX[CL_Z_OFFSET + cii]);
                 exit(-1);
                 break;
             }

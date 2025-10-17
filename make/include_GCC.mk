@@ -1,6 +1,11 @@
 CC = gcc
 LINKER = $(CC)
 
+ifeq ($(strip $(ENABLE_MPI)),true)
+    CC = mpicc
+    DEFINES += -D_MPI
+endif
+
 ifeq ($(strip $(ENABLE_OPENMP)),true)
 OPENMP = -fopenmp
 endif
@@ -20,10 +25,10 @@ ifeq ($(strip $(SIMD)),SVE)
 OPTS += -march=armv8.5-a+sve
 endif
 ifeq ($(strip $(SIMD)),NEON)
-OPTS += -march=armv8.5-a+simd
+OPTS += -march=armv8.5-a
 endif
 ifeq ($(strip $(SIMD)),NONE)
-OPTS += -march=armv8.5-a+nosimd+nosve+nosve2
+OPTS += -march=armv8.5-a+nosimd
 endif
 ASFLAGS =
 endif
@@ -39,10 +44,7 @@ ifeq ($(strip $(SIMD)),AVX2)
 OPTS += -march=x86-64-v3 -mavx2
 endif
 ifeq ($(strip $(SIMD)),AVX)
-OPTS += -march=x86-64-v3 -mno-avx2 -mno-bmi -mno-bmi2 -mno-fma
-endif
-ifeq ($(strip $(SIMD)),AVX_FMA)
-OPTS += -march=x86-64-v3 -mno-avx2 -mno-bmi -mno-bmi2 -mfma
+OPTS += -march=x86-64-v3 -mno-avx2 -mno-bmi -mno-bmi2 -mno-fma4
 endif
 ifeq ($(strip $(SIMD)),SSE)
 OPTS += -march=x86-64-v2

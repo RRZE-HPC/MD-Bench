@@ -7,10 +7,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <device.h>
+
 extern "C" {
 #include <allocate.h>
 #include <atom.h>
-#include <device.h>
 #include <pbc.h>
 #include <util.h>
 
