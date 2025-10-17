@@ -66,3 +66,6 @@ todo.txt
 build/*
 MDBench-*
 .clangd
+
+# Core dump file
+core
