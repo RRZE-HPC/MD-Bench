@@ -125,7 +125,7 @@ __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
     MD_FLOAT sigma6,
     MD_FLOAT epsilon) {
 
-    __shared__ MD_FLOAT3 sh_sci_x[SCLUSTER_SIZE * CLUSTER_M];
+    __shared__ MD_FLOAT4 sh_sci_x[SCLUSTER_SIZE * CLUSTER_M];
     int sci = blockIdx.x;
     int cii = threadIdx.y;
     int cjj = threadIdx.x;
@@ -146,6 +146,7 @@ __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
         sh_sci_x[idx].x = sci_x[CL_X_OFFSET + idx];
         sh_sci_x[idx].y = sci_x[CL_Y_OFFSET + idx];
         sh_sci_x[idx].z = sci_x[CL_Z_OFFSET + idx];
+        sh_sci_x[idx].w = (MD_FLOAT)0.0;
     }
 
     __syncthreads();
