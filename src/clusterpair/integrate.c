@@ -36,12 +36,12 @@ void initialIntegrateCPU(Parameter* param, Atom* atom) {
         MD_FLOAT* ciF = &atom->cl_f[ciVecBase];
 
         for (int cii = 0; cii < atom->iclusters[ci].natoms; cii++) {
-            ciV[CL_X_OFFSET + cii] += param->dtforce * ciF[CL_X_OFFSET + cii];
-            ciV[CL_Y_OFFSET + cii] += param->dtforce * ciF[CL_Y_OFFSET + cii];
-            ciV[CL_Z_OFFSET + cii] += param->dtforce * ciF[CL_Z_OFFSET + cii];
-            ciX[CL_X_OFFSET + cii] += param->dt * ciV[CL_X_OFFSET + cii];
-            ciX[CL_Y_OFFSET + cii] += param->dt * ciV[CL_Y_OFFSET + cii];
-            ciX[CL_Z_OFFSET + cii] += param->dt * ciV[CL_Z_OFFSET + cii];
+            ciV[CL_X_INDEX(cii)] += param->dtforce * ciF[CL_X_INDEX(cii)];
+            ciV[CL_Y_INDEX(cii)] += param->dtforce * ciF[CL_Y_INDEX(cii)];
+            ciV[CL_Z_INDEX(cii)] += param->dtforce * ciF[CL_Z_INDEX(cii)];
+            ciX[CL_X_INDEX(cii)] += param->dt * ciV[CL_X_INDEX(cii)];
+            ciX[CL_Y_INDEX(cii)] += param->dt * ciV[CL_Y_INDEX(cii)];
+            ciX[CL_Z_INDEX(cii)] += param->dt * ciV[CL_Z_INDEX(cii)];
         }
 
         /*
@@ -49,11 +49,11 @@ void initialIntegrateCPU(Parameter* param, Atom* atom) {
         MD_FLOAT threshold = 10000.0;
         for (int cii = 0; cii < atom->iclusters[ci].natoms; cii++) {
             if(
-                ciX[CL_X_OFFSET + cii] < -threshold || ciX[CL_X_OFFSET + cii] > threshold ||
-                ciX[CL_Y_OFFSET + cii] < -threshold || ciX[CL_Y_OFFSET + cii] > threshold ||
-                ciX[CL_Z_OFFSET + cii] < -threshold || ciX[CL_Z_OFFSET + cii] > threshold) {
+                ciX[CL_X_INDEX(cii)] < -threshold || ciX[CL_X_INDEX(cii)] > threshold ||
+                ciX[CL_Y_INDEX(cii)] < -threshold || ciX[CL_Y_INDEX(cii)] > threshold ||
+                ciX[CL_Z_INDEX(cii)] < -threshold || ciX[CL_Z_INDEX(cii)] > threshold) {
                 fprintf(stdout, "INVALID CLUSTER: %d\n", ci);
-                fprintf(stdout, "%f, %f, %f\n", ciX[CL_X_OFFSET + cii], ciX[CL_Y_OFFSET + cii], ciX[CL_Z_OFFSET + cii]);
+                fprintf(stdout, "%f, %f, %f\n", ciX[CL_X_INDEX + cii], ciX[CL_Y_INDEX(cii)], ciX[CL_Z_INDEX(cii)]);
                 exit(-1);
                 break;
             }
@@ -73,9 +73,9 @@ void finalIntegrateCPU(Parameter* param, Atom* atom) {
         MD_FLOAT* ciF = &atom->cl_f[ciVecBase];
 
         for (int cii = 0; cii < atom->iclusters[ci].natoms; cii++) {
-            ciV[CL_X_OFFSET + cii] += param->dtforce * ciF[CL_X_OFFSET + cii];
-            ciV[CL_Y_OFFSET + cii] += param->dtforce * ciF[CL_Y_OFFSET + cii];
-            ciV[CL_Z_OFFSET + cii] += param->dtforce * ciF[CL_Z_OFFSET + cii];
+            ciV[CL_X_INDEX(cii)] += param->dtforce * ciF[CL_X_INDEX(cii)];
+            ciV[CL_Y_INDEX(cii)] += param->dtforce * ciF[CL_Y_INDEX(cii)];
+            ciV[CL_Z_INDEX(cii)] += param->dtforce * ciF[CL_Z_INDEX(cii)];
         }
     }
 

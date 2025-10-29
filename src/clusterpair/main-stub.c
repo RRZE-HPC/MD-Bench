@@ -264,20 +264,20 @@ int main(int argc, const char* argv[])
         int* ci_t       = &atom->cl_t[ci_sca_base];
 
         for (int cii = 0; cii < iclusters_natoms; ++cii) {
-            ci_x[CL_X_OFFSET + cii] = (MD_FLOAT)(ci * iclusters_natoms + cii) * 0.00001;
-            ci_x[CL_Y_OFFSET + cii] = (MD_FLOAT)(ci * iclusters_natoms + cii) * 0.00001;
-            ci_x[CL_Z_OFFSET + cii] = (MD_FLOAT)(ci * iclusters_natoms + cii) * 0.00001;
-            ci_v[CL_X_OFFSET + cii] = 0.0;
-            ci_v[CL_Y_OFFSET + cii] = 0.0;
-            ci_v[CL_Z_OFFSET + cii] = 0.0;
+            ci_x[CL_X_INDEX(cii)] = (MD_FLOAT)(ci * iclusters_natoms + cii) * 0.00001;
+            ci_x[CL_Y_INDEX(cii)] = (MD_FLOAT)(ci * iclusters_natoms + cii) * 0.00001;
+            ci_x[CL_Z_INDEX(cii)] = (MD_FLOAT)(ci * iclusters_natoms + cii) * 0.00001;
+            ci_v[CL_X_INDEX(cii)] = 0.0;
+            ci_v[CL_Y_INDEX(cii)] = 0.0;
+            ci_v[CL_Z_INDEX(cii)] = 0.0;
             ci_t[cii]               = rand() % atom->ntypes;
             atom->Nlocal++;
         }
 
         for (int cii = iclusters_natoms; cii < CLUSTER_M; cii++) {
-            ci_x[CL_X_OFFSET + cii] = INFINITY;
-            ci_x[CL_Y_OFFSET + cii] = INFINITY;
-            ci_x[CL_Z_OFFSET + cii] = INFINITY;
+            ci_x[CL_X_INDEX(cii)] = INFINITY;
+            ci_x[CL_Y_INDEX(cii)] = INFINITY;
+            ci_x[CL_Z_INDEX(cii)] = INFINITY;
         }
 
         atom->iclusters[ci].natoms = iclusters_natoms;

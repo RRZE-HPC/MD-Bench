@@ -322,12 +322,12 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor) {
             MD_FLOAT ibb_zmax = atom->iclusters[ci].bbmaxz;
 
 #if defined(CLUSTERPAIR_KERNEL_2XNN)
-            MD_SIMD_FLOAT xi0_tmp = simd_real_load_h_dual(&ci_x[CL_X_OFFSET + 0]);
-            MD_SIMD_FLOAT xi2_tmp = simd_real_load_h_dual(&ci_x[CL_X_OFFSET + 2]);
-            MD_SIMD_FLOAT yi0_tmp = simd_real_load_h_dual(&ci_x[CL_Y_OFFSET + 0]);
-            MD_SIMD_FLOAT yi2_tmp = simd_real_load_h_dual(&ci_x[CL_Y_OFFSET + 2]);
-            MD_SIMD_FLOAT zi0_tmp = simd_real_load_h_dual(&ci_x[CL_Z_OFFSET + 0]);
-            MD_SIMD_FLOAT zi2_tmp = simd_real_load_h_dual(&ci_x[CL_Z_OFFSET + 2]);
+            MD_SIMD_FLOAT xi0_tmp = simd_real_load_h_dual(&ci_x[CL_X_INDEX(0)]);
+            MD_SIMD_FLOAT xi2_tmp = simd_real_load_h_dual(&ci_x[CL_X_INDEX(2)]);
+            MD_SIMD_FLOAT yi0_tmp = simd_real_load_h_dual(&ci_x[CL_Y_INDEX(0)]);
+            MD_SIMD_FLOAT yi2_tmp = simd_real_load_h_dual(&ci_x[CL_Y_INDEX(2)]);
+            MD_SIMD_FLOAT zi0_tmp = simd_real_load_h_dual(&ci_x[CL_Z_INDEX(0)]);
+            MD_SIMD_FLOAT zi2_tmp = simd_real_load_h_dual(&ci_x[CL_Z_INDEX(2)]);
 
 #ifndef ONE_ATOM_TYPE
             MD_SIMD_INT tbase0 = simd_i32_load_h_dual_scaled(&ci_t[0], atom->ntypes);
@@ -337,18 +337,18 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor) {
 #endif
 
 #elif defined(CLUSTERPAIR_KERNEL_4XN)
-            MD_SIMD_FLOAT xi0_tmp = simd_real_broadcast(ci_x[CL_X_OFFSET + 0]);
-            MD_SIMD_FLOAT xi1_tmp = simd_real_broadcast(ci_x[CL_X_OFFSET + 1]);
-            MD_SIMD_FLOAT xi2_tmp = simd_real_broadcast(ci_x[CL_X_OFFSET + 2]);
-            MD_SIMD_FLOAT xi3_tmp = simd_real_broadcast(ci_x[CL_X_OFFSET + 3]);
-            MD_SIMD_FLOAT yi0_tmp = simd_real_broadcast(ci_x[CL_Y_OFFSET + 0]);
-            MD_SIMD_FLOAT yi1_tmp = simd_real_broadcast(ci_x[CL_Y_OFFSET + 1]);
-            MD_SIMD_FLOAT yi2_tmp = simd_real_broadcast(ci_x[CL_Y_OFFSET + 2]);
-            MD_SIMD_FLOAT yi3_tmp = simd_real_broadcast(ci_x[CL_Y_OFFSET + 3]);
-            MD_SIMD_FLOAT zi0_tmp = simd_real_broadcast(ci_x[CL_Z_OFFSET + 0]);
-            MD_SIMD_FLOAT zi1_tmp = simd_real_broadcast(ci_x[CL_Z_OFFSET + 1]);
-            MD_SIMD_FLOAT zi2_tmp = simd_real_broadcast(ci_x[CL_Z_OFFSET + 2]);
-            MD_SIMD_FLOAT zi3_tmp = simd_real_broadcast(ci_x[CL_Z_OFFSET + 3]);
+            MD_SIMD_FLOAT xi0_tmp = simd_real_broadcast(ci_x[CL_X_INDEX(0)]);
+            MD_SIMD_FLOAT xi1_tmp = simd_real_broadcast(ci_x[CL_X_INDEX(1)]);
+            MD_SIMD_FLOAT xi2_tmp = simd_real_broadcast(ci_x[CL_X_INDEX(2)]);
+            MD_SIMD_FLOAT xi3_tmp = simd_real_broadcast(ci_x[CL_X_INDEX(3)]);
+            MD_SIMD_FLOAT yi0_tmp = simd_real_broadcast(ci_x[CL_Y_INDEX(0)]);
+            MD_SIMD_FLOAT yi1_tmp = simd_real_broadcast(ci_x[CL_Y_INDEX(1)]);
+            MD_SIMD_FLOAT yi2_tmp = simd_real_broadcast(ci_x[CL_Y_INDEX(2)]);
+            MD_SIMD_FLOAT yi3_tmp = simd_real_broadcast(ci_x[CL_Y_INDEX(3)]);
+            MD_SIMD_FLOAT zi0_tmp = simd_real_broadcast(ci_x[CL_Z_INDEX(0)]);
+            MD_SIMD_FLOAT zi1_tmp = simd_real_broadcast(ci_x[CL_Z_INDEX(1)]);
+            MD_SIMD_FLOAT zi2_tmp = simd_real_broadcast(ci_x[CL_Z_INDEX(2)]);
+            MD_SIMD_FLOAT zi3_tmp = simd_real_broadcast(ci_x[CL_Z_INDEX(3)]);
 
 #ifndef ONE_ATOM_TYPE
             MD_SIMD_INT tbase0    = simd_i32_broadcast(ci_t[0] * atom->ntypes);
@@ -428,11 +428,11 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor) {
 #if defined(CLUSTERPAIR_KERNEL_2XNN)
 
                                     MD_SIMD_FLOAT xj_tmp = simd_real_load_h_duplicate(
-                                        &cj_x[CL_X_OFFSET]);
+                                        &cj_x[CL_X_INDEX(0)]);
                                     MD_SIMD_FLOAT yj_tmp = simd_real_load_h_duplicate(
-                                        &cj_x[CL_Y_OFFSET]);
+                                        &cj_x[CL_Y_INDEX(0)]);
                                     MD_SIMD_FLOAT zj_tmp = simd_real_load_h_duplicate(
-                                        &cj_x[CL_Z_OFFSET]);
+                                        &cj_x[CL_INDEX(0)]);
 
 #ifndef ONE_ATOM_TYPE
                                     MD_SIMD_INT tj_tmp = simd_i32_load_h_duplicate(cj_t);
@@ -479,9 +479,9 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor) {
 
 #elif defined(CLUSTERPAIR_KERNEL_4XN)
 
-                                    MD_SIMD_FLOAT xj_tmp = simd_real_load(&cj_x[CL_X_OFFSET]);
-                                    MD_SIMD_FLOAT yj_tmp = simd_real_load(&cj_x[CL_Y_OFFSET]);
-                                    MD_SIMD_FLOAT zj_tmp = simd_real_load(&cj_x[CL_Z_OFFSET]);
+                                    MD_SIMD_FLOAT xj_tmp = simd_real_load(&cj_x[CL_X_INDEX(0)]);
+                                    MD_SIMD_FLOAT yj_tmp = simd_real_load(&cj_x[CL_Y_INDEX(0)]);
+                                    MD_SIMD_FLOAT zj_tmp = simd_real_load(&cj_x[CL_Z_INDEX(0)]);
 #ifndef ONE_ATOM_TYPE
                                     MD_SIMD_INT tj_tmp = simd_i32_load(cj_t);
                                     MD_SIMD_INT tvec0  = simd_i32_add(tbase0, tj_tmp);
@@ -561,12 +561,12 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor) {
                                     is_neighbor = 0;
                                     for (int cii = 0; cii < CLUSTER_M; cii++) {
                                         for (int cjj = 0; cjj < CLUSTER_N; cjj++) {
-                                            MD_FLOAT delx = ci_x[CL_X_OFFSET + cii] -
-                                                            cj_x[CL_X_OFFSET + cjj];
-                                            MD_FLOAT dely = ci_x[CL_Y_OFFSET + cii] -
-                                                            cj_x[CL_Y_OFFSET + cjj];
-                                            MD_FLOAT delz = ci_x[CL_Z_OFFSET + cii] -
-                                                            cj_x[CL_Z_OFFSET + cjj];
+                                            MD_FLOAT delx = ci_x[CL_X_INDEX(cii)] -
+                                                            cj_x[CL_X_INDEX(cjj)];
+                                            MD_FLOAT dely = ci_x[CL_Y_INDEX(cii)] -
+                                                            cj_x[CL_Y_INDEX(cjj)];
+                                            MD_FLOAT delz = ci_x[CL_Z_INDEX(cii)] -
+                                                            cj_x[CL_Z_INDEX(cjj)];
 
                                             if (delx * delx + dely * dely + delz * delz <
                                                 cutneighsq) {
@@ -679,7 +679,7 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor) {
             atom->iclusters[ci].bbmaxz);
 
         for(int cii = 0; cii < CLUSTER_M; cii++) {
-            DEBUG_MESSAGE("%f, %f, %f\n", ci_x[CL_X_OFFSET + cii], ci_x[CL_Y_OFFSET +
+            DEBUG_MESSAGE("%f, %f, %f\n", ci_x[CL_X_INDEX(cii)], ci_x[CL_Y_OFFSET +
     cii], ci_x[CL_Z_OFFSET + cii]);
         }
 
@@ -697,7 +697,7 @@ void buildNeighborCPU(Atom* atom, Neighbor* neighbor) {
                 atom->jclusters[cj].bbmaxz);
 
             for(int cjj = 0; cjj < CLUSTER_N; cjj++) {
-                DEBUG_MESSAGE("    %f, %f, %f\n", cj_x[CL_X_OFFSET + cjj],
+                DEBUG_MESSAGE("    %f, %f, %f\n", cj_x[CL_X_INDEX(cjj)],
     cj_x[CL_Y_OFFSET + cjj], cj_x[CL_Z_OFFSET + cjj]);
             }
         }
@@ -803,14 +803,18 @@ void buildNeighborSuperclusters(Atom* atom, Neighbor* neighbor) {
                                     for (int sci_ci = 0; sci_ci < atom->siclusters[sci].nclusters; sci_ci++) {
                                         const int ci = sci * SCLUSTER_SIZE + sci_ci;
                                         int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
-                                        MD_FLOAT* ci_x  = &atom->cl_x[sci_vec_base + sci_ci * CLUSTER_M];
+#ifdef SOA
+                                        MD_FLOAT* ci_x  = &atom->cl_x[sci_vec_base + sci_ci * CLUSTER_M];                             
+#else                                     
+                                        MD_FLOAT* ci_x  = &atom->cl_x[sci_vec_base + sci_ci * CLUSTER_M * 3];
+#endif
                                         MD_FLOAT* cj_x  = &atom->cl_x[cj_vec_base];
 
                                         for (int cii = 0; cii < atom->iclusters[ci].natoms; cii++) {
                                             for (int cjj = 0; cjj < atom->jclusters[cj].natoms; cjj++) {
-                                                MD_FLOAT delx = ci_x[CL_X_OFFSET + cii] - cj_x[CL_X_OFFSET + cjj];
-                                                MD_FLOAT dely = ci_x[CL_Y_OFFSET + cii] - cj_x[CL_Y_OFFSET + cjj];
-                                                MD_FLOAT delz = ci_x[CL_Z_OFFSET + cii] - cj_x[CL_Z_OFFSET + cjj];
+                                                MD_FLOAT delx = ci_x[CL_X_INDEX(cii)] - cj_x[CL_X_INDEX(cjj)];
+                                                MD_FLOAT dely = ci_x[CL_Y_INDEX(cii)] - cj_x[CL_Y_INDEX(cjj)];
+                                                MD_FLOAT delz = ci_x[CL_Z_INDEX(cii)] - cj_x[CL_Z_INDEX(cjj)];
 
                                                 if (delx * delx + dely * dely + delz * delz < cutneighsq) {
                                                     is_neighbor = 1;
@@ -886,7 +890,7 @@ distance_check_out:
             atom->iclusters[ci].bbmaxz);
 
         for(int cii = 0; cii < CLUSTER_M; cii++) {
-            DEBUG_MESSAGE("%f, %f, %f\n", ci_x[CL_X_OFFSET + cii], ci_x[CL_Y_OFFSET +
+            DEBUG_MESSAGE("%f, %f, %f\n", ci_x[CL_X_INDEX(cii)], ci_x[CL_Y_OFFSET +
     cii], ci_x[CL_Z_OFFSET + cii]);
         }
 
@@ -904,7 +908,7 @@ distance_check_out:
                 atom->jclusters[cj].bbmaxz);
 
             for(int cjj = 0; cjj < CLUSTER_N; cjj++) {
-                DEBUG_MESSAGE("    %f, %f, %f\n", cj_x[CL_X_OFFSET + cjj],
+                DEBUG_MESSAGE("    %f, %f, %f\n", cj_x[CL_X_INDEX(cjj)],
     cj_x[CL_Y_OFFSET + cjj], cj_x[CL_Z_OFFSET + cjj]);
             }
         }
@@ -930,26 +934,26 @@ void pruneNeighborCPU(Parameter* param, Atom* atom, Neighbor* neighbor) {
 
 #if defined(CLUSTERPAIR_KERNEL_2XNN)
         MD_SIMD_FLOAT cutneighsq_vec = simd_real_broadcast(cutsq);
-        MD_SIMD_FLOAT xi0_tmp        = simd_real_load_h_dual(&ci_x[CL_X_OFFSET + 0]);
-        MD_SIMD_FLOAT xi2_tmp        = simd_real_load_h_dual(&ci_x[CL_X_OFFSET + 2]);
-        MD_SIMD_FLOAT yi0_tmp        = simd_real_load_h_dual(&ci_x[CL_Y_OFFSET + 0]);
-        MD_SIMD_FLOAT yi2_tmp        = simd_real_load_h_dual(&ci_x[CL_Y_OFFSET + 2]);
-        MD_SIMD_FLOAT zi0_tmp        = simd_real_load_h_dual(&ci_x[CL_Z_OFFSET + 0]);
-        MD_SIMD_FLOAT zi2_tmp        = simd_real_load_h_dual(&ci_x[CL_Z_OFFSET + 2]);
+        MD_SIMD_FLOAT xi0_tmp        = simd_real_load_h_dual(&ci_x[CL_X_INDEX(0)]);
+        MD_SIMD_FLOAT xi2_tmp        = simd_real_load_h_dual(&ci_x[CL_X_INDEX(2)]);
+        MD_SIMD_FLOAT yi0_tmp        = simd_real_load_h_dual(&ci_x[CL_Y_INDEX(0)]);
+        MD_SIMD_FLOAT yi2_tmp        = simd_real_load_h_dual(&ci_x[CL_Y_INDEX(2)]);
+        MD_SIMD_FLOAT zi0_tmp        = simd_real_load_h_dual(&ci_x[CL_Z_INDEX(0)]);
+        MD_SIMD_FLOAT zi2_tmp        = simd_real_load_h_dual(&ci_x[CL_Z_INDEX(2)]);
 #elif defined(CLUSTERPAIR_KERNEL_4XN)
         MD_SIMD_FLOAT cutneighsq_vec = simd_real_broadcast(cutsq);
-        MD_SIMD_FLOAT xi0_tmp = simd_real_broadcast(ci_x[CL_X_OFFSET + 0]);
-        MD_SIMD_FLOAT xi1_tmp = simd_real_broadcast(ci_x[CL_X_OFFSET + 1]);
-        MD_SIMD_FLOAT xi2_tmp = simd_real_broadcast(ci_x[CL_X_OFFSET + 2]);
-        MD_SIMD_FLOAT xi3_tmp = simd_real_broadcast(ci_x[CL_X_OFFSET + 3]);
-        MD_SIMD_FLOAT yi0_tmp = simd_real_broadcast(ci_x[CL_Y_OFFSET + 0]);
-        MD_SIMD_FLOAT yi1_tmp = simd_real_broadcast(ci_x[CL_Y_OFFSET + 1]);
-        MD_SIMD_FLOAT yi2_tmp = simd_real_broadcast(ci_x[CL_Y_OFFSET + 2]);
-        MD_SIMD_FLOAT yi3_tmp = simd_real_broadcast(ci_x[CL_Y_OFFSET + 3]);
-        MD_SIMD_FLOAT zi0_tmp = simd_real_broadcast(ci_x[CL_Z_OFFSET + 0]);
-        MD_SIMD_FLOAT zi1_tmp = simd_real_broadcast(ci_x[CL_Z_OFFSET + 1]);
-        MD_SIMD_FLOAT zi2_tmp = simd_real_broadcast(ci_x[CL_Z_OFFSET + 2]);
-        MD_SIMD_FLOAT zi3_tmp = simd_real_broadcast(ci_x[CL_Z_OFFSET + 3]);
+        MD_SIMD_FLOAT xi0_tmp = simd_real_broadcast(ci_x[CL_X_INDEX(0)]);
+        MD_SIMD_FLOAT xi1_tmp = simd_real_broadcast(ci_x[CL_X_INDEX(1)]);
+        MD_SIMD_FLOAT xi2_tmp = simd_real_broadcast(ci_x[CL_X_INDEX(2)]);
+        MD_SIMD_FLOAT xi3_tmp = simd_real_broadcast(ci_x[CL_X_INDEX(3)]);
+        MD_SIMD_FLOAT yi0_tmp = simd_real_broadcast(ci_x[CL_Y_INDEX(0)]);
+        MD_SIMD_FLOAT yi1_tmp = simd_real_broadcast(ci_x[CL_Y_INDEX(1)]);
+        MD_SIMD_FLOAT yi2_tmp = simd_real_broadcast(ci_x[CL_Y_INDEX(2)]);
+        MD_SIMD_FLOAT yi3_tmp = simd_real_broadcast(ci_x[CL_Y_INDEX(3)]);
+        MD_SIMD_FLOAT zi0_tmp = simd_real_broadcast(ci_x[CL_Z_INDEX(0)]);
+        MD_SIMD_FLOAT zi1_tmp = simd_real_broadcast(ci_x[CL_Z_INDEX(1)]);
+        MD_SIMD_FLOAT zi2_tmp = simd_real_broadcast(ci_x[CL_Z_INDEX(2)]);
+        MD_SIMD_FLOAT zi3_tmp = simd_real_broadcast(ci_x[CL_Z_INDEX(3)]);
 #endif
 
         // Remove dummy clusters if necessary
@@ -967,9 +971,9 @@ void pruneNeighborCPU(Parameter* param, Atom* atom, Neighbor* neighbor) {
 
 #if defined(CLUSTERPAIR_KERNEL_2XNN)
 
-            MD_SIMD_FLOAT xj_tmp = simd_real_load_h_duplicate(&cj_x[CL_X_OFFSET]);
-            MD_SIMD_FLOAT yj_tmp = simd_real_load_h_duplicate(&cj_x[CL_Y_OFFSET]);
-            MD_SIMD_FLOAT zj_tmp = simd_real_load_h_duplicate(&cj_x[CL_Z_OFFSET]);
+            MD_SIMD_FLOAT xj_tmp = simd_real_load_h_duplicate(&cj_x[CL_X_INDEX(0)]);
+            MD_SIMD_FLOAT yj_tmp = simd_real_load_h_duplicate(&cj_x[CL_Y_INDEX(0)]);
+            MD_SIMD_FLOAT zj_tmp = simd_real_load_h_duplicate(&cj_x[CL_Z_INDEX(0)]);
             MD_SIMD_FLOAT delx0  = simd_real_sub(xi0_tmp, xj_tmp);
             MD_SIMD_FLOAT dely0  = simd_real_sub(yi0_tmp, yj_tmp);
             MD_SIMD_FLOAT delz0  = simd_real_sub(zi0_tmp, zj_tmp);
@@ -992,9 +996,9 @@ void pruneNeighborCPU(Parameter* param, Atom* atom, Neighbor* neighbor) {
 
 #elif defined(CLUSTERPAIR_KERNEL_4XN)
 
-            MD_SIMD_FLOAT xj_tmp = simd_real_load(&cj_x[CL_X_OFFSET]);
-            MD_SIMD_FLOAT yj_tmp = simd_real_load(&cj_x[CL_Y_OFFSET]);
-            MD_SIMD_FLOAT zj_tmp = simd_real_load(&cj_x[CL_Z_OFFSET]);
+            MD_SIMD_FLOAT xj_tmp = simd_real_load(&cj_x[CL_X_INDEX(0)]);
+            MD_SIMD_FLOAT yj_tmp = simd_real_load(&cj_x[CL_Y_INDEX(0)]);
+            MD_SIMD_FLOAT zj_tmp = simd_real_load(&cj_x[CL_Z_INDEX(0)]);
             MD_SIMD_FLOAT delx0 = simd_real_sub(xi0_tmp, xj_tmp);
             MD_SIMD_FLOAT dely0 = simd_real_sub(yi0_tmp, yj_tmp);
             MD_SIMD_FLOAT delz0 = simd_real_sub(zi0_tmp, zj_tmp);
@@ -1033,9 +1037,9 @@ void pruneNeighborCPU(Parameter* param, Atom* atom, Neighbor* neighbor) {
 #else
             for (int cii = 0; cii < atom->iclusters[ci].natoms; cii++) {
                 for (int cjj = 0; cjj < atom->jclusters[cj].natoms; cjj++) {
-                    MD_FLOAT delx = ci_x[CL_X_OFFSET + cii] - cj_x[CL_X_OFFSET + cjj];
-                    MD_FLOAT dely = ci_x[CL_Y_OFFSET + cii] - cj_x[CL_Y_OFFSET + cjj];
-                    MD_FLOAT delz = ci_x[CL_Z_OFFSET + cii] - cj_x[CL_Z_OFFSET + cjj];
+                    MD_FLOAT delx = ci_x[CL_X_INDEX(cii)] - cj_x[CL_X_INDEX(cjj)];
+                    MD_FLOAT dely = ci_x[CL_Y_INDEX(cii)] - cj_x[CL_Y_INDEX(cjj)];
+                    MD_FLOAT delz = ci_x[CL_Z_INDEX(cii)] - cj_x[CL_Z_INDEX(cjj)];
                     if (delx * delx + dely * dely + delz * delz < cutsq) {
                         atom_dist_in_range = 1;
                         break;
@@ -1103,12 +1107,12 @@ void pruneNeighborSuperclusters(Parameter* param, Atom* atom, Neighbor* neighbor
 
                     for (int cii = 0; cii < atom->iclusters[ci].natoms; cii++) {
                         for (int cjj = 0; cjj < atom->jclusters[cj].natoms; cjj++) {
-                            MD_FLOAT delx = ci_x[CL_X_OFFSET + cii] -
-                                            cj_x[CL_X_OFFSET + cjj];
-                            MD_FLOAT dely = ci_x[CL_Y_OFFSET + cii] -
-                                            cj_x[CL_Y_OFFSET + cjj];
-                            MD_FLOAT delz = ci_x[CL_Z_OFFSET + cii] -
-                                            cj_x[CL_Z_OFFSET + cjj];
+                            MD_FLOAT delx = ci_x[CL_X_INDEX(cii)] -
+                                            cj_x[CL_X_INDEX(cjj)];
+                            MD_FLOAT dely = ci_x[CL_Y_INDEX(cii)] -
+                                            cj_x[CL_Y_INDEX(cjj)];
+                            MD_FLOAT delz = ci_x[CL_Z_INDEX(cii)] -
+                                            cj_x[CL_Z_INDEX(cjj)];
                             if (delx * delx + dely * dely + delz * delz < cutsq) {
                                 is_neighbor = 1;
                                 break;
@@ -1344,12 +1348,12 @@ void buildClustersCPU(Atom* atom) {
                     MD_FLOAT ytmp = atom_y(i);
                     MD_FLOAT ztmp = atom_z(i);
 
-                    ci_x[CL_X_OFFSET + cii] = xtmp;
-                    ci_x[CL_Y_OFFSET + cii] = ytmp;
-                    ci_x[CL_Z_OFFSET + cii] = ztmp;
-                    ci_v[CL_X_OFFSET + cii] = atom->vx[i];
-                    ci_v[CL_Y_OFFSET + cii] = atom->vy[i];
-                    ci_v[CL_Z_OFFSET + cii] = atom->vz[i];
+                    ci_x[CL_X_INDEX(cii)] = xtmp;
+                    ci_x[CL_Y_INDEX(cii)] = ytmp;
+                    ci_x[CL_Z_INDEX(cii)] = ztmp;
+                    ci_v[CL_X_INDEX(cii)] = atom->vx[i];
+                    ci_v[CL_Y_INDEX(cii)] = atom->vy[i];
+                    ci_v[CL_Z_INDEX(cii)] = atom->vz[i];
 
                     // TODO: To create the bounding boxes faster, we can use SIMD
                     // operations
@@ -1375,9 +1379,9 @@ void buildClustersCPU(Atom* atom) {
                     ci_t[cii] = atom->type[i];
                     atom->iclusters[ci].natoms++;
                 } else {
-                    ci_x[CL_X_OFFSET + cii] = INFINITY;
-                    ci_x[CL_Y_OFFSET + cii] = INFINITY;
-                    ci_x[CL_Z_OFFSET + cii] = INFINITY;
+                    ci_x[CL_X_INDEX(cii)] = INFINITY;
+                    ci_x[CL_Y_INDEX(cii)] = INFINITY;
+                    ci_x[CL_Z_INDEX(cii)] = INFINITY;
                     ci_t[cii]               = 0;
                 }
 
@@ -1465,12 +1469,12 @@ void buildSuperclusters(Atom* atom) {
                                 MD_FLOAT ytmp = atom_y(i);
                                 MD_FLOAT ztmp = atom_z(i);
 
-                                sci_x[CL_X_OFFSET + sci_ci * CLUSTER_M + cii] = xtmp;
-                                sci_x[CL_Y_OFFSET + sci_ci * CLUSTER_M + cii] = ytmp;
-                                sci_x[CL_Z_OFFSET + sci_ci * CLUSTER_M + cii] = ztmp;
-                                sci_v[CL_X_OFFSET + sci_ci * CLUSTER_M + cii] = atom->vx[i];
-                                sci_v[CL_Y_OFFSET + sci_ci * CLUSTER_M + cii] = atom->vy[i];
-                                sci_v[CL_Z_OFFSET + sci_ci * CLUSTER_M + cii] = atom->vz[i];
+                                sci_x[CL_X_INDEX(sci_ci * CLUSTER_M + cii)] = xtmp;
+                                sci_x[CL_Y_INDEX(sci_ci * CLUSTER_M + cii)] = ytmp;
+                                sci_x[CL_Z_INDEX(sci_ci * CLUSTER_M + cii)] = ztmp;
+                                sci_v[CL_X_INDEX(sci_ci * CLUSTER_M + cii)] = atom->vx[i];
+                                sci_v[CL_Y_INDEX(sci_ci * CLUSTER_M + cii)] = atom->vy[i];
+                                sci_v[CL_Z_INDEX(sci_ci * CLUSTER_M + cii)] = atom->vz[i];
                                 sci_t[sci_ci * CLUSTER_M + cii] = atom->type[i];
 
                                 // TODO: To create the bounding boxes faster, we can use
@@ -1496,9 +1500,9 @@ void buildSuperclusters(Atom* atom) {
 
                                 atom->iclusters[ci].natoms++;
                             } else {
-                                sci_x[CL_X_OFFSET + sci_ci * CLUSTER_M + cii] = INFINITY;
-                                sci_x[CL_Y_OFFSET + sci_ci * CLUSTER_M + cii] = INFINITY;
-                                sci_x[CL_Z_OFFSET + sci_ci * CLUSTER_M + cii] = INFINITY;
+                                sci_x[CL_X_INDEX(sci_ci * CLUSTER_M + cii)] = INFINITY;
+                                sci_x[CL_Y_INDEX(sci_ci * CLUSTER_M + cii)] = INFINITY;
+                                sci_x[CL_Z_INDEX(sci_ci * CLUSTER_M + cii)] = INFINITY;
                                 sci_t[sci_ci * CLUSTER_M + cii]                = 0;
                             }
 
@@ -1568,9 +1572,9 @@ void buildSuperclusters(Atom* atom) {
             for (int cii = 0; cii < atom->iclusters[ci].natoms; cii++) {
                 printf("    Atom %d: x=%.6f y=%.6f z=%.6f\n",
                     cii,
-                    sci_x[CL_X_OFFSET + sci_ci * CLUSTER_M + cii],
-                    sci_x[CL_Y_OFFSET + sci_ci * CLUSTER_M + cii],
-                    sci_x[CL_Z_OFFSET + sci_ci * CLUSTER_M + cii]);
+                    sci_x[CL_X_INDEX(sci_ci * CLUSTER_M + cii)],
+                    sci_x[CL_Y_INDEX(sci_ci * CLUSTER_M + cii)],
+                    sci_x[CL_Z_INDEX(sci_ci * CLUSTER_M + cii)]);
             }
         }
     }
@@ -1606,9 +1610,9 @@ void defineJClusters(Parameter* param, Atom* atom) {
             MD_FLOAT bbminz = INFINITY, bbmaxz = -INFINITY;
 
             for (int cii = 0; cii < MIN(atom->iclusters[ci].natoms, CLUSTER_N); cii++) {
-                MD_FLOAT xtmp = ci_x[CL_X_OFFSET + cii];
-                MD_FLOAT ytmp = ci_x[CL_Y_OFFSET + cii];
-                MD_FLOAT ztmp = ci_x[CL_Z_OFFSET + cii];
+                MD_FLOAT xtmp = ci_x[CL_X_INDEX(cii)];
+                MD_FLOAT ytmp = ci_x[CL_Y_INDEX(cii)];
+                MD_FLOAT ztmp = ci_x[CL_Z_INDEX(cii)];
 
                 // TODO: To create the bounding boxes faster, we can use SIMD operations
                 if (bbminx > xtmp) {
@@ -1644,9 +1648,9 @@ void defineJClusters(Parameter* param, Atom* atom) {
             bbminz = INFINITY, bbmaxz = -INFINITY;
 
             for (int cii = CLUSTER_N; cii < atom->iclusters[ci].natoms; cii++) {
-                MD_FLOAT xtmp = ci_x[CL_X_OFFSET + cii];
-                MD_FLOAT ytmp = ci_x[CL_Y_OFFSET + cii];
-                MD_FLOAT ztmp = ci_x[CL_Z_OFFSET + cii];
+                MD_FLOAT xtmp = ci_x[CL_X_INDEX(cii)];
+                MD_FLOAT ytmp = ci_x[CL_Y_INDEX(cii)];
+                MD_FLOAT ztmp = ci_x[CL_Z_INDEX(cii)];
 
                 // TODO: To create the bounding boxes faster, we can use SIMD operations
                 if (bbminx > xtmp) {
@@ -1784,8 +1788,8 @@ void binJClusters(Parameter* param, Atom* atom) {
                 MD_FLOAT* cj_x   = &atom->cl_x[cj_vec_base];
                 MD_FLOAT cj_minz = atom->jclusters[cj].bbminz;
 
-                xtmp = cj_x[CL_X_OFFSET + 0];
-                ytmp = cj_x[CL_Y_OFFSET + 0];
+                xtmp = cj_x[CL_X_INDEX(0)];
+                ytmp = cj_x[CL_Y_INDEX(0)];
 
                 coord2bin2D(xtmp, ytmp, &ix, &iy);
                 ix = MAX(MIN(ix, mbinx - 1), 0);
@@ -1793,8 +1797,8 @@ void binJClusters(Parameter* param, Atom* atom) {
 
                 for (int cjj = 1; cjj < atom->jclusters[cj].natoms; cjj++) {
                     int nix, niy;
-                    xtmp = cj_x[CL_X_OFFSET + cjj];
-                    ytmp = cj_x[CL_Y_OFFSET + cjj];
+                    xtmp = cj_x[CL_X_INDEX(cjj)];
+                    ytmp = cj_x[CL_Y_INDEX(cjj)];
 
                     coord2bin2D(xtmp, ytmp, &nix, &niy);
                     nix = MAX(MIN(nix, mbinx - 1), 0);
@@ -1880,12 +1884,12 @@ void updateSingleAtoms(Parameter* param, Atom* atom) {
             for(int sci_ci = 0; sci_ci < atom->siclusters[sci].nclusters; sci_ci++) {
                 const int ci = sci * SCLUSTER_SIZE + sci_ci;
                 for(int cii = 0; cii < atom->iclusters[ci].natoms; cii++) {
-                    atom_x(Natom)     = sci_x[CL_X_OFFSET + sci_ci * CLUSTER_M + cii];
-                    atom_y(Natom)     = sci_x[CL_Y_OFFSET + sci_ci * CLUSTER_M + cii];
-                    atom_z(Natom)     = sci_x[CL_Z_OFFSET + sci_ci * CLUSTER_M + cii];
-                    atom_vx(Natom)    = sci_v[CL_X_OFFSET + sci_ci * CLUSTER_M + cii];
-                    atom_vy(Natom)    = sci_v[CL_Y_OFFSET + sci_ci * CLUSTER_M + cii];
-                    atom_vz(Natom)    = sci_v[CL_Z_OFFSET + sci_ci * CLUSTER_M + cii];
+                    atom_x(Natom)     = sci_x[CL_X_INDEX(sci_ci * CLUSTER_M + cii)];
+                    atom_y(Natom)     = sci_x[CL_Y_INDEX(sci_ci * CLUSTER_M + cii)];
+                    atom_z(Natom)     = sci_x[CL_Z_INDEX(sci_ci * CLUSTER_M + cii)];
+                    atom_vx(Natom)    = sci_v[CL_X_INDEX(sci_ci * CLUSTER_M + cii)];
+                    atom_vy(Natom)    = sci_v[CL_Y_INDEX(sci_ci * CLUSTER_M + cii)];
+                    atom_vz(Natom)    = sci_v[CL_Z_INDEX(sci_ci * CLUSTER_M + cii)];
                     atom->type[Natom] = sci_t[sci_ci * CLUSTER_M + cii];
                     Natom++;
                 }
@@ -1900,12 +1904,12 @@ void updateSingleAtoms(Parameter* param, Atom* atom) {
             int* ci_t       = &atom->cl_t[ci_sca_base];
 
             for (int cii = 0; cii < atom->iclusters[ci].natoms; cii++) {
-                atom_x(Natom)     = ci_x[CL_X_OFFSET + cii];
-                atom_y(Natom)     = ci_x[CL_Y_OFFSET + cii];
-                atom_z(Natom)     = ci_x[CL_Z_OFFSET + cii];
-                atom->vx[Natom]   = ci_v[CL_X_OFFSET + cii];
-                atom->vy[Natom]   = ci_v[CL_Y_OFFSET + cii];
-                atom->vz[Natom]   = ci_v[CL_Z_OFFSET + cii];
+                atom_x(Natom)     = ci_x[CL_X_INDEX(cii)];
+                atom_y(Natom)     = ci_x[CL_Y_INDEX(cii)];
+                atom_z(Natom)     = ci_x[CL_Z_INDEX(cii)];
+                atom->vx[Natom]   = ci_v[CL_X_INDEX(cii)];
+                atom->vy[Natom]   = ci_v[CL_Y_INDEX(cii)];
+                atom->vz[Natom]   = ci_v[CL_Z_INDEX(cii)];
                 atom->type[Natom] = ci_t[cii];
                 Natom++;
             }
@@ -1988,9 +1992,9 @@ static int ghostClusterinRange(Atom* atom, int cs, int cg, MD_FLOAT rsq) {
 
     for (int cii = 0; cii < atom->jclusters[cs].natoms; cii++) {
         for (int cjj = 0; cjj < atom->jclusters[cg].natoms; cjj++) {
-            MD_FLOAT delx = cs_x[CL_X_OFFSET + cii] - cg_x[CL_X_OFFSET + cjj];
-            MD_FLOAT dely = cs_x[CL_Y_OFFSET + cii] - cg_x[CL_Y_OFFSET + cjj];
-            MD_FLOAT delz = cs_x[CL_Z_OFFSET + cii] - cg_x[CL_Z_OFFSET + cjj];
+            MD_FLOAT delx = cs_x[CL_X_INDEX(cii)] - cg_x[CL_X_INDEX(cjj)];
+            MD_FLOAT dely = cs_x[CL_Y_INDEX(cii)] - cg_x[CL_Y_INDEX(cjj)];
+            MD_FLOAT delz = cs_x[CL_Z_INDEX(cii)] - cg_x[CL_Z_INDEX(cjj)];
             if (delx * delx + dely * dely + delz * delz < rsq) {
                 return 1;
             }

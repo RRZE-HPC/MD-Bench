@@ -55,9 +55,9 @@ int write_super_clusters_to_vtk_file(const char* filename, Atom* atom, int times
             for (int cii = 0; cii < CLUSTER_M; cii++) {
                 fprintf(fp,
                     "%.4f %.4f %.4f\n",
-                    sci_x[CL_X_OFFSET + sci_ci * CLUSTER_M + cii],
-                    sci_x[CL_Y_OFFSET + sci_ci * CLUSTER_M + cii],
-                    sci_x[CL_Z_OFFSET + sci_ci * CLUSTER_M + cii]);
+                    sci_x[CL_X_INDEX(sci_ci * CLUSTER_M + cii)],
+                    sci_x[CL_Y_INDEX(sci_ci * CLUSTER_M + cii)],
+                    sci_x[CL_Z_INDEX(sci_ci * CLUSTER_M + cii)]);
             }
         }
     }
@@ -115,9 +115,9 @@ int write_local_atoms_to_vtk_file(const char* filename, Atom* atom, Parameter* p
                 for (int cii = 0; cii < atom->iclusters[ci].natoms; ++cii) {
                     fprintf(fp,
                         "%.4f %.4f %.4f\n",
-                        sciX[CL_X_OFFSET + sci_ci * CLUSTER_M + cii],
-                        sciX[CL_Y_OFFSET + sci_ci * CLUSTER_M + cii],
-                        sciX[CL_Z_OFFSET + sci_ci * CLUSTER_M + cii]);
+                        sciX[CL_X_INDEX(sci_ci * CLUSTER_M + cii)],
+                        sciX[CL_Y_INDEX(sci_ci * CLUSTER_M + cii)],
+                        sciX[CL_Z_INDEX(sci_ci * CLUSTER_M + cii)]);
                 }
             }
         }
@@ -128,9 +128,9 @@ int write_local_atoms_to_vtk_file(const char* filename, Atom* atom, Parameter* p
             for (int cii = 0; cii < atom->iclusters[ci].natoms; ++cii) {
                 fprintf(fp,
                     "%.4f %.4f %.4f\n",
-                    ciX[CL_X_OFFSET + cii],
-                    ciX[CL_Y_OFFSET + cii],
-                    ciX[CL_Z_OFFSET + cii]);
+                    ciX[CL_X_INDEX(cii)],
+                    ciX[CL_Y_INDEX(cii)],
+                    ciX[CL_Z_INDEX(cii)]);
             }
         }
     }
@@ -189,9 +189,9 @@ int write_ghost_atoms_to_vtk_file(const char* filename, Atom* atom, int timestep
         for (int cii = 0; cii < atom->iclusters[ci].natoms; ++cii) {
             fprintf(fp,
                 "%.4f %.4f %.4f\n",
-                ciX[CL_X_OFFSET + cii],
-                ciX[CL_Y_OFFSET + cii],
-                ciX[CL_Z_OFFSET + cii]);
+                ciX[CL_X_INDEX(cii)],
+                ciX[CL_Y_INDEX(cii)],
+                ciX[CL_Z_INDEX(cii)]);
         }
     }
 
@@ -252,9 +252,9 @@ int write_local_cluster_edges_to_vtk_file(const char* filename, Atom* atom, int 
         for (int cii = 0; cii < atom->iclusters[ci].natoms; ++cii) {
             fprintf(fp,
                 "%.4f %.4f %.4f\n",
-                ciX[CL_X_OFFSET + cii],
-                ciX[CL_Y_OFFSET + cii],
-                ciX[CL_Z_OFFSET + cii]);
+                ciX[CL_X_INDEX(cii)],
+                ciX[CL_Y_INDEX(cii)],
+                ciX[CL_Z_INDEX(cii)]);
         }
 
         totLines += atom->iclusters[ci].natoms;
@@ -306,9 +306,9 @@ int write_ghost_cluster_edges_to_vtk_file(const char* filename, Atom* atom, int 
         for (int cii = 0; cii < atom->iclusters[ci].natoms; ++cii) {
             fprintf(fp,
                 "%.4f %.4f %.4f\n",
-                ciX[CL_X_OFFSET + cii],
-                ciX[CL_Y_OFFSET + cii],
-                ciX[CL_Z_OFFSET + cii]);
+                ciX[CL_X_INDEX(cii)],
+                ciX[CL_Y_INDEX(cii)],
+                ciX[CL_Z_INDEX(cii)]);
         }
 
         totLines += atom->iclusters[ci].natoms;

@@ -122,6 +122,8 @@ endif
 endif
 ifeq ($(strip $(DATA_LAYOUT)),AOS)
     DEFINES +=  -DAOS
+else
+    DEFINES +=  -DSOA
 endif
 ifeq ($(strip $(DATA_TYPE)),SP)
     DEFINES +=  -DPRECISION=1

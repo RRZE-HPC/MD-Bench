@@ -867,11 +867,11 @@ void packForward(Atom* atom, int nc, int* list, MD_FLOAT* buf, int* pbc) {
         int displ       = i * CLUSTER_N;
 
         for (int cjj = 0; cjj < atom->jclusters[cj].natoms; cjj++) {
-            buf[3 * (displ + cjj) + 0] = cj_x[CL_X_OFFSET + cjj] +
+            buf[3 * (displ + cjj) + 0] = cj_x[CL_X_INDEX(cjj)] +
                                          pbc[0] * atom->mybox.xprd;
-            buf[3 * (displ + cjj) + 1] = cj_x[CL_Y_OFFSET + cjj] +
+            buf[3 * (displ + cjj) + 1] = cj_x[CL_Y_INDEX(cjj)] +
                                          pbc[1] * atom->mybox.yprd;
-            buf[3 * (displ + cjj) + 2] = cj_x[CL_Z_OFFSET + cjj] +
+            buf[3 * (displ + cjj) + 2] = cj_x[CL_Z_INDEX(cjj)] +
                                          pbc[2] * atom->mybox.zprd;
         }
 
@@ -891,12 +891,12 @@ void unpackForward(Atom* atom, int nc, int c0, MD_FLOAT* buf) {
         int displ       = i * CLUSTER_N;
 
         for (int cjj = 0; cjj < atom->jclusters[cj].natoms; cjj++) {
-            if (cj_x[CL_X_OFFSET + cjj] < INFINITY)
-                cj_x[CL_X_OFFSET + cjj] = buf[3 * (displ + cjj) + 0];
-            if (cj_x[CL_Y_OFFSET + cjj] < INFINITY)
-                cj_x[CL_Y_OFFSET + cjj] = buf[3 * (displ + cjj) + 1];
-            if (cj_x[CL_Z_OFFSET + cjj] < INFINITY)
-                cj_x[CL_Z_OFFSET + cjj] = buf[3 * (displ + cjj) + 2];
+            if (cj_x[CL_X_INDEX(cjj)] < INFINITY)
+                cj_x[CL_X_INDEX(cjj)] = buf[3 * (displ + cjj) + 0];
+            if (cj_x[CL_Y_INDEX(cjj)] < INFINITY)
+                cj_x[CL_Y_INDEX(cjj)] = buf[3 * (displ + cjj) + 1];
+            if (cj_x[CL_Z_INDEX(cjj)] < INFINITY)
+                cj_x[CL_Z_INDEX(cjj)] = buf[3 * (displ + cjj) + 2];
         }
     }
 }
@@ -918,9 +918,9 @@ int packGhost(Atom* atom, int cj, MD_FLOAT* buf, int* pbc) {
         buf[m++] = (MD_FLOAT) atom->jclusters[cj].natoms;
 
         for (int cjj = 0; cjj < atom->jclusters[cj].natoms; cjj++) {
-            MD_FLOAT xtmp = cj_x[CL_X_OFFSET + cjj] + pbc[0] * atom->mybox.xprd;
-            MD_FLOAT ytmp = cj_x[CL_Y_OFFSET + cjj] + pbc[1] * atom->mybox.yprd;
-            MD_FLOAT ztmp = cj_x[CL_Z_OFFSET + cjj] + pbc[2] * atom->mybox.zprd;
+            MD_FLOAT xtmp = cj_x[CL_X_INDEX(cjj)] + pbc[0] * atom->mybox.xprd;
+            MD_FLOAT ytmp = cj_x[CL_Y_INDEX(cjj)] + pbc[1] * atom->mybox.yprd;
+            MD_FLOAT ztmp = cj_x[CL_Z_INDEX(cjj)] + pbc[2] * atom->mybox.zprd;
         
             buf[m++] = xtmp;
             buf[m++] = ytmp;
@@ -987,17 +987,17 @@ int unpackGhost(Parameter *param, Atom* atom, int cj, MD_FLOAT* buf) {
 
     atom->jclusters[cj].natoms = (int)buf[m++];
     for (int cjj = 0; cjj < atom->jclusters[cj].natoms; cjj++) {
-        cj_x[CL_X_OFFSET + cjj]       = buf[m++];
-        cj_x[CL_Y_OFFSET + cjj]       = buf[m++];
-        cj_x[CL_Z_OFFSET + cjj]       = buf[m++];
+        cj_x[CL_X_INDEX(cjj)]       = buf[m++];
+        cj_x[CL_Y_INDEX(cjj)]       = buf[m++];
+        cj_x[CL_Z_INDEX(cjj)]       = buf[m++];
         atom->cl_t[cj_sca_base + cjj] = (int)buf[m++];
         atom->Nghost++;
     }
 
     for (int cjj = atom->jclusters[cj].natoms; cjj < CLUSTER_N; cjj++) {
-        cj_x[CL_X_OFFSET + cjj]       = INFINITY;
-        cj_x[CL_Y_OFFSET + cjj]       = INFINITY;
-        cj_x[CL_Z_OFFSET + cjj]       = INFINITY;
+        cj_x[CL_X_INDEX(cjj)]       = INFINITY;
+        cj_x[CL_Y_INDEX(cjj)]       = INFINITY;
+        cj_x[CL_Z_INDEX(cjj)]       = INFINITY;
         atom->cl_t[cj_sca_base + cjj] = -1;
         m += 4;
     }
@@ -1022,9 +1022,9 @@ void packReverse(Atom* atom, int nc, int c0, MD_FLOAT* buf) {
         int displ       = i * CLUSTER_N;
 
         for (int cjj = 0; cjj < atom->jclusters[cj].natoms; cjj++) {
-            buf[3 * (displ + cjj) + 0] = cj_f[CL_X_OFFSET + cjj];
-            buf[3 * (displ + cjj) + 1] = cj_f[CL_Y_OFFSET + cjj];
-            buf[3 * (displ + cjj) + 2] = cj_f[CL_Z_OFFSET + cjj];
+            buf[3 * (displ + cjj) + 0] = cj_f[CL_X_INDEX(cjj)];
+            buf[3 * (displ + cjj) + 1] = cj_f[CL_Y_INDEX(cjj)];
+            buf[3 * (displ + cjj) + 2] = cj_f[CL_Z_INDEX(cjj)];
         }
 
         for (int cjj = atom->jclusters[cj].natoms; cjj < CLUSTER_N; cjj++) {
@@ -1043,9 +1043,9 @@ void unpackReverse(Atom* atom, int nc, int* list, MD_FLOAT* buf) {
         int displ       = i * CLUSTER_N;
 
         for (int cjj = 0; cjj < atom->jclusters[cj].natoms; cjj++) {
-            cj_f[CL_X_OFFSET + cjj] += buf[3 * (displ + cjj) + 0];
-            cj_f[CL_Y_OFFSET + cjj] += buf[3 * (displ + cjj) + 1];
-            cj_f[CL_Z_OFFSET + cjj] += buf[3 * (displ + cjj) + 2];
+            cj_f[CL_X_INDEX(cjj)] += buf[3 * (displ + cjj) + 0];
+            cj_f[CL_Y_INDEX(cjj)] += buf[3 * (displ + cjj) + 1];
+            cj_f[CL_Z_INDEX(cjj)] += buf[3 * (displ + cjj) + 2];
         }
     }
 }

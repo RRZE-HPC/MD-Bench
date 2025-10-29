@@ -35,9 +35,9 @@ double computeForceLJRef(Parameter* param, Atom* atom, Neighbor* neighbor, Stats
         int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
         MD_FLOAT* ci_f  = &atom->cl_f[ci_vec_base];
         for (int cii = 0; cii < atom->iclusters[ci].natoms; cii++) {
-            ci_f[CL_X_OFFSET + cii] = 0.0;
-            ci_f[CL_Y_OFFSET + cii] = 0.0;
-            ci_f[CL_Z_OFFSET + cii] = 0.0;
+            ci_f[CL_X_INDEX(cii)] = 0.0;
+            ci_f[CL_Y_INDEX(cii)] = 0.0;
+            ci_f[CL_Z_INDEX(cii)] = 0.0;
         }
     }
 
@@ -45,9 +45,9 @@ double computeForceLJRef(Parameter* param, Atom* atom, Neighbor* neighbor, Stats
         int cj_vec_base = CJ_VECTOR_BASE_INDEX(cg);
         MD_FLOAT* cj_f  = &atom->cl_f[cj_vec_base];
         for (int cjj = 0; cjj < atom->jclusters[cg].natoms; cjj++) {
-            cj_f[CL_X_OFFSET + cjj] = 0.0;
-            cj_f[CL_Y_OFFSET + cjj] = 0.0;
-            cj_f[CL_Z_OFFSET + cjj] = 0.0;
+            cj_f[CL_X_INDEX(cjj)] = 0.0;
+            cj_f[CL_Y_INDEX(cjj)] = 0.0;
+            cj_f[CL_Z_INDEX(cjj)] = 0.0;
         }
     }
 
@@ -88,9 +88,9 @@ double computeForceLJRef(Parameter* param, Atom* atom, Neighbor* neighbor, Stats
 #ifndef ONE_ATOM_TYPE
                     int type_i = ci_t[cii];
 #endif
-                    MD_FLOAT xtmp = ci_x[CL_X_OFFSET + cii];
-                    MD_FLOAT ytmp = ci_x[CL_Y_OFFSET + cii];
-                    MD_FLOAT ztmp = ci_x[CL_Z_OFFSET + cii];
+                    MD_FLOAT xtmp = ci_x[CL_X_INDEX(cii)];
+                    MD_FLOAT ytmp = ci_x[CL_Y_INDEX(cii)];
+                    MD_FLOAT ztmp = ci_x[CL_Z_INDEX(cii)];
                     MD_FLOAT fix  = 0;
                     MD_FLOAT fiy  = 0;
                     MD_FLOAT fiz  = 0;
@@ -113,9 +113,9 @@ double computeForceLJRef(Parameter* param, Atom* atom, Neighbor* neighbor, Stats
                                          (ci_cj1 != cj || cii != cjj + CLUSTER_N);
 #endif
                         if (cond) {
-                            MD_FLOAT delx = xtmp - cj_x[CL_X_OFFSET + cjj];
-                            MD_FLOAT dely = ytmp - cj_x[CL_Y_OFFSET + cjj];
-                            MD_FLOAT delz = ztmp - cj_x[CL_Z_OFFSET + cjj];
+                            MD_FLOAT delx = xtmp - cj_x[CL_X_INDEX(cjj)];
+                            MD_FLOAT dely = ytmp - cj_x[CL_Y_INDEX(cjj)];
+                            MD_FLOAT delz = ztmp - cj_x[CL_Z_INDEX(cjj)];
                             MD_FLOAT rsq  = delx * delx + dely * dely + delz * delz;
 
 #ifndef ONE_ATOM_TYPE
@@ -132,9 +132,9 @@ double computeForceLJRef(Parameter* param, Atom* atom, Neighbor* neighbor, Stats
                                 MD_FLOAT force = 48.0 * sr6 * (sr6 - 0.5) * sr2 * epsilon;
 
                                 if (neighbor->half_neigh || param->method) {
-                                    cj_f[CL_X_OFFSET + cjj] -= delx * force;
-                                    cj_f[CL_Y_OFFSET + cjj] -= dely * force;
-                                    cj_f[CL_Z_OFFSET + cjj] -= delz * force;
+                                    cj_f[CL_X_INDEX(cjj)] -= delx * force;
+                                    cj_f[CL_Y_INDEX(cjj)] -= dely * force;
+                                    cj_f[CL_Z_INDEX(cjj)] -= delz * force;
                                 }
 
                                 fix += delx * force;
@@ -154,9 +154,9 @@ double computeForceLJRef(Parameter* param, Atom* atom, Neighbor* neighbor, Stats
                         addStat(stats->clusters_outside_cutoff, 1);
                     }
 
-                    ci_f[CL_X_OFFSET + cii] += fix;
-                    ci_f[CL_Y_OFFSET + cii] += fiy;
-                    ci_f[CL_Z_OFFSET + cii] += fiz;
+                    ci_f[CL_X_INDEX(cii)] += fix;
+                    ci_f[CL_Y_INDEX(cii)] += fiy;
+                    ci_f[CL_Z_INDEX(cii)] += fiz;
                 }
             }
 
@@ -197,9 +197,9 @@ double computeForceLJ2xnnHalfNeigh(
         int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
         MD_FLOAT* ci_f  = &atom->cl_f[ci_vec_base];
         for (int cii = 0; cii < atom->iclusters[ci].natoms; cii++) {
-            ci_f[CL_X_OFFSET + cii] = 0.0;
-            ci_f[CL_Y_OFFSET + cii] = 0.0;
-            ci_f[CL_Z_OFFSET + cii] = 0.0;
+            ci_f[CL_X_INDEX(cii)] = 0.0;
+            ci_f[CL_Y_INDEX(cii)] = 0.0;
+            ci_f[CL_Z_INDEX(cii)] = 0.0;
         }
     }
 
@@ -207,9 +207,9 @@ double computeForceLJ2xnnHalfNeigh(
         int cj_vec_base = CJ_VECTOR_BASE_INDEX(cg);
         MD_FLOAT* cj_f  = &atom->cl_f[cj_vec_base];
         for (int cjj = 0; cjj < atom->jclusters[cg].natoms; cjj++) {
-            cj_f[CL_X_OFFSET + cjj] = 0.0;
-            cj_f[CL_Y_OFFSET + cjj] = 0.0;
-            cj_f[CL_Z_OFFSET + cjj] = 0.0;
+            cj_f[CL_X_INDEX(cjj)] = 0.0;
+            cj_f[CL_Y_INDEX(cjj)] = 0.0;
+            cj_f[CL_Z_INDEX(cjj)] = 0.0;
         }
     }
 
@@ -232,12 +232,12 @@ double computeForceLJ2xnnHalfNeigh(
             int numneighs        = neighbor->numneigh[ci];
             int numneighs_masked = neighbor->numneigh_masked[ci];
 
-            MD_SIMD_FLOAT xi0_tmp = simd_real_load_h_dual(&ci_x[CL_X_OFFSET + 0]);
-            MD_SIMD_FLOAT xi2_tmp = simd_real_load_h_dual(&ci_x[CL_X_OFFSET + 2]);
-            MD_SIMD_FLOAT yi0_tmp = simd_real_load_h_dual(&ci_x[CL_Y_OFFSET + 0]);
-            MD_SIMD_FLOAT yi2_tmp = simd_real_load_h_dual(&ci_x[CL_Y_OFFSET + 2]);
-            MD_SIMD_FLOAT zi0_tmp = simd_real_load_h_dual(&ci_x[CL_Z_OFFSET + 0]);
-            MD_SIMD_FLOAT zi2_tmp = simd_real_load_h_dual(&ci_x[CL_Z_OFFSET + 2]);
+            MD_SIMD_FLOAT xi0_tmp = simd_real_load_h_dual(&ci_x[CL_X_INDEX(0)]);
+            MD_SIMD_FLOAT xi2_tmp = simd_real_load_h_dual(&ci_x[CL_X_INDEX(2)]);
+            MD_SIMD_FLOAT yi0_tmp = simd_real_load_h_dual(&ci_x[CL_Y_INDEX(0)]);
+            MD_SIMD_FLOAT yi2_tmp = simd_real_load_h_dual(&ci_x[CL_Y_INDEX(2)]);
+            MD_SIMD_FLOAT zi0_tmp = simd_real_load_h_dual(&ci_x[CL_Z_INDEX(0)]);
+            MD_SIMD_FLOAT zi2_tmp = simd_real_load_h_dual(&ci_x[CL_Z_INDEX(2)]);
             MD_SIMD_FLOAT fix0    = simd_real_zero();
             MD_SIMD_FLOAT fiy0    = simd_real_zero();
             MD_SIMD_FLOAT fiz0    = simd_real_zero();
@@ -269,9 +269,9 @@ double computeForceLJ2xnnHalfNeigh(
                 int* cj_t       = &atom->cl_t[cj_sca_base];
 #endif
 
-                MD_SIMD_FLOAT xj_tmp    = simd_real_load_h_duplicate(&cj_x[CL_X_OFFSET]);
-                MD_SIMD_FLOAT yj_tmp    = simd_real_load_h_duplicate(&cj_x[CL_Y_OFFSET]);
-                MD_SIMD_FLOAT zj_tmp    = simd_real_load_h_duplicate(&cj_x[CL_Z_OFFSET]);
+                MD_SIMD_FLOAT xj_tmp    = simd_real_load_h_duplicate(&cj_x[CL_X_INDEX(0)]);
+                MD_SIMD_FLOAT yj_tmp    = simd_real_load_h_duplicate(&cj_x[CL_Y_INDEX(0)]);
+                MD_SIMD_FLOAT zj_tmp    = simd_real_load_h_duplicate(&cj_x[CL_Z_INDEX(0)]);
                 MD_SIMD_FLOAT delx0     = simd_real_sub(xi0_tmp, xj_tmp);
                 MD_SIMD_FLOAT dely0     = simd_real_sub(yi0_tmp, yj_tmp);
                 MD_SIMD_FLOAT delz0     = simd_real_sub(zi0_tmp, zj_tmp);
@@ -398,9 +398,9 @@ double computeForceLJ2xnnHalfNeigh(
                 int* cj_t       = &atom->cl_t[cj_sca_base];
 #endif
 
-                MD_SIMD_FLOAT xj_tmp = simd_real_load_h_duplicate(&cj_x[CL_X_OFFSET]);
-                MD_SIMD_FLOAT yj_tmp = simd_real_load_h_duplicate(&cj_x[CL_Y_OFFSET]);
-                MD_SIMD_FLOAT zj_tmp = simd_real_load_h_duplicate(&cj_x[CL_Z_OFFSET]);
+                MD_SIMD_FLOAT xj_tmp = simd_real_load_h_duplicate(&cj_x[CL_X_INDEX(0)]);
+                MD_SIMD_FLOAT yj_tmp = simd_real_load_h_duplicate(&cj_x[CL_Y_INDEX(0)]);
+                MD_SIMD_FLOAT zj_tmp = simd_real_load_h_duplicate(&cj_x[CL_Z_INDEX(0)]);
                 MD_SIMD_FLOAT delx0  = simd_real_sub(xi0_tmp, xj_tmp);
                 MD_SIMD_FLOAT dely0  = simd_real_sub(yi0_tmp, yj_tmp);
                 MD_SIMD_FLOAT delz0  = simd_real_sub(zi0_tmp, zj_tmp);
@@ -494,9 +494,9 @@ double computeForceLJ2xnnHalfNeigh(
                 }
             }
 
-            simd_real_h_dual_incr_reduced_sum(&ci_f[CL_X_OFFSET], fix0, fix2);
-            simd_real_h_dual_incr_reduced_sum(&ci_f[CL_Y_OFFSET], fiy0, fiy2);
-            simd_real_h_dual_incr_reduced_sum(&ci_f[CL_Z_OFFSET], fiz0, fiz2);
+            simd_real_h_dual_incr_reduced_sum(&ci_f[CL_X_INDEX(0)], fix0, fix2);
+            simd_real_h_dual_incr_reduced_sum(&ci_f[CL_Y_INDEX(0)], fiy0, fiy2);
+            simd_real_h_dual_incr_reduced_sum(&ci_f[CL_Z_INDEX(0)], fiz0, fiz2);
 
             addStat(stats->calculated_forces, 1);
             addStat(stats->num_neighs, numneighs);
@@ -536,9 +536,9 @@ double computeForceLJ2xnnFullNeigh(
         int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
         MD_FLOAT* ci_f  = &atom->cl_f[ci_vec_base];
         for (int cii = 0; cii < atom->iclusters[ci].natoms; cii++) {
-            ci_f[CL_X_OFFSET + cii] = 0.0;
-            ci_f[CL_Y_OFFSET + cii] = 0.0;
-            ci_f[CL_Z_OFFSET + cii] = 0.0;
+            ci_f[CL_X_INDEX(cii)] = 0.0;
+            ci_f[CL_Y_INDEX(cii)] = 0.0;
+            ci_f[CL_Z_INDEX(cii)] = 0.0;
         }
     }
 
@@ -561,12 +561,12 @@ double computeForceLJ2xnnFullNeigh(
             int numneighs        = neighbor->numneigh[ci];
             int numneighs_masked = neighbor->numneigh_masked[ci];
 
-            MD_SIMD_FLOAT xi0_tmp = simd_real_load_h_dual(&ci_x[CL_X_OFFSET + 0]);
-            MD_SIMD_FLOAT xi2_tmp = simd_real_load_h_dual(&ci_x[CL_X_OFFSET + 2]);
-            MD_SIMD_FLOAT yi0_tmp = simd_real_load_h_dual(&ci_x[CL_Y_OFFSET + 0]);
-            MD_SIMD_FLOAT yi2_tmp = simd_real_load_h_dual(&ci_x[CL_Y_OFFSET + 2]);
-            MD_SIMD_FLOAT zi0_tmp = simd_real_load_h_dual(&ci_x[CL_Z_OFFSET + 0]);
-            MD_SIMD_FLOAT zi2_tmp = simd_real_load_h_dual(&ci_x[CL_Z_OFFSET + 2]);
+            MD_SIMD_FLOAT xi0_tmp = simd_real_load_h_dual(&ci_x[CL_X_INDEX(0)]);
+            MD_SIMD_FLOAT xi2_tmp = simd_real_load_h_dual(&ci_x[CL_X_INDEX(2)]);
+            MD_SIMD_FLOAT yi0_tmp = simd_real_load_h_dual(&ci_x[CL_Y_INDEX(0)]);
+            MD_SIMD_FLOAT yi2_tmp = simd_real_load_h_dual(&ci_x[CL_Y_INDEX(2)]);
+            MD_SIMD_FLOAT zi0_tmp = simd_real_load_h_dual(&ci_x[CL_Z_INDEX(0)]);
+            MD_SIMD_FLOAT zi2_tmp = simd_real_load_h_dual(&ci_x[CL_Z_INDEX(2)]);
             MD_SIMD_FLOAT fix0    = simd_real_zero();
             MD_SIMD_FLOAT fiy0    = simd_real_zero();
             MD_SIMD_FLOAT fiz0    = simd_real_zero();
@@ -591,9 +591,9 @@ double computeForceLJ2xnnFullNeigh(
                 int* cj_t       = &atom->cl_t[cj_sca_base];
 #endif
 
-                MD_SIMD_FLOAT xj_tmp    = simd_real_load_h_duplicate(&cj_x[CL_X_OFFSET]);
-                MD_SIMD_FLOAT yj_tmp    = simd_real_load_h_duplicate(&cj_x[CL_Y_OFFSET]);
-                MD_SIMD_FLOAT zj_tmp    = simd_real_load_h_duplicate(&cj_x[CL_Z_OFFSET]);
+                MD_SIMD_FLOAT xj_tmp    = simd_real_load_h_duplicate(&cj_x[CL_X_INDEX(0)]);
+                MD_SIMD_FLOAT yj_tmp    = simd_real_load_h_duplicate(&cj_x[CL_Y_INDEX(0)]);
+                MD_SIMD_FLOAT zj_tmp    = simd_real_load_h_duplicate(&cj_x[CL_Z_INDEX(0)]);
                 MD_SIMD_FLOAT delx0     = simd_real_sub(xi0_tmp, xj_tmp);
                 MD_SIMD_FLOAT dely0     = simd_real_sub(yi0_tmp, yj_tmp);
                 MD_SIMD_FLOAT delz0     = simd_real_sub(zi0_tmp, zj_tmp);
@@ -711,9 +711,9 @@ double computeForceLJ2xnnFullNeigh(
                 int* cj_t       = &atom->cl_t[cj_sca_base];
 #endif
 
-                MD_SIMD_FLOAT xj_tmp = simd_real_load_h_duplicate(&cj_x[CL_X_OFFSET]);
-                MD_SIMD_FLOAT yj_tmp = simd_real_load_h_duplicate(&cj_x[CL_Y_OFFSET]);
-                MD_SIMD_FLOAT zj_tmp = simd_real_load_h_duplicate(&cj_x[CL_Z_OFFSET]);
+                MD_SIMD_FLOAT xj_tmp = simd_real_load_h_duplicate(&cj_x[CL_X_INDEX(0)]);
+                MD_SIMD_FLOAT yj_tmp = simd_real_load_h_duplicate(&cj_x[CL_Y_INDEX(0)]);
+                MD_SIMD_FLOAT zj_tmp = simd_real_load_h_duplicate(&cj_x[CL_Z_INDEX(0)]);
                 MD_SIMD_FLOAT delx0  = simd_real_sub(xi0_tmp, xj_tmp);
                 MD_SIMD_FLOAT dely0  = simd_real_sub(yi0_tmp, yj_tmp);
                 MD_SIMD_FLOAT delz0  = simd_real_sub(zi0_tmp, zj_tmp);
@@ -799,9 +799,9 @@ double computeForceLJ2xnnFullNeigh(
                     cutoff_mask2);
             }
 
-            simd_real_h_dual_incr_reduced_sum(&ci_f[CL_X_OFFSET], fix0, fix2);
-            simd_real_h_dual_incr_reduced_sum(&ci_f[CL_Y_OFFSET], fiy0, fiy2);
-            simd_real_h_dual_incr_reduced_sum(&ci_f[CL_Z_OFFSET], fiz0, fiz2);
+            simd_real_h_dual_incr_reduced_sum(&ci_f[CL_X_INDEX(0)], fix0, fix2);
+            simd_real_h_dual_incr_reduced_sum(&ci_f[CL_Y_INDEX(0)], fiy0, fiy2);
+            simd_real_h_dual_incr_reduced_sum(&ci_f[CL_Z_INDEX(0)], fiz0, fiz2);
 
             addStat(stats->calculated_forces, 1);
             addStat(stats->num_neighs, numneighs);
@@ -840,9 +840,9 @@ double computeForceLJ4xnHalfNeigh(
         int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
         MD_FLOAT* ci_f  = &atom->cl_f[ci_vec_base];
         for (int cii = 0; cii < atom->iclusters[ci].natoms; cii++) {
-            ci_f[CL_X_OFFSET + cii] = 0.0;
-            ci_f[CL_Y_OFFSET + cii] = 0.0;
-            ci_f[CL_Z_OFFSET + cii] = 0.0;
+            ci_f[CL_X_INDEX(cii)] = 0.0;
+            ci_f[CL_Y_INDEX(cii)] = 0.0;
+            ci_f[CL_Z_INDEX(cii)] = 0.0;
         }
     }
 
@@ -850,9 +850,9 @@ double computeForceLJ4xnHalfNeigh(
         int cj_vec_base = CJ_VECTOR_BASE_INDEX(cg);
         MD_FLOAT* cj_f  = &atom->cl_f[cj_vec_base];
         for (int cjj = 0; cjj < atom->jclusters[cg].natoms; cjj++) {
-            cj_f[CL_X_OFFSET + cjj] = 0.0;
-            cj_f[CL_Y_OFFSET + cjj] = 0.0;
-            cj_f[CL_Z_OFFSET + cjj] = 0.0;
+            cj_f[CL_X_INDEX(cjj)] = 0.0;
+            cj_f[CL_Y_INDEX(cjj)] = 0.0;
+            cj_f[CL_Z_INDEX(cjj)] = 0.0;
         }
     }
 
@@ -875,18 +875,18 @@ double computeForceLJ4xnHalfNeigh(
             int numneighs        = neighbor->numneigh[ci];
             int numneighs_masked = neighbor->numneigh_masked[ci];
 
-            MD_SIMD_FLOAT xi0_tmp = simd_real_broadcast(ci_x[CL_X_OFFSET + 0]);
-            MD_SIMD_FLOAT xi1_tmp = simd_real_broadcast(ci_x[CL_X_OFFSET + 1]);
-            MD_SIMD_FLOAT xi2_tmp = simd_real_broadcast(ci_x[CL_X_OFFSET + 2]);
-            MD_SIMD_FLOAT xi3_tmp = simd_real_broadcast(ci_x[CL_X_OFFSET + 3]);
-            MD_SIMD_FLOAT yi0_tmp = simd_real_broadcast(ci_x[CL_Y_OFFSET + 0]);
-            MD_SIMD_FLOAT yi1_tmp = simd_real_broadcast(ci_x[CL_Y_OFFSET + 1]);
-            MD_SIMD_FLOAT yi2_tmp = simd_real_broadcast(ci_x[CL_Y_OFFSET + 2]);
-            MD_SIMD_FLOAT yi3_tmp = simd_real_broadcast(ci_x[CL_Y_OFFSET + 3]);
-            MD_SIMD_FLOAT zi0_tmp = simd_real_broadcast(ci_x[CL_Z_OFFSET + 0]);
-            MD_SIMD_FLOAT zi1_tmp = simd_real_broadcast(ci_x[CL_Z_OFFSET + 1]);
-            MD_SIMD_FLOAT zi2_tmp = simd_real_broadcast(ci_x[CL_Z_OFFSET + 2]);
-            MD_SIMD_FLOAT zi3_tmp = simd_real_broadcast(ci_x[CL_Z_OFFSET + 3]);
+            MD_SIMD_FLOAT xi0_tmp = simd_real_broadcast(ci_x[CL_X_INDEX(0)]);
+            MD_SIMD_FLOAT xi1_tmp = simd_real_broadcast(ci_x[CL_X_INDEX(1)]);
+            MD_SIMD_FLOAT xi2_tmp = simd_real_broadcast(ci_x[CL_X_INDEX(2)]);
+            MD_SIMD_FLOAT xi3_tmp = simd_real_broadcast(ci_x[CL_X_INDEX(3)]);
+            MD_SIMD_FLOAT yi0_tmp = simd_real_broadcast(ci_x[CL_Y_INDEX(0)]);
+            MD_SIMD_FLOAT yi1_tmp = simd_real_broadcast(ci_x[CL_Y_INDEX(1)]);
+            MD_SIMD_FLOAT yi2_tmp = simd_real_broadcast(ci_x[CL_Y_INDEX(2)]);
+            MD_SIMD_FLOAT yi3_tmp = simd_real_broadcast(ci_x[CL_Y_INDEX(3)]);
+            MD_SIMD_FLOAT zi0_tmp = simd_real_broadcast(ci_x[CL_Z_INDEX(0)]);
+            MD_SIMD_FLOAT zi1_tmp = simd_real_broadcast(ci_x[CL_Z_INDEX(1)]);
+            MD_SIMD_FLOAT zi2_tmp = simd_real_broadcast(ci_x[CL_Z_INDEX(2)]);
+            MD_SIMD_FLOAT zi3_tmp = simd_real_broadcast(ci_x[CL_Z_INDEX(3)]);
             MD_SIMD_FLOAT fix0    = simd_real_zero();
             MD_SIMD_FLOAT fiy0    = simd_real_zero();
             MD_SIMD_FLOAT fiz0    = simd_real_zero();
@@ -920,9 +920,9 @@ double computeForceLJ4xnHalfNeigh(
                 int* cj_t       = &atom->cl_t[cj_sca_base];
 #endif
 
-                MD_SIMD_FLOAT xj_tmp    = simd_real_load(&cj_x[CL_X_OFFSET]);
-                MD_SIMD_FLOAT yj_tmp    = simd_real_load(&cj_x[CL_Y_OFFSET]);
-                MD_SIMD_FLOAT zj_tmp    = simd_real_load(&cj_x[CL_Z_OFFSET]);
+                MD_SIMD_FLOAT xj_tmp    = simd_real_load(&cj_x[CL_X_INDEX(0)]);
+                MD_SIMD_FLOAT yj_tmp    = simd_real_load(&cj_x[CL_Y_INDEX(0)]);
+                MD_SIMD_FLOAT zj_tmp    = simd_real_load(&cj_x[CL_Z_INDEX(0)]);
                 MD_SIMD_FLOAT delx0     = simd_real_sub(xi0_tmp, xj_tmp);
                 MD_SIMD_FLOAT dely0     = simd_real_sub(yi0_tmp, yj_tmp);
                 MD_SIMD_FLOAT delz0     = simd_real_sub(zi0_tmp, zj_tmp);
@@ -1125,12 +1125,12 @@ double computeForceLJ4xnHalfNeigh(
                     MD_SIMD_FLOAT tz_sum = simd_real_add(tz0,
                         simd_real_add(tz1, simd_real_add(tz2, tz3)));
 
-                    simd_real_store(&cj_f[CL_X_OFFSET],
-                        simd_real_sub(simd_real_load(&cj_f[CL_X_OFFSET]), tx_sum));
-                    simd_real_store(&cj_f[CL_Y_OFFSET],
-                        simd_real_sub(simd_real_load(&cj_f[CL_Y_OFFSET]), ty_sum));
-                    simd_real_store(&cj_f[CL_Z_OFFSET],
-                        simd_real_sub(simd_real_load(&cj_f[CL_Z_OFFSET]), tz_sum));
+                    simd_real_store(&cj_f[CL_X_INDEX(0)],
+                        simd_real_sub(simd_real_load(&cj_f[CL_X_INDEX(0)]), tx_sum));
+                    simd_real_store(&cj_f[CL_Y_INDEX(0)],
+                        simd_real_sub(simd_real_load(&cj_f[CL_Y_INDEX(0)]), ty_sum));
+                    simd_real_store(&cj_f[CL_Z_INDEX(0)],
+                        simd_real_sub(simd_real_load(&cj_f[CL_Z_INDEX(0)]), tz_sum));
                 }
             }
 
@@ -1145,9 +1145,9 @@ double computeForceLJ4xnHalfNeigh(
                 int* cj_t       = &atom->cl_t[cj_sca_base];
 #endif
 
-                MD_SIMD_FLOAT xj_tmp = simd_real_load(&cj_x[CL_X_OFFSET]);
-                MD_SIMD_FLOAT yj_tmp = simd_real_load(&cj_x[CL_Y_OFFSET]);
-                MD_SIMD_FLOAT zj_tmp = simd_real_load(&cj_x[CL_Z_OFFSET]);
+                MD_SIMD_FLOAT xj_tmp = simd_real_load(&cj_x[CL_X_INDEX(0)]);
+                MD_SIMD_FLOAT yj_tmp = simd_real_load(&cj_x[CL_Y_INDEX(0)]);
+                MD_SIMD_FLOAT zj_tmp = simd_real_load(&cj_x[CL_Z_INDEX(0)]);
                 MD_SIMD_FLOAT delx0  = simd_real_sub(xi0_tmp, xj_tmp);
                 MD_SIMD_FLOAT dely0  = simd_real_sub(yi0_tmp, yj_tmp);
                 MD_SIMD_FLOAT delz0  = simd_real_sub(zi0_tmp, zj_tmp);
@@ -1318,18 +1318,18 @@ double computeForceLJ4xnHalfNeigh(
                     MD_SIMD_FLOAT tz_sum = simd_real_add(tz0,
                         simd_real_add(tz1, simd_real_add(tz2, tz3)));
 
-                    simd_real_store(&cj_f[CL_X_OFFSET],
-                        simd_real_sub(simd_real_load(&cj_f[CL_X_OFFSET]), tx_sum));
-                    simd_real_store(&cj_f[CL_Y_OFFSET],
-                        simd_real_sub(simd_real_load(&cj_f[CL_Y_OFFSET]), ty_sum));
-                    simd_real_store(&cj_f[CL_Z_OFFSET],
-                        simd_real_sub(simd_real_load(&cj_f[CL_Z_OFFSET]), tz_sum));
+                    simd_real_store(&cj_f[CL_X_INDEX(0)],
+                        simd_real_sub(simd_real_load(&cj_f[CL_X_INDEX(0)]), tx_sum));
+                    simd_real_store(&cj_f[CL_Y_INDEX(0)],
+                        simd_real_sub(simd_real_load(&cj_f[CL_Y_INDEX(0)]), ty_sum));
+                    simd_real_store(&cj_f[CL_Z_INDEX(0)],
+                        simd_real_sub(simd_real_load(&cj_f[CL_Z_INDEX(0)]), tz_sum));
                 }
             }
 
-            simd_real_incr_reduced_sum(&ci_f[CL_X_OFFSET], fix0, fix1, fix2, fix3);
-            simd_real_incr_reduced_sum(&ci_f[CL_Y_OFFSET], fiy0, fiy1, fiy2, fiy3);
-            simd_real_incr_reduced_sum(&ci_f[CL_Z_OFFSET], fiz0, fiz1, fiz2, fiz3);
+            simd_real_incr_reduced_sum(&ci_f[CL_X_INDEX(0)], fix0, fix1, fix2, fix3);
+            simd_real_incr_reduced_sum(&ci_f[CL_Y_INDEX(0)], fiy0, fiy1, fiy2, fiy3);
+            simd_real_incr_reduced_sum(&ci_f[CL_Z_INDEX(0)], fiz0, fiz1, fiz2, fiz3);
 
             addStat(stats->calculated_forces, 1);
             addStat(stats->num_neighs, numneighs);
@@ -1367,9 +1367,9 @@ double computeForceLJ4xnFullNeigh(
         int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
         MD_FLOAT* ci_f  = &atom->cl_f[ci_vec_base];
         for (int cii = 0; cii < atom->iclusters[ci].natoms; cii++) {
-            ci_f[CL_X_OFFSET + cii] = 0.0;
-            ci_f[CL_Y_OFFSET + cii] = 0.0;
-            ci_f[CL_Z_OFFSET + cii] = 0.0;
+            ci_f[CL_X_INDEX(cii)] = 0.0;
+            ci_f[CL_Y_INDEX(cii)] = 0.0;
+            ci_f[CL_Z_INDEX(cii)] = 0.0;
         }
     }
 
@@ -1392,18 +1392,18 @@ double computeForceLJ4xnFullNeigh(
             int numneighs        = neighbor->numneigh[ci];
             int numneighs_masked = neighbor->numneigh_masked[ci];
 
-            MD_SIMD_FLOAT xi0_tmp = simd_real_broadcast(ci_x[CL_X_OFFSET + 0]);
-            MD_SIMD_FLOAT xi1_tmp = simd_real_broadcast(ci_x[CL_X_OFFSET + 1]);
-            MD_SIMD_FLOAT xi2_tmp = simd_real_broadcast(ci_x[CL_X_OFFSET + 2]);
-            MD_SIMD_FLOAT xi3_tmp = simd_real_broadcast(ci_x[CL_X_OFFSET + 3]);
-            MD_SIMD_FLOAT yi0_tmp = simd_real_broadcast(ci_x[CL_Y_OFFSET + 0]);
-            MD_SIMD_FLOAT yi1_tmp = simd_real_broadcast(ci_x[CL_Y_OFFSET + 1]);
-            MD_SIMD_FLOAT yi2_tmp = simd_real_broadcast(ci_x[CL_Y_OFFSET + 2]);
-            MD_SIMD_FLOAT yi3_tmp = simd_real_broadcast(ci_x[CL_Y_OFFSET + 3]);
-            MD_SIMD_FLOAT zi0_tmp = simd_real_broadcast(ci_x[CL_Z_OFFSET + 0]);
-            MD_SIMD_FLOAT zi1_tmp = simd_real_broadcast(ci_x[CL_Z_OFFSET + 1]);
-            MD_SIMD_FLOAT zi2_tmp = simd_real_broadcast(ci_x[CL_Z_OFFSET + 2]);
-            MD_SIMD_FLOAT zi3_tmp = simd_real_broadcast(ci_x[CL_Z_OFFSET + 3]);
+            MD_SIMD_FLOAT xi0_tmp = simd_real_broadcast(ci_x[CL_X_INDEX(0)]);
+            MD_SIMD_FLOAT xi1_tmp = simd_real_broadcast(ci_x[CL_X_INDEX(1)]);
+            MD_SIMD_FLOAT xi2_tmp = simd_real_broadcast(ci_x[CL_X_INDEX(2)]);
+            MD_SIMD_FLOAT xi3_tmp = simd_real_broadcast(ci_x[CL_X_INDEX(3)]);
+            MD_SIMD_FLOAT yi0_tmp = simd_real_broadcast(ci_x[CL_Y_INDEX(0)]);
+            MD_SIMD_FLOAT yi1_tmp = simd_real_broadcast(ci_x[CL_Y_INDEX(1)]);
+            MD_SIMD_FLOAT yi2_tmp = simd_real_broadcast(ci_x[CL_Y_INDEX(2)]);
+            MD_SIMD_FLOAT yi3_tmp = simd_real_broadcast(ci_x[CL_Y_INDEX(3)]);
+            MD_SIMD_FLOAT zi0_tmp = simd_real_broadcast(ci_x[CL_Z_INDEX(0)]);
+            MD_SIMD_FLOAT zi1_tmp = simd_real_broadcast(ci_x[CL_Z_INDEX(1)]);
+            MD_SIMD_FLOAT zi2_tmp = simd_real_broadcast(ci_x[CL_Z_INDEX(2)]);
+            MD_SIMD_FLOAT zi3_tmp = simd_real_broadcast(ci_x[CL_Z_INDEX(3)]);
             MD_SIMD_FLOAT fix0    = simd_real_zero();
             MD_SIMD_FLOAT fiy0    = simd_real_zero();
             MD_SIMD_FLOAT fiz0    = simd_real_zero();
@@ -1436,9 +1436,9 @@ double computeForceLJ4xnFullNeigh(
                 int* cj_t       = &atom->cl_t[cj_sca_base];
 #endif
 
-                MD_SIMD_FLOAT xj_tmp    = simd_real_load(&cj_x[CL_X_OFFSET]);
-                MD_SIMD_FLOAT yj_tmp    = simd_real_load(&cj_x[CL_Y_OFFSET]);
-                MD_SIMD_FLOAT zj_tmp    = simd_real_load(&cj_x[CL_Z_OFFSET]);
+                MD_SIMD_FLOAT xj_tmp    = simd_real_load(&cj_x[CL_X_INDEX(0)]);
+                MD_SIMD_FLOAT yj_tmp    = simd_real_load(&cj_x[CL_Y_INDEX(0)]);
+                MD_SIMD_FLOAT zj_tmp    = simd_real_load(&cj_x[CL_Z_INDEX(0)]);
                 MD_SIMD_FLOAT delx0     = simd_real_sub(xi0_tmp, xj_tmp);
                 MD_SIMD_FLOAT dely0     = simd_real_sub(yi0_tmp, yj_tmp);
                 MD_SIMD_FLOAT delz0     = simd_real_sub(zi0_tmp, zj_tmp);
@@ -1651,9 +1651,9 @@ double computeForceLJ4xnFullNeigh(
                 int* cj_t       = &atom->cl_t[cj_sca_base];
 #endif
 
-                MD_SIMD_FLOAT xj_tmp = simd_real_load(&cj_x[CL_X_OFFSET]);
-                MD_SIMD_FLOAT yj_tmp = simd_real_load(&cj_x[CL_Y_OFFSET]);
-                MD_SIMD_FLOAT zj_tmp = simd_real_load(&cj_x[CL_Z_OFFSET]);
+                MD_SIMD_FLOAT xj_tmp = simd_real_load(&cj_x[CL_X_INDEX(0)]);
+                MD_SIMD_FLOAT yj_tmp = simd_real_load(&cj_x[CL_Y_INDEX(0)]);
+                MD_SIMD_FLOAT zj_tmp = simd_real_load(&cj_x[CL_Z_INDEX(0)]);
                 MD_SIMD_FLOAT delx0  = simd_real_sub(xi0_tmp, xj_tmp);
                 MD_SIMD_FLOAT dely0  = simd_real_sub(yi0_tmp, yj_tmp);
                 MD_SIMD_FLOAT delz0  = simd_real_sub(zi0_tmp, zj_tmp);
@@ -1816,9 +1816,9 @@ double computeForceLJ4xnFullNeigh(
                     cutoff_mask3);
             }
 
-            simd_real_incr_reduced_sum(&ci_f[CL_X_OFFSET], fix0, fix1, fix2, fix3);
-            simd_real_incr_reduced_sum(&ci_f[CL_Y_OFFSET], fiy0, fiy1, fiy2, fiy3);
-            simd_real_incr_reduced_sum(&ci_f[CL_Z_OFFSET], fiz0, fiz1, fiz2, fiz3);
+            simd_real_incr_reduced_sum(&ci_f[CL_X_INDEX(0)], fix0, fix1, fix2, fix3);
+            simd_real_incr_reduced_sum(&ci_f[CL_Y_INDEX(0)], fiy0, fiy1, fiy2, fiy3);
+            simd_real_incr_reduced_sum(&ci_f[CL_Z_INDEX(0)], fiz0, fiz1, fiz2, fiz3);
 
             addStat(stats->calculated_forces, 1);
             addStat(stats->num_neighs, numneighs);
@@ -1862,9 +1862,9 @@ void computeForceGhostShell(Parameter* param, Atom* atom, Neighbor* neighbor)
             MD_FLOAT* cj_f  = &atom->cl_f[cj_vec_base];
 
             for (int css = 0; css < CLUSTER_N; css++) {
-                MD_FLOAT x = cs_x[CL_X_OFFSET + css];
-                MD_FLOAT y = cs_x[CL_Y_OFFSET + css];
-                MD_FLOAT z = cs_x[CL_Z_OFFSET + css];
+                MD_FLOAT x = cs_x[CL_X_INDEX(css)];
+                MD_FLOAT y = cs_x[CL_Y_INDEX(css)];
+                MD_FLOAT z = cs_x[CL_Z_INDEX(css)];
 
                 MD_FLOAT fix = 0;
                 MD_FLOAT fiy = 0;
@@ -1872,9 +1872,9 @@ void computeForceGhostShell(Parameter* param, Atom* atom, Neighbor* neighbor)
 
                 for (int cjj = 0; cjj < CLUSTER_N; cjj++) {
 
-                    MD_FLOAT delx = x - cj_x[CL_X_OFFSET + cjj];
-                    MD_FLOAT dely = y - cj_x[CL_Y_OFFSET + cjj];
-                    MD_FLOAT delz = z - cj_x[CL_Z_OFFSET + cjj];
+                    MD_FLOAT delx = x - cj_x[CL_X_INDEX(cjj)];
+                    MD_FLOAT dely = y - cj_x[CL_Y_INDEX(cjj)];
+                    MD_FLOAT delz = z - cj_x[CL_Z_INDEX(cjj)];
 
                     MD_FLOAT rsq = delx * delx + dely * dely + delz * delz;
                     if (rsq < cutforcesq) {
@@ -1882,9 +1882,9 @@ void computeForceGhostShell(Parameter* param, Atom* atom, Neighbor* neighbor)
                         MD_FLOAT sr6   = sr2 * sr2 * sr2 * sigma6;
                         MD_FLOAT force = 48.0 * sr6 * (sr6 - 0.5) * sr2 * epsilon;
 
-                        cj_f[CL_X_OFFSET + cjj] -= delx * force;
-                        cj_f[CL_Y_OFFSET + cjj] -= dely * force;
-                        cj_f[CL_Z_OFFSET + cjj] -= delz * force;
+                        cj_f[CL_X_INDEX(cjj)] -= delx * force;
+                        cj_f[CL_Y_INDEX(cjj)] -= dely * force;
+                        cj_f[CL_Z_INDEX(cjj)] -= delz * force;
 
                         fix += delx * force;
                         fiy += dely * force;
@@ -1892,9 +1892,9 @@ void computeForceGhostShell(Parameter* param, Atom* atom, Neighbor* neighbor)
                     }
                 }
 
-                cs_f[CL_X_OFFSET + css] += fix;
-                cs_f[CL_Y_OFFSET + css] += fiy;
-                cs_f[CL_Z_OFFSET + css] += fiz;
+                cs_f[CL_X_INDEX(css)] += fix;
+                cs_f[CL_Y_INDEX(css)] += fiy;
+                cs_f[CL_Z_INDEX(css)] += fiz;
             }
         }
         // addStat(stats->calculated_forces, 1);

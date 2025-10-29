@@ -61,13 +61,13 @@ void updatePbcCPU(Atom* atom, Parameter* param, bool firstUpdate) {
         MD_FLOAT bbminz = INFINITY, bbmaxz = -INFINITY;
 
         for (int cjj = 0; cjj < atom->jclusters[cj].natoms; cjj++) {
-            MD_FLOAT xtmp = bmapX[CL_X_OFFSET + cjj] + atom->PBCx[cg] * xprd;
-            MD_FLOAT ytmp = bmapX[CL_Y_OFFSET + cjj] + atom->PBCy[cg] * yprd;
-            MD_FLOAT ztmp = bmapX[CL_Z_OFFSET + cjj] + atom->PBCz[cg] * zprd;
+            MD_FLOAT xtmp = bmapX[CL_X_INDEX(cjj)] + atom->PBCx[cg] * xprd;
+            MD_FLOAT ytmp = bmapX[CL_Y_INDEX(cjj)] + atom->PBCy[cg] * yprd;
+            MD_FLOAT ztmp = bmapX[CL_Z_INDEX(cjj)] + atom->PBCz[cg] * zprd;
 
-            cjX[CL_X_OFFSET + cjj] = xtmp;
-            cjX[CL_Y_OFFSET + cjj] = ytmp;
-            cjX[CL_Z_OFFSET + cjj] = ztmp;
+            cjX[CL_X_INDEX(cjj)] = xtmp;
+            cjX[CL_Y_INDEX(cjj)] = ytmp;
+            cjX[CL_Z_INDEX(cjj)] = ztmp;
             cjT[cjj]               = bmapT[cjj];
 
             if (firstUpdate) {
@@ -95,9 +95,9 @@ void updatePbcCPU(Atom* atom, Parameter* param, bool firstUpdate) {
 
         if (firstUpdate) {
             for (int cjj = atom->jclusters[cj].natoms; cjj < CLUSTER_N; cjj++) {
-                cjX[CL_X_OFFSET + cjj] = INFINITY;
-                cjX[CL_Y_OFFSET + cjj] = INFINITY;
-                cjX[CL_Z_OFFSET + cjj] = INFINITY;
+                cjX[CL_X_INDEX(cjj)] = INFINITY;
+                cjX[CL_Y_INDEX(cjj)] = INFINITY;
+                cjX[CL_Z_INDEX(cjj)] = INFINITY;
                 cjT[cjj]               = 0;
             }
 
@@ -306,9 +306,9 @@ void setupPbc(Atom* atom, Parameter* param) {
     MD_FLOAT* cjX = &atom->cl_x[cjVecBase];
 
     for (int cjj = 0; cjj < CLUSTER_N; cjj++) {
-        cjX[CL_X_OFFSET + cjj] = INFINITY;
-        cjX[CL_Y_OFFSET + cjj] = INFINITY;
-        cjX[CL_Z_OFFSET + cjj] = INFINITY;
+        cjX[CL_X_INDEX(cjj)] = INFINITY;
+        cjX[CL_Y_INDEX(cjj)] = INFINITY;
+        cjX[CL_Z_INDEX(cjj)] = INFINITY;
         cjT[cjj]               = 0;
     }
 
