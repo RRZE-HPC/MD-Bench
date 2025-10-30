@@ -728,13 +728,7 @@ void initMasks(Atom* atom) {
 void growAtom(Atom* atom) {
     int nold = atom->Nmax;
     atom->Nmax += DELTA;
-
-#ifdef AOS
-    atom->x = (MD_FLOAT*)reallocate(atom->x,
-        ALIGNMENT,
-        atom->Nmax * sizeof(MD_FLOAT) * 3,
-        nold * sizeof(MD_FLOAT) * 3);
-#else
+#ifdef SOA
     atom->x = (MD_FLOAT*)reallocate(atom->x,
         ALIGNMENT,
         atom->Nmax * sizeof(MD_FLOAT),
@@ -747,6 +741,11 @@ void growAtom(Atom* atom) {
         ALIGNMENT,
         atom->Nmax * sizeof(MD_FLOAT),
         nold * sizeof(MD_FLOAT));
+#else
+        atom->x = (MD_FLOAT*)reallocate(atom->x,
+        ALIGNMENT,
+        atom->Nmax * sizeof(MD_FLOAT) * 3,
+        nold * sizeof(MD_FLOAT) * 3);
 #endif
     atom->vx   = (MD_FLOAT*)reallocate(atom->vx,
         ALIGNMENT,
@@ -814,16 +813,16 @@ void growClusters(Atom* atom, int super_clustering) {
 /* MPI added*/
 
 void freeAtom(Atom* atom) {
-#ifdef AOS
-    free(atom->x);
-    atom->x = NULL;
-#else
+#ifdef SOA
     free(atom->x);
     atom->x = NULL;
     free(atom->y);
     atom->y = NULL;
     free(atom->z);
     atom->z = NULL;
+#else
+    free(atom->x);
+    atom->x = NULL;
 #endif
     free(atom->vx);
     atom->vx = NULL;

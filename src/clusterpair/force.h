@@ -150,11 +150,11 @@ extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #define CJ0_FROM_CI(a)      (a)
 #define CJ1_FROM_CI(a)      (a)
 #define CI_BASE_INDEX(a, b) ((a)*CLUSTER_N * (b))
-#ifdef AOS
-#define CJ_BASE_INDEX(a, b) ((a)*CLUSTER_N * (b))
-#else
+#ifdef SOA
 #define CJ_BASE_INDEX(a, b) ((((a) / SCLUSTER_SIZE) * SCLUSTER_SIZE * CLUSTER_N * (b)) + \
                              (((a) % SCLUSTER_SIZE) * CLUSTER_N))
+#else
+#define CJ_BASE_INDEX(a, b) ((a)*CLUSTER_N * (b))
 #endif
 #else
 #if CLUSTER_M == CLUSTER_N
@@ -199,17 +199,17 @@ extern double computeForceLJCUDA(Parameter*, Atom*, Neighbor*, Stats*);
 #define CL_Z_INDEX(i) (i + CL_Z_OFFSET)
 #endif
 #else
-#ifdef AOS
-#define CL_X_INDEX(i)  ((i) * 3 + 0)
-#define CL_Y_INDEX(i)  ((i) * 3 + 1)
-#define CL_Z_INDEX(i)  ((i) * 3 + 2)
-#else
+#ifdef SOA
 #define CL_X_OFFSET (0 * CLUSTER_N * SCLUSTER_SIZE)
 #define CL_Y_OFFSET (1 * CLUSTER_N * SCLUSTER_SIZE)
 #define CL_Z_OFFSET (2 * CLUSTER_N * SCLUSTER_SIZE)
 #define CL_X_INDEX(i) (i + CL_X_OFFSET)
 #define CL_Y_INDEX(i) (i + CL_Y_OFFSET)
 #define CL_Z_INDEX(i) (i + CL_Z_OFFSET)
+#else
+#define CL_X_INDEX(i)  ((i) * 3 + 0)
+#define CL_Y_INDEX(i)  ((i) * 3 + 1)
+#define CL_Z_INDEX(i)  ((i) * 3 + 2)
 #endif
 #endif
 
