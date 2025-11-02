@@ -54,7 +54,7 @@ void displayStatistics(Atom* atom, Parameter* param, Stats* stats, double* timer
     double forceUsefulVolume = 1e-9 * ((double)(atom->Natoms * (param->ntimes + 1)) *
                                               (sizeof(MD_FLOAT) * 6 + sizeof(int)) +
                                           (double)(stats->num_neighs) *
-                                              (sizeof(MD_FLOAT) * 3 + sizeof(int)));
+                                              (sizeof(MD_FLOAT) * ATOM_DIM + sizeof(int)));
     double avgNeighAtom      = (stats->num_neighs * CLUSTER_N) /
                           (double)(atom->Natoms * (param->ntimes + 1));
     double avgNeighCluster = (double)(stats->num_neighs) /

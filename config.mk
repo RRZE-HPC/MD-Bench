@@ -16,8 +16,8 @@ ENABLE_OPENMP ?= false
 ENABLE_MPI ?= false
 # SP or DP
 DATA_TYPE ?= SP
-# AOS or SOA
-DATA_LAYOUT ?= AOS
+# AOS3 or AOS4 or SOA 
+DATA_LAYOUT ?= AOS3
 # Debug
 DEBUG ?= false
 
@@ -120,8 +120,10 @@ else
     VECTOR_WIDTH=$(__SIMD_WIDTH_DBL__)
 endif
 endif
-ifeq ($(strip $(DATA_LAYOUT)),AOS)
-    DEFINES +=  -DAOS
+ifeq ($(strip $(DATA_LAYOUT)),AOS3)
+    DEFINES +=  -DAOS3
+else ifeq ($(strip $(DATA_LAYOUT)),AOS4)
+    DEFINES +=  -DAOS4
 else
     DEFINES +=  -DSOA
 endif

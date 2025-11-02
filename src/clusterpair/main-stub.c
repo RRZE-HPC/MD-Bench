@@ -258,26 +258,26 @@ int main(int argc, const char* argv[])
 
     for (int ci = 0; ci < niclusters; ++ci) {
         int ci_sca_base = CI_SCALAR_BASE_INDEX(ci);
-        int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
+        int ci_vec_base = CI_VECTOR3_BASE_INDEX(ci);
         MD_FLOAT* ci_x  = &atom->cl_x[ci_vec_base];
         MD_FLOAT* ci_v  = &atom->cl_v[ci_vec_base];
         int* ci_t       = &atom->cl_t[ci_sca_base];
 
         for (int cii = 0; cii < iclusters_natoms; ++cii) {
-            ci_x[CL_X_INDEX(cii)] = (MD_FLOAT)(ci * iclusters_natoms + cii) * 0.00001;
-            ci_x[CL_Y_INDEX(cii)] = (MD_FLOAT)(ci * iclusters_natoms + cii) * 0.00001;
-            ci_x[CL_Z_INDEX(cii)] = (MD_FLOAT)(ci * iclusters_natoms + cii) * 0.00001;
-            ci_v[CL_X_INDEX(cii)] = 0.0;
-            ci_v[CL_Y_INDEX(cii)] = 0.0;
-            ci_v[CL_Z_INDEX(cii)] = 0.0;
+            ci_x[CL_X_INDEX_3D(cii)] = (MD_FLOAT)(ci * iclusters_natoms + cii) * 0.00001;
+            ci_x[CL_Y_INDEX_3D(cii)] = (MD_FLOAT)(ci * iclusters_natoms + cii) * 0.00001;
+            ci_x[CL_Z_INDEX_3D(cii)] = (MD_FLOAT)(ci * iclusters_natoms + cii) * 0.00001;
+            ci_v[CL_X_INDEX_3D(cii)] = 0.0;
+            ci_v[CL_Y_INDEX_3D(cii)] = 0.0;
+            ci_v[CL_Z_INDEX_3D(cii)] = 0.0;
             ci_t[cii]               = rand() % atom->ntypes;
             atom->Nlocal++;
         }
 
         for (int cii = iclusters_natoms; cii < CLUSTER_M; cii++) {
-            ci_x[CL_X_INDEX(cii)] = INFINITY;
-            ci_x[CL_Y_INDEX(cii)] = INFINITY;
-            ci_x[CL_Z_INDEX(cii)] = INFINITY;
+            ci_x[CL_X_INDEX_3D(cii)] = INFINITY;
+            ci_x[CL_Y_INDEX_3D(cii)] = INFINITY;
+            ci_x[CL_Z_INDEX_3D(cii)] = INFINITY;
         }
 
         atom->iclusters[ci].natoms = iclusters_natoms;

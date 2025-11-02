@@ -744,8 +744,8 @@ void growAtom(Atom* atom) {
 #else
         atom->x = (MD_FLOAT*)reallocate(atom->x,
         ALIGNMENT,
-        atom->Nmax * sizeof(MD_FLOAT) * 3,
-        nold * sizeof(MD_FLOAT) * 3);
+        atom->Nmax * sizeof(MD_FLOAT) * ATOM_DIM,
+        nold * sizeof(MD_FLOAT) * ATOM_DIM);
 #endif
     atom->vx   = (MD_FLOAT*)reallocate(atom->vx,
         ALIGNMENT,
@@ -1016,14 +1016,14 @@ int unpackGhost(Parameter *param, Atom* atom, int cj, MD_FLOAT* buf) {
 void packReverse(Atom* atom, int nc, int c0, MD_FLOAT* buf) {
     for (int i = 0; i < nc; i++) {
         int cj          = c0 + i;
-        int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
+        int cj_vec_base = CJ_VECTOR3_BASE_INDEX(cj);
         MD_FLOAT* cj_f  = &atom->cl_f[cj_vec_base];
         int displ       = i * CLUSTER_N;
 
         for (int cjj = 0; cjj < atom->jclusters[cj].natoms; cjj++) {
-            buf[3 * (displ + cjj) + 0] = cj_f[CL_X_INDEX(cjj)];
-            buf[3 * (displ + cjj) + 1] = cj_f[CL_Y_INDEX(cjj)];
-            buf[3 * (displ + cjj) + 2] = cj_f[CL_Z_INDEX(cjj)];
+            buf[3 * (displ + cjj) + 0] = cj_f[CL_X_INDEX_3D(cjj)];
+            buf[3 * (displ + cjj) + 1] = cj_f[CL_Y_INDEX_3D(cjj)];
+            buf[3 * (displ + cjj) + 2] = cj_f[CL_Z_INDEX_3D(cjj)];
         }
 
         for (int cjj = atom->jclusters[cj].natoms; cjj < CLUSTER_N; cjj++) {
@@ -1037,14 +1037,14 @@ void packReverse(Atom* atom, int nc, int c0, MD_FLOAT* buf) {
 void unpackReverse(Atom* atom, int nc, int* list, MD_FLOAT* buf) {
     for (int i = 0; i < nc; i++) {
         int cj          = list[i];
-        int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
+        int cj_vec_base = CJ_VECTOR3_BASE_INDEX(cj);
         MD_FLOAT* cj_f  = &atom->cl_f[cj_vec_base];
         int displ       = i * CLUSTER_N;
 
         for (int cjj = 0; cjj < atom->jclusters[cj].natoms; cjj++) {
-            cj_f[CL_X_INDEX(cjj)] += buf[3 * (displ + cjj) + 0];
-            cj_f[CL_Y_INDEX(cjj)] += buf[3 * (displ + cjj) + 1];
-            cj_f[CL_Z_INDEX(cjj)] += buf[3 * (displ + cjj) + 2];
+            cj_f[CL_X_INDEX_3D(cjj)] += buf[3 * (displ + cjj) + 0];
+            cj_f[CL_Y_INDEX_3D(cjj)] += buf[3 * (displ + cjj) + 1];
+            cj_f[CL_Z_INDEX_3D(cjj)] += buf[3 * (displ + cjj) + 2];
         }
     }
 }

@@ -49,18 +49,18 @@ __global__ void cudaInitialIntegrateSup_warp(MD_FLOAT* cuda_cl_x,
         return;
     }
 
-    int sci_vec_base = SCI_VECTOR_BASE_INDEX(sci);
+    int sci_vec_base = SCI_VECTOR3_BASE_INDEX(sci);
     int i            = ci * CLUSTER_M + cii;
-    MD_FLOAT* ci_x   = &cuda_cl_x[sci_vec_base];
+    MD_FLOAT* ci_x   = &cuda_cl_x[SCI_VECTOR_BASE_INDEX(sci)];
     MD_FLOAT* ci_v   = &cuda_cl_v[sci_vec_base];
     MD_FLOAT* ci_f   = &cuda_cl_f[sci_vec_base];
 
-    ci_v[CL_X_INDEX(i)] += dtforce * ci_f[CL_X_INDEX(i)];
-    ci_v[CL_Y_INDEX(i)] += dtforce * ci_f[CL_Y_INDEX(i)];
-    ci_v[CL_Z_INDEX(i)] += dtforce * ci_f[CL_Z_INDEX(i)];
-    ci_x[CL_X_INDEX(i)] += dt * ci_v[CL_X_INDEX(i)];
-    ci_x[CL_Y_INDEX(i)] += dt * ci_v[CL_Y_INDEX(i)];
-    ci_x[CL_Z_INDEX(i)] += dt * ci_v[CL_Z_INDEX(i)];
+    ci_v[CL_X_INDEX_3D(i)] += dtforce * ci_f[CL_X_INDEX_3D(i)];
+    ci_v[CL_Y_INDEX_3D(i)] += dtforce * ci_f[CL_Y_INDEX_3D(i)];
+    ci_v[CL_Z_INDEX_3D(i)] += dtforce * ci_f[CL_Z_INDEX_3D(i)];
+    ci_x[CL_X_INDEX(i)] += dt * ci_v[CL_X_INDEX_3D(i)];
+    ci_x[CL_Y_INDEX(i)] += dt * ci_v[CL_Y_INDEX_3D(i)];
+    ci_x[CL_Z_INDEX(i)] += dt * ci_v[CL_Z_INDEX_3D(i)];
 }
 
 extern "C" void cudaInitialIntegrateSup(Parameter* param, Atom* atom) {
@@ -91,14 +91,14 @@ __global__ void cudaFinalIntegrateSup_warp(MD_FLOAT* cuda_cl_v,
         return;
     }
 
-    int sci_vec_base = SCI_VECTOR_BASE_INDEX(sci);
+    int sci_vec_base = SCI_VECTOR3_BASE_INDEX(sci);
     int i            = ci * CLUSTER_M + cii;
     MD_FLOAT* ci_v   = &cuda_cl_v[sci_vec_base];
     MD_FLOAT* ci_f   = &cuda_cl_f[sci_vec_base];
 
-    ci_v[CL_X_INDEX(i)] += dtforce * ci_f[CL_X_INDEX(i)];
-    ci_v[CL_Y_INDEX(i)] += dtforce * ci_f[CL_Y_INDEX(i)];
-    ci_v[CL_Z_INDEX(i)] += dtforce * ci_f[CL_Z_INDEX(i)];
+    ci_v[CL_X_INDEX_3D(i)] += dtforce * ci_f[CL_X_INDEX_3D(i)];
+    ci_v[CL_Y_INDEX_3D(i)] += dtforce * ci_f[CL_Y_INDEX_3D(i)];
+    ci_v[CL_Z_INDEX_3D(i)] += dtforce * ci_f[CL_Z_INDEX_3D(i)];
 }
 
 extern "C" void cudaFinalIntegrateSup(Parameter* param, Atom* atom) {
@@ -129,8 +129,8 @@ __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
     int sci = blockIdx.x;
     int cii = threadIdx.y;
     int cjj = threadIdx.x;
-    int sci_vec_base = SCI_VECTOR_BASE_INDEX(sci);
-    MD_FLOAT* sci_x  = &cuda_cl_x[sci_vec_base];
+    int sci_vec_base = SCI_VECTOR3_BASE_INDEX(sci);
+    MD_FLOAT* sci_x  = &cuda_cl_x[SCI_VECTOR_BASE_INDEX(sci)];
     MD_FLOAT* sci_f  = &cuda_cl_f[sci_vec_base];
     int tid = cjj * CLUSTER_M + cii;
     MD_FLOAT3 fbuf[SCLUSTER_SIZE];
@@ -153,8 +153,8 @@ __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
 
     for(int k = 0; k < cuda_numneigh[sci]; k++) {
         int cj          = cuda_neighs[sci * maxneighs + k];
-        int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
-        MD_FLOAT* cj_x  = &cuda_cl_x[cj_vec_base];
+        int cj_vec_base = CJ_VECTOR3_BASE_INDEX(cj);
+        MD_FLOAT* cj_x  = &cuda_cl_x[CJ_VECTOR_BASE_INDEX(cj)];
         MD_FLOAT* cj_f  = &cuda_cl_f[cj_vec_base];
         MD_FLOAT xjtmp  = cj_x[CL_X_INDEX(cjj)];
         MD_FLOAT yjtmp  = cj_x[CL_Y_INDEX(cjj)];
@@ -185,9 +185,9 @@ __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
                     fbuf[sci_ci].z += fz;
 
                     if (half_neigh) {
-                        atomicAdd(&cj_f[CL_X_INDEX(cjj)], -fx);
-                        atomicAdd(&cj_f[CL_Y_INDEX(cjj)], -fy);
-                        atomicAdd(&cj_f[CL_Z_INDEX(cjj)], -fz);
+                        atomicAdd(&cj_f[CL_X_INDEX_3D(cjj)], -fx);
+                        atomicAdd(&cj_f[CL_Y_INDEX_3D(cjj)], -fy);
+                        atomicAdd(&cj_f[CL_Z_INDEX_3D(cjj)], -fz);
                     }
                 }
             }
@@ -215,14 +215,14 @@ __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
         }
 
         if (cjj == 0) {
-            sci_f[CL_X_INDEX(ai)] = fix;
-            sci_f[CL_Y_INDEX(ai)] = fiy;
-            sci_f[CL_Z_INDEX(ai)] = fiz;
+            sci_f[CL_X_INDEX_3D(ai)] = fix;
+            sci_f[CL_Y_INDEX_3D(ai)] = fiy;
+            sci_f[CL_Z_INDEX_3D(ai)] = fiz;
         }
         #else
-        atomicAdd(&sci_f[CL_X_INDEX(ai)], fbuf[sci_ci].x);
-        atomicAdd(&sci_f[CL_Y_INDEX(ai)], fbuf[sci_ci].y);
-        atomicAdd(&sci_f[CL_Z_INDEX(ai)], fbuf[sci_ci].z);
+        atomicAdd(&sci_f[CL_X_INDEX_3D(ai)], fbuf[sci_ci].x);
+        atomicAdd(&sci_f[CL_Y_INDEX_3D(ai)], fbuf[sci_ci].y);
+        atomicAdd(&sci_f[CL_Z_INDEX_3D(ai)], fbuf[sci_ci].z);
         #endif
     }
 }

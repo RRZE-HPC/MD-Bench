@@ -75,7 +75,7 @@ extern "C" void initDevice(Parameter* param, Atom* atom, Neighbor* neighbor) {
     cuda_assert("cudaDeviceSetup", cudaSetDevice(0));
 
     cuda_cl_x = (MD_FLOAT*)allocateGPU(
-        atom->Nclusters_max * CLUSTER_M * SCLUSTER_SIZE * 3 * sizeof(MD_FLOAT));
+        atom->Nclusters_max * CLUSTER_M * SCLUSTER_SIZE * ATOM_DIM * sizeof(MD_FLOAT));
     cuda_cl_v = (MD_FLOAT*)allocateGPU(
         atom->Nclusters_max * CLUSTER_M * SCLUSTER_SIZE * 3 * sizeof(MD_FLOAT));
     cuda_cl_f = (MD_FLOAT*)allocateGPU(
@@ -113,8 +113,8 @@ extern "C" void initDevice(Parameter* param, Atom* atom, Neighbor* neighbor) {
 extern "C" void copyDataToCUDADevice(Parameter* param, Atom* atom, Neighbor* neighbor) {
     memcpyToGPU(cuda_cl_x,
         atom->cl_x,
-        atom->Nclusters_max * CLUSTER_M * SCLUSTER_SIZE * 3 * sizeof(MD_FLOAT));
-        //(atom->Nclusters_local*SCLUSTER_SIZE+atom->Nclusters_ghost) * CLUSTER_M  * 3 * sizeof(MD_FLOAT));
+        atom->Nclusters_max * CLUSTER_M * SCLUSTER_SIZE * ATOM_DIM * sizeof(MD_FLOAT));
+        //(atom->Nclusters_local*SCLUSTER_SIZE+atom->Nclusters_ghost) * CLUSTER_M  * ATOM_DIM * sizeof(MD_FLOAT));
     memcpyToGPU(cuda_cl_v,
         atom->cl_v,
         (atom->Nclusters_local*SCLUSTER_SIZE+atom->Nclusters_ghost) * CLUSTER_M  * 3 * sizeof(MD_FLOAT));
@@ -152,7 +152,7 @@ extern "C" void copyDataToCUDADevice(Parameter* param, Atom* atom, Neighbor* nei
 extern "C" void copyDataFromCUDADevice(Parameter* param, Atom* atom) {
     memcpyFromGPU(atom->cl_x,
         cuda_cl_x,
-        atom->Nclusters_max * CLUSTER_M * SCLUSTER_SIZE * 3 * sizeof(MD_FLOAT));
+        atom->Nclusters_max * CLUSTER_M * SCLUSTER_SIZE * ATOM_DIM * sizeof(MD_FLOAT));
     memcpyFromGPU(atom->cl_v,
         cuda_cl_v,
         (atom->Nclusters_local*SCLUSTER_SIZE+atom->Nclusters_ghost) * CLUSTER_M  * 3 * sizeof(MD_FLOAT));
@@ -203,8 +203,8 @@ __global__ void computeForceLJCudaFullNeigh(
     int cii         = threadIdx.z;
     int cjj         = threadIdx.y;
     int ci_cj0      = CJ0_FROM_CI(ci);
-    int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
-    MD_FLOAT* ci_x  = &cuda_cl_x[ci_vec_base];
+    int ci_vec_base = CI_VECTOR3_BASE_INDEX(ci);
+    MD_FLOAT* ci_x  = &cuda_cl_x[CI_VECTOR_BASE_INDEX(ci)];
     MD_FLOAT* ci_f  = &cuda_cl_f[ci_vec_base];
     int* neighs     = &cuda_neighs[ci * maxneighs];
     int numneighs   = cuda_numneigh[ci];
@@ -278,14 +278,14 @@ __global__ void computeForceLJCudaFullNeigh(
     }
 
     if (cjj == 0) {
-        ci_f[CL_X_INDEX(cii)] = fix;
-        ci_f[CL_Y_INDEX(cii)] = fiy;
-        ci_f[CL_Z_INDEX(cii)] = fiz;
+        ci_f[CL_X_INDEX_3D(cii)] = fix;
+        ci_f[CL_Y_INDEX_3D(cii)] = fiy;
+        ci_f[CL_Z_INDEX_3D(cii)] = fiz;
     }
     #else
-    atomicAdd(&ci_f[CL_X_INDEX(cii)], fix);
-    atomicAdd(&ci_f[CL_Y_INDEX(cii)], fiy);
-    atomicAdd(&ci_f[CL_Z_INDEX(cii)], fiz);
+    atomicAdd(&ci_f[CL_X_INDEX_3D(cii)], fix);
+    atomicAdd(&ci_f[CL_Y_INDEX_3D(cii)], fiy);
+    atomicAdd(&ci_f[CL_Z_INDEX_3D(cii)], fiz);
     #endif
 }
 
@@ -317,8 +317,8 @@ __global__ void computeForceLJCudaHalfNeigh(
     int cii         = threadIdx.z;
     int cjj         = threadIdx.y;
     int ci_cj0      = CJ0_FROM_CI(ci);
-    int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
-    MD_FLOAT* ci_x  = &cuda_cl_x[ci_vec_base];
+    int ci_vec_base = CI_VECTOR3_BASE_INDEX(ci);
+    MD_FLOAT* ci_x  = &cuda_cl_x[CI_VECTOR_BASE_INDEX(ci)];
     MD_FLOAT* ci_f  = &cuda_cl_f[ci_vec_base];
     int* neighs     = &cuda_neighs[ci * maxneighs];
     int numneighs   = cuda_numneigh[ci];
@@ -336,8 +336,8 @@ __global__ void computeForceLJCudaHalfNeigh(
 
     for (int k = 0; k < numneighs; k++) {
         int cj          = neighs[k];
-        int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
-        MD_FLOAT* cj_x  = &cuda_cl_x[cj_vec_base];
+        int cj_vec_base = CJ_VECTOR3_BASE_INDEX(cj);
+        MD_FLOAT* cj_x  = &cuda_cl_x[CJ_VECTOR_BASE_INDEX(cj)];
         MD_FLOAT* cj_f  = &cuda_cl_f[cj_vec_base];
 
         int cond;
@@ -370,9 +370,9 @@ __global__ void computeForceLJCudaHalfNeigh(
                 MD_FLOAT partial_force_y = dely * force;
                 MD_FLOAT partial_force_z = delz * force;
 
-                atomicAdd(&cj_f[CL_X_INDEX(cjj)], -partial_force_x);
-                atomicAdd(&cj_f[CL_Y_INDEX(cjj)], -partial_force_y);
-                atomicAdd(&cj_f[CL_Z_INDEX(cjj)], -partial_force_z);
+                atomicAdd(&cj_f[CL_X_INDEX_3D(cjj)], -partial_force_x);
+                atomicAdd(&cj_f[CL_Y_INDEX_3D(cjj)], -partial_force_y);
+                atomicAdd(&cj_f[CL_Z_INDEX_3D(cjj)], -partial_force_z);
 
                 fix += partial_force_x;
                 fiy += partial_force_y;
@@ -381,9 +381,9 @@ __global__ void computeForceLJCudaHalfNeigh(
         }
     }
 
-    atomicAdd(&ci_f[CL_X_INDEX(cii)], fix);
-    atomicAdd(&ci_f[CL_Y_INDEX(cii)], fiy);
-    atomicAdd(&ci_f[CL_Z_INDEX(cii)], fiz);
+    atomicAdd(&ci_f[CL_X_INDEX_3D(cii)], fix);
+    atomicAdd(&ci_f[CL_Y_INDEX_3D(cii)], fiy);
+    atomicAdd(&ci_f[CL_Z_INDEX_3D(cii)], fiz);
 }
 
 __global__ void cudaInitialIntegrate_warp(MD_FLOAT* cuda_cl_x,
@@ -399,18 +399,18 @@ __global__ void cudaInitialIntegrate_warp(MD_FLOAT* cuda_cl_x,
         return;
     }
 
-    int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
-    MD_FLOAT* ci_x  = &cuda_cl_x[ci_vec_base];
+    int ci_vec_base = CI_VECTOR3_BASE_INDEX(ci);
+    MD_FLOAT* ci_x  = &cuda_cl_x[CI_VECTOR_BASE_INDEX(ci)];
     MD_FLOAT* ci_v  = &cuda_cl_v[ci_vec_base];
     MD_FLOAT* ci_f  = &cuda_cl_f[ci_vec_base];
 
     for (int cii = 0; cii < cuda_natoms[ci]; cii++) {
-        ci_v[CL_X_INDEX(cii)] += dtforce * ci_f[CL_X_INDEX(cii)];
-        ci_v[CL_Y_INDEX(cii)] += dtforce * ci_f[CL_Y_INDEX(cii)];
-        ci_v[CL_Z_INDEX(cii)] += dtforce * ci_f[CL_Z_INDEX(cii)];
-        ci_x[CL_X_INDEX(cii)] += dt * ci_v[CL_X_INDEX(cii)];
-        ci_x[CL_Y_INDEX(cii)] += dt * ci_v[CL_Y_INDEX(cii)];
-        ci_x[CL_Z_INDEX(cii)] += dt * ci_v[CL_Z_INDEX(cii)];
+        ci_v[CL_X_INDEX_3D(cii)] += dtforce * ci_f[CL_X_INDEX_3D(cii)];
+        ci_v[CL_Y_INDEX_3D(cii)] += dtforce * ci_f[CL_Y_INDEX_3D(cii)];
+        ci_v[CL_Z_INDEX_3D(cii)] += dtforce * ci_f[CL_Z_INDEX_3D(cii)];
+        ci_x[CL_X_INDEX(cii)] += dt * ci_v[CL_X_INDEX_3D(cii)];
+        ci_x[CL_Y_INDEX(cii)] += dt * ci_v[CL_Y_INDEX_3D(cii)];
+        ci_x[CL_Z_INDEX(cii)] += dt * ci_v[CL_Z_INDEX_3D(cii)];
     }
 }
 
@@ -443,14 +443,14 @@ __global__ void cudaFinalIntegrate_warp(MD_FLOAT* cuda_cl_v,
         return;
     }
 
-    int ci_vec_base = CI_VECTOR_BASE_INDEX(ci);
+    int ci_vec_base = CI_VECTOR3_BASE_INDEX(ci);
     MD_FLOAT* ci_v  = &cuda_cl_v[ci_vec_base];
     MD_FLOAT* ci_f  = &cuda_cl_f[ci_vec_base];
 
     for (int cii = 0; cii < cuda_natoms[ci]; cii++) {
-        ci_v[CL_X_INDEX(cii)] += dtforce * ci_f[CL_X_INDEX(cii)];
-        ci_v[CL_Y_INDEX(cii)] += dtforce * ci_f[CL_Y_INDEX(cii)];
-        ci_v[CL_Z_INDEX(cii)] += dtforce * ci_f[CL_Z_INDEX(cii)];
+        ci_v[CL_X_INDEX_3D(cii)] += dtforce * ci_f[CL_X_INDEX_3D(cii)];
+        ci_v[CL_Y_INDEX_3D(cii)] += dtforce * ci_f[CL_Y_INDEX_3D(cii)];
+        ci_v[CL_Z_INDEX_3D(cii)] += dtforce * ci_f[CL_Z_INDEX_3D(cii)];
     }
 }
 
@@ -613,17 +613,17 @@ extern "C" double computeForceLJCuda(Parameter* param, Atom* atom, Neighbor* nei
 extern "C" void copyGhostFromGPU(Atom* atom) {
     memcpyFromGPU(atom->cl_x,
         cuda_cl_x,
-        atom->Nclusters_local * CLUSTER_M * SCLUSTER_SIZE * 3 * sizeof(MD_FLOAT));
+        atom->Nclusters_local * CLUSTER_M * SCLUSTER_SIZE * ATOM_DIM * sizeof(MD_FLOAT));
 }
 
 extern "C" void copyGhostToGPU(Atom* atom) {
     int ncj               = CJ0_FROM_CI(atom->Nclusters_local);
-    int cj_vec_base       = CJ_VECTOR_BASE_INDEX(ncj);
+    int cj_vec_base       = CJ_VECTOR3_BASE_INDEX(ncj);
     MD_FLOAT* host_cl_x   = &atom->cl_x[cj_vec_base];
     MD_FLOAT* device_cl_x = &cuda_cl_x[cj_vec_base];
     memcpyToGPU(device_cl_x,
         host_cl_x,
-        atom->Nclusters_ghost * CLUSTER_N * 3 * sizeof(MD_FLOAT));
+        atom->Nclusters_ghost * CLUSTER_N * ATOM_DIM * sizeof(MD_FLOAT));
 }
 
 extern "C" void copyForceFromGPU(Atom* atom) {
@@ -641,7 +641,7 @@ extern "C" void copyForceToGPU(Atom* atom) {
 extern "C" void growClustersCUDA(Atom* atom) {
     if (cuda_cl_x) {
         cuda_cl_x   = (MD_FLOAT*)reallocateGPU(cuda_cl_x,
-            atom->Nclusters_max * CLUSTER_M * 3 * sizeof(MD_FLOAT));
+            atom->Nclusters_max * CLUSTER_M * ATOM_DIM * sizeof(MD_FLOAT));
         cuda_cl_v   = (MD_FLOAT*)reallocateGPU(cuda_cl_v,
             atom->Nclusters_max * CLUSTER_M * 3 * sizeof(MD_FLOAT));
         cuda_cl_f   = (MD_FLOAT*)reallocateGPU(cuda_cl_f,

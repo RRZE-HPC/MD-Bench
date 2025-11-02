@@ -99,10 +99,17 @@ extern void growClustersCUDA(Atom*);
 #define atom_y(i)       atom->y[i]
 #define atom_z(i)       atom->z[i]
 #else
-#define POS_DATA_LAYOUT "AoS"
+#ifdef AOS3
+#define POS_DATA_LAYOUT "AoS3"
 #define atom_x(i)       atom->x[(i)*3 + 0]
 #define atom_y(i)       atom->x[(i)*3 + 1]
 #define atom_z(i)       atom->x[(i)*3 + 2]
+#else
+#define POS_DATA_LAYOUT "AoS4"
+#define atom_x(i)       atom->x[(i)*4 + 0]
+#define atom_y(i)       atom->x[(i)*4 + 1]
+#define atom_z(i)       atom->x[(i)*4 + 2]
+#endif
 /*
 #   define atom_vx(i)          atom->vx[(i) * 3 + 0]
 #   define atom_vy(i)          atom->vx[(i) * 3 + 1]
