@@ -39,7 +39,7 @@ endif
 
 # X86 SIMD options
 ifeq ($(strip $(ISA)),X86)
-OPTS = -Ofast
+OPTS = -O3 -ffast-math
 ifeq ($(strip $(SIMD)),AVX512)
 OPTS += -march=x86-64-v4 -mevex512
 else

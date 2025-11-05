@@ -13,7 +13,7 @@ endif
 PROFILE     = #-profile-functions -g  -pg
 
 # SIMD options
-OPTS        = -Ofast
+OPTS        = -O3 -ffast-math
 ifeq ($(strip $(SIMD)),AVX512)
 OPTS        += -xCORE-AVX512 -qopt-zmm-usage=high
 endif
