@@ -803,7 +803,7 @@ void buildNeighborSuperclusters(Atom* atom, Neighbor* neighbor) {
                                     for (int sci_ci = 0; sci_ci < atom->siclusters[sci].nclusters; sci_ci++) {
                                         const int ci = sci * SCLUSTER_SIZE + sci_ci;
                                         int cj_vec_base = CJ_VECTOR_BASE_INDEX(cj);
-#ifdef SOA
+#ifdef SOA_SUP
                                         MD_FLOAT* ci_x  = &atom->cl_x[sci_vec_base + sci_ci * CLUSTER_M];                             
 #else                                     
                                         MD_FLOAT* ci_x  = &atom->cl_x[sci_vec_base + sci_ci * CLUSTER_M * ATOM_DIM];

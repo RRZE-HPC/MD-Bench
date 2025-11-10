@@ -16,8 +16,10 @@ ENABLE_OPENMP ?= false
 ENABLE_MPI ?= false
 # SP or DP
 DATA_TYPE ?= SP
-# AOS3 or AOS4 or SOA 
-DATA_LAYOUT ?= AOS3
+# AOS or SOA
+DATA_LAYOUT ?= AOS
+# AOS3 or AOS4 or SOA
+DATA_LAYOUT_SUPERCLUSTER ?= AOS4
 # Debug
 DEBUG ?= false
 
@@ -38,7 +40,7 @@ ENABLE_OMP_SIMD ?= true
 
 # Configurations for clusterpair optimization scheme
 # Cluster pair kernel variant (auto/4xN/2xNN/gpusimple)
-CLUSTER_PAIR_KERNEL ?= auto
+CLUSTER_PAIR_KERNEL ?= gpusimple
 # Use scalar version (and pray for the compiler to vectorize the code properly)
 USE_SCALAR_KERNEL ?= false
 # Use reference version (for correction and metrics purposes)
@@ -120,12 +122,15 @@ else
     VECTOR_WIDTH=$(__SIMD_WIDTH_DBL__)
 endif
 endif
-ifeq ($(strip $(DATA_LAYOUT)),AOS3)
-    DEFINES +=  -DAOS3
-else ifeq ($(strip $(DATA_LAYOUT)),AOS4)
-    DEFINES +=  -DAOS4
+ifeq ($(strip $(DATA_LAYOUT)),AOS)
+    DEFINES +=  -DAOS
+endif
+ifeq ($(strip $(DATA_LAYOUT_SUPERCLUSTER)),AOS3)
+    DEFINES +=  -DAOS3_SUP
+else ifeq ($(strip $(DATA_LAYOUT_SUPERCLUSTER)),AOS4)
+    DEFINES +=  -DAOS4_SUP
 else
-    DEFINES +=  -DSOA
+    DEFINES +=  -DSOA_SUP
 endif
 ifeq ($(strip $(DATA_TYPE)),SP)
     DEFINES +=  -DPRECISION=1
