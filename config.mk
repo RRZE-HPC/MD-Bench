@@ -1,5 +1,5 @@
 # Compiler tool chain (GCC/CLANG/ICC/ICX/ONEAPI/NVCC/HIPCC)
-TOOLCHAIN ?= ICX
+TOOLCHAIN ?= GCC
 # ISA of instruction code (X86/ARM)
 ISA ?= X86
 # Instruction set for instrinsic kernels (NONE/<X86-SIMD>/<ARM-SIMD>)
@@ -7,13 +7,13 @@ ISA ?= X86
 # with ARM-SIMD options: NONE/NEON/SVE/SVE2 (SVE not width-agnostic yet!)
 SIMD ?= AVX512
 # Optimization scheme (verletlist/clusterpair)
-OPT_SCHEME ?= clusterpair
+OPT_SCHEME ?= verletlist
 # Enable likwid (true or false)
 ENABLE_LIKWID ?= false
 # Enable OpenMP parallelization (true or false)
 ENABLE_OPENMP ?= false
 # Enable MPI parallelization
-ENABLE_MPI ?= false
+ENABLE_MPI ?= true
 # SP or DP
 DATA_TYPE ?= DP
 # AOS or SOA

@@ -13,6 +13,8 @@
 #include <atom.h>
 #include <device.h>
 #include <util.h>
+#include <limits.h> 
+#include <unistd.h>
 
 #define DELTA 20000
 
@@ -25,11 +27,12 @@
 #endif
 
 int write_atoms_to_file(Atom* atom, char* name)
-{
+{ 
+/* 
     // file system variable
     char *file_system = getenv("TMPDIR");
     
-    // Check if $FASTTMP is set
+     Check if $FASTTMP is set
     if (file_system == NULL) {
         fprintf(stderr, "Error: TMPDIR environment variable is not set!\n");
         return -1;
@@ -37,8 +40,9 @@ int write_atoms_to_file(Atom* atom, char* name)
 
     char file_path[256]; 
     snprintf(file_path, sizeof(file_path), "%s/%s", file_system, name);
-
     FILE *fp = fopen(file_path, "wb");
+*/
+    FILE *fp = fopen(name, "wb");
     if (fp == NULL) {
         perror("Error opening file");
         return -1;

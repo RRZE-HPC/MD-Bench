@@ -35,5 +35,5 @@ CFLAGS      = $(PROFILE) $(OPENMP) $(OPTS) -std=c11 #-pedantic-errors
 ASFLAGS     = -masm=intel
 LFLAGS      = $(PROFILE) $(OPENMP) $(OPTS)
 DEFINES    += -D_GNU_SOURCE
-INCLUDES    =
-LIBS        = -lm
+INCLUDES    = 
+LIBS       += -lm

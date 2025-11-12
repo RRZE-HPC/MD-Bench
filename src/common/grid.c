@@ -506,6 +506,7 @@ void initGrid(Grid* grid, int nprocs) {
 }
 
 int readAtomsTempFile(Atom* atom, char* file) {
+/*
     char *file_system = getenv("TMPDIR");
     if (file_system == NULL) {
         fprintf(stderr, "Error: TMPDIR environment variable is not set!\n");
@@ -515,7 +516,8 @@ int readAtomsTempFile(Atom* atom, char* file) {
     char file_path[256]; 
     snprintf(file_path, sizeof(file_path), "%s/%s", file_system, file);
     FILE *fp = fopen(file_path, "r");
-
+*/  
+    FILE *fp = fopen(file, "r");
     if (fp == NULL) {
         perror("Error opening file");
         return -1;
@@ -559,7 +561,7 @@ int readAtomsTempFile(Atom* atom, char* file) {
                 i++;
             }
     }
-
+ 
     fclose(fp);
     atom->Nlocal = i;
     return 0;

@@ -5,6 +5,7 @@
  * license that can be found in the LICENSE file.
  */
 #include <immintrin.h>
+#include <assert.h>
 #ifndef NO_ZMM_INTRIN
 #include <zmmintrin.h>
 #endif
@@ -207,5 +208,14 @@ static inline MD_SIMD_INT simd_i32_load_h_dual_scaled(const int* m, int scale)
 static inline MD_SIMD_FLOAT simd_real_gather(
     MD_SIMD_INT vidx, MD_FLOAT* base, const int scale)
 {
-    return _mm512_i32gather_pd(vidx, base, scale);
+    
+    switch (scale) {
+    case 1: return _mm512_i32gather_pd(vidx, base, 1);
+    case 2: return _mm512_i32gather_pd(vidx, base, 2);
+    case 4: return _mm512_i32gather_pd(vidx, base, 4);
+    case 8: return _mm512_i32gather_pd(vidx, base, 8);
+    default:
+        assert(!"invalid scale for gather");
+     }
+    //return _mm512_i32gather_pd(vidx, base, scale);
 }
