@@ -129,9 +129,8 @@ __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
     int sci = blockIdx.x;
     int cii = threadIdx.y;
     int cjj = threadIdx.x;
-    int sci_vec_base = SCI_VECTOR3_BASE_INDEX(sci);
     MD_FLOAT* sci_x  = &cuda_cl_x[SCI_VECTOR_BASE_INDEX(sci)];
-    MD_FLOAT* sci_f  = &cuda_cl_f[sci_vec_base];
+    MD_FLOAT* sci_f  = &cuda_cl_f[SCI_VECTOR3_BASE_INDEX(sci)];
     int tid = cjj * CLUSTER_M + cii;
     MD_FLOAT3 fbuf[SCLUSTER_SIZE];
 
@@ -153,9 +152,8 @@ __global__ void computeForceLJCudaSup_warp(MD_FLOAT* cuda_cl_x,
 
     for(int k = 0; k < cuda_numneigh[sci]; k++) {
         int cj          = cuda_neighs[sci * maxneighs + k];
-        int cj_vec_base = CJ_VECTOR3_BASE_INDEX(cj);
         MD_FLOAT* cj_x  = &cuda_cl_x[CJ_VECTOR_BASE_INDEX(cj)];
-        MD_FLOAT* cj_f  = &cuda_cl_f[cj_vec_base];
+        MD_FLOAT* cj_f  = &cuda_cl_f[CJ_VECTOR3_BASE_INDEX(cj)];
         MD_FLOAT xjtmp  = cj_x[CL_X_INDEX(cjj)];
         MD_FLOAT yjtmp  = cj_x[CL_Y_INDEX(cjj)];
         MD_FLOAT zjtmp  = cj_x[CL_Z_INDEX(cjj)];

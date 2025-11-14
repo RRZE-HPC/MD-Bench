@@ -203,9 +203,8 @@ __global__ void computeForceLJCudaFullNeigh(
     int cii         = threadIdx.z;
     int cjj         = threadIdx.y;
     int ci_cj0      = CJ0_FROM_CI(ci);
-    int ci_vec_base = CI_VECTOR3_BASE_INDEX(ci);
     MD_FLOAT* ci_x  = &cuda_cl_x[CI_VECTOR_BASE_INDEX(ci)];
-    MD_FLOAT* ci_f  = &cuda_cl_f[ci_vec_base];
+    MD_FLOAT* ci_f  = &cuda_cl_f[CI_VECTOR3_BASE_INDEX(ci)];
     int* neighs     = &cuda_neighs[ci * maxneighs];
     int numneighs   = cuda_numneigh[ci];
     MD_FLOAT xtmp   = ci_x[CL_X_INDEX(cii)];
@@ -317,9 +316,8 @@ __global__ void computeForceLJCudaHalfNeigh(
     int cii         = threadIdx.z;
     int cjj         = threadIdx.y;
     int ci_cj0      = CJ0_FROM_CI(ci);
-    int ci_vec_base = CI_VECTOR3_BASE_INDEX(ci);
     MD_FLOAT* ci_x  = &cuda_cl_x[CI_VECTOR_BASE_INDEX(ci)];
-    MD_FLOAT* ci_f  = &cuda_cl_f[ci_vec_base];
+    MD_FLOAT* ci_f  = &cuda_cl_f[CI_VECTOR3_BASE_INDEX(ci)];
     int* neighs     = &cuda_neighs[ci * maxneighs];
     int numneighs   = cuda_numneigh[ci];
     MD_FLOAT xtmp   = ci_x[CL_X_INDEX(cii)];
@@ -336,9 +334,8 @@ __global__ void computeForceLJCudaHalfNeigh(
 
     for (int k = 0; k < numneighs; k++) {
         int cj          = neighs[k];
-        int cj_vec_base = CJ_VECTOR3_BASE_INDEX(cj);
         MD_FLOAT* cj_x  = &cuda_cl_x[CJ_VECTOR_BASE_INDEX(cj)];
-        MD_FLOAT* cj_f  = &cuda_cl_f[cj_vec_base];
+        MD_FLOAT* cj_f  = &cuda_cl_f[CJ_VECTOR3_BASE_INDEX(cj)];
 
         int cond;
 #if CLUSTER_M == CLUSTER_N
@@ -399,8 +396,8 @@ __global__ void cudaInitialIntegrate_warp(MD_FLOAT* cuda_cl_x,
         return;
     }
 
-    int ci_vec_base = CI_VECTOR3_BASE_INDEX(ci);
     MD_FLOAT* ci_x  = &cuda_cl_x[CI_VECTOR_BASE_INDEX(ci)];
+    int ci_vec_base = CI_VECTOR3_BASE_INDEX(ci);
     MD_FLOAT* ci_v  = &cuda_cl_v[ci_vec_base];
     MD_FLOAT* ci_f  = &cuda_cl_f[ci_vec_base];
 
