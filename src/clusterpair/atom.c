@@ -162,7 +162,7 @@ void createAtom(Atom* atom, Parameter* param) {
     int oy        = 0;
     int oz        = 0;
     int subboxdim = 8;
-
+     
     if(me == 0 && param->setup) {
         while (oz * subboxdim <= khi) {
             k = oz * subboxdim + sz;
@@ -195,7 +195,8 @@ void createAtom(Atom* atom, Parameter* param) {
                     if (atom->Nlocal == atom->Nmax) {
                         growAtom(atom);
                     }
-                    atom_x(atom->Nlocal)     = xtmp;
+                                           
+                    atom_x(atom->Nlocal)     = xtmp;                 
                     atom_y(atom->Nlocal)     = ytmp;
                     atom_z(atom->Nlocal)     = ztmp;
                     atom->vx[atom->Nlocal]   = vxtmp;
@@ -231,6 +232,8 @@ void createAtom(Atom* atom, Parameter* param) {
 
         write_atoms_to_file(atom, param->atom_file_name);
     }
+
+                         
 }
 
 int typeStr2int(const char* type) {
@@ -728,7 +731,13 @@ void initMasks(Atom* atom) {
 void growAtom(Atom* atom) {
     int nold = atom->Nmax;
     atom->Nmax += DELTA;
-#if defined(SOA) || defined(SOA_SUP)
+
+#ifdef AOS
+    atom->x = (MD_FLOAT*)reallocate(atom->x,
+        ALIGNMENT,
+        atom->Nmax * sizeof(MD_FLOAT) * 3,
+        nold * sizeof(MD_FLOAT) * 3);
+#else
     atom->x = (MD_FLOAT*)reallocate(atom->x,
         ALIGNMENT,
         atom->Nmax * sizeof(MD_FLOAT),
@@ -741,11 +750,6 @@ void growAtom(Atom* atom) {
         ALIGNMENT,
         atom->Nmax * sizeof(MD_FLOAT),
         nold * sizeof(MD_FLOAT));
-#else
-        atom->x = (MD_FLOAT*)reallocate(atom->x,
-        ALIGNMENT,
-        atom->Nmax * sizeof(MD_FLOAT) * ATOM_DIM,
-        nold * sizeof(MD_FLOAT) * ATOM_DIM);
 #endif
     atom->vx   = (MD_FLOAT*)reallocate(atom->vx,
         ALIGNMENT,
@@ -813,16 +817,16 @@ void growClusters(Atom* atom, int super_clustering) {
 /* MPI added*/
 
 void freeAtom(Atom* atom) {
-#if defined(SOA) || defined(SOA_SUP)
+#ifdef AOS
+    free(atom->x);
+    atom->x = NULL;
+#else
     free(atom->x);
     atom->x = NULL;
     free(atom->y);
     atom->y = NULL;
     free(atom->z);
     atom->z = NULL;
-#else
-    free(atom->x);
-    atom->x = NULL;
 #endif
     free(atom->vx);
     atom->vx = NULL;

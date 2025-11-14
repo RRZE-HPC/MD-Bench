@@ -18,8 +18,7 @@ ENABLE_MPI ?= false
 DATA_TYPE ?= SP
 # AOS or SOA
 DATA_LAYOUT ?= AOS
-# AOS3 or AOS4 or SOA
-DATA_LAYOUT_SUPERCLUSTER ?= AOS4
+
 # Debug
 DEBUG ?= false
 
@@ -40,7 +39,10 @@ ENABLE_OMP_SIMD ?= true
 
 # Configurations for clusterpair optimization scheme
 # Cluster pair kernel variant (auto/4xN/2xNN/gpusimple)
-CLUSTER_PAIR_KERNEL ?= gpusimple
+CLUSTER_PAIR_KERNEL ?= auto
+# AOS3 or AOS4 or SOA
+#CLSUTER_DATA_LAYOUT
+DATA_LAYOUT_SUPERCLUSTER ?= AOS3
 # Use scalar version (and pray for the compiler to vectorize the code properly)
 USE_SCALAR_KERNEL ?= false
 # Use reference version (for correction and metrics purposes)
