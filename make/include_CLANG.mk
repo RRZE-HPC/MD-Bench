@@ -41,7 +41,7 @@ endif
 ifeq ($(strip $(ISA)),X86)
 OPTS = -O3 -ffast-math
 ifeq ($(strip $(SIMD)),AVX512)
-OPTS += -march=x86-64-v4 -mavx512f
+OPTS += -march=x86-64-v4 -mavx512f -mprefer-vector-width=512
 #OPTS += -march=x86-64-v4 -mevex512
 else
 DEFINES += -DNO_ZMM_INTRIN
